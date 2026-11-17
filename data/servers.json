@@ -2,9 +2,9 @@
   {
     "id": "WEB01",
     "name": "업무웹01",
-    "type": "WEB",
+    "type": "DB",
     "os": "Windows",
-    "ip": "10.10.10.11",
+    "ip": "10.10.10.112",
     "sharedPath": "C:\\logs\\WeeklyCheck"
   },
   {
@@ -13,6 +13,14 @@
     "type": "WAS",
     "os": "Linux",
     "ip": "10.10.10.21",
+    "sharedPath": "C:\\logs\\WeeklyCheck"
+  },
+  {
+    "id": "WEB02",
+    "name": "test",
+    "type": "WEB",
+    "os": "Windows",
+    "ip": "10.10.10.10",
     "sharedPath": "C:\\logs\\WeeklyCheck"
   }
 ]

@@ -14,13 +14,11 @@
 <body>
   <div class="layout">
     <div id="sidebar-container"></div>
-
     <main class="content">
       <div class="container">
         <!-- Dashboard -->
         <header class="header">
           <h1>OpsBox</h1>
-
           <p>Server Inventory Management</p>
         </header>
         <section class="card dashboard">
@@ -28,17 +26,14 @@
             <span>Total</span>
             <strong id="total-count"> 0 </strong>
           </div>
-
           <div class="summary-card">
             <span>WEB</span>
             <strong id="web-count"> 0 </strong>
           </div>
-
           <div class="summary-card">
             <span>WAS</span>
             <strong id="was-count"> 0 </strong>
           </div>
-
           <div class="summary-card">
             <span>DB</span>
             <strong id="db-count"> 0 </strong>
@@ -46,18 +41,14 @@
         </section>
 
         <!-- Server List -->
-
         <section class="card">
           <div class="section-title">
             <h2>서버 목록</h2>
-
             <div style="display: flex; gap: 10px; align-items: center">
               <button type="button" id="btn-new" class="btn btn-primary">+ 신규 서버</button>
-
               <input id="search" type="text" placeholder="검색..." />
             </div>
           </div>
-
           <table class="server-table">
             <thead>
               <tr>
@@ -69,13 +60,11 @@
                 <th>관리</th>
               </tr>
             </thead>
-
             <tbody id="server-list"></tbody>
           </table>
         </section>
 
         <!-- Server Form -->
-
         <section class="card" id="server-form-section">
           <h2 id="form-title">서버 등록</h2>
 
@@ -83,54 +72,40 @@
             <div class="form-grid">
               <div class="form-group">
                 <label for="id"> 서버 ID </label>
-
-                <input id="id" type="text" placeholder="WEB01" required />
+                <input id="id" type="text" placeholder="서버 ID" required />
               </div>
-
               <div class="form-group">
                 <label for="name"> 서버명 </label>
-
-                <input id="name" type="text" placeholder="업무웹01" required />
+                <input id="name" type="text" placeholder="서버명" required />
               </div>
-
               <div class="form-group">
                 <label for="type"> 서버 유형 </label>
 
                 <select id="type">
                   <option value="WEB">WEB</option>
-
                   <option value="WAS">WAS</option>
-
                   <option value="DB">DB</option>
                 </select>
               </div>
-
               <div class="form-group">
                 <label for="os"> 운영체제 </label>
-
                 <select id="os">
                   <option value="Windows">Windows</option>
-
                   <option value="Linux">Linux</option>
                 </select>
               </div>
-
               <div class="form-group">
                 <label for="ip"> IP 주소 </label>
-
                 <input id="ip" type="text" placeholder="10.10.10.11" required />
               </div>
-
               <div class="form-group">
                 <label for="sharedPath"> 공용 폴더 </label>
-
                 <input id="sharedPath" type="text" placeholder="\\NAS01\OpsBox" required />
               </div>
             </div>
-
+            
             <div class="button-area">
               <button type="submit" class="btn btn-primary">저장</button>
-
               <button type="button" id="btn-cancel" class="btn">취소</button>
             </div>
           </form>

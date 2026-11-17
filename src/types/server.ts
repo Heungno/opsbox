@@ -9,14 +9,19 @@ export interface DirectoryCheck {
   criticalPercent: number;
 }
 
+export interface ServerPolicy {
+  minUptimeMinutes: number;
+}
+
 export interface Server {
   id: string;
   name: string;
 
-  type: string;
-  os: string;
+  type: 'WEB' | 'WAS' | 'DB';
+  os: 'Windows' | 'Linux';
 
   ip: string;
+  policy?: ServerPolicy;
 
   sharedPath: string;
 

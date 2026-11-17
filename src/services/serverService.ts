@@ -1,5 +1,10 @@
 import fs from 'fs';
+
 import { Server } from '../types/server';
+
+import { validateProcesses, validateDirectories } from './serverValidation';
+
+import { ValidationError } from '../types/error';
 
 const FILE = 'data/servers.json';
 
@@ -9,6 +14,43 @@ function read(): Server[] {
 
 function write(data: Server[]) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+}
+
+function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {
+  const errors = [];
+
+  if (!server.id || server.id.trim() === '') {
+    errors.push({
+      field: 'id',
+      message: '서버 ID는 필수입니다.',
+    });
+  }
+
+  if (!server.name || server.name.trim() === '') {
+    errors.push({
+      field: 'name',
+      message: '서버명은 필수입니다.',
+    });
+  }
+
+  if (server.id && servers.some((s) => s.id === server.id && s.id !== currentId)) {
+    errors.push({
+      field: 'id',
+      message: `이미 존재하는 서버 ID 입니다. (${server.id})`,
+    });
+  }
+
+  const processValidation = validateProcesses(server.processes ?? []);
+
+  const directoryValidation = validateDirectories(server.directories ?? []);
+
+  errors.push(...processValidation.errors);
+
+  errors.push(...directoryValidation.errors);
+
+  if (errors.length > 0) {
+    throw new ValidationError(errors);
+  }
 }
 
 export function getAllServers() {
@@ -22,6 +64,9 @@ export function getServer(id: string) {
 export function createServer(server: Server) {
   const servers = read();
 
+  validateServer(server, servers);
+
+console.error(server)
   servers.push(server);
 
   write(servers);
@@ -32,31 +77,38 @@ export function createServer(server: Server) {
 export function updateServer(id: string, data: Partial<Server>) {
   const servers = read();
 
-  const idx = servers.findIndex((s) => s.id === id);
+  const index = servers.findIndex((server) => server.id === id);
 
-  if (idx === -1) {
-    return null;
+  if (index === -1) {
+    throw new Error(`Server not found: ${id}`);
   }
 
-  servers[idx] = {
-    ...servers[idx],
+  const updatedServer = {
+    ...servers[index],
     ...data,
   };
 
+  validateServer(updatedServer, servers, id);
+
+  servers[index] = updatedServer;
+
   write(servers);
 
-  return servers[idx];
+  return servers[index];
 }
 
 export function deleteServer(id: string) {
   const servers = read();
+
   const exists = servers.some((server) => server.id === id);
 
   if (!exists) {
-    throw new NotFoundError(`서버를 찾을 수 없습니다. (${id})`);
+    throw new Error(`Server not found: ${id}`);
   }
 
   const filtered = servers.filter((server) => server.id !== id);
+
   write(filtered);
+
   return true;
 }

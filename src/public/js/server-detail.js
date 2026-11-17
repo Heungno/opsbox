@@ -35,41 +35,29 @@ function renderServerInfo(server) {
   const year = new Date().getFullYear();
 
   document.getElementById('server-title').textContent = `${server.id} - ${server.name}`;
-
   document.getElementById('server-id').textContent = server.id;
-
   document.getElementById('server-name').textContent = server.name;
-
   document.getElementById('server-ip').textContent = server.ip;
-
   document.getElementById('server-shared-path').textContent = server.sharedPath;
-
   document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
-
   document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
+  document.getElementById('btn-add-process')?.addEventListener('click', () => addProcessRow());
+  document.getElementById('btn-add-directory')?.addEventListener('click', () => addDirectoryRow());
 
   const typeCell = document.getElementById('server-type');
-
   typeCell.replaceChildren();
 
   const typeBadge = document.createElement('span');
-
   typeBadge.className = 'server-badge';
-
   typeBadge.textContent = server.type;
-
   typeCell.appendChild(typeBadge);
 
   const osCell = document.getElementById('server-os');
-
   osCell.replaceChildren();
 
   const osBadge = document.createElement('span');
-
   osBadge.className = 'server-badge';
-
   osBadge.textContent = server.os;
-
   osCell.appendChild(osBadge);
 }
 
@@ -376,6 +364,66 @@ function getHealthStatus(result) {
   }
 
   return 'Healthy';
+}
+
+function addProcessRow(value = '') {
+  const container = document.getElementById('process-container');
+
+  const row = document.createElement('div');
+  row.className = 'policy-row process-row';
+
+  const input = document.createElement('input');
+  input.className = 'process-name';
+  input.value = value;
+  input.placeholder = 'nginx';
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'btn btn-danger';
+  remove.textContent = '삭제';
+  remove.addEventListener('click', () => row.remove());
+
+  row.appendChild(input);
+  row.appendChild(remove);
+
+  container.appendChild(row);
+}
+
+function addDirectoryRow(data = {}) {
+  const container = document.getElementById('directory-container');
+
+  const row = document.createElement('div');
+  row.className = 'policy-row directory-row';
+
+  const path = document.createElement('input');
+  path.className = 'directory-path';
+  path.placeholder = '/logs';
+  path.value = data.path ?? '';
+
+  const warning = document.createElement('input');
+  warning.type = 'number';
+  warning.className = 'directory-warning';
+  warning.placeholder = '70';
+  warning.value = data.warningPercent ?? '';
+
+  const critical = document.createElement('input');
+  critical.type = 'number';
+  critical.className = 'directory-critical';
+  critical.placeholder = '90';
+  critical.value = data.criticalPercent ?? '';
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'btn btn-danger';
+  remove.textContent = '삭제';
+  remove.addEventListener('click', () => row.remove());
+
+  row.appendChild(path);
+  row.appendChild(warning);
+  row.appendChild(critical);
+  row.appendChild(remove);
+
+  container.appendChild(row);
 }
 
 init();
