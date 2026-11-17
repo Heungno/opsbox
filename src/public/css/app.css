@@ -1,19 +1,20 @@
 :root {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
+  --primary: #0969da;
+  --primary-hover: #0550ae;
 
-  --success: #16a34a;
-  --warning: #ca8a04;
-  --danger: #dc2626;
-  --danger-light: #fef2f2;
+  --success: #1a7f37;
+  --success-bg: #dcfce7;
+  --warning: #9a6700;
+  --danger: #cf222e;
+  --danger-light: #ffebe9;
 
-  --border: #e5e7eb;
+  --border: #d0d7de;
 
-  --bg: #f5f7fa;
+  --bg: #f6f8fa;
   --card-bg: #ffffff;
 
-  --text: #111827;
-  --text-light: #6b7280;
+  --text: #24292f;
+  --text-light: #57606a;
 }
 
 /* =========================================================
@@ -28,12 +29,13 @@ html,
 body {
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Malgun Gothic', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Helvetica, Arial, sans-serif;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -45,12 +47,14 @@ body {
 .layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
 .content {
   flex: 1;
   padding: 24px;
   overflow-x: auto;
+  background: var(--bg);
 }
 
 .container {
@@ -59,17 +63,22 @@ body {
 }
 
 /* =========================================================
-   Sidebar
+   Sidebar (GitHub Dark Style)
 ========================================================= */
 
 .sidebar {
-  width: 220px;
-  background: #1f2937;
-  color: white;
+  width: 240px;
+  background: #24292e;
+  color: #f0f6fc;
   display: flex;
   flex-direction: column;
-  transition: width 0.2s ease;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: width 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-header {
@@ -84,6 +93,7 @@ body {
   font-size: 16px;
   font-weight: 700;
   color: white;
+  letter-spacing: -0.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -91,12 +101,13 @@ body {
 
 .sidebar-toggle {
   background: transparent;
-  border: none;
-  color: #9ca3af;
-  font-size: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #adbac7;
+  font-size: 14px;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .sidebar-toggle:hover {
@@ -105,42 +116,52 @@ body {
 }
 
 .sidebar-menu {
-  padding: 12px 0;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .sidebar-menu a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
-  color: #d1d5db;
+  padding: 10px 12px;
+  color: #adbac7;
   text-decoration: none;
   font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .sidebar-menu a:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   color: white;
 }
 
 .sidebar-menu a.active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
   font-weight: 600;
 }
 
+.menu-icon {
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+}
+
 /* Sidebar Collapsed State */
 .sidebar.collapsed {
-  width: 60px;
+  width: 64px;
 }
 
 .sidebar.collapsed .logo,
-.sidebar.collapsed .sidebar-menu a span {
+.sidebar.collapsed .sidebar-menu a .menu-text {
   display: none;
 }
 
@@ -159,32 +180,36 @@ body {
 ========================================================= */
 
 .header {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .header h1 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .header p,
 .dashboard-desc {
   margin-top: 6px;
   color: var(--text-light);
+  font-size: 13px;
 }
 
 /* =========================================================
-   Card
+   Card (GitHub Clean Box)
 ========================================================= */
 
 .card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 20px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 3px rgba(31, 35, 40, 0.04);
 }
 
 /* =========================================================
@@ -196,13 +221,13 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .section-header h2,
 .section-header h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -216,7 +241,7 @@ body {
 .section-title h2 {
   margin: 0;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* =========================================================
@@ -226,33 +251,32 @@ body {
 .dashboard,
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .summary-card {
   background: white;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: 6px;
+  padding: 16px;
   border-left: 4px solid var(--border);
+  box-shadow: 0 1px 2px rgba(31, 35, 40, 0.02);
 }
 
 .summary-card span {
   display: block;
   color: var(--text-light);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .summary-card strong {
   display: block;
-  margin-top: 6px;
-  font-size: 20px;
-  font-weight: 700;
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 600;
   color: var(--text);
 }
 
@@ -285,30 +309,32 @@ body {
 }
 
 /* =========================================================
-   Tables
+   Tables (GitHub Table Style)
 ========================================================= */
 
 table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 13px;
 }
 
 th {
-  background: #f8fafc;
-  color: var(--text-light);
+  background: #f6f8fa;
+  color: var(--text);
   font-size: 12px;
   font-weight: 600;
   text-align: left;
+  border-bottom: 1px solid var(--border);
 }
 
 th,
 td {
-  padding: 12px 10px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
 }
 
 tbody tr:hover {
-  background: #fafafa;
+  background: #f6f8fa;
 }
 
 .server-table,
@@ -318,8 +344,9 @@ tbody tr:hover {
 }
 
 .detail-table th {
-  width: 140px;
-  background: #f8fafc;
+  width: 150px;
+  background: #f6f8fa;
+  font-weight: 600;
 }
 
 /* =========================================================
@@ -331,17 +358,17 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   min-width: 60px;
-  height: 26px;
+  height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 12px;
+  background: #ddf4ff;
+  color: #0969da;
+  font-size: 11px;
   font-weight: 600;
 }
 
 /* =========================================================
-   Button
+   Button (GitHub Button Style)
 ========================================================= */
 
 .btn {
@@ -349,49 +376,60 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid transparent;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
+  background: #f6f8fa;
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
+.btn:hover {
+  background: #f3f4f6;
+  border-color: #8c959f;
+}
+
 .btn-primary {
-  background: var(--primary);
+  background: #1f883d;
   color: white;
+  border-color: rgba(31, 35, 40, 0.15);
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: #1a7f37;
+  border-color: rgba(31, 35, 40, 0.15);
 }
 
 .btn-secondary {
-  background: white;
+  background: #f6f8fa;
   color: var(--text);
   border-color: var(--border);
 }
 
 .btn-secondary:hover {
-  background: #f8fafc;
+  background: #f3f4f6;
 }
 
 .btn-danger {
   background: white;
   color: var(--danger);
-  border-color: #fecaca;
+  border-color: var(--border);
 }
 
 .btn-danger:hover {
   background: var(--danger-light);
+  border-color: #cf222e;
 }
 
 .btn-small {
-  height: 30px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 8px;
   font-size: 12px;
 }
 
@@ -420,20 +458,21 @@ tbody tr:hover {
 input,
 select {
   width: 100%;
-  height: 34px;
+  height: 32px;
   padding: 0 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 13px;
   background: white;
   color: var(--text);
+  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075);
 }
 
 input:focus,
 select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075), 0 0 0 3px rgba(9, 105, 218, 0.3);
 }
 
 .button-area {
@@ -443,57 +482,15 @@ select:focus {
 }
 
 /* =========================================================
-   Policy & Dynamic Rows
-========================================================= */
-
-.policy-help {
-  margin-bottom: 16px;
-  color: var(--text-light);
-  font-size: 12px;
-}
-
-.policy-header {
-  display: grid;
-  gap: 8px;
-  align-items: center;
-  background: #f8fafc;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-light);
-}
-
-.process-grid,
-.process-row {
-  display: grid;
-  grid-template-columns: 1fr 80px;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.directory-grid,
-.directory-row {
-  display: grid;
-  grid-template-columns: 1fr 100px 100px 80px;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-/* =========================================================
-   Script & Command Box Components
+   Script & Command Box Components (GitHub Code Block Style)
 ========================================================= */
 
 .script-item {
   background: white;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .script-item h3 {
@@ -505,7 +502,7 @@ select:focus {
 .script-desc {
   color: var(--text-light);
   font-size: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .command-title {
@@ -516,16 +513,16 @@ select:focus {
 }
 
 .command-box {
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: Consolas, Monaco, 'Courier New', monospace;
+  background: #24292e;
+  color: #f0f6fc;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   font-size: 12px;
   padding: 12px 16px;
   border-radius: 6px;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  border: 1px solid #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   margin: 0 0 12px 0;
 }
 
@@ -542,10 +539,10 @@ select:focus {
 }
 
 .result-item {
-  background: #f8fafc;
+  background: #f6f8fa;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 6px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -554,13 +551,13 @@ select:focus {
 .result-item span {
   color: var(--text-light);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
 .result-item strong {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text);
 }
 
@@ -577,14 +574,14 @@ select:focus {
 
 .badge-success,
 .history-status.healthy {
-  background: #dcfce7;
-  color: #16a34a;
+  background: #dafbe1;
+  color: #1a7f37;
 }
 
 .badge-warning,
 .history-status.warning {
-  background: #fef9c3;
-  color: #ca8a04;
+  background: #fff8c5;
+  color: #9a6700;
 }
 
 .badge-danger,
@@ -611,12 +608,63 @@ select:focus {
 }
 
 /* =========================================================
+   Policy & Dynamic Rows
+========================================================= */
+
+.policy-help {
+  margin-bottom: 16px;
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.policy-header {
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  background: #f6f8fa;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.process-grid,
+.process-row {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.directory-grid,
+.directory-row {
+  display: grid;
+  grid-template-columns:
+    1fr
+    100px
+    100px
+    80px;
+
+  gap: 8px;
+
+  align-items: center;
+
+  margin-bottom: 8px;
+}
+
+/* =========================================================
    Validation & Helpers
 ========================================================= */
 
 .field-error {
   margin-top: 4px;
+
   color: var(--danger);
+
   font-size: 12px;
 }
 

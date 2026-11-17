@@ -4,63 +4,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>OpsBox Report</title>
-
+  <title>OpsBox - 점검 보고서</title>
   <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    @media print {
+      .sidebar, .button-area, .sidebar-toggle, .compare-container {
+        display: none !important;
+      }
+      .content {
+        padding: 0 !important;
+      }
+      .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 10px 0 !important;
+      }
+    }
+    .diff-badge {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .diff-up {
+      background: #fef2f2;
+      color: var(--danger);
+    }
+    .diff-down {
+      background: #dcfce7;
+      color: var(--success);
+    }
+    .diff-same {
+      background: #f1f5f9;
+      color: var(--text-light);
+    }
+  </style>
 </head>
 
 <body>
-
   <div class="layout">
-
     <div id="sidebar-container"></div>
-
     <main class="content">
-
       <div class="container">
-
-        <header class="header">
-
-          <h1>
-            점검 보고서
-          </h1>
-
-          <p id="report-title">
-            조회중...
-          </p>
-
+        <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1>점검 보고서</h1>
+            <p id="report-title">조회중...</p>
+          </div>
+          <div class="button-area" style="margin-top: 0;">
+            <button type="button" class="btn btn-secondary" onclick="window.print()">🖨️ 인쇄 / PDF</button>
+            <a id="btn-back" href="#" class="btn btn-primary">서버 상세로</a>
+          </div>
         </header>
 
         <section class="card">
-
-          <div id="health-summary">
-
+          <div class="section-header">
+            <h2>종합 진단 상태</h2>
           </div>
-
+          <div id="health-summary"></div>
         </section>
 
         <section class="card">
-
-          <h2>
-            점검 결과
-          </h2>
-
-          <div id="report-result">
-
+          <div class="section-header">
+            <h2>자원 사용량 요약</h2>
+            <div class="compare-container" style="display: flex; gap: 8px; align-items: center;">
+              <label for="compare-select" style="font-size: 12px; font-weight: 600;">이전 점검 비교:</label>
+              <select id="compare-select" style="width: 240px; height: 30px; font-size: 12px;">
+                <option value="">비교 안 함</option>
+              </select>
+            </div>
           </div>
-
+          <div id="report-result"></div>
         </section>
 
+        <section class="card">
+          <h2>프로세스 점검 결과</h2>
+          <table class="server-table">
+            <thead>
+              <tr>
+                <th>프로세스명</th>
+                <th>상태</th>
+                <th>CPU</th>
+                <th>메모리 (MB)</th>
+                <th>가동 시간 (분)</th>
+              </tr>
+            </thead>
+            <tbody id="process-report-list">
+              <tr><td colspan="5">조회중...</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="card">
+          <h2>디렉토리 점검 결과</h2>
+          <table class="server-table">
+            <thead>
+              <tr>
+                <th>디렉토리 경로</th>
+                <th>존재 여부</th>
+                <th>사용량 (GB)</th>
+                <th>전체 (GB)</th>
+                <th>사용률 (%)</th>
+              </tr>
+            </thead>
+            <tbody id="directory-report-list">
+              <tr><td colspan="5">조회중...</td></tr>
+            </tbody>
+          </table>
+        </section>
       </div>
-
     </main>
-
   </div>
 
   <script src="/js/common.js"></script>
   <script src="/js/report.js"></script>
-
 </body>
 
 </html>

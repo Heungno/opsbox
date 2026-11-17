@@ -8,7 +8,13 @@
     "sharedPath": "C:\\logs\\WeeklyCheck",
     "processes": [
       {
-        "name": "java"
+        "name": "Code"
+      },
+      {
+        "name": "n6agent"
+      },
+      {
+        "name": "node"
       }
     ],
     "directories": [
