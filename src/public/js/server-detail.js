@@ -41,8 +41,8 @@ function renderServerInfo(server) {
   document.getElementById('server-shared-path').textContent = server.sharedPath;
   document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
   document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
-  document.getElementById('btn-add-process')?.addEventListener('click', () => addProcessRow());
-  document.getElementById('btn-add-directory')?.addEventListener('click', () => addDirectoryRow());
+  document.getElementById('btn-add-directory')?.addEventListener('click', addDirectoryRow);
+  document.getElementById('btn-add-process')?.addEventListener('click', addProcessRow);
 
   const typeCell = document.getElementById('server-type');
   typeCell.replaceChildren();
@@ -366,34 +366,25 @@ function getHealthStatus(result) {
   return 'Healthy';
 }
 
-function addProcessRow(value = '') {
-  const container = document.getElementById('process-container');
+async function savePolicy() {
+  const directories = getDirectories();
 
-  const row = document.createElement('div');
-  row.className = 'policy-row process-row';
+  const response = await fetch(`/api/servers/${serverId}/check-config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ directories }),
+  });
 
-  const input = document.createElement('input');
-  input.className = 'process-name';
-  input.value = value;
-  input.placeholder = 'nginx';
+  const result = await response.json();
 
-  const remove = document.createElement('button');
-  remove.type = 'button';
-  remove.className = 'btn btn-danger';
-  remove.textContent = '삭제';
-  remove.addEventListener('click', () => row.remove());
-
-  row.appendChild(input);
-  row.appendChild(remove);
-
-  container.appendChild(row);
+  console.log(result);
 }
 
 function addDirectoryRow(data = {}) {
   const container = document.getElementById('directory-container');
-
   const row = document.createElement('div');
-  row.className = 'policy-row directory-row';
+
+  row.className = 'directory-row';
 
   const path = document.createElement('input');
   path.className = 'directory-path';
@@ -402,26 +393,63 @@ function addDirectoryRow(data = {}) {
 
   const warning = document.createElement('input');
   warning.type = 'number';
+  warning.min = '0';
+  warning.max = '100';
   warning.className = 'directory-warning';
   warning.placeholder = '70';
   warning.value = data.warningPercent ?? '';
 
   const critical = document.createElement('input');
   critical.type = 'number';
+  critical.min = '0';
+  critical.max = '100';
   critical.className = 'directory-critical';
   critical.placeholder = '90';
   critical.value = data.criticalPercent ?? '';
 
-  const remove = document.createElement('button');
-  remove.type = 'button';
-  remove.className = 'btn btn-danger';
-  remove.textContent = '삭제';
-  remove.addEventListener('click', () => row.remove());
-
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'btn btn-danger';
+  removeButton.textContent = '삭제';
+  removeButton.addEventListener('click', () => row.remove());
   row.appendChild(path);
   row.appendChild(warning);
   row.appendChild(critical);
-  row.appendChild(remove);
+  row.appendChild(removeButton);
+
+  container.appendChild(row);
+}
+
+function getDirectories() {
+  return [...document.querySelectorAll('.directory-row')].map((row) => ({
+    path: row.querySelector('.directory-path').value.trim(),
+    warningPercent: Number(row.querySelector('.directory-warning').value),
+    criticalPercent: Number(row.querySelector('.directory-critical').value),
+  }));
+}
+
+function addProcessRow(data = {}) {
+  const container = document.getElementById('process-container');
+  if (!container) {
+    return;
+  }
+
+  const row = document.createElement('div');
+  row.className = 'process-row';
+
+  const name = document.createElement('input');
+  name.type = 'text';
+  name.className = 'process-name';
+  name.placeholder = 'nginx';
+  name.value = data.name ?? '';
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'btn btn-danger';
+  removeButton.textContent = '삭제';
+  removeButton.addEventListener('click', () => row.remove());
+  row.appendChild(name);
+  row.appendChild(removeButton);
 
   container.appendChild(row);
 }
