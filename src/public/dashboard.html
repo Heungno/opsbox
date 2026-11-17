@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpsBox Dashboard</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+
+<body>
+  <div class="layout">
+    <div id="sidebar-container"></div>
+
+    <main class="content">
+      <div class="container">
+        <section class="card">
+          <div class="section-header">
+            <div>
+              <h2>OpsBox Dashboard</h2>
+              <p class="dashboard-desc">서버 운영 현황 요약</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard stats-grid">
+          <div class="summary-card summary-total">
+            <span>총 서버</span>
+            <strong id="total-count"> - </strong>
+          </div>
+
+          <div class="summary-card summary-healthy">
+            <span>Healthy</span>
+            <strong id="healthy-count"> - </strong>
+          </div>
+
+          <div class="summary-card summary-warning">
+            <span>Warning</span>
+            <strong id="warning-count"> - </strong>
+          </div>
+
+          <div class="summary-card summary-critical">
+            <span>Critical</span>
+            <strong id="critical-count"> - </strong>
+          </div>
+        </section>
+
+        <section class="dashboard">
+          <div class="summary-card summary-web">
+            <span>WEB</span>
+            <strong id="web-count"> - </strong>
+          </div>
+
+          <div class="summary-card summary-was">
+            <span>WAS</span>
+            <strong id="was-count"> - </strong>
+          </div>
+
+          <div class="summary-card summary-db">
+            <span>DB</span>
+            <strong id="db-count"> - </strong>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-title">
+            <h2>최근 점검 결과</h2>
+
+            <a href="/server.html" class="btn btn-primary"> 서버 목록 </a>
+          </div>
+
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>서버</th>
+                <th>유형</th>
+                <th>점검일시</th>
+                <th>상태</th>
+                <th>CPU</th>
+                <th>MEM</th>
+                <th>DISK</th>
+              </tr>
+            </thead>
+
+            <tbody id="recent-checks"></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+    <script src="/js/common.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+
+</html>

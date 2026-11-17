@@ -1,0 +1,125 @@
+{
+  "Windows": {
+    "COMMON": [
+      {
+        "id": "SCR-WIN-COM-001",
+        "name": "server_check.ps1",
+        "description": "기본 서버 점검",
+        "version": "1.0.0",
+        "path": "windows/server_check.ps1",
+        "command": "powershell -ExecutionPolicy Bypass -File server_check.ps1"
+      }
+    ],
+
+    "WEB": [
+      {
+        "id": "SCR-WIN-WEB-001",
+        "name": "iis_check.ps1",
+        "description": "IIS 서비스 점검",
+        "version": "1.0.0",
+        "path": "windows/iis_check.ps1",
+        "command": "powershell -ExecutionPolicy Bypass -File iis_check.ps1"
+      }
+    ],
+
+    "WAS": [
+      {
+        "id": "SCR-WIN-WAS-001",
+        "name": "tomcat_check.ps1",
+        "description": "Tomcat 서비스 점검",
+        "version": "1.0.0",
+        "path": "windows/tomcat_check.ps1",
+        "command": "powershell -ExecutionPolicy Bypass -File tomcat_check.ps1"
+      }
+    ],
+
+    "DB": [
+      {
+        "id": "SCR-WIN-DB-001",
+        "name": "oracle_check.ps1",
+        "description": "Oracle DB 점검",
+        "version": "1.0.0",
+        "path": "windows/oracle_check.ps1",
+        "command": "powershell -ExecutionPolicy Bypass -File oracle_check.ps1"
+      },
+      {
+        "id": "SCR-WIN-DB-002",
+        "name": "mssql_check.ps1",
+        "description": "MSSQL 점검",
+        "version": "1.0.0",
+        "path": "windows/mssql_check.ps1",
+        "command": "powershell -ExecutionPolicy Bypass -File mssql_check.ps1"
+      }
+    ]
+  },
+
+  "Linux": {
+    "COMMON": [
+      {
+        "id": "SCR-LNX-COM-001",
+        "name": "server_check.sh",
+        "description": "기본 서버 점검",
+        "version": "1.0.0",
+        "path": "linux/server_check.sh",
+        "command": "bash server_check.sh"
+      }
+    ],
+
+    "WEB": [
+      {
+        "id": "SCR-LNX-WEB-001",
+        "name": "nginx_check.sh",
+        "description": "Nginx 서비스 점검",
+        "version": "1.0.0",
+        "path": "linux/nginx_check.sh",
+        "command": "bash nginx_check.sh"
+      },
+      {
+        "id": "SCR-LNX-WEB-002",
+        "name": "apache_check.sh",
+        "description": "Apache 서비스 점검",
+        "version": "1.0.0",
+        "path": "linux/apache_check.sh",
+        "command": "bash apache_check.sh"
+      }
+    ],
+
+    "WAS": [
+      {
+        "id": "SCR-LNX-WAS-001",
+        "name": "tomcat_check.sh",
+        "description": "Tomcat 서비스 점검",
+        "version": "1.0.0",
+        "path": "linux/tomcat_check.sh",
+        "command": "bash tomcat_check.sh"
+      },
+      {
+        "id": "SCR-LNX-WAS-002",
+        "name": "jboss_check.sh",
+        "description": "JBoss 서비스 점검",
+        "version": "1.0.0",
+        "path": "linux/jboss_check.sh",
+        "command": "bash jboss_check.sh"
+      }
+    ],
+
+    "DB": [
+      {
+        "id": "SCR-LNX-DB-001",
+        "name": "oracle_check.sh",
+        "description": "Oracle DB 점검",
+        "version": "1.0.0",
+        "path": "linux/oracle_check.sh",
+        "command": "bash oracle_check.sh"
+      },
+      {
+        "id": "SCR-LNX-DB-002",
+        "name": "mysql_check.sh",
+        "description": "MySQL 점검",
+        "version": "1.0.0",
+        "path": "linux/mysql_check.sh",
+        "command": "bash mysql_check.sh"
+      }
+    ]
+  }
+}
