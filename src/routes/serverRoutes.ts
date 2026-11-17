@@ -1,4 +1,12 @@
-import { createServer, deleteServer, getAllServers, getServer, updateServer } from '../services/serverService';
+import {
+  createServer,
+  deleteServer,
+  getAllServers,
+  getServer,
+  updateServer,
+  updateCheckConfig,
+  getCheckConfig,
+} from '../services/serverService';
 
 export async function serverRoutes(app) {
   app.get('/servers', async () => {
@@ -25,5 +33,29 @@ export async function serverRoutes(app) {
     const { id } = req.params as { id: string };
     deleteServer(id);
     return { success: true };
+  });
+
+  app.get('/servers/:id/check-config', async (req) => {
+    const { id } = req.params as {
+      id: string;
+    };
+
+    return getCheckConfig(id);
+  });
+
+  app.put('/servers/:id/check-config', async (req) => {
+    const { id } = req.params as {
+      id: string;
+    };
+
+    const { processes, directories } = req.body as {
+      processes?: any[];
+      directories?: any[];
+    };
+
+    return updateCheckConfig(id, {
+      processes,
+      directories,
+    });
   });
 }

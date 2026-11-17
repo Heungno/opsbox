@@ -6,12 +6,8 @@ import { reportRoutes } from './reportRoutes';
 
 export async function routes(app: FastifyInstance) {
   await app.register(serverRoutes);
-
   await app.register(scriptRoutes);
-
   await app.register(resultRoutes);
-
   await app.register(dashboardRoutes);
-
   await app.register(reportRoutes);
 }

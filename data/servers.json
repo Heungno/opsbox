@@ -5,7 +5,24 @@
     "type": "DB",
     "os": "Windows",
     "ip": "10.10.10.112",
-    "sharedPath": "C:\\logs\\WeeklyCheck"
+    "sharedPath": "C:\\logs\\WeeklyCheck",
+    "processes": [
+      {
+        "name": "java"
+      }
+    ],
+    "directories": [
+      {
+        "path": "C:\\logs",
+        "warningPercent": 50,
+        "criticalPercent": 90
+      },
+      {
+        "path": "C:\\logs2",
+        "warningPercent": 1,
+        "criticalPercent": 2
+      }
+    ]
   },
   {
     "id": "WAS01",

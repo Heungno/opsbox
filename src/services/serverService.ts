@@ -66,7 +66,7 @@ export function createServer(server: Server) {
 
   validateServer(server, servers);
 
-console.error(server)
+  console.error(server);
   servers.push(server);
 
   write(servers);
@@ -111,4 +111,70 @@ export function deleteServer(id: string) {
   write(filtered);
 
   return true;
+}
+
+export function getCheckConfig(id: string) {
+  const server = getServer(id);
+
+  if (!server) {
+    throw new NotFoundError(`Server not found: ${id}`);
+  }
+
+  return {
+    processes: server.processes ?? [],
+
+    directories: server.directories ?? [],
+  };
+}
+
+export function updateCheckConfig(
+  id: string,
+
+  config: {
+    processes?: ProcessCheck[];
+
+    directories?: DirectoryCheck[];
+  },
+) {
+  const servers = read();
+
+  const index = servers.findIndex((server) => server.id === id);
+
+  if (index === -1) {
+    throw new NotFoundError(`Server not found: ${id}`);
+  }
+
+  const processValidation = validateProcesses(config.processes ?? []);
+
+  const directoryValidation = validateDirectories(config.directories ?? []);
+
+  const errors = [...processValidation.errors, ...directoryValidation.errors];
+
+  if (errors.length > 0) {
+    throw new ValidationError(errors);
+  }
+
+  servers[index].processes = config.processes ?? [];
+
+  servers[index].directories = config.directories ?? [];
+
+  write(servers);
+
+  return {
+    success: true,
+
+    processes: servers[index].processes,
+
+    directories: servers[index].directories,
+  };
+}
+
+async function loadPolicy() {
+  const response = await fetch(`/api/servers/${serverId}/check-config`);
+
+  const config = await response.json();
+
+  config.processes.forEach((process) => addProcessRow(process));
+
+  config.directories.forEach((directory) => addDirectoryRow(directory));
 }

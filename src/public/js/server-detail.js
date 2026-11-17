@@ -29,6 +29,8 @@ async function loadServer() {
   await loadScripts(server);
   await loadLatestResult(server.id);
   await loadResultHistory(server.id);
+  await loadPolicy(server.id);
+  await loadPolicy(serverId);
 }
 
 function renderServerInfo(server) {
@@ -43,6 +45,7 @@ function renderServerInfo(server) {
   document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
   document.getElementById('btn-add-directory')?.addEventListener('click', addDirectoryRow);
   document.getElementById('btn-add-process')?.addEventListener('click', addProcessRow);
+  document.getElementById('btn-save-policy')?.addEventListener('click', savePolicy);
 
   const typeCell = document.getElementById('server-type');
   typeCell.replaceChildren();
@@ -61,102 +64,63 @@ function renderServerInfo(server) {
   osCell.appendChild(osBadge);
 }
 
-async function loadScripts(server) {
-  const response = await fetch(`/api/scripts/${server.type}/${server.os}`);
-
-  const scripts = await response.json();
-
-  renderScripts(scripts);
-}
-
-function renderScripts(scripts) {
+function loadScripts(server) {
   const container = document.getElementById('script-list');
-
   container.replaceChildren();
 
-  const resultPath = `${currentServer.sharedPath}\\results`;
+  const card = document.createElement('div');
+  card.className = 'script-item';
 
-  scripts.forEach((script) => {
-    const card = document.createElement('div');
+  const title = document.createElement('h3');
+  title.textContent = `📄 ${server.id} 맞춤형 점검 스크립트 (${server.os})`;
 
-    card.className = 'script-item';
+  const desc = document.createElement('div');
+  desc.className = 'script-desc';
+  desc.textContent = '서버에 설정된 프로세스 및 디렉토리 점검 정책이 자동으로 반영된 실행 스크립트입니다.';
 
-    const title = document.createElement('h3');
+  const commandTitle = document.createElement('div');
+  commandTitle.className = 'command-title';
+  commandTitle.textContent = '실행 명령어 (결과 폴더 자동 저장)';
 
-    title.textContent = `📄 ${script.name}`;
+  const year = new Date().getFullYear();
+  const scriptFileName = server.os.toLowerCase() === 'windows' ? `${server.id}.ps1` : `${server.id}.sh`;
+  
+  const command = server.os.toLowerCase() === 'windows'
+    ? `$year = (Get-Date).Year; $resPath = "${server.sharedPath}\\results\\$year\\${server.id}"; if (-not (Test-Path $resPath)) { New-Item -ItemType Directory -Path $resPath -Force }; powershell -ExecutionPolicy Bypass -File ".\\${scriptFileName}" | Out-File -Encoding utf8 "$resPath\\$((Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')).json"`
+    : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
-    const desc = document.createElement('div');
+  const commandBox = document.createElement('pre');
+  commandBox.className = 'command-box';
+  commandBox.textContent = command;
 
-    desc.className = 'script-desc';
+  const buttons = document.createElement('div');
+  buttons.className = 'button-area';
 
-    desc.textContent = script.description || '';
+  const downloadButton = document.createElement('button');
+  downloadButton.className = 'btn btn-primary';
+  downloadButton.textContent = '스크립트 다운로드';
+  downloadButton.onclick = () => {
+    window.open(`/api/scripts/generate/${server.id}`, '_blank');
+  };
 
-    const commandTitle = document.createElement('div');
+  const copyButton = document.createElement('button');
+  copyButton.className = 'btn';
+  copyButton.textContent = '명령어 복사';
+  copyButton.onclick = async () => {
+    await navigator.clipboard.writeText(command);
+    alert('실행 명령어가 복사되었습니다.');
+  };
 
-    commandTitle.className = 'command-title';
+  buttons.appendChild(downloadButton);
+  buttons.appendChild(copyButton);
 
-    commandTitle.textContent = '실행 명령어';
+  card.appendChild(title);
+  card.appendChild(desc);
+  card.appendChild(commandTitle);
+  card.appendChild(commandBox);
+  card.appendChild(buttons);
 
-    const command = buildCommand(script, resultPath);
-
-    const commandBox = document.createElement('pre');
-
-    commandBox.className = 'command-box';
-
-    commandBox.textContent = command;
-
-    const buttons = document.createElement('div');
-
-    buttons.className = 'button-area';
-
-    const downloadButton = document.createElement('button');
-
-    downloadButton.className = 'btn btn-primary';
-
-    downloadButton.textContent = '다운로드';
-
-    downloadButton.onclick = () => {
-      window.open(`/api/scripts/download/${script.id}`, '_blank');
-    };
-
-    const copyButton = document.createElement('button');
-
-    copyButton.className = 'btn';
-
-    copyButton.textContent = '명령어 복사';
-
-    copyButton.onclick = async () => {
-      await navigator.clipboard.writeText(command);
-
-      alert('명령어가 복사되었습니다.');
-    };
-
-    buttons.appendChild(downloadButton);
-    buttons.appendChild(copyButton);
-
-    card.appendChild(title);
-    card.appendChild(desc);
-    card.appendChild(commandTitle);
-    card.appendChild(commandBox);
-    card.appendChild(buttons);
-
-    container.appendChild(card);
-  });
-}
-
-function buildCommand(script, resultPath) {
-  if (script.commandTemplate) {
-    return script.commandTemplate
-      .replace('{SCRIPT}', script.name)
-      .replace('{SERVER_ID}', currentServer.id)
-      .replace('{RESULT_PATH}', resultPath);
-  }
-
-  if (currentServer.os.toLowerCase() === 'windows') {
-    return `powershell -ExecutionPolicy Bypass -File "${script.name}" -ServerId "${currentServer.id}" -ResultPath "${resultPath}"`;
-  }
-
-  return `bash ${script.name} "${currentServer.id}" "${resultPath}"`;
+  container.appendChild(card);
 }
 
 async function loadLatestResult(serverId) {
@@ -380,6 +344,17 @@ async function savePolicy() {
   console.log(result);
 }
 
+async function loadPolicy(serverId) {
+  const response = await fetch(`/api/servers/${serverId}/check-config`);
+  if (!response.ok) return;
+
+  const config = await response.json();
+  document.getElementById('process-container')?.replaceChildren();
+  document.getElementById('directory-container')?.replaceChildren();
+  (config.processes ?? []).forEach((process) => addProcessRow(process));
+  (config.directories ?? []).forEach((directory) => addDirectoryRow(directory));
+}
+
 function addDirectoryRow(data = {}) {
   const container = document.getElementById('directory-container');
   const row = document.createElement('div');
@@ -452,6 +427,45 @@ function addProcessRow(data = {}) {
   row.appendChild(removeButton);
 
   container.appendChild(row);
+}
+
+function getProcesses() {
+  return [...document.querySelectorAll('.process-row')]
+    .map((row) => ({
+      name: row.querySelector('.process-name')?.value.trim(),
+    }))
+    .filter((process) => process.name);
+}
+
+async function savePolicy() {
+  try {
+    const processes = getProcesses();
+    const directories = getDirectories();
+    const response = await fetch(`/api/servers/${serverId}/check-config`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+
+      body: JSON.stringify({
+        processes,
+        directories,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(result);
+      alert(result.message ?? '정책 저장에 실패했습니다.');
+      return;
+    }
+
+    alert('정책이 저장되었습니다.');
+  } catch (error) {
+    console.error(error);
+    alert('정책 저장 중 오류가 발생했습니다.');
+  }
 }
 
 init();
