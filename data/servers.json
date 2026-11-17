@@ -2,7 +2,7 @@
   {
     "id": "WEB01",
     "name": "업무웹01",
-    "type": "DB",
+    "type": "WEB",
     "os": "Windows",
     "ip": "10.10.10.112",
     "sharedPath": "C:\\logs\\WeeklyCheck",
