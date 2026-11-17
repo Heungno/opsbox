@@ -1,7 +1,8 @@
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 
-import { getServer } from "./serverService";
+import { getServer } from './serverService';
+import { CheckResult } from '../types/result';
 
 export interface CheckResult {
   fileName?: string;
@@ -20,9 +21,9 @@ export interface CheckResult {
 }
 
 function readJsonFile(filePath: string) {
-  const content = fs.readFileSync(filePath, "utf8");
+  const content = fs.readFileSync(filePath, 'utf8');
 
-  const json = content.replace(/^\uFEFF/, "");
+  const json = content.replace(/^\uFEFF/, '');
 
   return JSON.parse(json);
 }
@@ -34,7 +35,7 @@ function getResultsDirectory(serverId: string, year: string): string {
     throw new Error(`Server not found: ${serverId}`);
   }
 
-  return path.join(server.sharedPath, "results", year, serverId);
+  return path.join(server.sharedPath, 'results', year, serverId);
 }
 
 function getYearFolders(serverId: string): string[] {
@@ -44,7 +45,7 @@ function getYearFolders(serverId: string): string[] {
     return [];
   }
 
-  const resultsRoot = path.join(server.sharedPath, "results");
+  const resultsRoot = path.join(server.sharedPath, 'results');
 
   if (!fs.existsSync(resultsRoot)) {
     return [];
@@ -74,7 +75,7 @@ export function getResultFiles(serverId: string): string[] {
 
     const resultFiles = fs
       .readdirSync(folder)
-      .filter((file) => file.endsWith(".json"))
+      .filter((file) => file.endsWith('.json'))
       .map((file) => `${year}/${file}`);
 
     files.push(...resultFiles);
@@ -87,7 +88,7 @@ export function getResults(serverId: string): CheckResult[] {
   const files = getResultFiles(serverId);
 
   return files.map((file) => {
-    const [year, fileName] = file.split("/");
+    const [year, fileName] = file.split('/');
 
     const fullPath = path.join(getResultsDirectory(serverId, year), fileName);
 
@@ -105,17 +106,17 @@ export function getLatestResult(serverId: string): CheckResult | null {
     return null;
   }
 
-  const [year, fileName] = files[0].split("/");
+  const [year, fileName] = files[0].split('/');
 
   const fullPath = path.join(getResultsDirectory(serverId, year), fileName);
 
-  return readJsonFile(fullPath) as CheckResult;
+  return {
+    fileName,
+    ...readJsonFile(fullPath),
+  };
 }
 
-export function getResultByFile(
-  serverId: string,
-  fileName: string
-): CheckResult | null {
+export function getResultByFile(serverId: string, fileName: string): CheckResult | null {
   const years = getYearFolders(serverId);
 
   for (const year of years) {
@@ -133,12 +134,12 @@ export function getHealthStatus(result: CheckResult): string {
   const max = Math.max(result.cpu, result.memory, result.disk);
 
   if (max >= 90) {
-    return "Critical";
+    return 'Critical';
   }
 
   if (max >= 70) {
-    return "Warning";
+    return 'Warning';
   }
 
-  return "Healthy";
+  return 'Healthy';
 }

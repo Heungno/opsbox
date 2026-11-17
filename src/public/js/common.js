@@ -68,7 +68,7 @@ function activateCurrentMenu() {
   }
 
   if (path.includes('report')) {
-    activeMenu = 'servers';
+    activeMenu = 'reports';
   }
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {

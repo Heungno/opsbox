@@ -1,8 +1,23 @@
 import { FastifyInstance } from 'fastify';
-
-import { getReport } from '../services/reportService';
+import { getReport, getAllReports } from '../services/reportService';
 
 export async function reportRoutes(app: FastifyInstance) {
+  app.get('/reports', async (request) => {
+    const query = request.query as {
+      serverId?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+
+    const reports = getAllReports(query);
+
+    return {
+      success: true,
+      count: reports.length,
+      data: reports,
+    };
+  });
+
   app.get('/report/:serverId/:fileName', async (request) => {
     const { serverId, fileName } = request.params as {
       serverId: string;

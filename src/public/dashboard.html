@@ -14,14 +14,10 @@
 
     <main class="content">
       <div class="container">
-        <section class="card">
-          <div class="section-header">
-            <div>
-              <h2>OpsBox Dashboard</h2>
-              <p class="dashboard-desc">서버 운영 현황 요약</p>
-            </div>
-          </div>
-        </section>
+        <header class="header">
+          <h1>OpsBox Dashboard</h1>
+          <p>서버 운영 현황 요약</p>
+        </header>
 
         <section class="dashboard stats-grid">
           <div class="summary-card summary-total">
@@ -66,7 +62,7 @@
           <div class="section-title">
             <h2>최근 점검 결과</h2>
 
-            <a href="/server.html" class="btn btn-primary"> 서버 목록 </a>
+            <a href="/server.html" class="btn btn-secondary"> 서버 목록 </a>
           </div>
 
           <table class="history-table">
@@ -79,6 +75,7 @@
                 <th>CPU</th>
                 <th>MEM</th>
                 <th>DISK</th>
+                <th>리포트</th>
               </tr>
             </thead>
 
@@ -87,8 +84,9 @@
         </section>
       </div>
     </main>
-    <script src="/js/common.js"></script>
-    <script src="/js/dashboard.js"></script>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard.js"></script>
 </body>
 
 </html>

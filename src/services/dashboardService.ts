@@ -81,6 +81,8 @@ export function getRecentChecks() {
 
       serverType: server.type,
 
+      fileName: latest.fileName,
+
       checkDate: latest.checkDate,
 
       health: getHealthStatus(latest),

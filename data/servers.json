@@ -45,5 +45,21 @@
     "os": "Windows",
     "ip": "10.10.10.10",
     "sharedPath": "C:\\logs\\WeeklyCheck"
+  },
+  {
+    "id": "TEST-01",
+    "name": "테스트",
+    "type": "WEB",
+    "os": "Windows",
+    "ip": "127.0.0.1",
+    "sharedPath": "C:\\logs\\WeeklyCheck",
+    "processes": [],
+    "directories": [
+      {
+        "path": "C:\\DEV\\VSCode\\opsbox.zip",
+        "warningPercent": 80,
+        "criticalPercent": 90
+      }
+    ]
   }
 ]
