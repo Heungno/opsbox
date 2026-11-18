@@ -7,6 +7,7 @@ import {
   updateCheckConfig,
   getCheckConfig,
 } from '../services/serverService';
+import type { ScriptPart } from '../types/template';
 
 export async function serverRoutes(app) {
   app.get('/servers', async () => {
@@ -48,12 +49,13 @@ export async function serverRoutes(app) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports, httpChecks } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
       ports?: any[];
       httpChecks?: any[];
+      scriptParts?: Partial<Record<ScriptPart, string>>;
     };
 
     return updateCheckConfig(id, {
@@ -62,6 +64,7 @@ export async function serverRoutes(app) {
       fileChecks,
       ports,
       httpChecks,
+      scriptParts,
     });
   });
 }

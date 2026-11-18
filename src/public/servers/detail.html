@@ -140,6 +140,18 @@
             </section>
           </section>
 
+          <section id="script-template-policy" class="card" hidden>
+            <div class="section-header"><h2>정책별 스크립트 템플릿</h2></div>
+            <p class="policy-help">각 점검 정책에 사용할 스크립트 항목을 선택합니다. ‘기본 템플릿’은 내장 기본 항목을 뜻하며, 정책 저장 후 다음 스크립트 다운로드부터 반영됩니다.</p>
+            <p id="script-template-override-note" class="policy-help" hidden></p>
+            <div class="table-scroll">
+              <table class="server-table script-template-map-table">
+                <thead><tr><th>점검 정책</th><th>적용 상태</th><th>사용할 스크립트 템플릿</th></tr></thead>
+                <tbody id="script-template-map"></tbody>
+              </table>
+            </div>
+          </section>
+
           <section class="card">
             <h2>최근 점검 결과</h2>
             <div id="latest-result">조회중...</div>

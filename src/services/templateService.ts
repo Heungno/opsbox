@@ -96,10 +96,6 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
   const items = read();
   const index = id ? items.findIndex((item) => item.id === id) : -1;
   if (id && index < 0) throw new Error(`Template not found: ${id}`);
-  if (input.kind === 'SCRIPT_PART' && input.enabled !== false) {
-    const duplicate = items.find((item, itemIndex) => itemIndex !== index && item.kind === 'SCRIPT_PART' && item.os === input.os && item.item === input.item && item.enabled);
-    if (duplicate) throw new ValidationError([{ field: 'item', message: `같은 운영체제·점검 항목의 사용 템플릿이 이미 있습니다. (${duplicate.name})` }]);
-  }
   const item: ManagedTemplate = {
     id: id ?? `TPL-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     name: input.name!.trim(), kind: input.kind!, os: input.os, role: input.role, product: input.product, item: input.item,

@@ -1,6 +1,7 @@
 import fs from 'fs';
 
 import { Server, ServerRole, ServerProduct, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
+import type { ScriptPart } from '../types/template';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
@@ -178,6 +179,7 @@ export function getCheckConfig(id: string) {
     fileChecks: server.fileChecks ?? [],
     ports: server.ports ?? [],
     httpChecks: server.httpChecks ?? [],
+    scriptParts: server.scriptParts ?? {},
   };
 }
 
@@ -191,6 +193,7 @@ export function updateCheckConfig(
     fileChecks?: FileCheck[];
     ports?: PortCheck[];
     httpChecks?: HttpCheck[];
+    scriptParts?: Partial<Record<ScriptPart, string>>;
   },
 ) {
   const servers = read();
@@ -209,6 +212,18 @@ export function updateCheckConfig(
   const httpValidation = validateHttpChecks(config.httpChecks ?? []);
 
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
+  const validParts: ScriptPart[] = ['START', 'OS_DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEBTOB', 'DATABASE', 'SAVE'];
+  for (const [part, templateId] of Object.entries(config.scriptParts ?? {})) {
+    if (!validParts.includes(part as ScriptPart)) {
+      errors.push({ field: `scriptParts.${part}`, message: '스크립트 점검 항목이 올바르지 않습니다.' });
+      continue;
+    }
+    if (!templateId) continue;
+    const template = getTemplate(templateId);
+    if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== 'Windows' || template.item !== part) {
+      errors.push({ field: `scriptParts.${part}`, message: `${part} 점검에 사용할 Windows 템플릿을 선택하세요.` });
+    }
+  }
   if (!getServerRoles(servers[index]).some((role) => role === 'WEB' || role === 'WAS') && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (servers[index].os === 'Linux' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
 
@@ -222,6 +237,7 @@ export function updateCheckConfig(
   servers[index].fileChecks = config.fileChecks ?? [];
   servers[index].ports = config.ports ?? [];
   servers[index].httpChecks = config.httpChecks ?? [];
+  servers[index].scriptParts = config.scriptParts ?? servers[index].scriptParts ?? {};
 
   write(servers);
 
@@ -234,6 +250,7 @@ export function updateCheckConfig(
     fileChecks: servers[index].fileChecks,
     ports: servers[index].ports,
     httpChecks: servers[index].httpChecks,
+    scriptParts: servers[index].scriptParts,
   };
 }
 

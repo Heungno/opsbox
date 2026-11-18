@@ -2,6 +2,7 @@ const params = new URLSearchParams(window.location.search);
 const serverId = params.get('id');
 
 let currentServer = null;
+let managedTemplates = [];
 
 async function init() {
   if (!serverId) {
@@ -22,6 +23,7 @@ async function init() {
 async function loadTemplateOptions(scriptId = '', queryId = '') {
   const response = await fetch('/api/templates');
   const templates = response.ok ? await response.json() : [];
+  managedTemplates = templates;
   const scriptSelect = document.getElementById('server-form-script-template');
   const querySelect = document.getElementById('server-form-query-template');
   const roleContainer = document.getElementById('server-form-role-products');
@@ -471,6 +473,7 @@ async function loadPolicy(serverId) {
   if (!response.ok) return;
 
   const config = await response.json();
+  renderScriptTemplateMap(config.scriptParts ?? currentServer?.scriptParts ?? {});
   document.getElementById('process-container')?.replaceChildren();
   document.getElementById('directory-container')?.replaceChildren();
   document.getElementById('file-check-container')?.replaceChildren();
@@ -682,6 +685,9 @@ async function savePolicy() {
     const fileChecks = getFileChecks();
     const ports = getPorts();
     const httpChecks = getHttpChecks();
+    const scriptParts = Object.fromEntries([...document.querySelectorAll('[data-script-part]')]
+      .map((select) => [select.dataset.scriptPart, select.value])
+      .filter(([, templateId]) => templateId));
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
       headers: {
@@ -694,6 +700,7 @@ async function savePolicy() {
         fileChecks,
         ports,
         httpChecks,
+        scriptParts,
       }),
     });
 
@@ -706,10 +713,68 @@ async function savePolicy() {
     }
 
     alert('정책이 저장되었습니다.');
+    currentServer.processes = processes;
+    currentServer.directories = directories;
+    currentServer.fileChecks = fileChecks;
+    currentServer.ports = ports;
+    currentServer.httpChecks = httpChecks;
+    currentServer.scriptParts = scriptParts;
+    renderScriptTemplateMap(scriptParts);
   } catch (error) {
     console.error(error);
     alert('정책 저장 중 오류가 발생했습니다.');
   }
+}
+
+function renderScriptTemplateMap(selectedParts = {}) {
+  const panel = document.getElementById('script-template-policy');
+  if (!panel || !currentServer) return;
+  panel.hidden = currentServer.os !== 'Windows';
+  if (panel.hidden) return;
+
+  const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
+  const products = currentServer.products || { [currentServer.type]: currentServer.product };
+  const checks = [
+    ['START', '실행 준비·로깅', true], ['OS_DISK', '운영체제·디스크', true],
+    ['PROCESS', '프로세스', (currentServer.processes ?? []).length > 0],
+    ['DIRECTORY', '디렉터리', (currentServer.directories ?? []).length > 0],
+    ['FILE_SIZE', '특정 파일 크기', (currentServer.fileChecks ?? []).length > 0],
+    ['PORT', '포트 리스닝', (currentServer.ports ?? []).length > 0],
+    ['HTTP', 'HTTP 응답', (currentServer.httpChecks ?? []).length > 0],
+    ['WAS', 'WAS·JVM', roles.includes('WAS')],
+    ['WEBTOB', 'WebtoB wsadmin', roles.includes('WEB') && products.WEB === 'WebtoB'],
+    ['DATABASE', 'DB 상태', roles.includes('DB')], ['SAVE', '결과 저장·종료', true],
+  ];
+  const body = document.getElementById('script-template-map');
+  body.replaceChildren();
+  const overridden = Boolean(currentServer.scriptTemplateId);
+  const note = document.getElementById('script-template-override-note');
+  note.hidden = !overridden;
+  note.textContent = overridden
+    ? '서버 정보에서 전체 스크립트 재정의가 선택되어 있습니다. 이 설정이 적용되는 동안 아래 항목별 선택은 사용되지 않습니다.'
+    : '점검 정책이 등록된 항목은 스크립트에 포함됩니다. 템플릿 선택을 비워두면 기본 템플릿을 사용합니다.';
+
+  checks.forEach(([item, label, active]) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = label;
+    const state = document.createElement('td'); state.textContent = overridden ? '전체 스크립트 사용' : active ? '조립 대상' : '정책 없음 · 미조립';
+    const templateCell = document.createElement('td');
+    const select = document.createElement('select'); select.dataset.scriptPart = item;
+    select.setAttribute('aria-label', `${label} 스크립트 템플릿`);
+    const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item);
+    const seededDefault = available.find((template) => template.id === `WINDOWS-PART-${item}`);
+    const defaultName = seededDefault?.name || (available.length === 1 ? available[0].name : available.length > 1 ? '기본 항목 없음 · 템플릿을 지정하세요' : '사용 가능한 템플릿 없음');
+    select.add(new Option(`기본 템플릿 · ${defaultName}`, ''));
+    available.forEach((template) => select.add(new Option(template.name, template.id)));
+    const selectedId = selectedParts[item] || '';
+    if (selectedId && !available.some((template) => template.id === selectedId)) {
+      select.add(new Option('선택한 템플릿을 사용할 수 없음 · 다시 선택', selectedId));
+    }
+    select.value = selectedId;
+    select.disabled = overridden || !active;
+    templateCell.appendChild(select);
+    row.append(name, state, templateCell); body.appendChild(row);
+  });
 }
 
 init().catch((error) => { console.error(error); alert(error.message || '서버 상세 화면을 초기화하지 못했습니다.'); });

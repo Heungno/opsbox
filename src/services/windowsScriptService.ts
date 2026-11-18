@@ -37,10 +37,17 @@ function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   selected.push('SAVE');
 
   return selected.map((item) => {
-    const matches = templates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item);
-    if (matches.length !== 1) throw new Error(`Windows 점검 항목 템플릿 '${item}'은 사용 가능한 항목이 정확히 하나 필요합니다. (현재 ${matches.length}개)`);
-    if (item === 'START' && !matches[0].content.includes(CONFIG_TOKEN)) throw new Error('Windows 실행 준비 템플릿에 @@CONFIG_BASE64@@ 토큰이 필요합니다.');
-    return matches[0].content;
+    const selectedId = server.scriptParts?.[item];
+    const selectedTemplate = selectedId ? templates.find((template) => template.id === selectedId && template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item) : undefined;
+    if (selectedId && !selectedTemplate) throw new Error(`Windows 점검 항목 '${item}'에 지정한 스크립트 템플릿을 사용할 수 없습니다. 서버 정책에서 템플릿을 다시 선택하세요.`);
+    const defaults = templates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item);
+    const chosen = selectedTemplate ?? defaults.find((template) => template.id === `WINDOWS-PART-${item}`) ?? (defaults.length === 1 ? defaults[0] : undefined);
+    if (!chosen) {
+      const reason = defaults.length ? '여러 개 등록되어 있습니다' : '등록되어 있지 않습니다';
+      throw new Error(`Windows 점검 항목 템플릿 '${item}'이 ${reason}. 서버 정책에서 템플릿을 선택하거나 템플릿 설정에서 추가하세요.`);
+    }
+    if (item === 'START' && !chosen.content.includes(CONFIG_TOKEN)) throw new Error('Windows 실행 준비 템플릿에 @@CONFIG_BASE64@@ 토큰이 필요합니다.');
+    return chosen.content;
   });
 }
 

@@ -1,3 +1,5 @@
+import type { ScriptPart } from './template';
+
 export interface ProcessCheck {
   name: string;
 }
@@ -38,6 +40,7 @@ export interface Server {
   roles?: ServerRole[];
   products?: Partial<Record<ServerRole, ServerProduct>>;
   scriptTemplateId?: string;
+  scriptParts?: Partial<Record<ScriptPart, string>>;
   queryTemplateId?: string;
   os: 'Windows' | 'Linux';
   ip: string;
