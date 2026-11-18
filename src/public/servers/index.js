@@ -1,5 +1,5 @@
-let editId = null;
 let serverCache = [];
+const serverDialog = document.getElementById("server-form-dialog");
 
 const serverForm = document.getElementById("server-form");
 
@@ -10,10 +10,22 @@ const serverList = document.getElementById("server-list");
 const cancelButton = document.getElementById("btn-cancel");
 
 const newButton = document.getElementById("btn-new");
+const typeSelect = document.getElementById("type");
+const productSelect = document.getElementById("product");
+const productsByType = { WEB: ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"], WAS: ["JEUS", "Apache Tomcat", "JBoss", "Node.js"] };
+typeSelect?.addEventListener("change", () => populateProducts(typeSelect.value));
+function populateProducts(type, selected = "") {
+  if (!productSelect) return;
+  productSelect.replaceChildren(new Option("제품 선택", ""));
+  (productsByType[type] || []).forEach((product) => productSelect.add(new Option(product, product)));
+  productSelect.value = selected;
+}
+populateProducts(typeSelect?.value || "WEB");
 
 serverForm?.addEventListener("submit", saveServer);
 
-cancelButton?.addEventListener("click", resetForm);
+cancelButton?.addEventListener("click", closeServerDialog);
+document.getElementById("btn-cancel-form")?.addEventListener("click", closeServerDialog);
 
 newButton?.addEventListener("click", showNewForm);
 
@@ -48,6 +60,7 @@ async function saveServer(event) {
     name: document.getElementById("name").value.trim(),
 
     type: document.getElementById("type").value,
+    product: document.getElementById("product").value || undefined,
 
     os: document.getElementById("os").value,
 
@@ -57,43 +70,23 @@ async function saveServer(event) {
   };
 
   try {
-    if (editId) {
-      const response = await fetch(`/api/servers/${editId}`, {
-        method: "PUT",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(server),
-      });
-
-      if (!response.ok) {
-        throw new Error("수정 실패");
-      }
-    } else {
-      const response = await fetch("/api/servers", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(server),
-      });
-
-      if (!response.ok) {
-        throw new Error("등록 실패");
-      }
+    const response = await fetch("/api/servers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(server),
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.message || "등록 실패");
     }
 
-    resetForm();
+    closeServerDialog();
 
     await loadServers();
   } catch (error) {
     console.error(error);
 
-    alert("저장 실패");
+    alert(error.message || "등록 실패");
   }
 }
 
@@ -110,6 +103,7 @@ function renderServers() {
       server.name.toLowerCase().includes(keyword) ||
       server.ip.toLowerCase().includes(keyword) ||
       server.type.toLowerCase().includes(keyword)
+      || (server.product || "").toLowerCase().includes(keyword)
     );
   });
 
@@ -135,6 +129,7 @@ function renderServers() {
     const typeTd = document.createElement("td");
 
     typeTd.textContent = server.type;
+    typeTd.textContent += server.product ? ` · ${server.product}` : "";
 
     const osTd = document.createElement("td");
 
@@ -146,13 +141,10 @@ function renderServers() {
 
     const actionTd = document.createElement("td");
 
-    const editButton = document.createElement("button");
-
-    editButton.textContent = "수정";
-
-    editButton.className = "btn btn-small";
-
-    editButton.addEventListener("click", () => fillEditForm(server));
+    const detailButton = document.createElement("a");
+    detailButton.textContent = "상세";
+    detailButton.className = "btn btn-small";
+    detailButton.href = `/servers/detail?id=${encodeURIComponent(server.id)}`;
 
     const deleteButton = document.createElement("button");
 
@@ -162,7 +154,7 @@ function renderServers() {
 
     deleteButton.addEventListener("click", () => removeServer(server.id));
 
-    actionTd.appendChild(editButton);
+    actionTd.appendChild(detailButton);
 
     actionTd.appendChild(deleteButton);
 
@@ -179,30 +171,6 @@ function renderServers() {
     tr.appendChild(actionTd);
 
     serverList.appendChild(tr);
-  });
-}
-
-function fillEditForm(server) {
-  editId = server.id;
-
-  document.getElementById("form-title").textContent = "서버 수정";
-
-  document.getElementById("id").value = server.id;
-
-  document.getElementById("name").value = server.name;
-
-  document.getElementById("type").value = server.type;
-
-  document.getElementById("os").value = server.os;
-
-  document.getElementById("ip").value = server.ip;
-
-  document.getElementById("sharedPath").value = server.sharedPath || "";
-
-  document.getElementById("id").disabled = true;
-
-  document.getElementById("server-form-section")?.scrollIntoView({
-    behavior: "smooth",
   });
 }
 
@@ -231,25 +199,21 @@ async function removeServer(id) {
 }
 
 function resetForm() {
-  editId = null;
-
   serverForm?.reset();
-
-  document.getElementById("form-title").textContent = "서버 등록";
-
-  document.getElementById("id").disabled = false;
-
+  populateProducts(typeSelect?.value || "WEB");
   document.getElementById("sharedPath").value = "";
 }
 
 function showNewForm() {
   resetForm();
 
-  document.getElementById("server-form-section")?.scrollIntoView({
-    behavior: "smooth",
-  });
-
+  serverDialog?.showModal();
   document.getElementById("id").focus();
+}
+
+function closeServerDialog() {
+  serverDialog?.close();
+  resetForm();
 }
 
 function updateSummary() {

@@ -1,8 +1,8 @@
 import fs from 'fs';
 
-import { Server, DirectoryCheck, FileCheck, PortCheck, ProcessCheck } from '../types/server';
+import { Server, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
 
-import { validateProcesses, validateDirectories, validateFileChecks, validatePorts } from './serverValidation';
+import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
 import { ValidationError } from '../types/error';
 
@@ -45,12 +45,19 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   const directoryValidation = validateDirectories(server.directories ?? []);
   const fileCheckValidation = validateFileChecks(server.fileChecks ?? []);
   const portValidation = validatePorts(server.ports ?? []);
+  const httpValidation = validateHttpChecks(server.httpChecks ?? []);
 
   errors.push(...processValidation.errors);
 
   errors.push(...directoryValidation.errors);
   errors.push(...fileCheckValidation.errors);
   errors.push(...portValidation.errors);
+  errors.push(...httpValidation.errors);
+  const webProducts = ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'];
+  const wasProducts = ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'];
+  if (server.product && (server.type === 'WEB' ? !webProducts.includes(server.product) : server.type === 'WAS' ? !wasProducts.includes(server.product) : true)) errors.push({ field: 'product', message: '서버 유형에 맞는 제품을 선택해야 합니다.' });
+  if (server.type === 'DB' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 서버에만 설정할 수 있습니다.' });
+  if (server.os === 'Linux' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -130,6 +137,7 @@ export function getCheckConfig(id: string) {
     directories: server.directories ?? [],
     fileChecks: server.fileChecks ?? [],
     ports: server.ports ?? [],
+    httpChecks: server.httpChecks ?? [],
   };
 }
 
@@ -142,6 +150,7 @@ export function updateCheckConfig(
     directories?: DirectoryCheck[];
     fileChecks?: FileCheck[];
     ports?: PortCheck[];
+    httpChecks?: HttpCheck[];
   },
 ) {
   const servers = read();
@@ -157,8 +166,11 @@ export function updateCheckConfig(
   const directoryValidation = validateDirectories(config.directories ?? []);
   const fileCheckValidation = validateFileChecks(config.fileChecks ?? []);
   const portValidation = validatePorts(config.ports ?? []);
+  const httpValidation = validateHttpChecks(config.httpChecks ?? []);
 
-  const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors];
+  const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
+  if (servers[index].type === 'DB' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 서버에만 설정할 수 있습니다.' });
+  if (servers[index].os === 'Linux' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -169,6 +181,7 @@ export function updateCheckConfig(
   servers[index].directories = config.directories ?? [];
   servers[index].fileChecks = config.fileChecks ?? [];
   servers[index].ports = config.ports ?? [];
+  servers[index].httpChecks = config.httpChecks ?? [];
 
   write(servers);
 
@@ -180,6 +193,7 @@ export function updateCheckConfig(
     directories: servers[index].directories,
     fileChecks: servers[index].fileChecks,
     ports: servers[index].ports,
+    httpChecks: servers[index].httpChecks,
   };
 }
 

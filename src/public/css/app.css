@@ -212,6 +212,28 @@ body {
   box-shadow: 0 1px 3px rgba(31, 35, 40, 0.04);
 }
 
+.modal-dialog {
+  width: min(760px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  background: transparent;
+}
+
+.modal-dialog::backdrop {
+  background: rgb(15 23 42 / 52%);
+  backdrop-filter: blur(2px);
+}
+
+.modal-dialog .modal-card {
+  margin: 0;
+}
+
+.modal-dialog .section-header {
+  align-items: center;
+}
+
 /* =========================================================
    Section
 ========================================================= */
@@ -674,6 +696,15 @@ select:focus {
   margin-bottom: 8px;
 }
 
+.http-check-grid,
+.http-check-row {
+  display: grid;
+  grid-template-columns: minmax(130px, .8fr) minmax(220px, 2fr) 110px 80px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 /* =========================================================
    Validation & Helpers
 ========================================================= */
@@ -710,6 +741,12 @@ select:focus {
   .port-grid,
   .port-row,
   .policy-header.port-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .http-check-grid,
+  .http-check-row,
+  .policy-header.http-check-grid {
     grid-template-columns: 1fr;
   }
 

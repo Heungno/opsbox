@@ -1,4 +1,4 @@
-import { DirectoryCheck, FileCheck, PortCheck, ProcessCheck } from '../types/server';
+import { DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
 import { ValidationError, ValidationResult } from '../types/validation';
 
 export function validateProcesses(processes: ProcessCheck[]): ValidationResult<ProcessCheck[]> {
@@ -150,4 +150,20 @@ export function validatePorts(ports: PortCheck[]): ValidationResult<PortCheck[]>
   });
 
   return { valid: errors.length === 0, data: ports, errors };
+}
+
+export function validateHttpChecks(checks: HttpCheck[]): ValidationResult<HttpCheck[]> {
+  const errors: ValidationError[] = [];
+  const names = new Set<string>();
+  checks.forEach((item, index) => {
+    const name = item.name?.trim(); const url = item.url?.trim();
+    if (!name || !url) { errors.push({ field: 'httpChecks', index, message: 'HTTP 점검명과 URL은 필수입니다.' }); return; }
+    try { const parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error(); }
+    catch { errors.push({ field: 'httpChecks', index, message: `${name} URL은 http 또는 https 주소여야 합니다.` }); }
+    if (names.has(name.toLowerCase())) errors.push({ field: 'httpChecks', index, message: `중복 HTTP 점검명: ${name}` });
+    names.add(name.toLowerCase());
+    const expected = item.expectedStatus ?? 200;
+    if (!Number.isInteger(expected) || expected < 100 || expected > 599) errors.push({ field: 'httpChecks', index, message: `${name} 기대 상태 코드는 100~599 정수여야 합니다.` });
+  });
+  return { valid: errors.length === 0, data: checks, errors };
 }

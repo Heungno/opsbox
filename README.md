@@ -20,6 +20,8 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 다중 디스크 사용량 점검
 - 특정 파일 크기 및 존재 여부 점검
 - TCP/UDP 포트 리스닝 점검
+- WEB/WAS 제품 분류(WebtoB, Apache HTTP Server, IIS, Nginx, JEUS, Tomcat, JBoss, Node.js)
+- Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
 - 브라우저에 저장되는 전체 화면 테마 설정
 - 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI
 
@@ -280,7 +282,7 @@ data
 
 ## 사용자 가이드
 
-설치, 서버 등록, 점검 정책 설정, 스크립트 실행, 결과 확인 방법은 [doc/USER_GUIDE.md](doc/USER_GUIDE.md)를 참고하세요.
+설치, 서버 등록, 점검 정책 설정, 스크립트 실행, 결과 확인 방법은 [doc/USER_GUIDE.md](doc/USER_GUIDE.md)를 참고하세요. 점검 기준 원문 정리는 [정보시스템 예방점검 매뉴얼](doc/INFORMATION_SYSTEM_PREVENTIVE_CHECK_MANUAL.md)을 참고하세요.
 
 ---
 

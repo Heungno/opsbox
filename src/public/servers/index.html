@@ -64,10 +64,9 @@
           </table>
         </section>
 
-        <!-- Server Form -->
-        <section class="card" id="server-form-section">
-          <h2 id="form-title">서버 등록</h2>
-
+        <dialog id="server-form-dialog" class="modal-dialog">
+          <section class="card modal-card">
+            <div class="section-header"><h2 id="form-title">신규 서버 등록</h2><button type="button" id="btn-cancel" class="btn" aria-label="닫기">닫기</button></div>
           <form id="server-form">
             <div class="form-grid">
               <div class="form-group">
@@ -88,6 +87,10 @@
                 </select>
               </div>
               <div class="form-group">
+                <label for="product">제품</label>
+                <select id="product"><option value="">제품 선택</option></select>
+              </div>
+              <div class="form-group">
                 <label for="os"> 운영체제 </label>
                 <select id="os">
                   <option value="Windows">Windows</option>
@@ -105,11 +108,12 @@
             </div>
             
             <div class="button-area">
-              <button type="submit" class="btn btn-primary">저장</button>
-              <button type="button" id="btn-cancel" class="btn">취소</button>
+              <button type="submit" class="btn btn-primary">등록</button>
+              <button type="button" id="btn-cancel-form" class="btn">취소</button>
             </div>
           </form>
-        </section>
+          </section>
+        </dialog>
       </div>
     </main>
   </div>

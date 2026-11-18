@@ -126,6 +126,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('$directories = @()');
   lines.push('$fileChecks = @()');
   lines.push('$portChecks = @()');
+  lines.push('$httpChecks = @()');
   lines.push('');
 
   for (const process of server.processes ?? []) {
@@ -230,6 +231,20 @@ function generateWindowsScript(server: Server): string {
     lines.push(`$portChecks += @{ port = $portNumber; protocol = $protocol; description = "${description}"; listening = ($null -ne $endpoint); processName = $processName }`);
   }
 
+  if (server.os === 'Windows') for (const check of server.httpChecks ?? []) {
+    const safeName = check.name.replace(/`/g, '``').replace(/"/g, '`"');
+    const safeUrl = check.url.replace(/`/g, '``').replace(/"/g, '`"');
+    const expected = check.expectedStatus ?? 200;
+    lines.push(`$httpUrl = "${safeUrl}"`);
+    lines.push(`$expectedStatus = ${expected}`);
+    lines.push('$timer = [System.Diagnostics.Stopwatch]::StartNew()');
+    lines.push('$statusCode = $null; $success = $false; $errorKind = $null');
+    lines.push('try { $response = Invoke-WebRequest -Uri $httpUrl -Method Get -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop; $statusCode = [int]$response.StatusCode; $success = ($statusCode -eq $expectedStatus) }');
+    lines.push('catch { if ($_.Exception.Response) { try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {} }; $errorKind = "RequestFailed" }');
+    lines.push('$timer.Stop()');
+    lines.push(`$httpChecks += @{ name = "${safeName}"; url = $httpUrl; expectedStatus = $expectedStatus; statusCode = $statusCode; responseTimeMs = $timer.ElapsedMilliseconds; success = $success; error = $errorKind }`);
+  }
+
   lines.push('$result = @{');
   lines.push('  server = "' + server.id.replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('  serverType = "' + server.type + '"');
@@ -244,6 +259,8 @@ function generateWindowsScript(server: Server): string {
   lines.push('  directories = $directories');
   lines.push('  fileChecks = $fileChecks');
   lines.push('  ports = $portChecks');
+  lines.push('  httpChecks = $httpChecks');
+  lines.push('  product = "' + (server.product ?? '').replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('}');
   lines.push('');
   lines.push('$result | ConvertTo-Json -Depth 10');

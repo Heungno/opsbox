@@ -111,6 +111,7 @@ function renderReport() {
   renderDirectories(data.directories, compareData?.directories);
   renderFileChecks(data.fileChecks);
   renderPorts(data.ports);
+  renderHttpChecks(data.httpChecks);
 }
 
 function renderHealth(health) {
@@ -383,6 +384,24 @@ function renderPorts(ports) {
     process.textContent = port.processName || '-';
     row.append(protocol, number, description, state, process);
     tbody.appendChild(row);
+  });
+}
+
+function renderHttpChecks(checks) {
+  const tbody = document.getElementById('http-check-report-list');
+  tbody.replaceChildren();
+  if (!checks || checks.length === 0) {
+    const row = document.createElement('tr'); row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">HTTP 응답 점검 결과가 없습니다.</td>'; tbody.appendChild(row); return;
+  }
+  checks.forEach((check) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = check.name;
+    const url = document.createElement('td'); url.textContent = check.url;
+    const code = document.createElement('td'); code.textContent = check.statusCode ?? check.error ?? '응답 없음';
+    const time = document.createElement('td'); time.textContent = check.responseTimeMs == null ? '-' : `${check.responseTimeMs} ms`;
+    const state = document.createElement('td'); const badge = document.createElement('span');
+    badge.className = `server-badge ${check.success ? 'badge-success' : 'badge-danger'}`; badge.textContent = check.success ? '정상' : '실패'; state.appendChild(badge);
+    row.append(name, url, code, time, state); tbody.appendChild(row);
   });
 }
 

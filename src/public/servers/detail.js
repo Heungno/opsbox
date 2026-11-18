@@ -25,11 +25,11 @@ async function loadServer() {
   currentServer = server;
 
   renderServerInfo(server);
+  bindServerEdit(server);
 
   await loadScripts(server);
   await loadLatestResult(server.id);
   await loadResultHistory(server.id);
-  await loadPolicy(server.id);
   await loadPolicy(serverId);
 }
 
@@ -39,15 +39,26 @@ function renderServerInfo(server) {
   document.getElementById('server-title').textContent = `${server.id} - ${server.name}`;
   document.getElementById('server-id').textContent = server.id;
   document.getElementById('server-name').textContent = server.name;
+  document.getElementById('server-product').textContent = server.product || '미지정';
+  const httpPolicy = document.getElementById('http-check-policy');
+  if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows';
   document.getElementById('server-ip').textContent = server.ip;
   document.getElementById('server-shared-path').textContent = server.sharedPath;
   document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
   document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
-  document.getElementById('btn-add-directory')?.addEventListener('click', addDirectoryRow);
-  document.getElementById('btn-add-file-check')?.addEventListener('click', addFileCheckRow);
-  document.getElementById('btn-add-port')?.addEventListener('click', addPortRow);
-  document.getElementById('btn-add-process')?.addEventListener('click', addProcessRow);
-  document.getElementById('btn-save-policy')?.addEventListener('click', savePolicy);
+  [
+    ['btn-add-directory', addDirectoryRow],
+    ['btn-add-file-check', addFileCheckRow],
+    ['btn-add-port', addPortRow],
+    ['btn-add-http-check', addHttpCheckRow],
+    ['btn-add-process', addProcessRow],
+    ['btn-save-policy', savePolicy],
+  ].forEach(([id, handler]) => {
+    const button = document.getElementById(id);
+    if (!button || button.dataset.bound === 'true') return;
+    button.dataset.bound = 'true';
+    button.addEventListener('click', handler);
+  });
 
   const typeCell = document.getElementById('server-type');
   typeCell.replaceChildren();
@@ -64,6 +75,58 @@ function renderServerInfo(server) {
   osBadge.className = 'server-badge';
   osBadge.textContent = server.os;
   osCell.appendChild(osBadge);
+}
+
+function bindServerEdit() {
+  const dialog = document.getElementById('server-edit-dialog');
+  const form = document.getElementById('server-edit-form');
+  const type = document.getElementById('edit-server-type');
+  const product = document.getElementById('edit-server-product');
+  const fillProducts = (selected = '') => {
+    const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'] };
+    product.replaceChildren(new Option('제품 선택', ''));
+    (productsByType[type.value] || []).forEach((name) => product.add(new Option(name, name)));
+    product.value = selected;
+  };
+  if (form.dataset.bound === 'true') return;
+  form.dataset.bound = 'true';
+  type.addEventListener('change', () => fillProducts());
+  document.getElementById('btn-edit-server').addEventListener('click', () => {
+    document.getElementById('edit-server-name').value = currentServer.name;
+    type.value = currentServer.type;
+    fillProducts(currentServer.product || '');
+    document.getElementById('edit-server-os').value = currentServer.os;
+    document.getElementById('edit-server-ip').value = currentServer.ip;
+    document.getElementById('edit-server-shared-path').value = currentServer.sharedPath || '';
+    dialog.showModal();
+  });
+  document.getElementById('btn-close-server-edit').addEventListener('click', () => dialog.close());
+  document.getElementById('btn-cancel-server-edit').addEventListener('click', () => dialog.close());
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const data = {
+      name: document.getElementById('edit-server-name').value.trim(),
+      type: type.value,
+      product: product.value,
+      os: document.getElementById('edit-server-os').value,
+      ip: document.getElementById('edit-server-ip').value.trim(),
+      sharedPath: document.getElementById('edit-server-shared-path').value.trim(),
+    };
+    try {
+      const response = await fetch(`/api/servers/${encodeURIComponent(currentServer.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.message || '서버 정보 수정에 실패했습니다.');
+      dialog.close();
+      await loadServer();
+    } catch (error) {
+      console.error(error);
+      alert(error.message || '서버 정보 수정 중 오류가 발생했습니다.');
+    }
+  });
 }
 
 function loadScripts(server) {
@@ -328,6 +391,7 @@ function getHealthStatus(result) {
   if (result.ports?.some((port) => port.listening === false)) {
     return 'Critical';
   }
+  if (result.httpChecks?.some((check) => check.success === false)) return 'Critical';
   if (result.ports?.some((port) => port.listening === false)) {
     return 'Critical';
   }
@@ -360,10 +424,12 @@ async function loadPolicy(serverId) {
   document.getElementById('directory-container')?.replaceChildren();
   document.getElementById('file-check-container')?.replaceChildren();
   document.getElementById('port-container')?.replaceChildren();
+  document.getElementById('http-check-container')?.replaceChildren();
   (config.processes ?? []).forEach((process) => addProcessRow(process));
   (config.directories ?? []).forEach((directory) => addDirectoryRow(directory));
   (config.fileChecks ?? []).forEach((fileCheck) => addFileCheckRow(fileCheck));
   (config.ports ?? []).forEach((port) => addPortRow(port));
+  (config.httpChecks ?? []).forEach((check) => addHttpCheckRow(check));
 }
 
 function addDirectoryRow(data = {}) {
@@ -505,6 +571,25 @@ function getPorts() {
   }));
 }
 
+function addHttpCheckRow(data = {}) {
+  const container = document.getElementById('http-check-container');
+  if (!container) return;
+  const row = document.createElement('div'); row.className = 'http-check-row';
+  const name = document.createElement('input'); name.className = 'http-check-name'; name.placeholder = '예: 메인 페이지'; name.value = data.name ?? '';
+  const url = document.createElement('input'); url.type = 'url'; url.className = 'http-check-url'; url.placeholder = 'https://example.internal/health'; url.value = data.url ?? '';
+  const status = document.createElement('input'); status.type = 'number'; status.min = '100'; status.max = '599'; status.className = 'http-check-status'; status.value = data.expectedStatus ?? 200;
+  const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => row.remove());
+  row.append(name, url, status, remove); container.appendChild(row);
+}
+
+function getHttpChecks() {
+  return [...document.querySelectorAll('.http-check-row')].map((row) => ({
+    name: row.querySelector('.http-check-name').value.trim(),
+    url: row.querySelector('.http-check-url').value.trim(),
+    expectedStatus: Number(row.querySelector('.http-check-status').value || 200),
+  }));
+}
+
 function addProcessRow(data = {}) {
   const container = document.getElementById('process-container');
   if (!container) {
@@ -545,6 +630,7 @@ async function savePolicy() {
     const directories = getDirectories();
     const fileChecks = getFileChecks();
     const ports = getPorts();
+    const httpChecks = getHttpChecks();
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
       headers: {
@@ -556,6 +642,7 @@ async function savePolicy() {
         directories,
         fileChecks,
         ports,
+        httpChecks,
       }),
     });
 

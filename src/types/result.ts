@@ -41,6 +41,8 @@ export interface PortCheckResult {
   description?: string;
 }
 
+export interface HttpCheckResult { name: string; url: string; expectedStatus: number; statusCode?: number; responseTimeMs?: number; success: boolean; error?: string; }
+
 export interface CheckResult {
   hostname: string;
   checkDate: string;
@@ -53,4 +55,5 @@ export interface CheckResult {
   fileChecks?: FileCheckResult[];
   disks?: DiskCheckResult[];
   ports?: PortCheckResult[];
+  httpChecks?: HttpCheckResult[];
 }

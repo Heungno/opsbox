@@ -23,7 +23,10 @@
           <section class="card">
             <div class="section-header">
               <h2>기본 정보</h2>
-              <div id="health-summary"></div>
+              <div class="button-area">
+                <div id="health-summary"></div>
+                <button id="btn-edit-server" type="button" class="btn btn-primary">정보 수정</button>
+              </div>
             </div>
 
             <table class="detail-table">
@@ -40,6 +43,7 @@
                   <th>유형</th>
                   <td id="server-type"></td>
                 </tr>
+                <tr><th>제품</th><td id="server-product"></td></tr>
                 <tr>
                   <th>OS</th>
                   <td id="server-os"></td>
@@ -63,6 +67,23 @@
               </tbody>
             </table>
           </section>
+
+          <dialog id="server-edit-dialog" class="modal-dialog">
+            <section class="card modal-card">
+              <div class="section-header"><h2>서버 정보 수정</h2><button id="btn-close-server-edit" type="button" class="btn">닫기</button></div>
+              <form id="server-edit-form">
+                <div class="form-grid">
+                  <div class="form-group"><label for="edit-server-name">서버명</label><input id="edit-server-name" required /></div>
+                  <div class="form-group"><label for="edit-server-type">서버 유형</label><select id="edit-server-type"><option value="WEB">WEB</option><option value="WAS">WAS</option><option value="DB">DB</option></select></div>
+                  <div class="form-group"><label for="edit-server-product">제품</label><select id="edit-server-product"><option value="">제품 선택</option></select></div>
+                  <div class="form-group"><label for="edit-server-os">운영체제</label><select id="edit-server-os"><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
+                  <div class="form-group"><label for="edit-server-ip">IP 주소</label><input id="edit-server-ip" required /></div>
+                  <div class="form-group"><label for="edit-server-shared-path">공용 폴더</label><input id="edit-server-shared-path" required /></div>
+                </div>
+                <div class="button-area"><button type="submit" class="btn btn-primary">변경 저장</button><button id="btn-cancel-server-edit" type="button" class="btn">취소</button></div>
+              </form>
+            </section>
+          </dialog>
 
           <section class="card">
             <div class="section-header">
@@ -115,6 +136,15 @@
               <div>프로토콜</div><div>포트</div><div>설명</div><div>관리</div>
             </div>
             <div id="port-container"></div>
+            <div id="http-check-policy">
+            <div class="section-header">
+              <h3>HTTP 응답 점검</h3>
+              <button id="btn-add-http-check" type="button" class="btn btn-small btn-primary">+ 추가</button>
+            </div>
+            <p class="policy-help">WEB/WAS에서 지정 URL에 접속해 HTTP 상태 코드가 기대값과 일치하는지 확인합니다. Windows 스크립트 기준으로 응답 제한 시간은 10초입니다.</p>
+            <div class="policy-header http-check-grid"><div>점검명</div><div>URL</div><div>기대 코드</div><div>관리</div></div>
+            <div id="http-check-container"></div>
+            </div>
           </section>
 
           <section class="card">

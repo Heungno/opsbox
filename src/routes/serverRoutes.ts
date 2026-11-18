@@ -48,11 +48,12 @@ export async function serverRoutes(app) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
       ports?: any[];
+      httpChecks?: any[];
     };
 
     return updateCheckConfig(id, {
@@ -60,6 +61,7 @@ export async function serverRoutes(app) {
       directories,
       fileChecks,
       ports,
+      httpChecks,
     });
   });
 }

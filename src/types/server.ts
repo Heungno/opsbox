@@ -24,10 +24,13 @@ export interface PortCheck {
   description?: string;
 }
 
+export interface HttpCheck { name: string; url: string; expectedStatus?: number; }
+
 export interface Server {
   id: string;
   name: string;
   type: 'WEB' | 'WAS' | 'DB';
+  product?: 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js';
   os: 'Windows' | 'Linux';
   ip: string;
   policy?: ServerPolicy;
@@ -36,5 +39,6 @@ export interface Server {
   directories: DirectoryCheck[];
   fileChecks?: FileCheck[];
   ports?: PortCheck[];
+  httpChecks?: HttpCheck[];
 }
 
