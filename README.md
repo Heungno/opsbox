@@ -28,7 +28,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - Windows/Linux 공통 점검 스크립트 및 MSSQL 상태 쿼리 샘플 기본 제공
 - 템플릿 편집기에서 `{{변수}}` 토큰 색상 강조
 - 공통 자원 스크립트 샘플은 정책·제품별 점검을 생략하며, 전체 점검은 기본 자동 생성 템플릿을 사용
-- Windows PS1이 단계별 로그와 결과 JSON을 직접 저장하며, 실행 명령은 짧은 한 줄로 제공
+- Windows PS1이 단계별 로그를 콘솔과 로그 파일에 출력하고 결과 JSON을 직접 저장
 - Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
 - Windows WAS 서버의 JDK `jstat` 기반 JVM Heap 사용률 점검
 - Windows WebtoB WEB 서버의 `wsadmin` 정보·클라이언트 수·서버/서비스 상태 점검 (WebtoB 4.1)

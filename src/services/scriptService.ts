@@ -135,7 +135,7 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('$opsboxLogPath = $env:OPSBOX_SCRIPT_LOG');
   lines.push(`if ([string]::IsNullOrWhiteSpace($opsboxLogPath)) { if ($opsboxResultDirectoryReady) { $opsboxLogPath = Join-Path $opsboxResultDirectory "$opsboxRunStamp.log" } else { $opsboxLogPath = Join-Path $PSScriptRoot "${server.id}_$opsboxRunStamp.log" } }`);
   const fallbackLogPath = `(Join-Path $PSScriptRoot (${quotePowerShell(`${server.id}_`)} + $opsboxRunStamp + '.log'))`;
-  lines.push('function Write-OpsBoxLog { param([string]$Message); $logLine = "[$(Get-Date -Format \'yyyy-MM-dd HH:mm:ss\')] $Message"; try { Add-Content -LiteralPath $opsboxLogPath -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch { try { Add-Content -LiteralPath ' + fallbackLogPath + ' -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch {} } }');
+  lines.push('function Write-OpsBoxLog { param([string]$Message); $logLine = "[$(Get-Date -Format \'yyyy-MM-dd HH:mm:ss\')] $Message"; Write-Host $logLine; try { Add-Content -LiteralPath $opsboxLogPath -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch { try { Add-Content -LiteralPath ' + fallbackLogPath + ' -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch {} } }');
   lines.push('Write-OpsBoxLog "점검 스크립트 시작"');
   lines.push('Write-OpsBoxLog "결과 저장 경로 준비: $opsboxResultDirectory (공유 경로 접근 가능=$opsboxResultDirectoryReady)"');
   lines.push('');
@@ -409,7 +409,7 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('if (-not $opsboxResultDirectoryReady) { $saveError = "공유 결과 폴더에 접근할 수 없습니다: $opsboxResultDirectory"; Write-OpsBoxLog $saveError; throw $saveError }');
   lines.push('try { Set-Content -LiteralPath $opsboxResultPath -Value $jsonText -Encoding UTF8 -ErrorAction Stop; Write-OpsBoxLog "JSON 결과 저장 완료: $opsboxResultPath" } catch { Write-OpsBoxLog "JSON 파일 저장 실패: $($_.Exception.Message)"; throw }');
   lines.push('Write-OpsBoxLog "점검 스크립트 정상 종료"');
-  lines.push('$jsonText');
+  lines.push('Write-Host "점검 결과 JSON: $opsboxResultPath"');
 
   return lines.join('\n');
 }

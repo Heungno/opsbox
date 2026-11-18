@@ -200,7 +200,7 @@ function loadScripts(server) {
   const command = server.os.toLowerCase() === 'windows'
     ? server.scriptTemplateId
       ? windowsCustomTemplateCommand
-      : `$script = Get-ChildItem -Filter ${scriptFilter} -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script | Out-Null`
+      : `$script = Get-ChildItem -Filter ${scriptFilter} -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script`
     : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
   const commandBox = document.createElement('pre');
