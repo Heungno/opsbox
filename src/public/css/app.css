@@ -1541,7 +1541,15 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .policy-section .policy-header { background: var(--card-bg); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .template-content-group { margin-top: 16px; }
-.template-content-group textarea { width: 100%; min-height: 340px; padding: 12px; resize: vertical; border: 1px solid var(--border); border-radius: 10px; background: var(--control-bg); color: var(--text); font: 12px/1.55 Consolas, 'Courier New', monospace; }
+.template-editor { position: relative; min-height: 340px; height: min(58vh, 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--control-bg); }
+.template-editor pre,
+.template-editor textarea { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 12px; overflow: auto; border: 0; border-radius: 0; font: 12px/1.55 Consolas, 'Courier New', monospace; tab-size: 2; white-space: pre; overflow-wrap: normal; }
+.template-editor pre { color: var(--text); pointer-events: none; }
+.template-editor pre::-webkit-scrollbar { display: none; }
+.template-editor pre { scrollbar-width: none; }
+.template-editor textarea { resize: none; background: transparent; color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--text); box-shadow: none; }
+.template-editor textarea::selection { background: rgb(9 105 218 / 28%); }
+.template-variable { border-radius: 3px; background: rgb(9 105 218 / 18%); color: var(--primary-bright, #0969da); font-weight: 700; }
 .template-help { margin-top: 8px; color: var(--text-light); font-size: 12px; }
 .template-list { display: grid; gap: 10px; }
 .template-list-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); }

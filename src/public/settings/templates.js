@@ -5,11 +5,27 @@ const form = document.getElementById('template-form');
 const kind = document.getElementById('template-kind');
 const help = document.getElementById('template-help');
 const list = document.getElementById('template-list');
+const editor = document.getElementById('template-content');
+const highlight = document.querySelector('#template-highlight code');
 
 kind.addEventListener('change', updateFormMode);
 document.getElementById('template-filter').addEventListener('change', loadTemplates);
 document.getElementById('btn-template-reset').addEventListener('click', resetForm);
 form.addEventListener('submit', saveTemplate);
+editor.addEventListener('input', renderHighlightedTemplate);
+editor.addEventListener('scroll', () => {
+  const layer = document.getElementById('template-highlight');
+  layer.scrollTop = editor.scrollTop;
+  layer.scrollLeft = editor.scrollLeft;
+});
+
+function renderHighlightedTemplate() {
+  const source = editor.value || ' ';
+  const escapeHtml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  highlight.innerHTML = source.split(/(\{\{[A-Z_]+\}\})/g).map((part) => /^\{\{[A-Z_]+\}\}$/.test(part)
+    ? `<span class="template-variable">${escapeHtml(part)}</span>`
+    : escapeHtml(part)).join('');
+}
 
 function updateFormMode() {
   const script = kind.value === 'SCRIPT';
@@ -53,6 +69,7 @@ function editTemplate(item) {
   document.getElementById('template-product').value = item.product || '';
   document.getElementById('template-enabled').checked = item.enabled;
   document.getElementById('template-content').value = item.content;
+  renderHighlightedTemplate();
   updateFormMode();
   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -82,7 +99,8 @@ async function removeTemplate(item) {
   await loadTemplates();
 }
 
-function resetForm() { editingId = ''; form.reset(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; updateFormMode(); }
+function resetForm() { editingId = ''; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; updateFormMode(); }
 
 updateFormMode();
+renderHighlightedTemplate();
 loadTemplates();
