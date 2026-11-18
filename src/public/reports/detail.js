@@ -149,7 +149,7 @@ function renderTypeReportForm(serverType, data, product) {
     WEB: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
       ['WEB 프로세스', processCheck, '등록된 웹 엔진 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
-      ...(product === 'WebtoB' ? [['WebtoB wsadmin', summarizeWebtoB(data.webtobCheck), 'wsadmin cli st의 엔진·서버 상태']] : []),
+      ...(product === 'WebtoB' ? [['WebtoB wsadmin', summarizeWebtoB(data.webtobCheck), 'WebtoB 정보·접속 수·서버/서비스 상태']] : []),
       ['HTTP 응답', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['엔진·로그 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
     ],
     WAS: [
@@ -178,7 +178,7 @@ function renderTypeReportForm(serverType, data, product) {
       ['WEB-WAS 연결 상태', '커넥션 풀/연동 세션 상세는 제품 연계 필요'],
     ],
     WAS: [
-      ['Thread Pool', '활성·대기 스레드와 장기 작업 데이터는 미수집'],
+      ['JEUS 6 Thread Pool (ti)', 'JEUS 6 관리자 인증 및 대상 컨테이너 설정이 없어 현재 미수집'],
       ['DB Connection Pool', '풀 사용률 및 DB 세션 상태는 미수집'],
       ['Deploy·처리시간', '애플리케이션 배포 상태와 평균 처리시간은 미수집'],
       ['기동 스크립트 변경', '제품별 기동 스크립트 경로와 기준 버전 설정이 필요합니다.'],
