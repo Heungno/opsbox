@@ -13,12 +13,34 @@ async function initializeServerList() {
   serverList = document.getElementById('server-list');
   newButton = document.getElementById('btn-new');
   renderRoleProducts(roleProductFields);
+  await loadTemplateOptions();
+  document.getElementById('server-form-os').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
+  roleProductFields.addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
   serverForm.addEventListener('submit', saveServer);
   document.getElementById('server-modal-close').addEventListener('click', closeServerDialog);
   document.getElementById('server-modal-cancel').addEventListener('click', closeServerDialog);
   newButton.addEventListener('click', showNewForm);
   searchBox?.addEventListener('input', renderServers);
   await loadServers();
+}
+
+async function loadTemplateOptions(selectedScript = '', selectedQuery = '') {
+  const response = await fetch('/api/templates');
+  const templates = response.ok ? await response.json() : [];
+  const scriptSelect = document.getElementById('server-form-script-template');
+  const querySelect = document.getElementById('server-form-query-template');
+  const selectedRoles = [...roleProductFields.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
+  const dbProduct = roleProductFields.querySelector('select[data-role-product="DB"]')?.value;
+  const canUseQuery = document.getElementById('server-form-os').value === 'Windows' && selectedRoles.includes('DB') && dbProduct === 'MSSQL';
+  scriptSelect.replaceChildren(new Option('기본 자동 생성', ''));
+  querySelect.replaceChildren(new Option('기본 MSSQL 쿼리', ''));
+  templates.filter((template) => template.enabled && (template.kind !== 'SCRIPT' || template.os === document.getElementById('server-form-os').value) && (template.kind !== 'QUERY' || canUseQuery)).forEach((template) => {
+    const label = `${template.name}${template.os ? ` · ${template.os}` : ''}${template.role ? ` · ${template.role}` : ''}`;
+    if (template.kind === 'SCRIPT') scriptSelect.add(new Option(label, template.id));
+    if (template.kind === 'QUERY') querySelect.add(new Option(label, template.id));
+  });
+  scriptSelect.value = selectedScript;
+  querySelect.value = selectedQuery;
 }
 
 function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}) {
@@ -82,6 +104,8 @@ async function saveServer(event) {
     ip: document.getElementById("server-form-ip").value.trim(),
 
     sharedPath: document.getElementById("server-form-shared-path").value.trim(),
+    scriptTemplateId: document.getElementById('server-form-script-template').value || undefined,
+    queryTemplateId: document.getElementById('server-form-query-template').value || undefined,
   };
 
   try {
@@ -216,6 +240,8 @@ function resetForm() {
   serverForm?.reset();
   renderRoleProducts(roleProductFields, ['WEB']);
   document.getElementById("server-form-shared-path").value = "";
+  document.getElementById('server-form-script-template').value = '';
+  document.getElementById('server-form-query-template').value = '';
 }
 
 function showNewForm() {

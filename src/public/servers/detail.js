@@ -12,8 +12,31 @@ async function init() {
   const modalResponse = await fetch('/fragments/server-modal.html');
   if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
+  await loadTemplateOptions();
+  document.getElementById('server-form-os').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
+  document.getElementById('server-form-role-products').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
 
   await loadServer();
+}
+
+async function loadTemplateOptions(scriptId = '', queryId = '') {
+  const response = await fetch('/api/templates');
+  const templates = response.ok ? await response.json() : [];
+  const scriptSelect = document.getElementById('server-form-script-template');
+  const querySelect = document.getElementById('server-form-query-template');
+  const roleContainer = document.getElementById('server-form-role-products');
+  const selectedRoles = [...roleContainer.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
+  const dbProduct = roleContainer.querySelector('select[data-role-product="DB"]')?.value;
+  const canUseQuery = document.getElementById('server-form-os').value === 'Windows' && selectedRoles.includes('DB') && dbProduct === 'MSSQL';
+  scriptSelect.replaceChildren(new Option('기본 자동 생성', ''));
+  querySelect.replaceChildren(new Option('기본 MSSQL 쿼리', ''));
+  templates.filter((template) => template.enabled && (template.kind !== 'SCRIPT' || template.os === document.getElementById('server-form-os').value) && (template.kind !== 'QUERY' || canUseQuery)).forEach((template) => {
+    const label = `${template.name}${template.os ? ` · ${template.os}` : ''}${template.role ? ` · ${template.role}` : ''}`;
+    if (template.kind === 'SCRIPT') scriptSelect.add(new Option(label, template.id));
+    if (template.kind === 'QUERY') querySelect.add(new Option(label, template.id));
+  });
+  scriptSelect.value = scriptId;
+  querySelect.value = queryId;
 }
 
 async function loadServer() {
@@ -110,6 +133,9 @@ function bindServerEdit() {
     document.getElementById('server-form-os').value = currentServer.os;
     document.getElementById('server-form-ip').value = currentServer.ip;
     document.getElementById('server-form-shared-path').value = currentServer.sharedPath || '';
+    loadTemplateOptions(currentServer.scriptTemplateId || '', currentServer.queryTemplateId || '');
+    document.getElementById('server-form-script-template').value = currentServer.scriptTemplateId || '';
+    document.getElementById('server-form-query-template').value = currentServer.queryTemplateId || '';
     dialog.showModal();
   });
   document.getElementById('server-modal-close').addEventListener('click', () => dialog.close());
@@ -124,6 +150,8 @@ function bindServerEdit() {
       os: document.getElementById('server-form-os').value,
       ip: document.getElementById('server-form-ip').value.trim(),
       sharedPath: document.getElementById('server-form-shared-path').value.trim(),
+      scriptTemplateId: document.getElementById('server-form-script-template').value,
+      queryTemplateId: document.getElementById('server-form-query-template').value,
     };
     try {
       const response = await fetch(`/api/servers/${encodeURIComponent(currentServer.id)}`, {

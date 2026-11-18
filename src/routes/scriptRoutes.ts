@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { generateScript } from '../services/scriptService';
+import { getServer } from '../services/serverService';
 
 export async function scriptRoutes(app: FastifyInstance) {
   app.get('/scripts/generate/:serverId', async (req, reply) => {
@@ -8,7 +9,7 @@ export async function scriptRoutes(app: FastifyInstance) {
     };
     const script = generateScript(serverId);
 
-    const extension = script.startsWith('#!') ? 'sh' : 'ps1';
+    const extension = getServer(serverId)?.os === 'Linux' ? 'sh' : 'ps1';
 
     reply.header('Content-Disposition', `attachment; filename=${serverId}.${extension}`);
 

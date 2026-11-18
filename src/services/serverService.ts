@@ -5,6 +5,7 @@ import { Server, ServerRole, ServerProduct, DirectoryCheck, FileCheck, HttpCheck
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
 import { ValidationError } from '../types/error';
+import { getTemplate } from './templateService';
 
 const FILE = 'data/servers.json';
 
@@ -86,6 +87,17 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   }
   if (!roles.some((role) => role === 'WEB' || role === 'WAS') && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (server.os === 'Linux' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
+  if (server.scriptTemplateId) {
+    const template = getTemplate(server.scriptTemplateId);
+    if (!template || !template.enabled || template.kind !== 'SCRIPT' || template.os !== server.os) errors.push({ field: 'scriptTemplateId', message: '사용 중인 운영체제에 맞는 스크립트 템플릿을 선택해야 합니다.' });
+    else if (template.role && !roles.includes(template.role)) errors.push({ field: 'scriptTemplateId', message: '스크립트 템플릿의 대상 역할이 서버에 포함되어야 합니다.' });
+    else if (template.product && !Object.values(server.products ?? {}).includes(template.product as ServerProduct) && server.product !== template.product) errors.push({ field: 'scriptTemplateId', message: '스크립트 템플릿의 대상 제품이 서버 설정과 일치해야 합니다.' });
+  }
+  if (server.queryTemplateId) {
+    const template = getTemplate(server.queryTemplateId);
+    if (!template || !template.enabled || template.kind !== 'QUERY') errors.push({ field: 'queryTemplateId', message: '사용 중인 쿼리 템플릿을 선택하세요.' });
+    else if (server.os !== 'Windows' || !roles.includes('DB') || (server.products?.DB ?? (server.type === 'DB' ? server.product : undefined)) !== 'MSSQL') errors.push({ field: 'queryTemplateId', message: '쿼리 템플릿은 Windows MSSQL 역할에만 지정할 수 있습니다.' });
+  }
 
   if (errors.length > 0) {
     throw new ValidationError(errors);

@@ -48,6 +48,7 @@ app.get('/servers', async (request, reply) => reply.sendFile('servers/index.html
 app.get('/servers/detail', async (request, reply) => reply.sendFile('servers/detail.html'));
 app.get('/reports', async (request, reply) => reply.sendFile('reports/index.html'));
 app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/detail.html'));
+app.get('/settings/templates', async (request, reply) => reply.sendFile('settings/templates.html'));
 
 // Keep previous page URLs working for existing bookmarks.
 app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/index.html'));

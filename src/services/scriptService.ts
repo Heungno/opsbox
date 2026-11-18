@@ -1,4 +1,5 @@
 import { getServer, getServerProduct, getServerRoles } from './serverService';
+import { getTemplate } from './templateService';
 import { Server } from '../types/server';
 
 export function generateScript(serverId: string): string {
@@ -8,11 +9,29 @@ export function generateScript(serverId: string): string {
     throw new Error(`Server not found: ${serverId}`);
   }
 
-  if (server.os === 'Windows') {
-    return generateWindowsScript(server);
+  const scriptTemplate = getTemplate(server.scriptTemplateId);
+  if (scriptTemplate?.enabled) {
+    if (scriptTemplate.kind !== 'SCRIPT' || scriptTemplate.os !== server.os) throw new Error('선택한 스크립트 템플릿의 종류 또는 운영체제가 서버 설정과 맞지 않습니다.');
+    if (scriptTemplate.role && !getServerRoles(server).includes(scriptTemplate.role)) throw new Error('스크립트 템플릿의 대상 역할이 서버에 설정되어 있지 않습니다.');
+    if (scriptTemplate.product && !Object.values(server.products ?? {}).includes(scriptTemplate.product as any) && server.product !== scriptTemplate.product) throw new Error('스크립트 템플릿의 대상 제품이 서버 설정과 맞지 않습니다.');
+    return renderScriptTemplate(scriptTemplate.content, server);
   }
 
-  return generateLinuxScript(server);
+  const queryTemplate = getTemplate(server.queryTemplateId);
+  if (queryTemplate?.enabled && queryTemplate.kind !== 'QUERY') throw new Error('선택한 쿼리 템플릿이 QUERY 유형이 아닙니다.');
+  return server.os === 'Windows' ? generateWindowsScript(server, queryTemplate?.enabled ? queryTemplate.content : undefined) : generateLinuxScript(server);
+}
+
+function renderScriptTemplate(content: string, server: Server) {
+  const roles = getServerRoles(server);
+  const values: Record<string, string> = {
+    SERVER_ID: server.id, SERVER_NAME: server.name, SERVER_IP: server.ip, SHARED_PATH: server.sharedPath, OS: server.os,
+    ROLES: roles.join(','), PRODUCTS_JSON: JSON.stringify(server.products ?? {}),
+    PROCESSES_JSON: JSON.stringify(server.processes ?? []), DIRECTORIES_JSON: JSON.stringify(server.directories ?? []),
+    FILE_CHECKS_JSON: JSON.stringify(server.fileChecks ?? []), PORTS_JSON: JSON.stringify(server.ports ?? []),
+    HTTP_CHECKS_JSON: JSON.stringify(server.httpChecks ?? []),
+  };
+  return content.replace(/\{\{([A-Z_]+)\}\}/g, (token, key: string) => values[key] ?? token);
 }
 
 function generateLinuxScript(server: Server): string {
@@ -99,7 +118,7 @@ printf '{"server":"${server.id}","serverType":"${server.type}","serverTypes":${J
 `;
 }
 
-function generateWindowsScript(server: Server): string {
+function generateWindowsScript(server: Server, queryTemplate?: string): string {
   const roles = getServerRoles(server);
   const webProduct = getServerProduct(server, 'WEB');
   const wasProduct = getServerProduct(server, 'WAS');
@@ -308,7 +327,9 @@ function generateWindowsScript(server: Server): string {
       lines.push('if (-not $sqlcmd) { $databaseChecks.message = "sqlcmd was not found on PATH." }');
       lines.push('else {');
       lines.push(`  $sqlTarget = if ($env:OPSBOX_MSSQL_TARGET) { $env:OPSBOX_MSSQL_TARGET } else { "${safeIp},${sqlPort}" }`);
-      lines.push(`  $dbQuery = "SET NOCOUNT ON; SELECT 'SERVER|' + ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')), N'') + '|' + ISNULL(CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')), N'') + '|' + ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('Edition')), N''); SELECT 'DATABASE|' + d.name + '|' + d.state_desc + '|' + d.recovery_model_desc + '|' + CONVERT(nvarchar(32), CAST(ISNULL(SUM(CASE WHEN mf.type = 0 THEN CAST(mf.size AS bigint) ELSE 0 END), 0) * 8.0 / 1024 AS decimal(18,2))) FROM sys.databases d LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc"`);
+      const defaultQuery = "SET NOCOUNT ON; SELECT 'SERVER|' + ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')), N'') + '|' + ISNULL(CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')), N'') + '|' + ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('Edition')), N''); SELECT 'DATABASE|' + d.name + '|' + d.state_desc + '|' + d.recovery_model_desc + '|' + CONVERT(nvarchar(32), CAST(ISNULL(SUM(CASE WHEN mf.type = 0 THEN CAST(mf.size AS bigint) ELSE 0 END), 0) * 8.0 / 1024 AS decimal(18,2))) FROM sys.databases d LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc";
+      const selectedQuery = (queryTemplate ?? defaultQuery).replace(/\{\{SERVER_IP\}\}/g, server.ip).replace(/\{\{SERVER_NAME\}\}/g, server.name).replace(/\r?\n/g, ' ').trim().replace(/'/g, "''");
+      lines.push(`  $dbQuery = '${selectedQuery}'`);
       lines.push('  $dbOutput = @(& $sqlcmd.Source -S $sqlTarget -d master -E -l 5 -t 10 -Q $dbQuery -h -1 -W -s "|" -w 65535 -b 2>&1); $sqlExitCode = $LASTEXITCODE');
       lines.push('  $databaseRows = @(); $sqlServerInfo = $null');
       lines.push('  foreach ($outputLine in $dbOutput) { $text = "$outputLine".Trim(); if ($text.StartsWith("SERVER|")) { $parts = $text -split "\\|", 4; if ($parts.Count -ge 4) { $sqlServerInfo = @{ serverName = $parts[1]; version = $parts[2]; edition = $parts[3] } } } elseif ($text.StartsWith("DATABASE|")) { $parts = $text -split "\\|", 5; if ($parts.Count -ge 5) { $sizeMB = 0.0; [void][double]::TryParse($parts[4], [ref]$sizeMB); $dbState = $parts[2].ToUpperInvariant(); $dbStatus = if ($dbState -in @("OFFLINE", "SUSPECT", "RECOVERY_PENDING", "EMERGENCY")) { "Critical" } elseif ($dbState -ne "ONLINE") { "Warning" } else { "Healthy" }; $databaseRows += @{ name = $parts[1]; state = $parts[2]; recoveryModel = $parts[3]; sizeMB = $sizeMB; status = $dbStatus } } } }');

@@ -37,6 +37,8 @@ export interface Server {
   product?: ServerProduct;
   roles?: ServerRole[];
   products?: Partial<Record<ServerRole, ServerProduct>>;
+  scriptTemplateId?: string;
+  queryTemplateId?: string;
   os: 'Windows' | 'Linux';
   ip: string;
   policy?: ServerPolicy;

@@ -95,6 +95,7 @@ function activateCurrentMenu() {
   if (path.includes('report')) {
     activeMenu = 'reports';
   }
+  if (path.includes('settings')) activeMenu = 'settings';
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {
     if (link.dataset.menu === activeMenu) {
