@@ -15,7 +15,11 @@ export async function scriptRoutes(app: FastifyInstance) {
 
     reply.type('text/plain; charset=utf-8');
 
-    // Windows PowerShell 5 interprets BOM-less UTF-8 script files using the local ANSI code page.
-    return extension === 'ps1' ? `\uFEFF${script}` : script;
+    // Return raw UTF-8 bytes so the BOM is not removed by string response handling.
+    if (extension === 'ps1') {
+      const content = Buffer.from(script.replace(/^\uFEFF/, ''), 'utf8');
+      return Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), content]);
+    }
+    return script;
   });
 }
