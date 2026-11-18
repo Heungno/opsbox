@@ -337,7 +337,7 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   if (roles.includes('WEB') && webProduct === 'WebtoB') {
     lines.push('$wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue');
     lines.push('if (-not $wsadmin) { $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue }');
-    lines.push('if (-not $wsadmin) { $webtobCheck = @{ status = "NotCollected"; command = "wsadmin: wi, ci -s, st -v, st -s"; message = "wsadmin was not found on PATH." } }');
+    lines.push(`if (-not $wsadmin) { $webtobCheck = @{ status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = 'wsadmin was not found on PATH.' } }`);
     lines.push('else {');
     lines.push('  try {');
     lines.push('    $psi = New-Object System.Diagnostics.ProcessStartInfo');
@@ -345,9 +345,9 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('    $proc = New-Object System.Diagnostics.Process; $proc.StartInfo = $psi; [void]$proc.Start()');
     lines.push('    $stdoutTask = $proc.StandardOutput.ReadToEndAsync(); $stderrTask = $proc.StandardError.ReadToEndAsync()');
     lines.push('    @("wi", "ci -s", "st -v", "st -s", "quit") | ForEach-Object { $proc.StandardInput.WriteLine($_) }; $proc.StandardInput.Close()');
-    lines.push('    if (-not $proc.WaitForExit(20000)) { $proc.Kill(); $webtobCheck = @{ status = "NotCollected"; command = "wsadmin: wi, ci -s, st -v, st -s"; message = "wsadmin timed out after 20 seconds." } }');
-    lines.push('    else { $output = ($stdoutTask.Result + "`n" + $stderrTask.Result).Trim(); $hasRunningServer = $output -match "(?i)\\bRDY\\b"; $hasBadServer = $output -match "(?i)\\b(NRDY|BLK|DOWN|STOPPED)\\b"; $state = if ($hasBadServer) { "Critical" } elseif ($hasRunningServer) { "Healthy" } else { "NotCollected" }; $webtobCheck = @{ status = $state; command = "wsadmin: wi, ci -s, st -v, st -s"; output = $output.Substring(0, [math]::Min(12000, $output.Length)); message = if ($state -eq "NotCollected") { "No recognizable WebtoB server status was returned." } else { $null } } }');
-    lines.push('  } catch { $webtobCheck = @{ status = "NotCollected"; command = "wsadmin: wi, ci -s, st -v, st -s"; message = $_.Exception.Message } }');
+    lines.push('    if (-not $proc.WaitForExit(20000)) { $proc.Kill(); $webtobCheck = @{ status = "NotCollected"; command = \'wsadmin: wi, ci -s, st -v, st -s\'; message = "wsadmin timed out after 20 seconds." } }');
+    lines.push('    else { $output = ($stdoutTask.Result + "`n" + $stderrTask.Result).Trim(); $hasRunningServer = $output -match "(?i)\\bRDY\\b"; $hasBadServer = $output -match "(?i)\\b(NRDY|BLK|DOWN|STOPPED)\\b"; $state = if ($hasBadServer) { "Critical" } elseif ($hasRunningServer) { "Healthy" } else { "NotCollected" }; $webtobCheck = @{ status = $state; command = \'wsadmin: wi, ci -s, st -v, st -s\'; output = $output.Substring(0, [math]::Min(12000, $output.Length)); message = if ($state -eq "NotCollected") { "No recognizable WebtoB server status was returned." } else { $null } } }');
+    lines.push('  } catch { $webtobCheck = @{ status = "NotCollected"; command = \'wsadmin: wi, ci -s, st -v, st -s\'; message = $_.Exception.Message } }');
     lines.push('}');
   }
   if (roles.includes('WEB') && webProduct === 'WebtoB') lines.push('Write-OpsBoxLog "WebtoB wsadmin 점검 완료: $($webtobCheck.status)"');
@@ -366,9 +366,20 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
       const defaultQuery = "SET NOCOUNT ON; SELECT (N'SERVER|' COLLATE DATABASE_DEFAULT) + (ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')), N'') COLLATE DATABASE_DEFAULT) + (N'|' COLLATE DATABASE_DEFAULT) + (ISNULL(CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')), N'') COLLATE DATABASE_DEFAULT) + (N'|' COLLATE DATABASE_DEFAULT) + (ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('Edition')), N'') COLLATE DATABASE_DEFAULT); SELECT (N'DATABASE|' COLLATE DATABASE_DEFAULT) + (CONVERT(nvarchar(256), d.name) COLLATE DATABASE_DEFAULT) + (N'|' COLLATE DATABASE_DEFAULT) + (CONVERT(nvarchar(60), d.state_desc) COLLATE DATABASE_DEFAULT) + (N'|' COLLATE DATABASE_DEFAULT) + (CONVERT(nvarchar(60), d.recovery_model_desc) COLLATE DATABASE_DEFAULT) + (N'|' COLLATE DATABASE_DEFAULT) + (CONVERT(nvarchar(32), CAST(ISNULL(SUM(CASE WHEN mf.type = 0 THEN CAST(mf.size AS bigint) ELSE 0 END), 0) * 8.0 / 1024 AS decimal(18,2))) COLLATE DATABASE_DEFAULT) FROM sys.databases d LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc";
       const selectedQuery = (queryTemplate ?? defaultQuery).replace(/\{\{SERVER_IP\}\}/g, server.ip).replace(/\{\{SERVER_NAME\}\}/g, server.name).replace(/\r?\n/g, ' ').trim().replace(/'/g, "''");
       lines.push(`  $dbQuery = '${selectedQuery}'`);
-      lines.push('  $dbOutput = @(& $sqlcmd.Source -S $sqlTarget -d master -E -l 5 -t 10 -Q $dbQuery -h -1 -W -s "|" -w 65535 -b 2>&1); $sqlExitCode = $LASTEXITCODE');
+      lines.push("  $sqlArgs = @('-S', $sqlTarget, '-d', 'master', '-E', '-l', '5', '-t', '10', '-Q', $dbQuery, '-h', '-1', '-W', '-s', '|', '-w', '65535', '-b')");
+      lines.push('  $dbOutput = @(& $sqlcmd.Source @sqlArgs 2>&1)');
+      lines.push('  $sqlExitCode = $LASTEXITCODE');
       lines.push('  $databaseRows = @(); $sqlServerInfo = $null');
-      lines.push('  foreach ($outputLine in $dbOutput) { $text = "$outputLine".Trim(); if ($text.StartsWith("SERVER|")) { $parts = $text -split "\\|", 4; if ($parts.Count -ge 4) { $sqlServerInfo = @{ serverName = $parts[1]; version = $parts[2]; edition = $parts[3] } } } elseif ($text.StartsWith("DATABASE|")) { $parts = $text -split "\\|", 5; if ($parts.Count -ge 5) { $sizeMB = 0.0; [void][double]::TryParse($parts[4], [ref]$sizeMB); $dbState = $parts[2].ToUpperInvariant(); $dbStatus = if ($dbState -in @("OFFLINE", "SUSPECT", "RECOVERY_PENDING", "EMERGENCY")) { "Critical" } elseif ($dbState -ne "ONLINE") { "Warning" } else { "Healthy" }; $databaseRows += @{ name = $parts[1]; state = $parts[2]; recoveryModel = $parts[3]; sizeMB = $sizeMB; status = $dbStatus } } } }');
+      lines.push("  foreach ($outputLine in $dbOutput) {");
+      lines.push('    $text = ([string]$outputLine).Trim()');
+      lines.push("    if ($text.StartsWith('SERVER|')) {");
+      lines.push("      $parts = $text -split '\\|', 4");
+      lines.push('      if ($parts.Count -ge 4) { $sqlServerInfo = @{ serverName = $parts[1]; version = $parts[2]; edition = $parts[3] } }');
+      lines.push("    } elseif ($text.StartsWith('DATABASE|')) {");
+      lines.push("      $parts = $text -split '\\|', 5");
+      lines.push('      if ($parts.Count -ge 5) { $sizeMB = 0.0; [void][double]::TryParse($parts[4], [ref]$sizeMB); $dbState = $parts[2].ToUpperInvariant(); $dbStatus = if ($dbState -in @("OFFLINE", "SUSPECT", "RECOVERY_PENDING", "EMERGENCY")) { "Critical" } elseif ($dbState -ne "ONLINE") { "Warning" } else { "Healthy" }; $databaseRows += @{ name = $parts[1]; state = $parts[2]; recoveryModel = $parts[3]; sizeMB = $sizeMB; status = $dbStatus } }');
+      lines.push('    }');
+      lines.push('  }');
       lines.push('  $offlineCount = @($databaseRows | Where-Object { $_.status -eq "Critical" }).Count; $warningCount = @($databaseRows | Where-Object { $_.status -eq "Warning" }).Count');
       lines.push('  if ($sqlExitCode -eq 0 -and $sqlServerInfo) { $dbStatus = if ($offlineCount -gt 0) { "Critical" } elseif ($warningCount -gt 0 -or $databaseRows.Count -eq 0) { "Warning" } else { "Healthy" }; $dbMessage = if ($databaseRows.Count -eq 0) { "Connected, but no database metadata was returned. Check SQL metadata visibility." } else { $null }; $databaseChecks = @{ product = "MSSQL"; status = $dbStatus; serverName = $sqlServerInfo.serverName; version = $sqlServerInfo.version; edition = $sqlServerInfo.edition; databaseCount = $databaseRows.Count; offlineCount = $offlineCount; databases = $databaseRows; message = $dbMessage } } else { $dbMessage = ($dbOutput | ForEach-Object { "$($_)" }) -join " "; $databaseChecks = @{ product = "MSSQL"; status = "Critical"; serverName = $sqlTarget; message = $dbMessage.Substring(0, [math]::Min(1000, $dbMessage.Length)) } }');
       lines.push('}');
