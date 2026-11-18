@@ -9,6 +9,10 @@ async function init() {
     return;
   }
 
+  const modalResponse = await fetch('/fragments/server-modal.html');
+  if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
+  document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
+
   await loadServer();
 }
 
@@ -79,16 +83,16 @@ function renderServerInfo(server) {
 }
 
 function bindServerEdit() {
-  const dialog = document.getElementById('server-edit-dialog');
-  const form = document.getElementById('server-edit-form');
-  const roleContainer = document.getElementById('edit-role-product-fields');
+  const dialog = document.getElementById('server-modal');
+  const form = document.getElementById('server-modal-form');
+  const roleContainer = document.getElementById('server-form-role-products');
   const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'], DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'] };
   const renderRoleProducts = (selectedRoles = [], selectedProducts = {}) => {
     roleContainer.replaceChildren();
     ['WEB', 'WAS', 'DB', 'OTHER'].forEach((role) => {
       const row = document.createElement('div'); row.className = 'role-product-row';
       const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
-      checkbox.className = 'role-choice-checkbox'; label.className = 'role-choice-label';
+      checkbox.className = 'role-choice-checkbox'; checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;'; label.className = 'role-choice-label';
       label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.append(label);
       if (role !== 'OTHER') { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); (productsByType[role] || []).forEach((name) => select.add(new Option(name, name))); select.value = selectedProducts[role] || ''; row.append(select); }
       checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked && row.querySelector('select')) row.querySelector('select').value = ''; }); checkbox.dispatchEvent(new Event('change')); roleContainer.appendChild(row);
@@ -97,25 +101,29 @@ function bindServerEdit() {
   if (form.dataset.bound === 'true') return;
   form.dataset.bound = 'true';
   document.getElementById('btn-edit-server').addEventListener('click', () => {
-    document.getElementById('edit-server-name').value = currentServer.name;
+    document.getElementById('server-modal-title').textContent = '서버 정보 수정';
+    document.getElementById('server-modal-save').textContent = '변경 저장';
+    document.getElementById('server-id-group').hidden = true;
+    document.getElementById('server-form-id').required = false;
+    document.getElementById('server-form-name').value = currentServer.name;
     renderRoleProducts(currentServer.roles?.length ? currentServer.roles : [currentServer.type], currentServer.products || { [currentServer.type]: currentServer.product });
-    document.getElementById('edit-server-os').value = currentServer.os;
-    document.getElementById('edit-server-ip').value = currentServer.ip;
-    document.getElementById('edit-server-shared-path').value = currentServer.sharedPath || '';
+    document.getElementById('server-form-os').value = currentServer.os;
+    document.getElementById('server-form-ip').value = currentServer.ip;
+    document.getElementById('server-form-shared-path').value = currentServer.sharedPath || '';
     dialog.showModal();
   });
-  document.getElementById('btn-close-server-edit').addEventListener('click', () => dialog.close());
-  document.getElementById('btn-cancel-server-edit').addEventListener('click', () => dialog.close());
+  document.getElementById('server-modal-close').addEventListener('click', () => dialog.close());
+  document.getElementById('server-modal-cancel').addEventListener('click', () => dialog.close());
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const roles = [...roleContainer.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
     const products = Object.fromEntries([...roleContainer.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
     const data = {
-      name: document.getElementById('edit-server-name').value.trim(),
+      name: document.getElementById('server-form-name').value.trim(),
       roles, products, type: roles[0], product: products[roles[0]],
-      os: document.getElementById('edit-server-os').value,
-      ip: document.getElementById('edit-server-ip').value.trim(),
-      sharedPath: document.getElementById('edit-server-shared-path').value.trim(),
+      os: document.getElementById('server-form-os').value,
+      ip: document.getElementById('server-form-ip').value.trim(),
+      sharedPath: document.getElementById('server-form-shared-path').value.trim(),
     };
     try {
       const response = await fetch(`/api/servers/${encodeURIComponent(currentServer.id)}`, {
@@ -668,4 +676,4 @@ async function savePolicy() {
   }
 }
 
-init();
+init().catch((error) => { console.error(error); alert(error.message || '서버 상세 화면을 초기화하지 못했습니다.'); });

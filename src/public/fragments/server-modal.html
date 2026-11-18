@@ -1,0 +1,34 @@
+<dialog id="server-modal" class="modal-dialog">
+  <section class="card modal-card">
+    <div class="section-header">
+      <h2 id="server-modal-title">신규 서버 등록</h2>
+      <button type="button" id="server-modal-close" class="btn" aria-label="닫기">닫기</button>
+    </div>
+    <form id="server-modal-form">
+      <section class="server-form-section" id="server-id-section">
+        <h3>기본 정보</h3>
+        <div class="form-grid">
+          <div class="form-group" id="server-id-group"><label for="server-form-id">서버 ID</label><input id="server-form-id" type="text" placeholder="서버 ID" required /></div>
+          <div class="form-group"><label for="server-form-name">서버명</label><input id="server-form-name" type="text" placeholder="서버명" required /></div>
+        </div>
+      </section>
+      <section class="server-form-section role-selection-section">
+        <h3>점검 역할 설정</h3>
+        <p class="policy-help">이 서버에서 수행하는 역할을 선택하세요. 선택한 역할마다 제품을 지정합니다.</p>
+        <div id="server-form-role-products" class="role-product-fields"></div>
+      </section>
+      <section class="server-form-section">
+        <h3>접속 및 결과 정보</h3>
+        <div class="form-grid">
+          <div class="form-group"><label for="server-form-os">운영체제</label><select id="server-form-os"><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
+          <div class="form-group"><label for="server-form-ip">IP 주소</label><input id="server-form-ip" type="text" placeholder="10.10.10.11" required /></div>
+          <div class="form-group"><label for="server-form-shared-path">공용 폴더</label><input id="server-form-shared-path" type="text" placeholder="\\NAS01\OpsBox" required /></div>
+        </div>
+      </section>
+      <div class="button-area">
+        <button type="submit" id="server-modal-save" class="btn btn-primary">등록</button>
+        <button type="button" id="server-modal-cancel" class="btn">취소</button>
+      </div>
+    </form>
+  </section>
+</dialog>

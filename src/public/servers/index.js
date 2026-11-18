@@ -1,17 +1,25 @@
 let serverCache = [];
-const serverDialog = document.getElementById("server-form-dialog");
-
-const serverForm = document.getElementById("server-form");
-
-const searchBox = document.getElementById("search");
-
-const serverList = document.getElementById("server-list");
-
-const cancelButton = document.getElementById("btn-cancel");
-
-const newButton = document.getElementById("btn-new");
+let serverDialog, serverForm, searchBox, serverList, newButton, roleProductFields;
 const productsByType = { WEB: ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"], WAS: ["JEUS", "Apache Tomcat", "JBoss", "Node.js"], DB: ["MSSQL", "MariaDB", "CUBRID", "PostgreSQL"] };
-renderRoleProducts(document.getElementById('role-product-fields'));
+
+async function initializeServerList() {
+  const response = await fetch('/fragments/server-modal.html');
+  if (!response.ok) throw new Error('서버 입력 모달을 불러오지 못했습니다.');
+  document.getElementById('server-modal-container').innerHTML = await response.text();
+  serverDialog = document.getElementById('server-modal');
+  serverForm = document.getElementById('server-modal-form');
+  roleProductFields = document.getElementById('server-form-role-products');
+  searchBox = document.getElementById('search');
+  serverList = document.getElementById('server-list');
+  newButton = document.getElementById('btn-new');
+  renderRoleProducts(roleProductFields);
+  serverForm.addEventListener('submit', saveServer);
+  document.getElementById('server-modal-close').addEventListener('click', closeServerDialog);
+  document.getElementById('server-modal-cancel').addEventListener('click', closeServerDialog);
+  newButton.addEventListener('click', showNewForm);
+  searchBox?.addEventListener('input', renderServers);
+  await loadServers();
+}
 
 function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}) {
   if (!container) return;
@@ -21,6 +29,7 @@ function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}
     const label = document.createElement('label');
     const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
     checkbox.className = 'role-choice-checkbox';
+    checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;';
     label.className = 'role-choice-label';
     label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.appendChild(label);
     if (role !== 'OTHER') {
@@ -37,15 +46,6 @@ function getRoleProductSelection(container) {
   const products = Object.fromEntries([...container.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
   return { roles, products, type: roles[0], product: products[roles[0]] };
 }
-
-serverForm?.addEventListener("submit", saveServer);
-
-cancelButton?.addEventListener("click", closeServerDialog);
-document.getElementById("btn-cancel-form")?.addEventListener("click", closeServerDialog);
-
-newButton?.addEventListener("click", showNewForm);
-
-searchBox?.addEventListener("input", renderServers);
 
 async function loadServers() {
   try {
@@ -71,17 +71,17 @@ async function saveServer(event) {
   event.preventDefault();
 
   const server = {
-    id: document.getElementById("id").value.trim(),
+    id: document.getElementById("server-form-id").value.trim(),
 
-    name: document.getElementById("name").value.trim(),
+    name: document.getElementById("server-form-name").value.trim(),
 
-    ...getRoleProductSelection(document.getElementById('role-product-fields')),
+    ...getRoleProductSelection(roleProductFields),
 
-    os: document.getElementById("os").value,
+    os: document.getElementById("server-form-os").value,
 
-    ip: document.getElementById("ip").value.trim(),
+    ip: document.getElementById("server-form-ip").value.trim(),
 
-    sharedPath: document.getElementById("sharedPath").value.trim(),
+    sharedPath: document.getElementById("server-form-shared-path").value.trim(),
   };
 
   try {
@@ -214,15 +214,15 @@ async function removeServer(id) {
 
 function resetForm() {
   serverForm?.reset();
-  renderRoleProducts(document.getElementById('role-product-fields'), ['WEB']);
-  document.getElementById("sharedPath").value = "";
+  renderRoleProducts(roleProductFields, ['WEB']);
+  document.getElementById("server-form-shared-path").value = "";
 }
 
 function showNewForm() {
   resetForm();
 
   serverDialog?.showModal();
-  document.getElementById("id").focus();
+  document.getElementById("server-form-id").focus();
 }
 
 function closeServerDialog() {
@@ -255,4 +255,4 @@ function getServerTypeLabel(type) {
   return type === "OTHER" ? "기타" : type;
 }
 
-loadServers();
+initializeServerList().catch((error) => { console.error(error); alert(error.message || '서버 관리 화면을 초기화하지 못했습니다.'); });

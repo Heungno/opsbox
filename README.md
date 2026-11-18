@@ -23,6 +23,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - WEB/WAS 제품 분류(WebtoB, Apache HTTP Server, IIS, Nginx, JEUS, Tomcat, JBoss, Node.js)
 - 서버 한 대에 WEB, WAS, DB, 기타 역할을 복수 지정하고 역할별 제품을 설정
 - 서버 등록 정보와 역할/제품을 구역별로 구분해 입력하고, 점검 정책 항목별 추가 버튼을 구분
+- 서버 등록과 상세 수정이 공통 HTML 모달을 사용
 - Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
 - Windows WAS 서버의 JDK `jstat` 기반 JVM Heap 사용률 점검
 - Windows WebtoB WEB 서버의 `wsadmin` 정보·클라이언트 수·서버/서비스 상태 점검 (WebtoB 4.1)

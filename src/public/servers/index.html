@@ -68,58 +68,7 @@
           </table>
         </section>
 
-        <dialog id="server-form-dialog" class="modal-dialog">
-          <section class="card modal-card">
-            <div class="section-header"><h2 id="form-title">신규 서버 등록</h2><button type="button" id="btn-cancel" class="btn" aria-label="닫기">닫기</button></div>
-          <form id="server-form">
-            <section class="server-form-section">
-              <h3>기본 정보</h3>
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="id"> 서버 ID </label>
-                <input id="id" type="text" placeholder="서버 ID" required />
-              </div>
-              <div class="form-group">
-                <label for="name"> 서버명 </label>
-                <input id="name" type="text" placeholder="서버명" required />
-              </div>
-            </div>
-            </section>
-            <section class="server-form-section role-selection-section">
-              <h3>점검 역할 설정</h3>
-              <p class="policy-help">이 서버에서 수행하는 역할을 선택하세요. 선택한 역할마다 제품을 지정합니다.</p>
-              <fieldset class="form-group"><legend class="visually-hidden">서버 역할과 제품</legend>
-                <div id="role-product-fields" class="role-product-fields"></div>
-              </fieldset>
-            </section>
-            <section class="server-form-section">
-              <h3>접속 및 결과 정보</h3>
-              <div class="form-grid">
-              <div class="form-group">
-                <label for="os"> 운영체제 </label>
-                <select id="os">
-                  <option value="Windows">Windows</option>
-                  <option value="Linux">Linux</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="ip"> IP 주소 </label>
-                <input id="ip" type="text" placeholder="10.10.10.11" required />
-              </div>
-              <div class="form-group">
-                <label for="sharedPath"> 공용 폴더 </label>
-                <input id="sharedPath" type="text" placeholder="\\NAS01\OpsBox" required />
-              </div>
-            </div>
-            </section>
-            
-            <div class="button-area">
-              <button type="submit" class="btn btn-primary">등록</button>
-              <button type="button" id="btn-cancel-form" class="btn">취소</button>
-            </div>
-          </form>
-          </section>
-        </dialog>
+        <div id="server-modal-container"></div>
       </div>
     </main>
   </div>

@@ -1523,7 +1523,9 @@ select:focus {
 .role-product-row { display: grid; grid-template-columns: minmax(120px, 0.4fr) minmax(180px, 1fr); gap: 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; opacity: 0.62; }
 .role-product-row.active { opacity: 1; background: var(--control-bg, #f6f8fa); border-color: var(--primary); }
 .role-product-row .role-choice-label { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; }
-.role-product-row input.role-choice-checkbox { appearance: auto; accent-color: var(--primary); flex: 0 0 16px; width: 16px; min-width: 16px; height: 16px; margin: 0; padding: 0; border: 0; border-radius: 3px; box-shadow: none; }
+.role-product-row input.role-choice-checkbox,
+#role-product-fields input[type="checkbox"],
+#edit-role-product-fields input[type="checkbox"] { appearance: checkbox !important; accent-color: var(--primary); display: inline-block; flex: 0 0 16px !important; width: 16px !important; min-width: 16px !important; max-width: 16px !important; height: 16px !important; min-height: 16px !important; max-height: 16px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 3px; box-shadow: none !important; }
 .role-product-row select { width: 100%; }
 fieldset.form-group { min-width: 0; border: 0; padding: 0; margin: 0; }
 fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }

@@ -68,21 +68,7 @@
             </table>
           </section>
 
-          <dialog id="server-edit-dialog" class="modal-dialog">
-            <section class="card modal-card">
-              <div class="section-header"><h2>서버 정보 수정</h2><button id="btn-close-server-edit" type="button" class="btn">닫기</button></div>
-              <form id="server-edit-form">
-                <div class="form-grid">
-                  <div class="form-group"><label for="edit-server-name">서버명</label><input id="edit-server-name" required /></div>
-                  <fieldset class="form-group"><legend>서버 역할 및 제품</legend><div id="edit-role-product-fields" class="role-product-fields"></div></fieldset>
-                  <div class="form-group"><label for="edit-server-os">운영체제</label><select id="edit-server-os"><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
-                  <div class="form-group"><label for="edit-server-ip">IP 주소</label><input id="edit-server-ip" required /></div>
-                  <div class="form-group"><label for="edit-server-shared-path">공용 폴더</label><input id="edit-server-shared-path" required /></div>
-                </div>
-                <div class="button-area"><button type="submit" class="btn btn-primary">변경 저장</button><button id="btn-cancel-server-edit" type="button" class="btn">취소</button></div>
-              </form>
-            </section>
-          </dialog>
+          <div id="server-modal-container"></div>
 
           <section class="card">
             <div class="section-header">
