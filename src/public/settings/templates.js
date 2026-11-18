@@ -54,14 +54,14 @@ function renderList() {
   list.replaceChildren();
   if (!templates.length) { list.textContent = '등록된 템플릿이 없습니다.'; return; }
   templates.forEach((item) => {
-    const card = document.createElement('article'); card.className = 'template-list-item';
+    const card = document.createElement('article'); card.className = `template-list-item${editingId === item.id ? ' is-selected' : ''}`;
     const info = document.createElement('div');
     const title = document.createElement('strong'); title.textContent = item.name;
     const typeLabel = item.kind === 'SCRIPT_PART' ? `점검 항목 · ${item.item || '미지정'}` : item.kind === 'SCRIPT' ? '전체 스크립트' : 'DB 쿼리';
     const meta = document.createElement('small'); meta.textContent = `${typeLabel}${item.os ? ` · ${item.os}` : ''}${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''} · ${item.enabled ? '사용' : '중지'}`;
     info.append(title, meta);
     const actions = document.createElement('div'); actions.className = 'button-area';
-    const edit = document.createElement('button'); edit.className = 'btn btn-small'; edit.textContent = '수정'; edit.addEventListener('click', () => editTemplate(item));
+    const edit = document.createElement('button'); edit.className = 'btn btn-small'; edit.textContent = '열기'; edit.setAttribute('aria-label', `${item.name} 템플릿 열기`); edit.addEventListener('click', () => editTemplate(item));
     const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => removeTemplate(item));
     actions.append(edit, remove); card.append(info, actions); list.appendChild(card);
   });
@@ -81,7 +81,8 @@ function editTemplate(item) {
   document.getElementById('template-content').value = item.content;
   renderHighlightedTemplate();
   updateFormMode();
-  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  renderList();
+  if (window.matchMedia('(max-width: 900px)').matches) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function saveTemplate(event) {
@@ -110,7 +111,7 @@ async function removeTemplate(item) {
   await loadTemplates();
 }
 
-function resetForm() { editingId = ''; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; updateFormMode(); }
+function resetForm() { editingId = ''; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; updateFormMode(); renderList(); }
 
 updateFormMode();
 renderHighlightedTemplate();

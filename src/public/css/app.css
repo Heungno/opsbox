@@ -702,6 +702,14 @@ select:focus {
   font-size: 14px;
 }
 
+.report-group { min-width: 0; }
+.report-group-title { margin: 22px 0 12px; padding: 0 0 8px; border-bottom: 2px solid var(--border); color: var(--text); font-size: 18px; }
+.common-report-group > .card { margin-bottom: 14px; }
+.role-report-group > #type-report-form { display: grid; gap: 14px; }
+.role-report-group .type-report-card { margin: 0; border-top: 3px solid var(--primary); }
+.report-subsection { margin: 16px 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); }
+.report-subsection h3 { margin-top: 0; }
+
 .type-check-table {
   margin-bottom: 16px;
 }
@@ -1551,11 +1559,20 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .template-editor textarea::selection { background: rgb(9 105 218 / 28%); }
 .template-variable { border-radius: 3px; background: rgb(9 105 218 / 18%); color: var(--primary-bright, #0969da); font-weight: 700; }
 .template-help { margin-top: 8px; color: var(--text-light); font-size: 12px; }
+.template-workspace { display: grid; grid-template-columns: minmax(260px, 0.36fr) minmax(0, 1fr); align-items: start; gap: 18px; }
+.template-list-panel { position: sticky; top: 16px; min-width: 0; max-height: calc(100vh - 32px); overflow: auto; }
+.template-editor-panel { min-width: 0; }
 .template-list { display: grid; gap: 10px; }
-.template-list-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); }
+.template-list-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); }
+.template-list-item.is-selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 16%, transparent); }
 .template-list-item > div:first-child { display: grid; gap: 4px; }
+.template-list-item strong { overflow-wrap: anywhere; }
 .template-list-item small { color: var(--text-light); }
 .template-list-item .button-area { margin: 0; }
 .template-enabled { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 38px; }
 .template-enabled input[type="checkbox"] { appearance: checkbox; width: 16px; min-width: 16px; height: 16px; min-height: 16px; margin: 0; padding: 0; box-shadow: none; }
 @media (max-width: 640px) { .role-product-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .template-workspace { grid-template-columns: minmax(0, 1fr); }
+  .template-list-panel { position: static; max-height: none; }
+}

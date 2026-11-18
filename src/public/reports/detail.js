@@ -133,9 +133,6 @@ function renderReport() {
   renderFileChecks(data.fileChecks);
   renderPorts(data.ports);
   renderHttpChecks(data.httpChecks);
-  const webtobDetails = document.getElementById('webtob-report-details');
-  webtobDetails.hidden = !(serverTypes.includes('WEB') && ((data.products?.WEB || currentServerProducts.WEB || (currentServerType === 'WEB' ? currentServerProduct : '')) === 'WebtoB') && data.webtobCheck);
-  document.getElementById('webtob-check-output').textContent = data.webtobCheck?.output || data.webtobCheck?.message || 'wsadmin 결과 없음';
 }
 
 function renderTypeReportForm(serverTypes, data, productMap) {
@@ -149,6 +146,13 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   const fragment = template.content.cloneNode(true);
   fragment.querySelectorAll('[id]').forEach((node) => { node.id += reportRoleSuffix; });
   container.appendChild(fragment);
+  if (type === 'WEB') {
+    const webtobDetails = document.getElementById('webtob-report-details-WEB');
+    if (webtobDetails) {
+      webtobDetails.hidden = product !== 'WebtoB' || !data.webtobCheck;
+      document.getElementById('webtob-check-output-WEB').textContent = data.webtobCheck?.output || data.webtobCheck?.message || 'wsadmin 결과 없음';
+    }
+  }
 
   const processCheck = summarizeProcesses(data.processes);
   const portCheck = summarizePorts(data.ports);
