@@ -1,12 +1,22 @@
 Write-OpsBoxLog 'WebtoB wsadmin 점검 시작'
-$wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue
-if (-not $wsadmin) { $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue }
+$wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue
+if (-not $wsadmin) { $wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue }
 if (-not $wsadmin) {
   $webtobCheck = @{ status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = 'wsadmin을 PATH에서 찾을 수 없습니다.' }
 } else {
   try {
+    $wsadminPath = $wsadmin.Source
+    if (-not $env:WEBTOBDIR -and $wsadminPath) {
+      $candidateHome = Split-Path (Split-Path $wsadminPath -Parent) -Parent
+      if (Test-Path -LiteralPath (Join-Path $candidateHome 'config') -PathType Container) { $env:WEBTOBDIR = $candidateHome }
+    }
+    Write-OpsBoxLog "wsadmin 실행 경로: $wsadminPath (WEBTOBDIR=$env:WEBTOBDIR)"
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $wsadmin.Source
+    $startInfo.FileName = $wsadminPath
+    if ($wsadminPath -match '\.(bat|cmd)$') {
+      $startInfo.FileName = $env:ComSpec
+      $startInfo.Arguments = "/d /s /c call `"$wsadminPath`""
+    }
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
     $startInfo.RedirectStandardInput = $true

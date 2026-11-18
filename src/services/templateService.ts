@@ -54,6 +54,15 @@ function read(): ManagedTemplate[] {
     write(seeded);
     return seeded;
   }
+  let changed = false;
+  for (const currentDefault of scriptParts()) {
+    const index = items.findIndex((item) => item.id === currentDefault.id);
+    if (index >= 0 && items[index].updatedAt === currentDefault.updatedAt && items[index].content !== currentDefault.content) {
+      items[index] = currentDefault;
+      changed = true;
+    }
+  }
+  if (changed) write(items);
   return items;
 }
 
