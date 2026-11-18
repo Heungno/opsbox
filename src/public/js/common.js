@@ -13,9 +13,34 @@ async function loadSidebar() {
 
   restoreSidebarState();
 
+  initializeSidebarTheme();
+
   bindSidebarToggle();
 
   activateCurrentMenu();
+}
+
+function initializeSidebarTheme() {
+  const sidebar = document.getElementById('sidebar');
+  const select = document.getElementById('sidebar-theme');
+  if (!sidebar || !select) return;
+
+  const themes = ['ocean', 'light', 'forest'];
+  const savedTheme = localStorage.getItem('sidebar-theme');
+  const theme = themes.includes(savedTheme) ? savedTheme : 'ocean';
+  applyTheme(theme, sidebar);
+  select.value = theme;
+
+  select.addEventListener('change', () => {
+    const selectedTheme = themes.includes(select.value) ? select.value : 'ocean';
+    applyTheme(selectedTheme, sidebar);
+    localStorage.setItem('sidebar-theme', selectedTheme);
+  });
+}
+
+function applyTheme(theme, sidebar) {
+  document.documentElement.dataset.theme = theme;
+  sidebar.dataset.theme = theme;
 }
 
 function bindSidebarToggle() {
