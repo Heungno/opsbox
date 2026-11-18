@@ -12,7 +12,7 @@ const cancelButton = document.getElementById("btn-cancel");
 const newButton = document.getElementById("btn-new");
 const typeSelect = document.getElementById("type");
 const productSelect = document.getElementById("product");
-const productsByType = { WEB: ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"], WAS: ["JEUS", "Apache Tomcat", "JBoss", "Node.js"] };
+const productsByType = { WEB: ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"], WAS: ["JEUS", "Apache Tomcat", "JBoss", "Node.js"], DB: ["MSSQL", "MariaDB", "CUBRID", "PostgreSQL"] };
 typeSelect?.addEventListener("change", () => populateProducts(typeSelect.value));
 function populateProducts(type, selected = "") {
   if (!productSelect) return;

@@ -23,6 +23,7 @@ export interface CheckResult {
   httpChecks?: Array<{ success?: boolean }>;
   wasChecks?: Array<{ status?: string }>;
   webtobCheck?: { status?: string };
+  databaseChecks?: { status?: string };
 }
 
 function readJsonFile(filePath: string) {
@@ -149,6 +150,7 @@ export function getHealthStatus(result: CheckResult): string {
   if (result.httpChecks?.some((check) => check.success === false)) return 'Critical';
   if (result.wasChecks?.some((check) => check.status === 'Critical')) return 'Critical';
   if (result.webtobCheck?.status === 'Critical') return 'Critical';
+  if (result.databaseChecks?.status === 'Critical') return 'Critical';
   const max = Math.max(result.cpu, result.memory, result.disk);
 
   if (max >= 90) {
@@ -163,6 +165,7 @@ export function getHealthStatus(result: CheckResult): string {
   if (result.disks?.some((disk) => disk.status === 'Warning')) return 'Warning';
   if (result.wasChecks?.some((check) => check.status === 'Warning')) return 'Warning';
   if (result.webtobCheck?.status === 'Warning') return 'Warning';
+  if (result.databaseChecks?.status === 'Warning') return 'Warning';
 
   return 'Healthy';
 }

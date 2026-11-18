@@ -83,7 +83,7 @@ function bindServerEdit() {
   const type = document.getElementById('edit-server-type');
   const product = document.getElementById('edit-server-product');
   const fillProducts = (selected = '') => {
-    const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'] };
+    const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'], DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'] };
     product.replaceChildren(new Option('제품 선택', ''));
     (productsByType[type.value] || []).forEach((name) => product.add(new Option(name, name)));
     product.value = selected;

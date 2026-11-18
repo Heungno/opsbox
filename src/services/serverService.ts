@@ -59,7 +59,9 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   errors.push(...httpValidation.errors);
   const webProducts = ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'];
   const wasProducts = ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'];
-  if (server.product && (server.type === 'WEB' ? !webProducts.includes(server.product) : server.type === 'WAS' ? !wasProducts.includes(server.product) : true)) errors.push({ field: 'product', message: '서버 유형에 맞는 제품을 선택해야 합니다.' });
+  const dbProducts = ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'];
+  if (server.type === 'DB' && !server.product) errors.push({ field: 'product', message: 'DB 제품(MSSQL, MariaDB, CUBRID, PostgreSQL)을 선택해야 합니다.' });
+  if (server.product && (server.type === 'WEB' ? !webProducts.includes(server.product) : server.type === 'WAS' ? !wasProducts.includes(server.product) : server.type === 'DB' ? !dbProducts.includes(server.product) : true)) errors.push({ field: 'product', message: '서버 유형에 맞는 제품을 선택해야 합니다.' });
   if (server.type === 'DB' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 서버에만 설정할 수 있습니다.' });
   if (server.os === 'Linux' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
 

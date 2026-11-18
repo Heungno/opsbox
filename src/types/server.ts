@@ -30,7 +30,7 @@ export interface Server {
   id: string;
   name: string;
   type: 'WEB' | 'WAS' | 'DB' | 'OTHER';
-  product?: 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js';
+  product?: 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
   os: 'Windows' | 'Linux';
   ip: string;
   policy?: ServerPolicy;

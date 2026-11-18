@@ -60,6 +60,24 @@ export interface WebtoBCheckResult {
   message?: string;
 }
 
+export interface DatabaseCheckResult {
+  product: string;
+  status: 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
+  serverName?: string;
+  version?: string;
+  edition?: string;
+  databaseCount?: number;
+  offlineCount?: number;
+  databases?: Array<{
+    name: string;
+    state: string;
+    recoveryModel?: string;
+    sizeMB?: number;
+    status: 'Healthy' | 'Warning' | 'Critical';
+  }>;
+  message?: string;
+}
+
 export interface CheckResult {
   hostname: string;
   checkDate: string;
@@ -75,4 +93,5 @@ export interface CheckResult {
   httpChecks?: HttpCheckResult[];
   wasChecks?: WasRuntimeCheckResult[];
   webtobCheck?: WebtoBCheckResult;
+  databaseChecks?: DatabaseCheckResult;
 }

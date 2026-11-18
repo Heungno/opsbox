@@ -25,6 +25,8 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
 - Windows WAS 서버의 JDK `jstat` 기반 JVM Heap 사용률 점검
 - Windows WebtoB WEB 서버의 `wsadmin` 정보·클라이언트 수·서버/서비스 상태 점검 (WebtoB 4.1)
+- DB 제품 분류(MSSQL, MariaDB, CUBRID, PostgreSQL)
+- Windows MSSQL `sqlcmd`와 Windows 통합 인증을 이용한 읽기 전용 서버·데이터베이스 상태 점검
 - Windows PowerShell 점검 스크립트의 UTF-8 BOM 적용으로 한글 메시지 인코딩 지원
 - 브라우저에 저장되는 전체 화면 테마 설정
 - 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI

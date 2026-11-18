@@ -30,7 +30,7 @@ npm run dev
 
 1. **서버 관리** 화면에서 **신규 서버**를 선택하면 등록 모달이 열립니다.
 2. 서버 ID, 이름, 유형(WEB/WAS/DB/기타), 운영체제, IP 주소, 결과 공유 경로를 입력합니다.
-3. WEB/WAS 서버는 제품을 선택합니다. WEB은 WebtoB, Apache HTTP Server, IIS, Nginx를, WAS는 JEUS, Apache Tomcat, JBoss, Node.js를 선택할 수 있습니다. DB는 제품 선택을 비워둡니다. Node.js는 애플리케이션 런타임 분류로 WAS 항목에 둡니다.
+3. WEB/WAS/DB 서버는 제품을 선택합니다. WEB은 WebtoB, Apache HTTP Server, IIS, Nginx를, WAS는 JEUS, Apache Tomcat, JBoss, Node.js를, DB는 MSSQL, MariaDB, CUBRID, PostgreSQL을 선택할 수 있습니다. Node.js는 애플리케이션 런타임 분류로 WAS 항목에 둡니다.
 4. 저장 후 서버 ID를 선택해 상세 화면을 엽니다. 등록된 서버의 기본 정보는 상세 화면에서 **정보 수정**을 눌러 변경합니다.
 
 서버의 운영체제와 일치하는 스크립트를 다운로드해 해당 서버에서 실행해야 합니다. 점검 정책은 서버별로 저장됩니다.
@@ -67,6 +67,12 @@ WEB/WAS 서버 상세의 HTTP 응답 점검에서 점검명, HTTP/HTTPS URL, 기
 WebtoB 4.1을 WEB 제품으로 등록하면 Windows 점검 스크립트가 PATH의 `wsadmin`에 `wi`, `ci -s`, `st -v`, `st -s`를 차례로 입력합니다. WebtoB 정보, 클라이언트 접속 수, 서버/서비스 상태 출력과 서버 상태 판정을 보고서에 기록합니다. `RDY`가 없거나 `NRDY`·`BLK` 상태가 발견되면 각각 미수집 또는 위험으로 표시합니다. Apache, IIS, Nginx는 현재 공통 프로세스·포트·HTTP 점검으로 확인하며 제품별 관리 명령은 별도 연동이 필요합니다.
 
 Windows WAS 스크립트는 JDK의 `jstat.exe`를 찾을 수 있고 실행 계정에 JVM attach 권한이 있으면 Java 프로세스별 Heap 사용률을 결과에 기록합니다. 70% 이상은 경고, 90% 이상은 위험으로 표시합니다. `jstat`가 없거나 권한이 없으면 해당 항목은 미수집으로 남습니다. JEUS 6의 Thread 정보를 확인하는 `ti`는 관리자 인증과 대상 컨테이너 정보가 필요해 아직 자동 수집되지 않습니다. Connection Pool, 배포 상태, 평균 처리시간과 기동 스크립트 변경 여부도 제품별 관리 API·설정 연동이 필요합니다. Node.js 런타임 지표와 Linux 수집은 후속 단계입니다.
+
+### DB 엔진 점검 (Windows MSSQL)
+
+DB 서버를 등록할 때 MSSQL, MariaDB, CUBRID, PostgreSQL 중 제품을 선택합니다. 현재 자동 SQL 점검은 Windows MSSQL 대상입니다. 서버에서 `sqlcmd`를 PATH로 실행할 수 있어야 하며, Windows 통합 인증(`-E`)으로 접속합니다. 스크립트는 서버명·버전·에디션, 데이터베이스별 상태·복구 모델·데이터 파일 크기를 읽기 전용 조회로 기록합니다. 데이터베이스 상태가 `OFFLINE`, `SUSPECT`, `RECOVERY_PENDING`, `EMERGENCY`면 위험, `ONLINE`이 아닌 다른 상태는 경고로 표시합니다.
+
+기본 접속 대상은 등록된 서버 IP의 TCP 1433입니다. 기본 포트가 아니거나 이름 있는 인스턴스라면 대상 Windows에서 `OPSBOX_MSSQL_TARGET` 환경 변수에 `호스트,포트` 또는 `호스트\인스턴스명`을 설정할 수 있습니다. SQL Server 접속 계정은 스크립트를 실행하는 Windows 계정이며 결과 파일에 비밀번호를 기록하지 않습니다. `sqlcmd`가 없으면 미수집, 접속 실패는 위험, 메타데이터 조회 권한이 제한되면 경고로 표시합니다. MariaDB, CUBRID, PostgreSQL은 제품 선택과 공통 프로세스·포트·경로 점검을 지원하며 제품별 SQL 클라이언트 수집기는 후속 단계입니다. Linux DB 클라이언트 수집도 아직 지원하지 않습니다.
 
 ### 디스크 점검
 

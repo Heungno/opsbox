@@ -3,6 +3,7 @@ let historyResults = [];
 let selectedCurrentFile = null;
 let currentServerType = '';
 let currentServerProduct = '';
+let currentServerOS = '';
 
 async function init() {
   const params = new URLSearchParams(location.search);
@@ -32,6 +33,7 @@ async function loadHistoryAndReport(serverId, fileName) {
       const server = await serverResponse.json();
       currentServerType = server.type || '';
       currentServerProduct = server.product || '';
+      currentServerOS = server.os || '';
     }
     // 1. Fetch history results for comparison
     const historyRes = await fetch(`/api/results/${serverId}`);
@@ -144,6 +146,7 @@ function renderTypeReportForm(serverType, data, product) {
   const cpuCheck = summarizeMetric(data.cpu);
   const memoryCheck = summarizeMetric(data.memory);
   const wasRuntimeCheck = summarizeWasRuntime(data.wasChecks, product);
+  const databaseCheck = summarizeDatabaseCheck(data.databaseChecks, product);
 
   const checkRows = {
     WEB: [
@@ -160,6 +163,7 @@ function renderTypeReportForm(serverType, data, product) {
     DB: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
       ['DB 프로세스', processCheck, '등록한 DB 엔진 프로세스 실행 상태'], ['리스너 포트', portCheck, '등록한 DB 접속 포트의 로컬 리스닝 상태'],
+      ['DB 엔진 접속·상태', databaseCheck, '제품별 읽기 전용 CLI를 통한 연결 및 데이터베이스 상태'],
       ['DB 로그·엔진 경로', pathCheck, '등록 로그/엔진 경로의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
     ],
     OTHER: [
@@ -170,6 +174,7 @@ function renderTypeReportForm(serverType, data, product) {
   };
   renderChecklist('type-check-list', checkRows[type]);
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
+  if (type === 'DB') renderDatabaseChecks(data.databaseChecks, product);
 
   const pendingRows = {
     WEB: [
@@ -184,13 +189,13 @@ function renderTypeReportForm(serverType, data, product) {
       ['기동 스크립트 변경', '제품별 기동 스크립트 경로와 기준 버전 설정이 필요합니다.'],
     ],
     DB: [
-      ['DB 접속·쿼리', '실제 DB 세션 또는 SQL 연결 점검은 미수집'],
-      ['테이블스페이스', '테이블스페이스 사용률은 미수집'],
-      ['백업·복구', '백업 완료 및 복구 가능 여부는 미수집'],
-      ['복제·이중화', '동기화 상태와 구성 파일 이중화는 미수집'],
-      ['트랜잭션 로그', 'DB 제품별 트랜잭션 로그 상태는 미수집'],
+      ['DB 백업·복구', '최근 백업 시각과 복구 가능 여부는 미수집'],
+      ['DB 로그·용량', '트랜잭션 로그 및 제품별 저장영역 상세는 미수집'],
+      ['복제·이중화', '제품별 동기화·복제 상태는 미수집'],
     ],
   };
+  if (type === 'DB' && product !== 'MSSQL') pendingRows.DB.unshift(['제품별 DB 연결', 'Windows CLI 연동 대상은 현재 MSSQL입니다. 다른 제품은 공통 프로세스·포트·파일시스템 점검 결과를 확인하세요.']);
+  if (type === 'DB' && product === 'MSSQL' && currentServerOS === 'Linux') pendingRows.DB.unshift(['Linux MSSQL 연결', '현재 MSSQL sqlcmd 수집기는 Windows 점검 스크립트에 포함되어 있습니다.']);
   if (type === 'WAS' && product === 'Node.js') pendingRows.WAS.unshift(['Node.js Heap', '애플리케이션별 Node.js 런타임 수집기가 필요합니다.']);
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
 }
@@ -198,6 +203,43 @@ function renderTypeReportForm(serverType, data, product) {
 function summarizeWebtoB(check) {
   if (!check || check.status === 'NotCollected') return { status: 'NotCollected', detail: check?.message || 'wsadmin 결과 없음' };
   return { status: check.status, detail: check.message || `${check.command} 실행 결과 확인` };
+}
+
+function summarizeDatabaseCheck(check, product) {
+  if (!check || check.status === 'NotCollected') return { status: 'NotCollected', detail: check?.message || `${product || 'DB'} 연결 결과 없음` };
+  if (check.message) return { status: check.status, detail: check.message };
+  const serverInfo = [check.serverName, check.version, check.edition].filter(Boolean).join(' · ');
+  const detail = `${check.databaseCount ?? 0}개 DB · 정상 ${Math.max(0, (check.databaseCount ?? 0) - (check.offlineCount ?? 0))}개${serverInfo ? ` · ${serverInfo}` : ''}`;
+  return { status: check.status, detail };
+}
+
+function renderDatabaseChecks(check, product) {
+  const summary = document.getElementById('database-check-summary');
+  const tbody = document.getElementById('database-check-list');
+  summary.textContent = check?.message || (check ? `${check.product || product} · ${check.serverName || '서버 정보 없음'} · 버전 ${check.version || '미수집'} · DB ${check.databaseCount ?? 0}개` : `${product || 'DB'} 엔진 상세는 미수집입니다. 제품별 CLI가 필요합니다.`);
+  tbody.replaceChildren();
+  if (!check?.databases?.length) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.textContent = check?.message || '데이터베이스 상세가 없습니다.';
+    row.appendChild(cell);
+    tbody.appendChild(row);
+    return;
+  }
+  check.databases.forEach((database) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = database.name;
+    const state = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `server-badge ${database.status === 'Healthy' ? 'badge-success' : database.status === 'Warning' ? 'badge-warning' : 'badge-danger'}`;
+    badge.textContent = `${database.state} · ${database.status === 'Healthy' ? '정상' : database.status === 'Warning' ? '확인 필요' : '위험'}`;
+    state.appendChild(badge);
+    const recovery = document.createElement('td'); recovery.textContent = database.recoveryModel || '-';
+    const size = document.createElement('td'); size.textContent = Number.isFinite(Number(database.sizeMB)) ? Number(database.sizeMB).toLocaleString() : '-';
+    row.append(name, state, recovery, size);
+    tbody.appendChild(row);
+  });
 }
 
 function summarizeWasRuntime(items, product) {

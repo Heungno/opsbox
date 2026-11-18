@@ -60,6 +60,7 @@ processes='['
 directories='['
 fileChecks='['
 portChecks='['
+databaseChecks='null'
 
 ${(server.processes ?? []).map((process, index) => {
     const name = process.name.replace(/'/g, "'\\''");
@@ -86,11 +87,12 @@ ${(server.ports ?? []).map((port, index) => {
     return `if port_is_listening ${port.port} '${protocol}'; then listening=true; else listening=false; fi; description=$(json_escape '${description}'); portChecks+="${comma}{\\\"port\\\":${port.port},\\\"protocol\\\":\\\"${protocol}\\\",\\\"description\\\":\\\"$description\\\",\\\"listening\\\":$listening},"`;
   }).join('\n')}
 
+if [ "${server.type}" = "DB" ]; then databaseChecks='{"product":"${server.product ?? ''}","status":"NotCollected","message":"Linux DB client collector is not included in this Windows-first phase."}'; fi
 processes="${'${processes%,}'}]"
 directories="${'${directories%,}'}]"
 fileChecks="${'${fileChecks%,}'}]"
 portChecks="${'${portChecks%,}'}]"
-printf '{"server":"${server.id}","serverType":"${server.type}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","disks":%s,"processes":%s,"directories":%s,"fileChecks":%s,"ports":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$disks" "$processes" "$directories" "$fileChecks" "$portChecks"
+printf '{"server":"${server.id}","serverType":"${server.type}","product":"${server.product ?? ''}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","disks":%s,"processes":%s,"directories":%s,"fileChecks":%s,"ports":%s,"databaseChecks":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$disks" "$processes" "$directories" "$fileChecks" "$portChecks" "$databaseChecks"
 
 `;
 }
@@ -129,6 +131,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('$httpChecks = @()');
   lines.push('$wasChecks = @()');
   lines.push('$webtobCheck = $null');
+  lines.push('$databaseChecks = $null');
   lines.push('');
 
   for (const process of server.processes ?? []) {
@@ -288,6 +291,28 @@ function generateWindowsScript(server: Server): string {
     lines.push('}');
   }
 
+  if (server.type === 'DB') {
+    const safeIp = server.ip.replace(/'/g, "''");
+    const sqlPort = server.ports?.find((port) => (port.protocol ?? 'TCP').toUpperCase() === 'TCP' && port.port === 1433)?.port ?? 1433;
+    lines.push(`$databaseChecks = @{ product = "${server.product ?? ''}"; status = "NotCollected"; message = "DB collector has not run." }`);
+    if (server.product === 'MSSQL') {
+      lines.push('$sqlcmd = Get-Command sqlcmd.exe -ErrorAction SilentlyContinue');
+      lines.push('if (-not $sqlcmd) { $sqlcmd = Get-Command sqlcmd -ErrorAction SilentlyContinue }');
+      lines.push('if (-not $sqlcmd) { $databaseChecks.message = "sqlcmd was not found on PATH." }');
+      lines.push('else {');
+      lines.push(`  $sqlTarget = if ($env:OPSBOX_MSSQL_TARGET) { $env:OPSBOX_MSSQL_TARGET } else { "${safeIp},${sqlPort}" }`);
+      lines.push(`  $dbQuery = "SET NOCOUNT ON; SELECT 'SERVER|' + ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')), N'') + '|' + ISNULL(CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')), N'') + '|' + ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('Edition')), N''); SELECT 'DATABASE|' + d.name + '|' + d.state_desc + '|' + d.recovery_model_desc + '|' + CONVERT(nvarchar(32), CAST(ISNULL(SUM(CASE WHEN mf.type = 0 THEN CAST(mf.size AS bigint) ELSE 0 END), 0) * 8.0 / 1024 AS decimal(18,2))) FROM sys.databases d LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc"`);
+      lines.push('  $dbOutput = @(& $sqlcmd.Source -S $sqlTarget -d master -E -l 5 -t 10 -Q $dbQuery -h -1 -W -s "|" -w 65535 -b 2>&1); $sqlExitCode = $LASTEXITCODE');
+      lines.push('  $databaseRows = @(); $sqlServerInfo = $null');
+      lines.push('  foreach ($outputLine in $dbOutput) { $text = "$outputLine".Trim(); if ($text.StartsWith("SERVER|")) { $parts = $text -split "\\|", 4; if ($parts.Count -ge 4) { $sqlServerInfo = @{ serverName = $parts[1]; version = $parts[2]; edition = $parts[3] } } } elseif ($text.StartsWith("DATABASE|")) { $parts = $text -split "\\|", 5; if ($parts.Count -ge 5) { $sizeMB = 0.0; [void][double]::TryParse($parts[4], [ref]$sizeMB); $dbState = $parts[2].ToUpperInvariant(); $dbStatus = if ($dbState -in @("OFFLINE", "SUSPECT", "RECOVERY_PENDING", "EMERGENCY")) { "Critical" } elseif ($dbState -ne "ONLINE") { "Warning" } else { "Healthy" }; $databaseRows += @{ name = $parts[1]; state = $parts[2]; recoveryModel = $parts[3]; sizeMB = $sizeMB; status = $dbStatus } } } }');
+      lines.push('  $offlineCount = @($databaseRows | Where-Object { $_.status -eq "Critical" }).Count; $warningCount = @($databaseRows | Where-Object { $_.status -eq "Warning" }).Count');
+      lines.push('  if ($sqlExitCode -eq 0 -and $sqlServerInfo) { $dbStatus = if ($offlineCount -gt 0) { "Critical" } elseif ($warningCount -gt 0 -or $databaseRows.Count -eq 0) { "Warning" } else { "Healthy" }; $dbMessage = if ($databaseRows.Count -eq 0) { "Connected, but no database metadata was returned. Check SQL metadata visibility." } else { $null }; $databaseChecks = @{ product = "MSSQL"; status = $dbStatus; serverName = $sqlServerInfo.serverName; version = $sqlServerInfo.version; edition = $sqlServerInfo.edition; databaseCount = $databaseRows.Count; offlineCount = $offlineCount; databases = $databaseRows; message = $dbMessage } } else { $dbMessage = ($dbOutput | ForEach-Object { "$($_)" }) -join " "; $databaseChecks = @{ product = "MSSQL"; status = "Critical"; serverName = $sqlTarget; message = $dbMessage.Substring(0, [math]::Min(1000, $dbMessage.Length)) } }');
+      lines.push('}');
+    } else {
+      lines.push(`$databaseChecks.message = "${server.product ?? 'DB'} Windows SQL client collection is not configured in this phase."`);
+    }
+  }
+
   lines.push('$result = @{');
   lines.push('  server = "' + server.id.replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('  serverType = "' + server.type + '"');
@@ -305,6 +330,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('  httpChecks = $httpChecks');
   lines.push('  wasChecks = $wasChecks');
   lines.push('  webtobCheck = $webtobCheck');
+  lines.push('  databaseChecks = $databaseChecks');
   lines.push('  product = "' + (server.product ?? '').replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('}');
   lines.push('');
