@@ -1,8 +1,8 @@
 import fs from 'fs';
 
-import { Server, DirectoryCheck, FileCheck, ProcessCheck } from '../types/server';
+import { Server, DirectoryCheck, FileCheck, PortCheck, ProcessCheck } from '../types/server';
 
-import { validateProcesses, validateDirectories, validateFileChecks } from './serverValidation';
+import { validateProcesses, validateDirectories, validateFileChecks, validatePorts } from './serverValidation';
 
 import { ValidationError } from '../types/error';
 
@@ -44,11 +44,13 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
 
   const directoryValidation = validateDirectories(server.directories ?? []);
   const fileCheckValidation = validateFileChecks(server.fileChecks ?? []);
+  const portValidation = validatePorts(server.ports ?? []);
 
   errors.push(...processValidation.errors);
 
   errors.push(...directoryValidation.errors);
   errors.push(...fileCheckValidation.errors);
+  errors.push(...portValidation.errors);
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -127,6 +129,7 @@ export function getCheckConfig(id: string) {
 
     directories: server.directories ?? [],
     fileChecks: server.fileChecks ?? [],
+    ports: server.ports ?? [],
   };
 }
 
@@ -138,6 +141,7 @@ export function updateCheckConfig(
 
     directories?: DirectoryCheck[];
     fileChecks?: FileCheck[];
+    ports?: PortCheck[];
   },
 ) {
   const servers = read();
@@ -152,8 +156,9 @@ export function updateCheckConfig(
 
   const directoryValidation = validateDirectories(config.directories ?? []);
   const fileCheckValidation = validateFileChecks(config.fileChecks ?? []);
+  const portValidation = validatePorts(config.ports ?? []);
 
-  const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors];
+  const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors];
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -163,6 +168,7 @@ export function updateCheckConfig(
 
   servers[index].directories = config.directories ?? [];
   servers[index].fileChecks = config.fileChecks ?? [];
+  servers[index].ports = config.ports ?? [];
 
   write(servers);
 
@@ -173,6 +179,7 @@ export function updateCheckConfig(
 
     directories: servers[index].directories,
     fileChecks: servers[index].fileChecks,
+    ports: servers[index].ports,
   };
 }
 

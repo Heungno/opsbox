@@ -45,6 +45,7 @@ function renderServerInfo(server) {
   document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
   document.getElementById('btn-add-directory')?.addEventListener('click', addDirectoryRow);
   document.getElementById('btn-add-file-check')?.addEventListener('click', addFileCheckRow);
+  document.getElementById('btn-add-port')?.addEventListener('click', addPortRow);
   document.getElementById('btn-add-process')?.addEventListener('click', addProcessRow);
   document.getElementById('btn-save-policy')?.addEventListener('click', savePolicy);
 
@@ -324,6 +325,12 @@ function getHealthStatus(result) {
   if (result.disks?.some((disk) => disk.status === 'Critical')) {
     return 'Critical';
   }
+  if (result.ports?.some((port) => port.listening === false)) {
+    return 'Critical';
+  }
+  if (result.ports?.some((port) => port.listening === false)) {
+    return 'Critical';
+  }
   const max = Math.max(result.cpu || 0, result.memory || 0, result.disk || 0);
 
   if (max >= 90) {
@@ -352,9 +359,11 @@ async function loadPolicy(serverId) {
   document.getElementById('process-container')?.replaceChildren();
   document.getElementById('directory-container')?.replaceChildren();
   document.getElementById('file-check-container')?.replaceChildren();
+  document.getElementById('port-container')?.replaceChildren();
   (config.processes ?? []).forEach((process) => addProcessRow(process));
   (config.directories ?? []).forEach((directory) => addDirectoryRow(directory));
   (config.fileChecks ?? []).forEach((fileCheck) => addFileCheckRow(fileCheck));
+  (config.ports ?? []).forEach((port) => addPortRow(port));
 }
 
 function addDirectoryRow(data = {}) {
@@ -451,6 +460,51 @@ function getFileChecks() {
   }));
 }
 
+function addPortRow(data = {}) {
+  const container = document.getElementById('port-container');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.className = 'port-row';
+
+  const protocol = document.createElement('select');
+  protocol.className = 'port-protocol';
+  protocol.innerHTML = '<option value="TCP">TCP</option><option value="UDP">UDP</option>';
+  protocol.value = data.protocol ?? 'TCP';
+
+  const port = document.createElement('input');
+  port.type = 'number';
+  port.min = '1';
+  port.max = '65535';
+  port.step = '1';
+  port.className = 'port-number';
+  port.placeholder = '443';
+  port.value = data.port ?? '';
+
+  const description = document.createElement('input');
+  description.type = 'text';
+  description.className = 'port-description';
+  description.placeholder = '예: HTTPS';
+  description.value = data.description ?? '';
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'btn btn-danger';
+  removeButton.textContent = '삭제';
+  removeButton.addEventListener('click', () => row.remove());
+
+  row.append(protocol, port, description, removeButton);
+  container.appendChild(row);
+}
+
+function getPorts() {
+  return [...document.querySelectorAll('.port-row')].map((row) => ({
+    protocol: row.querySelector('.port-protocol').value,
+    port: Number(row.querySelector('.port-number').value),
+    description: row.querySelector('.port-description').value.trim(),
+  }));
+}
+
 function addProcessRow(data = {}) {
   const container = document.getElementById('process-container');
   if (!container) {
@@ -490,6 +544,7 @@ async function savePolicy() {
     const processes = getProcesses();
     const directories = getDirectories();
     const fileChecks = getFileChecks();
+    const ports = getPorts();
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
       headers: {
@@ -500,6 +555,7 @@ async function savePolicy() {
         processes,
         directories,
         fileChecks,
+        ports,
       }),
     });
 

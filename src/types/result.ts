@@ -38,6 +38,7 @@ export interface PortCheckResult {
   protocol: 'TCP' | 'UDP';
   listening: boolean;
   processName?: string;
+  description?: string;
 }
 
 export interface CheckResult {
@@ -51,5 +52,5 @@ export interface CheckResult {
   directories: DirectoryCheckResult[];
   fileChecks?: FileCheckResult[];
   disks?: DiskCheckResult[];
-  ports: PortCheckResult[];
+  ports?: PortCheckResult[];
 }

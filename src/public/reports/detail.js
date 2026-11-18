@@ -110,6 +110,7 @@ function renderReport() {
   renderProcesses(data.processes, compareData?.processes);
   renderDirectories(data.directories, compareData?.directories);
   renderFileChecks(data.fileChecks);
+  renderPorts(data.ports);
 }
 
 function renderHealth(health) {
@@ -351,6 +352,36 @@ function renderFileChecks(fileChecks) {
     badge.textContent = file.status ?? 'Critical';
     status.appendChild(badge);
     row.append(path, exists, size, status);
+    tbody.appendChild(row);
+  });
+}
+
+function renderPorts(ports) {
+  const tbody = document.getElementById('port-report-list');
+  tbody.replaceChildren();
+  if (!ports || ports.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">점검 대상으로 등록된 포트가 없습니다.</td>';
+    tbody.appendChild(row);
+    return;
+  }
+
+  ports.forEach((port) => {
+    const row = document.createElement('tr');
+    const protocol = document.createElement('td');
+    protocol.textContent = port.protocol;
+    const number = document.createElement('td');
+    number.textContent = String(port.port);
+    const description = document.createElement('td');
+    description.textContent = port.description || '-';
+    const state = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `server-badge ${port.listening ? 'badge-success' : 'badge-danger'}`;
+    badge.textContent = port.listening ? '수신 중' : '미수신';
+    state.appendChild(badge);
+    const process = document.createElement('td');
+    process.textContent = port.processName || '-';
+    row.append(protocol, number, description, state, process);
     tbody.appendChild(row);
   });
 }

@@ -1,4 +1,4 @@
-import { DirectoryCheck, FileCheck, ProcessCheck } from '../types/server';
+import { DirectoryCheck, FileCheck, PortCheck, ProcessCheck } from '../types/server';
 import { ValidationError, ValidationResult } from '../types/validation';
 
 export function validateProcesses(processes: ProcessCheck[]): ValidationResult<ProcessCheck[]> {
@@ -128,4 +128,26 @@ export function validateFileChecks(fileChecks: FileCheck[]): ValidationResult<Fi
     }
   });
   return { valid: errors.length === 0, data: fileChecks, errors };
+}
+
+export function validatePorts(ports: PortCheck[]): ValidationResult<PortCheck[]> {
+  const errors: ValidationError[] = [];
+  const endpoints = new Set<string>();
+
+  ports.forEach((item, index) => {
+    const protocol = (item.protocol ?? 'TCP').toUpperCase();
+    if (!Number.isInteger(item.port) || item.port < 1 || item.port > 65535) {
+      errors.push({ field: 'ports', index, message: '포트 번호는 1~65535 사이의 정수여야 합니다.' });
+      return;
+    }
+    if (protocol !== 'TCP' && protocol !== 'UDP') {
+      errors.push({ field: 'ports', index, message: `${item.port} 포트의 프로토콜은 TCP 또는 UDP여야 합니다.` });
+      return;
+    }
+    const key = `${protocol}:${item.port}`;
+    if (endpoints.has(key)) errors.push({ field: 'ports', index, message: `중복 포트 점검: ${protocol}/${item.port}` });
+    endpoints.add(key);
+  });
+
+  return { valid: errors.length === 0, data: ports, errors };
 }

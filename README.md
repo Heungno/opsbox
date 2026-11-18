@@ -17,7 +17,11 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 점검 리포트 생성
 - 프로세스 상태 점검
 - 디렉토리 사용량 점검
-- 파일 존재 여부 점검
+- 다중 디스크 사용량 점검
+- 특정 파일 크기 및 존재 여부 점검
+- TCP/UDP 포트 리스닝 점검
+- 브라우저에 저장되는 전체 화면 테마 설정
+- 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI
 
 ---
 
@@ -56,7 +60,9 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 점검 결과 리포트
 - 상태 분석
 - 프로세스 상태
+- 디스크별 사용량
 - 디렉토리 사용률
+- 파일 크기 및 포트 리스닝 결과
 
 ---
 
@@ -83,6 +89,14 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
       "warningPercent": 70,
       "criticalPercent": 90
     }
+  ],
+
+  "ports": [
+    {
+      "port": 443,
+      "protocol": "TCP",
+      "description": "HTTPS"
+    }
   ]
 }
 ```
@@ -102,7 +116,18 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
   "memory": 40,
   "disk": 50,
 
-  "network": "UP",
+  "network": "NotChecked",
+  "disks": [
+    {
+      "device": "/dev/sda1",
+      "mountPoint": "/",
+      "totalGB": 100,
+      "usedGB": 50,
+      "freeGB": 50,
+      "usagePercent": 50,
+      "status": "Healthy"
+    }
+  ],
 
   "processes": [
     {
@@ -116,6 +141,15 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
       "path": "/logs",
       "sizeGB": 25,
       "usagePercent": 50
+    }
+  ],
+
+  "ports": [
+    {
+      "port": 443,
+      "protocol": "TCP",
+      "description": "HTTPS",
+      "listening": true
     }
   ]
 }
@@ -220,6 +254,9 @@ public
   ├ detail.html
   └ detail.js
 
+doc
+└ USER_GUIDE.md
+
 data
 ├ servers.json
 └ scripts.json
@@ -240,6 +277,10 @@ data
 ## 화면 테마
 
 모든 화면의 사이드바 하단에서 블루 슬레이트, 밝은 회색, 포레스트 테마를 선택할 수 있습니다. 선택한 테마는 사이드바뿐 아니라 페이지 배경, 카드, 표, 입력창과 강조색에 적용되며 현재 브라우저에 저장됩니다. CSS와 글꼴은 로컬 리소스만 사용합니다.
+
+## 사용자 가이드
+
+설치, 서버 등록, 점검 정책 설정, 스크립트 실행, 결과 확인 방법은 [doc/USER_GUIDE.md](doc/USER_GUIDE.md)를 참고하세요.
 
 ---
 
