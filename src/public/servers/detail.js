@@ -88,6 +88,7 @@ function bindServerEdit() {
     ['WEB', 'WAS', 'DB', 'OTHER'].forEach((role) => {
       const row = document.createElement('div'); row.className = 'role-product-row';
       const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
+      checkbox.className = 'role-choice-checkbox'; label.className = 'role-choice-label';
       label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.append(label);
       if (role !== 'OTHER') { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); (productsByType[role] || []).forEach((name) => select.add(new Option(name, name))); select.value = selectedProducts[role] || ''; row.append(select); }
       checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked && row.querySelector('select')) row.querySelector('select').value = ''; }); checkbox.dispatchEvent(new Event('change')); roleContainer.appendChild(row);

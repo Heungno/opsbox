@@ -20,6 +20,8 @@ function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}
     const row = document.createElement('div'); row.className = 'role-product-row';
     const label = document.createElement('label');
     const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
+    checkbox.className = 'role-choice-checkbox';
+    label.className = 'role-choice-label';
     label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.appendChild(label);
     if (role !== 'OTHER') {
       const select = document.createElement('select'); select.dataset.roleProduct = role;
