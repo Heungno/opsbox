@@ -39,9 +39,10 @@ function renderServerInfo(server) {
   document.getElementById('server-title').textContent = `${server.id} - ${server.name}`;
   document.getElementById('server-id').textContent = server.id;
   document.getElementById('server-name').textContent = server.name;
-  document.getElementById('server-product').textContent = server.product || '미지정';
+  const roles = server.roles?.length ? server.roles : [server.type];
+  document.getElementById('server-product').textContent = roles.map((role) => `${role}: ${server.products?.[role] || (server.type === role ? server.product : '') || '미지정'}`).join(' · ');
   const httpPolicy = document.getElementById('http-check-policy');
-  if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows' || server.type === 'DB';
+  if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows' || !roles.some((role) => role === 'WEB' || role === 'WAS');
   document.getElementById('server-ip').textContent = server.ip;
   document.getElementById('server-shared-path').textContent = server.sharedPath;
   document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
@@ -65,7 +66,7 @@ function renderServerInfo(server) {
 
   const typeBadge = document.createElement('span');
   typeBadge.className = 'server-badge';
-  typeBadge.textContent = server.type === 'OTHER' ? '기타' : server.type;
+  typeBadge.textContent = roles.map((role) => role === 'OTHER' ? '기타' : role).join(' + ');
   typeCell.appendChild(typeBadge);
 
   const osCell = document.getElementById('server-os');
@@ -80,21 +81,23 @@ function renderServerInfo(server) {
 function bindServerEdit() {
   const dialog = document.getElementById('server-edit-dialog');
   const form = document.getElementById('server-edit-form');
-  const type = document.getElementById('edit-server-type');
-  const product = document.getElementById('edit-server-product');
-  const fillProducts = (selected = '') => {
-    const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'], DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'] };
-    product.replaceChildren(new Option('제품 선택', ''));
-    (productsByType[type.value] || []).forEach((name) => product.add(new Option(name, name)));
-    product.value = selected;
+  const roleContainer = document.getElementById('edit-role-product-fields');
+  const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'], DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'] };
+  const renderRoleProducts = (selectedRoles = [], selectedProducts = {}) => {
+    roleContainer.replaceChildren();
+    ['WEB', 'WAS', 'DB', 'OTHER'].forEach((role) => {
+      const row = document.createElement('div'); row.className = 'role-product-row';
+      const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
+      label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.append(label);
+      if (role !== 'OTHER') { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); (productsByType[role] || []).forEach((name) => select.add(new Option(name, name))); select.value = selectedProducts[role] || ''; row.append(select); }
+      checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked && row.querySelector('select')) row.querySelector('select').value = ''; }); checkbox.dispatchEvent(new Event('change')); roleContainer.appendChild(row);
+    });
   };
   if (form.dataset.bound === 'true') return;
   form.dataset.bound = 'true';
-  type.addEventListener('change', () => fillProducts());
   document.getElementById('btn-edit-server').addEventListener('click', () => {
     document.getElementById('edit-server-name').value = currentServer.name;
-    type.value = currentServer.type;
-    fillProducts(currentServer.product || '');
+    renderRoleProducts(currentServer.roles?.length ? currentServer.roles : [currentServer.type], currentServer.products || { [currentServer.type]: currentServer.product });
     document.getElementById('edit-server-os').value = currentServer.os;
     document.getElementById('edit-server-ip').value = currentServer.ip;
     document.getElementById('edit-server-shared-path').value = currentServer.sharedPath || '';
@@ -104,10 +107,11 @@ function bindServerEdit() {
   document.getElementById('btn-cancel-server-edit').addEventListener('click', () => dialog.close());
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const roles = [...roleContainer.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
+    const products = Object.fromEntries([...roleContainer.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
     const data = {
       name: document.getElementById('edit-server-name').value.trim(),
-      type: type.value,
-      product: product.value,
+      roles, products, type: roles[0], product: products[roles[0]],
       os: document.getElementById('edit-server-os').value,
       ip: document.getElementById('edit-server-ip').value.trim(),
       sharedPath: document.getElementById('edit-server-shared-path').value.trim(),

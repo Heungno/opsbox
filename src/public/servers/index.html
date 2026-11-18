@@ -81,20 +81,9 @@
                 <label for="name"> 서버명 </label>
                 <input id="name" type="text" placeholder="서버명" required />
               </div>
-              <div class="form-group">
-                <label for="type"> 서버 유형 </label>
-
-                <select id="type">
-                  <option value="WEB">WEB</option>
-                  <option value="WAS">WAS</option>
-                  <option value="DB">DB</option>
-                  <option value="OTHER">기타</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="product">제품</label>
-                <select id="product"><option value="">제품 선택</option></select>
-              </div>
+              <fieldset class="form-group"><legend>서버 역할 및 제품</legend>
+                <div id="role-product-fields" class="role-product-fields"></div>
+              </fieldset>
               <div class="form-group">
                 <label for="os"> 운영체제 </label>
                 <select id="os">

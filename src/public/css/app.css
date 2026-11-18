@@ -1518,3 +1518,12 @@ select:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+.role-product-fields { display: grid; gap: 8px; }
+.role-product-row { display: grid; grid-template-columns: minmax(100px, 0.35fr) minmax(180px, 1fr); gap: 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; opacity: 0.62; }
+.role-product-row.active { opacity: 1; background: var(--surface-alt, var(--surface)); }
+.role-product-row label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.role-product-row select { width: 100%; }
+fieldset.form-group { min-width: 0; border: 0; padding: 0; margin: 0; }
+fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
+@media (max-width: 640px) { .role-product-row { grid-template-columns: 1fr; } }

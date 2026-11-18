@@ -1,4 +1,4 @@
-import { getAllServers } from './serverService';
+import { getAllServers, getServerRoles } from './serverService';
 
 import { getLatestResult, getHealthStatus } from './resultService';
 
@@ -15,22 +15,11 @@ export function getDashboardSummary() {
   let critical = 0;
 
   servers.forEach((server) => {
-    switch (server.type) {
-      case 'WEB':
-        web++;
-        break;
-
-      case 'WAS':
-        was++;
-        break;
-
-      case 'DB':
-        db++;
-        break;
-      case 'OTHER':
-        other++;
-        break;
-    }
+    const roles = getServerRoles(server);
+    if (roles.includes('WEB')) web++;
+    if (roles.includes('WAS')) was++;
+    if (roles.includes('DB')) db++;
+    if (roles.includes('OTHER')) other++;
 
     const latest = getLatestResult(server.id);
 
@@ -85,6 +74,7 @@ export function getRecentChecks() {
       serverName: server.name,
 
       serverType: server.type,
+      serverTypes: getServerRoles(server),
 
       fileName: latest.fileName,
 

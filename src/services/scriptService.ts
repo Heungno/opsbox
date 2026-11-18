@@ -1,4 +1,4 @@
-import { getServer } from './serverService';
+import { getServer, getServerProduct, getServerRoles } from './serverService';
 import { Server } from '../types/server';
 
 export function generateScript(serverId: string): string {
@@ -16,6 +16,8 @@ export function generateScript(serverId: string): string {
 }
 
 function generateLinuxScript(server: Server): string {
+  const roles = getServerRoles(server);
+  const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
   return `
 #!/bin/bash
 set +e
@@ -87,17 +89,22 @@ ${(server.ports ?? []).map((port, index) => {
     return `if port_is_listening ${port.port} '${protocol}'; then listening=true; else listening=false; fi; description=$(json_escape '${description}'); portChecks+="${comma}{\\\"port\\\":${port.port},\\\"protocol\\\":\\\"${protocol}\\\",\\\"description\\\":\\\"$description\\\",\\\"listening\\\":$listening},"`;
   }).join('\n')}
 
-if [ "${server.type}" = "DB" ]; then databaseChecks='{"product":"${server.product ?? ''}","status":"NotCollected","message":"Linux DB client collector is not included in this Windows-first phase."}'; fi
+if [ "${roles.includes('DB')}" = "true" ]; then databaseChecks='{"product":"${getServerProduct(server, 'DB') ?? ''}","status":"NotCollected","message":"Linux DB client collector is not included in this Windows-first phase."}'; fi
 processes="${'${processes%,}'}]"
 directories="${'${directories%,}'}]"
 fileChecks="${'${fileChecks%,}'}]"
 portChecks="${'${portChecks%,}'}]"
-printf '{"server":"${server.id}","serverType":"${server.type}","product":"${server.product ?? ''}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","disks":%s,"processes":%s,"directories":%s,"fileChecks":%s,"ports":%s,"databaseChecks":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$disks" "$processes" "$directories" "$fileChecks" "$portChecks" "$databaseChecks"
+printf '{"server":"${server.id}","serverType":"${server.type}","serverTypes":${JSON.stringify(roles)},"products":${JSON.stringify(products)},"product":"${server.product ?? ''}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","disks":%s,"processes":%s,"directories":%s,"fileChecks":%s,"ports":%s,"databaseChecks":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$disks" "$processes" "$directories" "$fileChecks" "$portChecks" "$databaseChecks"
 
 `;
 }
 
 function generateWindowsScript(server: Server): string {
+  const roles = getServerRoles(server);
+  const webProduct = getServerProduct(server, 'WEB');
+  const wasProduct = getServerProduct(server, 'WAS');
+  const dbProduct = getServerProduct(server, 'DB');
+  const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
   const lines: string[] = [];
   lines.push('$ErrorActionPreference = "SilentlyContinue"');
   lines.push('');
@@ -250,7 +257,7 @@ function generateWindowsScript(server: Server): string {
     lines.push(`$httpChecks += @{ name = "${safeName}"; url = $httpUrl; expectedStatus = $expectedStatus; statusCode = $statusCode; responseTimeMs = $timer.ElapsedMilliseconds; success = $success; error = $errorKind }`);
   }
 
-  if (server.type === 'WAS' && server.product !== 'Node.js') {
+  if (roles.includes('WAS') && wasProduct !== 'Node.js') {
     lines.push('$javaProcesses = @(Get-CimInstance Win32_Process -Filter "Name = \'java.exe\'" -ErrorAction SilentlyContinue)');
     lines.push('$pathJstat = Get-Command jstat.exe -ErrorAction SilentlyContinue');
     lines.push('foreach ($javaProcess in $javaProcesses) {');
@@ -270,11 +277,11 @@ function generateWindowsScript(server: Server): string {
     lines.push('  $wasChecks += @{ processId = $javaProcess.ProcessId; processName = "java"; heapUsedMB = [math]::Round($heapUsedKB / 1024, 1); heapCapacityMB = [math]::Round($heapCapacityKB / 1024, 1); heapUsagePercent = $heapPercent; status = $heapStatus; message = $null }');
     lines.push('}');
     lines.push('if ($javaProcesses.Count -eq 0) { $wasChecks += @{ processId = 0; processName = "java"; status = "NotCollected"; message = "Java process not found" } }');
-  } else if (server.type === 'WAS') {
+  } else if (roles.includes('WAS')) {
     lines.push('$wasChecks += @{ processId = 0; processName = "node"; status = "NotCollected"; message = "Node.js runtime metrics require an application-specific collector" }');
   }
 
-  if (server.type === 'WEB' && server.product === 'WebtoB') {
+  if (roles.includes('WEB') && webProduct === 'WebtoB') {
     lines.push('$wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue');
     lines.push('if (-not $wsadmin) { $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue }');
     lines.push('if (-not $wsadmin) { $webtobCheck = @{ status = "NotCollected"; command = "wsadmin: wi, ci -s, st -v, st -s"; message = "wsadmin was not found on PATH." } }');
@@ -291,11 +298,11 @@ function generateWindowsScript(server: Server): string {
     lines.push('}');
   }
 
-  if (server.type === 'DB') {
+  if (roles.includes('DB')) {
     const safeIp = server.ip.replace(/'/g, "''");
     const sqlPort = server.ports?.find((port) => (port.protocol ?? 'TCP').toUpperCase() === 'TCP' && port.port === 1433)?.port ?? 1433;
-    lines.push(`$databaseChecks = @{ product = "${server.product ?? ''}"; status = "NotCollected"; message = "DB collector has not run." }`);
-    if (server.product === 'MSSQL') {
+    lines.push(`$databaseChecks = @{ product = "${dbProduct ?? ''}"; status = "NotCollected"; message = "DB collector has not run." }`);
+    if (dbProduct === 'MSSQL') {
       lines.push('$sqlcmd = Get-Command sqlcmd.exe -ErrorAction SilentlyContinue');
       lines.push('if (-not $sqlcmd) { $sqlcmd = Get-Command sqlcmd -ErrorAction SilentlyContinue }');
       lines.push('if (-not $sqlcmd) { $databaseChecks.message = "sqlcmd was not found on PATH." }');
@@ -309,13 +316,14 @@ function generateWindowsScript(server: Server): string {
       lines.push('  if ($sqlExitCode -eq 0 -and $sqlServerInfo) { $dbStatus = if ($offlineCount -gt 0) { "Critical" } elseif ($warningCount -gt 0 -or $databaseRows.Count -eq 0) { "Warning" } else { "Healthy" }; $dbMessage = if ($databaseRows.Count -eq 0) { "Connected, but no database metadata was returned. Check SQL metadata visibility." } else { $null }; $databaseChecks = @{ product = "MSSQL"; status = $dbStatus; serverName = $sqlServerInfo.serverName; version = $sqlServerInfo.version; edition = $sqlServerInfo.edition; databaseCount = $databaseRows.Count; offlineCount = $offlineCount; databases = $databaseRows; message = $dbMessage } } else { $dbMessage = ($dbOutput | ForEach-Object { "$($_)" }) -join " "; $databaseChecks = @{ product = "MSSQL"; status = "Critical"; serverName = $sqlTarget; message = $dbMessage.Substring(0, [math]::Min(1000, $dbMessage.Length)) } }');
       lines.push('}');
     } else {
-      lines.push(`$databaseChecks.message = "${server.product ?? 'DB'} Windows SQL client collection is not configured in this phase."`);
+      lines.push(`$databaseChecks.message = "${dbProduct ?? 'DB'} Windows SQL client collection is not configured in this phase."`);
     }
   }
 
   lines.push('$result = @{');
   lines.push('  server = "' + server.id.replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('  serverType = "' + server.type + '"');
+  lines.push('  serverTypes = @(' + roles.map((role) => '"' + role + '"').join(', ') + ')');
   lines.push('  hostname = $hostname');
   lines.push('  checkDate = $checkDate');
   lines.push('  uptimeMinutes = $uptimeMinutes');
@@ -331,6 +339,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('  wasChecks = $wasChecks');
   lines.push('  webtobCheck = $webtobCheck');
   lines.push('  databaseChecks = $databaseChecks');
+  lines.push('  products = @{ ' + Object.entries(products).map(([role, product]) => `${role} = "${product}"`).join('; ') + ' }');
   lines.push('  product = "' + (server.product ?? '').replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('}');
   lines.push('');

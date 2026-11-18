@@ -26,11 +26,17 @@ export interface PortCheck {
 
 export interface HttpCheck { name: string; url: string; expectedStatus?: number; }
 
+export type ServerRole = 'WEB' | 'WAS' | 'DB' | 'OTHER';
+export type ServerProduct = 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
+
 export interface Server {
   id: string;
   name: string;
-  type: 'WEB' | 'WAS' | 'DB' | 'OTHER';
-  product?: 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
+  /** `type` and `product` are kept for compatibility with older single-role records. */
+  type: ServerRole;
+  product?: ServerProduct;
+  roles?: ServerRole[];
+  products?: Partial<Record<ServerRole, ServerProduct>>;
   os: 'Windows' | 'Linux';
   ip: string;
   policy?: ServerPolicy;

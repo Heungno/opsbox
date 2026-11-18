@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { Server, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
+import { Server, ServerRole, ServerProduct, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
@@ -8,8 +8,32 @@ import { ValidationError } from '../types/error';
 
 const FILE = 'data/servers.json';
 
+const ROLES: ServerRole[] = ['WEB', 'WAS', 'DB', 'OTHER'];
+const PRODUCTS: Record<Exclude<ServerRole, 'OTHER'>, ServerProduct[]> = {
+  WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'],
+  WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'],
+  DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'],
+};
+
+export function getServerRoles(server: Pick<Server, 'type' | 'roles'>): ServerRole[] {
+  const roles = Array.isArray(server.roles) ? server.roles.filter((role): role is ServerRole => ROLES.includes(role)) : [];
+  return [...new Set(roles.length ? roles : [server.type])];
+}
+
+export function getServerProduct(server: Pick<Server, 'type' | 'product' | 'products'>, role: ServerRole): ServerProduct | undefined {
+  return server.products?.[role] ?? (server.type === role ? server.product : undefined);
+}
+
+function normalizeServer(server: Server): Server {
+  const roles = getServerRoles(server);
+  const products = { ...(server.products ?? {}) };
+  if (server.product && !products[server.type]) products[server.type] = server.product;
+  const type = roles.includes(server.type) ? server.type : roles[0];
+  return { ...server, roles, products, type, product: products[type] };
+}
+
 function read(): Server[] {
-  return JSON.parse(fs.readFileSync(FILE, 'utf8'));
+  return (JSON.parse(fs.readFileSync(FILE, 'utf8')) as Server[]).map(normalizeServer);
 }
 
 function write(data: Server[]) {
@@ -18,10 +42,8 @@ function write(data: Server[]) {
 
 function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {
   const errors = [];
-
-  if (!['WEB', 'WAS', 'DB', 'OTHER'].includes(server.type ?? '')) {
-    errors.push({ field: 'type', message: '서버 유형은 WEB, WAS, DB, 기타 중 하나여야 합니다.' });
-  }
+  const roles = Array.isArray(server.roles) && server.roles.length ? [...new Set(server.roles)] : server.type ? [server.type] : [];
+  if (!roles.length || roles.some((role) => !ROLES.includes(role))) errors.push({ field: 'roles', message: '서버 역할을 하나 이상 선택해야 합니다.' });
 
   if (!server.id || server.id.trim() === '') {
     errors.push({
@@ -57,12 +79,12 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   errors.push(...fileCheckValidation.errors);
   errors.push(...portValidation.errors);
   errors.push(...httpValidation.errors);
-  const webProducts = ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'];
-  const wasProducts = ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'];
-  const dbProducts = ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'];
-  if (server.type === 'DB' && !server.product) errors.push({ field: 'product', message: 'DB 제품(MSSQL, MariaDB, CUBRID, PostgreSQL)을 선택해야 합니다.' });
-  if (server.product && (server.type === 'WEB' ? !webProducts.includes(server.product) : server.type === 'WAS' ? !wasProducts.includes(server.product) : server.type === 'DB' ? !dbProducts.includes(server.product) : true)) errors.push({ field: 'product', message: '서버 유형에 맞는 제품을 선택해야 합니다.' });
-  if (server.type === 'DB' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 서버에만 설정할 수 있습니다.' });
+  for (const role of roles) {
+    if (role === 'OTHER') continue;
+    const product = server.products?.[role] ?? (server.type === role ? server.product : undefined);
+    if (!product || !PRODUCTS[role].includes(product)) errors.push({ field: `products.${role}`, message: `${role} 제품을 선택해야 합니다.` });
+  }
+  if (!roles.some((role) => role === 'WEB' || role === 'WAS') && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (server.os === 'Linux' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
 
   if (errors.length > 0) {
@@ -81,14 +103,14 @@ export function getServer(id: string) {
 export function createServer(server: Server) {
   const servers = read();
 
-  validateServer(server, servers);
+  const normalized = normalizeServer(server);
+  validateServer(normalized, servers);
 
-  console.error(server);
-  servers.push(server);
+  servers.push(normalized);
 
   write(servers);
 
-  return server;
+  return normalized;
 }
 
 export function updateServer(id: string, data: Partial<Server>) {
@@ -100,10 +122,10 @@ export function updateServer(id: string, data: Partial<Server>) {
     throw new Error(`Server not found: ${id}`);
   }
 
-  const updatedServer = {
+  const updatedServer = normalizeServer({
     ...servers[index],
     ...data,
-  };
+  });
 
   validateServer(updatedServer, servers, id);
 
@@ -175,7 +197,7 @@ export function updateCheckConfig(
   const httpValidation = validateHttpChecks(config.httpChecks ?? []);
 
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
-  if (servers[index].type === 'DB' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 서버에만 설정할 수 있습니다.' });
+  if (!getServerRoles(servers[index]).some((role) => role === 'WEB' || role === 'WAS') && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (servers[index].os === 'Linux' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
 
   if (errors.length > 0) {

@@ -21,7 +21,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 특정 파일 크기 및 존재 여부 점검
 - TCP/UDP 포트 리스닝 점검
 - WEB/WAS 제품 분류(WebtoB, Apache HTTP Server, IIS, Nginx, JEUS, Tomcat, JBoss, Node.js)
-- 서버 유형 분류: WEB, WAS, DB, 기타
+- 서버 한 대에 WEB, WAS, DB, 기타 역할을 복수 지정하고 역할별 제품을 설정
 - Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
 - Windows WAS 서버의 JDK `jstat` 기반 JVM Heap 사용률 점검
 - Windows WebtoB WEB 서버의 `wsadmin` 정보·클라이언트 수·서버/서비스 상태 점검 (WebtoB 4.1)
@@ -34,12 +34,16 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 
 ---
 
-## 지원 서버 유형
+## 서버 역할
 
-- WEB
-- WAS
-- DB
-- 기타
+한 서버가 WEB, WAS, DB 역할을 함께 수행하는 경우 서버를 한 번만 등록하고 해당 역할을 모두 선택합니다. 공통 OS 자원은 한 번 수집하고 역할별 제품 점검 및 보고서 양식은 각각 적용합니다. 기존 단일 `type`/`product` 서버 데이터도 읽을 때 역할/제품 정보로 호환 처리됩니다.
+
+| 역할 | 제품 |
+| --- | --- |
+| WEB | WebtoB, Apache HTTP Server, IIS, Nginx |
+| WAS | JEUS, Apache Tomcat, JBoss, Node.js |
+| DB | MSSQL, MariaDB, CUBRID, PostgreSQL |
+| 기타 | 별도 제품 없이 공통 점검 |
 
 ---
 
@@ -84,6 +88,8 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
   "id": "WEB01",
   "name": "업무웹01",
   "type": "WEB",
+  "roles": ["WEB", "WAS"],
+  "products": { "WEB": "WebtoB", "WAS": "JEUS" },
   "os": "Linux",
   "ip": "10.10.10.11",
   "sharedPath": "\\\\NAS01\\OpsBox",

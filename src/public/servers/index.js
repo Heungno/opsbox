@@ -10,17 +10,31 @@ const serverList = document.getElementById("server-list");
 const cancelButton = document.getElementById("btn-cancel");
 
 const newButton = document.getElementById("btn-new");
-const typeSelect = document.getElementById("type");
-const productSelect = document.getElementById("product");
 const productsByType = { WEB: ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"], WAS: ["JEUS", "Apache Tomcat", "JBoss", "Node.js"], DB: ["MSSQL", "MariaDB", "CUBRID", "PostgreSQL"] };
-typeSelect?.addEventListener("change", () => populateProducts(typeSelect.value));
-function populateProducts(type, selected = "") {
-  if (!productSelect) return;
-  productSelect.replaceChildren(new Option("제품 선택", ""));
-  (productsByType[type] || []).forEach((product) => productSelect.add(new Option(product, product)));
-  productSelect.value = selected;
+renderRoleProducts(document.getElementById('role-product-fields'));
+
+function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}) {
+  if (!container) return;
+  container.replaceChildren();
+  ['WEB', 'WAS', 'DB', 'OTHER'].forEach((role) => {
+    const row = document.createElement('div'); row.className = 'role-product-row';
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
+    label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.appendChild(label);
+    if (role !== 'OTHER') {
+      const select = document.createElement('select'); select.dataset.roleProduct = role;
+      select.add(new Option('제품 선택', '')); (productsByType[role] || []).forEach((product) => select.add(new Option(product, product)));
+      select.value = selectedProducts[role] || ''; row.appendChild(select);
+    }
+    checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked) { const select = row.querySelector('select'); if (select) select.value = ''; } });
+    checkbox.dispatchEvent(new Event('change')); container.appendChild(row);
+  });
 }
-populateProducts(typeSelect?.value || "WEB");
+function getRoleProductSelection(container) {
+  const roles = [...container.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
+  const products = Object.fromEntries([...container.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
+  return { roles, products, type: roles[0], product: products[roles[0]] };
+}
 
 serverForm?.addEventListener("submit", saveServer);
 
@@ -59,8 +73,7 @@ async function saveServer(event) {
 
     name: document.getElementById("name").value.trim(),
 
-    type: document.getElementById("type").value,
-    product: document.getElementById("product").value || undefined,
+    ...getRoleProductSelection(document.getElementById('role-product-fields')),
 
     os: document.getElementById("os").value,
 
@@ -102,8 +115,8 @@ function renderServers() {
       server.id.toLowerCase().includes(keyword) ||
       server.name.toLowerCase().includes(keyword) ||
       server.ip.toLowerCase().includes(keyword) ||
-      server.type.toLowerCase().includes(keyword)
-      || (server.product || "").toLowerCase().includes(keyword)
+      getRoles(server).join(' ').toLowerCase().includes(keyword)
+      || Object.values(server.products || {}).join(' ').toLowerCase().includes(keyword)
     );
   });
 
@@ -128,8 +141,7 @@ function renderServers() {
 
     const typeTd = document.createElement("td");
 
-    typeTd.textContent = getServerTypeLabel(server.type);
-    typeTd.textContent += server.product ? ` · ${server.product}` : "";
+    typeTd.textContent = getRoles(server).map((role) => `${getServerTypeLabel(role)}${server.products?.[role] ? ` · ${server.products[role]}` : ''}`).join(' / ');
 
     const osTd = document.createElement("td");
 
@@ -200,7 +212,7 @@ async function removeServer(id) {
 
 function resetForm() {
   serverForm?.reset();
-  populateProducts(typeSelect?.value || "WEB");
+  renderRoleProducts(document.getElementById('role-product-fields'), ['WEB']);
   document.getElementById("sharedPath").value = "";
 }
 
@@ -219,11 +231,11 @@ function closeServerDialog() {
 function updateSummary() {
   const total = serverCache.length;
 
-  const web = serverCache.filter((s) => s.type === "WEB").length;
+  const web = serverCache.filter((s) => getRoles(s).includes("WEB")).length;
 
-  const was = serverCache.filter((s) => s.type === "WAS").length;
+  const was = serverCache.filter((s) => getRoles(s).includes("WAS")).length;
 
-  const db = serverCache.filter((s) => s.type === "DB").length;
+  const db = serverCache.filter((s) => getRoles(s).includes("DB")).length;
 
   document.getElementById("total-count").textContent = total;
 
@@ -232,8 +244,10 @@ function updateSummary() {
   document.getElementById("was-count").textContent = was;
 
   document.getElementById("db-count").textContent = db;
-  document.getElementById("other-count").textContent = serverCache.filter((s) => s.type === "OTHER").length;
+  document.getElementById("other-count").textContent = serverCache.filter((s) => getRoles(s).includes("OTHER")).length;
 }
+
+function getRoles(server) { return server.roles?.length ? server.roles : [server.type]; }
 
 function getServerTypeLabel(type) {
   return type === "OTHER" ? "기타" : type;

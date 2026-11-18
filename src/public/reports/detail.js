@@ -2,8 +2,11 @@ let currentReportData = null;
 let historyResults = [];
 let selectedCurrentFile = null;
 let currentServerType = '';
+let currentServerTypes = [];
 let currentServerProduct = '';
+let currentServerProducts = {};
 let currentServerOS = '';
+let reportRoleSuffix = '';
 
 async function init() {
   const params = new URLSearchParams(location.search);
@@ -32,7 +35,9 @@ async function loadHistoryAndReport(serverId, fileName) {
     if (serverResponse.ok) {
       const server = await serverResponse.json();
       currentServerType = server.type || '';
+      currentServerTypes = server.roles?.length ? server.roles : [server.type];
       currentServerProduct = server.product || '';
+      currentServerProducts = server.products || { [server.type]: server.product };
       currentServerOS = server.os || '';
     }
     // 1. Fetch history results for comparison
@@ -113,14 +118,15 @@ function renderReport() {
   const health = currentReportData.health;
   const compareData = getCompareResult();
 
-  const serverType = data.serverType || currentServerType || 'OTHER';
-  const typeLabel = serverType === 'OTHER' ? '기타' : serverType;
-  document.getElementById('report-title').textContent = `서버: ${data.server || data.hostname || '-'} | 유형: ${typeLabel} | 점검일시: ${data.checkDate}`;
-  document.getElementById('http-report-details').hidden = serverType === 'DB';
+  const serverTypes = data.serverTypes?.length ? data.serverTypes : (currentServerTypes.length ? currentServerTypes : [data.serverType || currentServerType || 'OTHER']);
+  const serverType = serverTypes[0] || 'OTHER';
+  const typeLabel = serverTypes.map((role) => role === 'OTHER' ? '기타' : role).join(' + ');
+  document.getElementById('report-title').textContent = `서버: ${data.server || data.hostname || '-'} | 역할: ${typeLabel} | 점검일시: ${data.checkDate}`;
+  document.getElementById('http-report-details').hidden = !serverTypes.some((role) => role === 'WEB' || role === 'WAS');
 
   renderHealth(health);
   renderMetrics(data, compareData);
-  renderTypeReportForm(serverType, data, data.product || currentServerProduct);
+  renderTypeReportForm(serverTypes, data, data.products || currentServerProduct);
   renderDisks(data.disks);
   renderProcesses(data.processes, compareData?.processes);
   renderDirectories(data.directories, compareData?.directories);
@@ -128,15 +134,21 @@ function renderReport() {
   renderPorts(data.ports);
   renderHttpChecks(data.httpChecks);
   const webtobDetails = document.getElementById('webtob-report-details');
-  webtobDetails.hidden = !(serverType === 'WEB' && (data.product || currentServerProduct) === 'WebtoB' && data.webtobCheck);
+  webtobDetails.hidden = !(serverTypes.includes('WEB') && ((data.products?.WEB || currentServerProducts.WEB || (currentServerType === 'WEB' ? currentServerProduct : '')) === 'WebtoB') && data.webtobCheck);
   document.getElementById('webtob-check-output').textContent = data.webtobCheck?.output || data.webtobCheck?.message || 'wsadmin 결과 없음';
 }
 
-function renderTypeReportForm(serverType, data, product) {
-  const type = ['WEB', 'WAS', 'DB', 'OTHER'].includes(serverType) ? serverType : 'OTHER';
-  const template = document.getElementById(`report-form-${type}`);
+function renderTypeReportForm(serverTypes, data, productMap) {
   const container = document.getElementById('type-report-form');
-  container.replaceChildren(template.content.cloneNode(true));
+  container.replaceChildren();
+  for (const serverType of serverTypes) {
+  const type = ['WEB', 'WAS', 'DB', 'OTHER'].includes(serverType) ? serverType : 'OTHER';
+  const product = typeof productMap === 'string' ? productMap : productMap?.[type] || currentServerProducts[type] || (currentServerType === type ? (data.product || currentServerProduct) : '');
+  reportRoleSuffix = `-${type}`;
+  const template = document.getElementById(`report-form-${type}`);
+  const fragment = template.content.cloneNode(true);
+  fragment.querySelectorAll('[id]').forEach((node) => { node.id += reportRoleSuffix; });
+  container.appendChild(fragment);
 
   const processCheck = summarizeProcesses(data.processes);
   const portCheck = summarizePorts(data.ports);
@@ -198,6 +210,8 @@ function renderTypeReportForm(serverType, data, product) {
   if (type === 'DB' && product === 'MSSQL' && currentServerOS === 'Linux') pendingRows.DB.unshift(['Linux MSSQL 연결', '현재 MSSQL sqlcmd 수집기는 Windows 점검 스크립트에 포함되어 있습니다.']);
   if (type === 'WAS' && product === 'Node.js') pendingRows.WAS.unshift(['Node.js Heap', '애플리케이션별 Node.js 런타임 수집기가 필요합니다.']);
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
+  }
+  reportRoleSuffix = '';
 }
 
 function summarizeWebtoB(check) {
@@ -214,8 +228,8 @@ function summarizeDatabaseCheck(check, product) {
 }
 
 function renderDatabaseChecks(check, product) {
-  const summary = document.getElementById('database-check-summary');
-  const tbody = document.getElementById('database-check-list');
+  const summary = document.getElementById('database-check-summary' + reportRoleSuffix);
+  const tbody = document.getElementById('database-check-list' + reportRoleSuffix);
   summary.textContent = check?.message || (check ? `${check.product || product} · ${check.serverName || '서버 정보 없음'} · 버전 ${check.version || '미수집'} · DB ${check.databaseCount ?? 0}개` : `${product || 'DB'} 엔진 상세는 미수집입니다. 제품별 CLI가 필요합니다.`);
   tbody.replaceChildren();
   if (!check?.databases?.length) {
@@ -253,7 +267,7 @@ function summarizeWasRuntime(items, product) {
 }
 
 function renderWasHeapRows(items) {
-  const tbody = document.getElementById('was-heap-list');
+  const tbody = document.getElementById('was-heap-list' + reportRoleSuffix);
   if (!items?.length) {
     const row = document.createElement('tr');
     row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">JVM Heap 결과가 없습니다. 새 Windows 점검 스크립트를 실행하세요.</td>';
@@ -316,7 +330,7 @@ function summarizePaths(directories, files) {
 }
 
 function renderChecklist(targetId, rows) {
-  const tbody = document.getElementById(targetId);
+  const tbody = document.getElementById(targetId + reportRoleSuffix);
   rows.forEach(([label, result, note]) => {
     const row = document.createElement('tr');
     const name = document.createElement('td'); name.textContent = label;
@@ -330,7 +344,7 @@ function renderChecklist(targetId, rows) {
 }
 
 function renderPendingChecklist(targetId, rows) {
-  const tbody = document.getElementById(targetId);
+  const tbody = document.getElementById(targetId + reportRoleSuffix);
   rows.forEach(([label, note]) => {
     const row = document.createElement('tr');
     const name = document.createElement('td'); name.textContent = label;

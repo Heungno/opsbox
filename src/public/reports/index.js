@@ -57,10 +57,13 @@ function renderReportList(reports) {
   const grouped = Object.fromEntries(typeOrder.map((type) => [type, new Map()]));
 
   reports.forEach((item) => {
-    const type = typeOrder.includes(item.serverType) ? item.serverType : 'OTHER';
-    const servers = grouped[type];
-    if (!servers.has(item.serverId)) servers.set(item.serverId, []);
-    servers.get(item.serverId).push(item);
+    const roles = item.serverTypes?.length ? item.serverTypes : [item.serverType];
+    [...new Set(roles)].forEach((role) => {
+      const type = typeOrder.includes(role) ? role : 'OTHER';
+      const servers = grouped[type];
+      if (!servers.has(item.serverId)) servers.set(item.serverId, []);
+      servers.get(item.serverId).push(item);
+    });
   });
 
   typeOrder.forEach((type) => {

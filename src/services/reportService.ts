@@ -1,6 +1,6 @@
 import { getResultByFile, getHealthStatus, getResults } from './resultService';
 import { getReportFields } from './reportRuleService';
-import { getAllServers } from './serverService';
+import { getAllServers, getServerRoles } from './serverService';
 
 export function getAllReports(filter?: { serverId?: string; startDate?: string; endDate?: string }) {
   const servers = getAllServers();
@@ -32,6 +32,8 @@ export function getAllReports(filter?: { serverId?: string; startDate?: string; 
           serverId: server.id,
           serverName: server.name,
           serverType: server.type,
+          serverTypes: getServerRoles(server),
+          products: server.products,
           os: server.os,
           hostname: res.hostname || '-',
           checkDate: res.checkDate,
