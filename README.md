@@ -28,6 +28,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - DB 제품 분류(MSSQL, MariaDB, CUBRID, PostgreSQL)
 - Windows MSSQL `sqlcmd`와 Windows 통합 인증을 이용한 읽기 전용 서버·데이터베이스 상태 점검
 - Windows PowerShell 점검 스크립트의 UTF-8 BOM 적용으로 한글 메시지 인코딩 지원
+- 서버·프로세스 가동 시간을 년·월·일·시·분 형식으로 표시
 - 브라우저에 저장되는 전체 화면 테마 설정
 - 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI
 

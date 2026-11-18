@@ -424,7 +424,7 @@ function renderMetrics(data, compareData) {
     { label: 'CPU 사용률', value: data.cpu, prevVal: compareData?.cpu, unit: '%' },
     { label: '메모리 사용률', value: data.memory, prevVal: compareData?.memory, unit: '%' },
     { label: '디스크 사용률', value: data.disk, prevVal: compareData?.disk, unit: '%' },
-    { label: '가동 시간', value: data.uptimeMinutes ?? '-', prevVal: compareData?.uptimeMinutes, unit: ' 분', isNum: true },
+    { label: '가동 시간', value: data.uptimeMinutes ?? 0, prevVal: compareData?.uptimeMinutes, unit: '', formatter: formatUptime },
   ];
 
   metrics.forEach((m) => {
@@ -435,11 +435,17 @@ function renderMetrics(data, compareData) {
     span.textContent = m.label;
 
     const strong = document.createElement('strong');
-    strong.textContent = `${m.value}${m.unit}`;
+    strong.textContent = m.formatter ? m.formatter(m.value) : `${m.value}${m.unit}`;
 
     if (m.prevVal !== undefined && m.prevVal !== null && typeof m.value === 'number') {
       const diffBadge = createDiffBadge(m.value, m.prevVal, m.unit === '%');
-      if (diffBadge) strong.appendChild(diffBadge);
+      if (diffBadge) {
+        if (m.formatter && m.value !== m.prevVal) {
+          const delta = m.value - m.prevVal;
+          diffBadge.textContent = `${delta > 0 ? '▲ +' : '▼ -'}${m.formatter(Math.abs(delta))}`;
+        }
+        strong.appendChild(diffBadge);
+      }
     }
 
     card.appendChild(span);
@@ -448,6 +454,22 @@ function renderMetrics(data, compareData) {
   });
 
   container.appendChild(grid);
+}
+
+function formatUptime(minutes) {
+  let remaining = Math.max(0, Math.floor(Number(minutes) || 0));
+  const minutesPerYear = 365 * 24 * 60;
+  const minutesPerMonth = 30 * 24 * 60;
+  let years = Math.floor(remaining / minutesPerYear);
+  remaining %= minutesPerYear;
+  let months = Math.floor(remaining / minutesPerMonth);
+  remaining %= minutesPerMonth;
+  if (months === 12) { years += 1; months = 0; }
+  const days = Math.floor(remaining / (24 * 60));
+  remaining %= 24 * 60;
+  const hours = Math.floor(remaining / 60);
+  const mins = remaining % 60;
+  return `${years}년 ${months}개월 ${days}일 ${hours}시간 ${mins}분`;
 }
 
 function renderProcesses(processes, prevProcesses) {
@@ -495,7 +517,7 @@ function renderProcesses(processes, prevProcesses) {
     }
 
     const uptimeTd = document.createElement('td');
-    uptimeTd.textContent = `${proc.uptimeMinutes ?? 0} 분`;
+    uptimeTd.textContent = formatUptime(proc.uptimeMinutes);
 
     tr.appendChild(nameTd);
     tr.appendChild(statusTd);
