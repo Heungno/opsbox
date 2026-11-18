@@ -392,6 +392,7 @@ function getHealthStatus(result) {
     return 'Critical';
   }
   if (result.httpChecks?.some((check) => check.success === false)) return 'Critical';
+  if (result.wasChecks?.some((check) => check.status === 'Critical')) return 'Critical';
   if (result.ports?.some((port) => port.listening === false)) {
     return 'Critical';
   }
@@ -411,6 +412,7 @@ function getHealthStatus(result) {
   if (result.disks?.some((disk) => disk.status === 'Warning')) {
     return 'Warning';
   }
+  if (result.wasChecks?.some((check) => check.status === 'Warning')) return 'Warning';
 
   return 'Healthy';
 }

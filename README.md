@@ -23,6 +23,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - WEB/WAS 제품 분류(WebtoB, Apache HTTP Server, IIS, Nginx, JEUS, Tomcat, JBoss, Node.js)
 - 서버 유형 분류: WEB, WAS, DB, 기타
 - Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
+- Windows WAS 서버의 JDK `jstat` 기반 JVM Heap 사용률 점검
 - 브라우저에 저장되는 전체 화면 테마 설정
 - 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI
 

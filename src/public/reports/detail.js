@@ -2,6 +2,7 @@ let currentReportData = null;
 let historyResults = [];
 let selectedCurrentFile = null;
 let currentServerType = '';
+let currentServerProduct = '';
 
 async function init() {
   const params = new URLSearchParams(location.search);
@@ -27,7 +28,11 @@ async function init() {
 async function loadHistoryAndReport(serverId, fileName) {
   try {
     const serverResponse = await fetch(`/api/servers/${encodeURIComponent(serverId)}`);
-    if (serverResponse.ok) currentServerType = (await serverResponse.json()).type || '';
+    if (serverResponse.ok) {
+      const server = await serverResponse.json();
+      currentServerType = server.type || '';
+      currentServerProduct = server.product || '';
+    }
     // 1. Fetch history results for comparison
     const historyRes = await fetch(`/api/results/${serverId}`);
     const historyJson = await historyRes.json();
@@ -113,7 +118,7 @@ function renderReport() {
 
   renderHealth(health);
   renderMetrics(data, compareData);
-  renderTypeReportForm(serverType, data);
+  renderTypeReportForm(serverType, data, data.product || currentServerProduct);
   renderDisks(data.disks);
   renderProcesses(data.processes, compareData?.processes);
   renderDirectories(data.directories, compareData?.directories);
@@ -122,7 +127,7 @@ function renderReport() {
   renderHttpChecks(data.httpChecks);
 }
 
-function renderTypeReportForm(serverType, data) {
+function renderTypeReportForm(serverType, data, product) {
   const type = ['WEB', 'WAS', 'DB', 'OTHER'].includes(serverType) ? serverType : 'OTHER';
   const template = document.getElementById(`report-form-${type}`);
   const container = document.getElementById('type-report-form');
@@ -135,6 +140,7 @@ function renderTypeReportForm(serverType, data) {
   const pathCheck = summarizePaths(data.directories, data.fileChecks);
   const cpuCheck = summarizeMetric(data.cpu);
   const memoryCheck = summarizeMetric(data.memory);
+  const wasRuntimeCheck = summarizeWasRuntime(data.wasChecks, product);
 
   const checkRows = {
     WEB: [
@@ -145,7 +151,7 @@ function renderTypeReportForm(serverType, data) {
     WAS: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
       ['WAS 프로세스', processCheck, '등록된 WAS 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
-      ['애플리케이션 HTTP', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['로그·배포 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+      ['JVM Heap', wasRuntimeCheck, 'Windows JDK jstat로 수집한 JVM Heap 사용률'], ['애플리케이션 HTTP', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['로그·배포 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
     ],
     DB: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
@@ -159,6 +165,7 @@ function renderTypeReportForm(serverType, data) {
     ],
   };
   renderChecklist('type-check-list', checkRows[type]);
+  if (type === 'WAS') renderWasHeapRows(data.wasChecks);
 
   const pendingRows = {
     WEB: [
@@ -167,10 +174,10 @@ function renderTypeReportForm(serverType, data) {
       ['WEB-WAS 연결 상태', '커넥션 풀/연동 세션 상세는 제품 연계 필요'],
     ],
     WAS: [
-      ['JVM Heap', 'Heap 사용량·여유 공간 데이터는 미수집'],
       ['Thread Pool', '활성·대기 스레드와 장기 작업 데이터는 미수집'],
       ['DB Connection Pool', '풀 사용률 및 DB 세션 상태는 미수집'],
       ['Deploy·처리시간', '애플리케이션 배포 상태와 평균 처리시간은 미수집'],
+      ['기동 스크립트 변경', '제품별 기동 스크립트 경로와 기준 버전 설정이 필요합니다.'],
     ],
     DB: [
       ['DB 접속·쿼리', '실제 DB 세션 또는 SQL 연결 점검은 미수집'],
@@ -180,7 +187,41 @@ function renderTypeReportForm(serverType, data) {
       ['트랜잭션 로그', 'DB 제품별 트랜잭션 로그 상태는 미수집'],
     ],
   };
+  if (type === 'WAS' && product === 'Node.js') pendingRows.WAS.unshift(['Node.js Heap', '애플리케이션별 Node.js 런타임 수집기가 필요합니다.']);
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
+}
+
+function summarizeWasRuntime(items, product) {
+  if (product === 'Node.js') return { status: 'NotCollected', detail: 'Node.js 런타임 수집기 미설정' };
+  if (!items?.length) return { status: 'NotCollected', detail: 'JVM Heap 결과 없음' };
+  const collected = items.filter((item) => item.heapUsagePercent !== undefined);
+  if (!collected.length) return { status: 'NotCollected', detail: items[0].message || 'JDK jstat를 사용할 수 없음' };
+  const worst = collected.reduce((max, item) => Math.max(max, Number(item.heapUsagePercent) || 0), 0);
+  const status = collected.some((item) => item.status === 'Critical') ? 'Critical' : collected.some((item) => item.status === 'Warning') ? 'Warning' : 'Healthy';
+  return { status, detail: `${collected.length}개 JVM · 최대 ${worst}%` };
+}
+
+function renderWasHeapRows(items) {
+  const tbody = document.getElementById('was-heap-list');
+  if (!items?.length) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">JVM Heap 결과가 없습니다. 새 Windows 점검 스크립트를 실행하세요.</td>';
+    tbody.appendChild(row);
+    return;
+  }
+  items.forEach((item) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = item.processName || 'java';
+    const pid = document.createElement('td'); pid.textContent = item.processId ? String(item.processId) : '-';
+    const usage = document.createElement('td'); usage.textContent = item.heapUsagePercent == null ? '-' : `${item.heapUsedMB} / ${item.heapCapacityMB} MB (${item.heapUsagePercent}%)`;
+    const state = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `server-badge ${item.status === 'Healthy' ? 'badge-success' : item.status === 'Warning' ? 'badge-warning' : item.status === 'NotCollected' ? 'badge-muted' : 'badge-danger'}`;
+    badge.textContent = item.status === 'Healthy' ? '정상' : item.status === 'Warning' ? '경고' : item.status === 'NotCollected' ? '미수집' : '위험';
+    state.appendChild(badge);
+    const note = document.createElement('td'); note.textContent = item.message || '-';
+    row.append(name, pid, usage, state, note); tbody.appendChild(row);
+  });
 }
 
 function summarizeMetric(value) {

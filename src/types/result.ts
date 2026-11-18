@@ -43,6 +43,16 @@ export interface PortCheckResult {
 
 export interface HttpCheckResult { name: string; url: string; expectedStatus: number; statusCode?: number; responseTimeMs?: number; success: boolean; error?: string; }
 
+export interface WasRuntimeCheckResult {
+  processId: number;
+  processName: string;
+  heapUsedMB?: number;
+  heapCapacityMB?: number;
+  heapUsagePercent?: number;
+  status: 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
+  message?: string;
+}
+
 export interface CheckResult {
   hostname: string;
   checkDate: string;
@@ -56,4 +66,5 @@ export interface CheckResult {
   disks?: DiskCheckResult[];
   ports?: PortCheckResult[];
   httpChecks?: HttpCheckResult[];
+  wasChecks?: WasRuntimeCheckResult[];
 }
