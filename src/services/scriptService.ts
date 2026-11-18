@@ -26,7 +26,7 @@ function renderScriptTemplate(content: string, server: Server) {
   const roles = getServerRoles(server);
   const values: Record<string, string> = {
     SERVER_ID: server.id, SERVER_NAME: server.name, SERVER_IP: server.ip, SHARED_PATH: server.sharedPath, OS: server.os,
-    ROLES: roles.join(','), PRODUCTS_JSON: JSON.stringify(server.products ?? {}),
+    ROLES: roles.join(','), ROLES_JSON: JSON.stringify(roles), PRODUCTS_JSON: JSON.stringify(server.products ?? {}),
     PROCESSES_JSON: JSON.stringify(server.processes ?? []), DIRECTORIES_JSON: JSON.stringify(server.directories ?? []),
     FILE_CHECKS_JSON: JSON.stringify(server.fileChecks ?? []), PORTS_JSON: JSON.stringify(server.ports ?? []),
     HTTP_CHECKS_JSON: JSON.stringify(server.httpChecks ?? []),

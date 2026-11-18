@@ -15,7 +15,7 @@ function updateFormMode() {
   const script = kind.value === 'SCRIPT';
   document.querySelectorAll('.template-script-option').forEach((node) => node.hidden = !script);
   help.textContent = script
-    ? '스크립트는 선택한 운영체제에서 실행할 전체 내용을 작성합니다. 사용 가능 변수: {{SERVER_ID}}, {{SERVER_NAME}}, {{SERVER_IP}}, {{SHARED_PATH}}, {{OS}}, {{ROLES}}, {{PRODUCTS_JSON}}, {{PROCESSES_JSON}}, {{DIRECTORIES_JSON}}, {{FILE_CHECKS_JSON}}, {{PORTS_JSON}}, {{HTTP_CHECKS_JSON}}.'
+    ? '스크립트는 선택한 운영체제에서 실행할 전체 내용을 작성합니다. 사용 가능 변수: {{SERVER_ID}}, {{SERVER_NAME}}, {{SERVER_IP}}, {{SHARED_PATH}}, {{OS}}, {{ROLES}}, {{ROLES_JSON}}, {{PRODUCTS_JSON}}, {{PROCESSES_JSON}}, {{DIRECTORIES_JSON}}, {{FILE_CHECKS_JSON}}, {{PORTS_JSON}}, {{HTTP_CHECKS_JSON}}. 예제 템플릿은 수정해 저장하거나 복사해 새 템플릿으로 관리할 수 있습니다.'
     : '쿼리는 MSSQL 점검 스크립트에서 실행할 SQL입니다. {{SERVER_IP}}와 {{SERVER_NAME}}을 설정값으로 치환할 수 있습니다. 쿼리 결과는 기본 보고서의 컬럼 형식(SERVER|..., DATABASE|...)과 맞춰야 합니다.';
 }
 

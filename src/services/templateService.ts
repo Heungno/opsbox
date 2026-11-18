@@ -1,11 +1,25 @@
 import fs from 'fs';
+import path from 'path';
 import { ManagedTemplate } from '../types/template';
 import { ValidationError } from '../types/error';
 
 const FILE = 'data/templates.json';
 
+function sampleTemplates(): ManagedTemplate[] {
+  const updatedAt = '2026-11-18T00:00:00.000Z';
+  const sample = (id: string, name: string, kind: ManagedTemplate['kind'], file: string, os?: ManagedTemplate['os']): ManagedTemplate => ({
+    id, name, kind, os, enabled: true,
+    content: fs.readFileSync(path.join('src', 'template-samples', file), 'utf8'), updatedAt,
+  });
+  return [
+    sample('SAMPLE-WINDOWS-COMMON', '예제 · Windows 공통 자원', 'SCRIPT', 'windows-common.ps1', 'Windows'),
+    sample('SAMPLE-LINUX-COMMON', '예제 · Linux 공통 자원', 'SCRIPT', 'linux-common.sh', 'Linux'),
+    sample('SAMPLE-MSSQL-DATABASES', '예제 · MSSQL 데이터베이스 상태', 'QUERY', 'mssql-databases.sql'),
+  ];
+}
+
 function read(): ManagedTemplate[] {
-  if (!fs.existsSync(FILE)) return [];
+  if (!fs.existsSync(FILE)) return sampleTemplates();
   return JSON.parse(fs.readFileSync(FILE, 'utf8')) as ManagedTemplate[];
 }
 
