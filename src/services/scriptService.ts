@@ -119,8 +119,8 @@ function generateWindowsScript(server: Server): string {
   lines.push('  $status = if ($usagePercent -ge 90) { "Critical" } elseif ($usagePercent -ge 70) { "Warning" } else { "Healthy" }');
   lines.push('  [ordered]@{ device = $_.DeviceID; mountPoint = $_.DeviceID; volumeName = $_.VolumeName; totalGB = [math]::Round($_.Size / 1GB, 2); usedGB = [math]::Round(($_.Size - $_.FreeSpace) / 1GB, 2); freeGB = [math]::Round($_.FreeSpace / 1GB, 2); usagePercent = $usagePercent; status = $status }');
   lines.push('})');
-  lines.push('$disk = ($disks | Measure-Object -Property usagePercent -Maximum).Maximum');
-  lines.push('if ($null -eq $disk) { $disk = 0 }');
+  lines.push('$disk = 0');
+  lines.push('foreach ($diskInfo in $disks) { $usage = [double]$diskInfo["usagePercent"]; if ($usage -gt $disk) { $disk = $usage } }');
   lines.push('');
   lines.push('$processes = @()');
   lines.push('$directories = @()');

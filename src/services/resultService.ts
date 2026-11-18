@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 
 import { getServer } from './serverService';
-import { CheckResult } from '../types/result';
 
 export interface CheckResult {
   fileName?: string;
@@ -29,7 +28,14 @@ function readJsonFile(filePath: string) {
 
   const json = content.replace(/^\uFEFF/, '');
 
-  return JSON.parse(json);
+  const result = JSON.parse(json);
+  if (Array.isArray(result.disks) && result.disks.length > 0) {
+    const usages = result.disks
+      .map((disk: { usagePercent?: number | string }) => Number(disk.usagePercent))
+      .filter((usage: number) => Number.isFinite(usage));
+    if (usages.length > 0) result.disk = Math.max(...usages);
+  }
+  return result;
 }
 
 function getResultsDirectory(serverId: string, year: string): string {
