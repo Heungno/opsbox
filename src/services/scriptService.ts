@@ -389,7 +389,12 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   }
   if (roles.includes('DB')) lines.push('Write-OpsBoxLog "DB 엔진 점검 완료: $($databaseChecks.status)"');
 
-  lines.push('if ($Error.Count -gt 0) { Write-OpsBoxLog "수집 중 PowerShell 오류 $($Error.Count)건"; $Error | Select-Object -First 10 | ForEach-Object { Write-OpsBoxLog $_.ToString() } }');
+  lines.push('if ($Error.Count -gt 0) {');
+  lines.push('  Write-OpsBoxLog "수집 중 PowerShell 오류 $($Error.Count)건"');
+  lines.push('  $Error | Select-Object -First 10 | ForEach-Object {');
+  lines.push('    Write-OpsBoxLog ([string]$_)');
+  lines.push('  }');
+  lines.push('}');
   lines.push('Write-OpsBoxLog "역할별 수집 완료: 프로세스 $($processes.Count)개, 포트 $($portChecks.Count)개, WAS $($wasChecks.Count)개"');
 
   lines.push('$result = @{');
@@ -420,7 +425,7 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('if (-not $opsboxResultDirectoryReady) { $saveError = "공유 결과 폴더에 접근할 수 없습니다: $opsboxResultDirectory"; Write-OpsBoxLog $saveError; throw $saveError }');
   lines.push('try { Set-Content -LiteralPath $opsboxResultPath -Value $jsonText -Encoding UTF8 -ErrorAction Stop; Write-OpsBoxLog "JSON 결과 저장 완료: $opsboxResultPath" } catch { Write-OpsBoxLog "JSON 파일 저장 실패: $($_.Exception.Message)"; throw }');
   lines.push('Write-OpsBoxLog "점검 스크립트 정상 종료"');
-  lines.push('Write-Host "점검 결과 JSON: $opsboxResultPath"');
+  lines.push('Write-Host "Result JSON: $opsboxResultPath"');
 
   return lines.join('\n');
 }
