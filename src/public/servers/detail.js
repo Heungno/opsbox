@@ -5,7 +5,7 @@ let currentServer = null;
 
 async function init() {
   if (!serverId) {
-    location.href = '/server.html';
+    location.href = '/servers';
     return;
   }
 
@@ -303,7 +303,7 @@ function renderResultHistory(results) {
     const link = document.createElement('a');
     link.className = 'btn btn-small btn-primary';
     link.textContent = 'Report';
-    link.href = `/report.html?serverId=${currentServer.id}&file=${encodeURIComponent(item.fileName)}`;
+    link.href = `/reports/detail?serverId=${encodeURIComponent(currentServer.id)}&file=${encodeURIComponent(item.fileName)}`;
     report.appendChild(link);
 
     row.appendChild(date);

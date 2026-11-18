@@ -122,7 +122,7 @@ function renderServers() {
 
     const link = document.createElement("a");
 
-    link.href = `/server-detail.html?id=${server.id}`;
+    link.href = `/servers/detail?id=${encodeURIComponent(server.id)}`;
 
     link.textContent = server.id;
 

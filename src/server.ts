@@ -40,15 +40,22 @@ app.register(fastifyStatic, {
  * Home
  */
 app.get('/', async (request, reply) => {
-  return reply.sendFile('dashboard.html');
+  return reply.sendFile('dashboard/index.html');
 });
 
-/*
- * Home
- */
-app.get('/server', async (request, reply) => {
-  return reply.sendFile('server.html');
-});
+app.get('/dashboard', async (request, reply) => reply.sendFile('dashboard/index.html'));
+app.get('/servers', async (request, reply) => reply.sendFile('servers/index.html'));
+app.get('/servers/detail', async (request, reply) => reply.sendFile('servers/detail.html'));
+app.get('/reports', async (request, reply) => reply.sendFile('reports/index.html'));
+app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/detail.html'));
+
+// Keep previous page URLs working for existing bookmarks.
+app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/index.html'));
+app.get('/server', async (request, reply) => reply.redirect('/servers'));
+app.get('/server.html', async (request, reply) => reply.redirect('/servers'));
+app.get('/server-detail.html', async (request, reply) => reply.redirect(`/servers/detail${request.url.slice('/server-detail.html'.length)}`));
+app.get('/report-list.html', async (request, reply) => reply.redirect('/reports'));
+app.get('/report.html', async (request, reply) => reply.redirect(`/reports/detail${request.url.slice('/report.html'.length)}`));
 
 /*
  * API Routes

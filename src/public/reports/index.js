@@ -98,7 +98,7 @@ function renderReportList(reports) {
     const reportLink = document.createElement('a');
     reportLink.className = 'btn btn-small btn-primary';
     reportLink.textContent = '보고서 보기';
-    reportLink.href = `/report.html?serverId=${encodeURIComponent(item.serverId)}&file=${encodeURIComponent(item.fileName)}`;
+    reportLink.href = `/reports/detail?serverId=${encodeURIComponent(item.serverId)}&file=${encodeURIComponent(item.fileName)}`;
     actionTd.appendChild(reportLink);
 
     tr.appendChild(dateTd);

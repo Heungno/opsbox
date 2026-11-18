@@ -35,7 +35,7 @@ function renderRecentChecks(checks) {
     const serverName = document.createElement('td');
     const linkServer = document.createElement('a');
 
-    linkServer.href = `/server-detail.html?id=${encodeURIComponent(item.serverId)}`;
+    linkServer.href = `/servers/detail?id=${encodeURIComponent(item.serverId)}`;
     linkServer.textContent = item.serverName;
     linkServer.className = 'server-link';
     serverName.appendChild(linkServer);
@@ -65,7 +65,7 @@ function renderRecentChecks(checks) {
     const linkReport = document.createElement('a');
     linkReport.className = 'btn btn-small btn-primary';
     linkReport.textContent = 'Report';
-    linkReport.href = `/report.html?serverId=${item.serverId}&file=${encodeURIComponent(item.fileName)}`;
+    linkReport.href = `/reports/detail?serverId=${item.serverId}&file=${encodeURIComponent(item.fileName)}`;
     Report.appendChild(linkReport);
 
     row.appendChild(serverName);

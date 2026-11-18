@@ -9,7 +9,7 @@ async function init() {
 
   if (!serverId || !file) {
     alert('잘못된 접근입니다.');
-    location.href = '/server.html';
+    location.href = '/servers';
     return;
   }
 
@@ -17,7 +17,7 @@ async function init() {
 
   const backBtn = document.getElementById('btn-back');
   if (backBtn) {
-    backBtn.href = `/server-detail.html?id=${serverId}`;
+    backBtn.href = `/servers/detail?id=${encodeURIComponent(serverId)}`;
   }
 
   await loadHistoryAndReport(serverId, file);

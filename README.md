@@ -203,11 +203,22 @@ src
 
 public
 ├ css
-├ js
-├ dashboard.html
-├ server.html
-├ server-detail.html
-└ report.html
+│ └ app.css
+├ fragments
+│ └ sidebar.html
+├ dashboard
+│ ├ index.html
+│ └ index.js
+├ servers
+│ ├ index.html
+│ ├ index.js
+│ ├ detail.html
+│ └ detail.js
+└ reports
+  ├ index.html
+  ├ index.js
+  ├ detail.html
+  └ detail.js
 
 data
 ├ servers.json
