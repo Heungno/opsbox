@@ -48,71 +48,94 @@ async function loadReports() {
 }
 
 function renderReportList(reports) {
-  const tbody = document.getElementById('report-list');
+  const tree = document.getElementById('report-tree');
   const countSpan = document.getElementById('report-count');
   countSpan.textContent = reports.length;
-
-  tbody.replaceChildren();
-
-  if (reports.length === 0) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="9" style="text-align: center; color: var(--text-light); padding: 30px;">검색된 점검 보고서가 없습니다.</td>';
-    tbody.appendChild(tr);
-    return;
-  }
+  tree.replaceChildren();
+  const typeOrder = ['WEB', 'WAS', 'DB', 'OTHER'];
+  const typeLabels = { WEB: 'WEB', WAS: 'WAS', DB: 'DB', OTHER: '기타' };
+  const grouped = Object.fromEntries(typeOrder.map((type) => [type, new Map()]));
 
   reports.forEach((item) => {
-    const tr = document.createElement('tr');
-
-    const dateTd = document.createElement('td');
-    dateTd.textContent = item.checkDate;
-
-    const serverTd = document.createElement('td');
-    serverTd.innerHTML = `<strong>${item.serverId}</strong> <span style="color: var(--text-light); font-size: 12px;">(${item.serverName})</span>`;
-
-    const typeTd = document.createElement('td');
-    const typeBadge = document.createElement('span');
-    typeBadge.className = 'server-badge';
-    typeBadge.textContent = item.serverType;
-    typeTd.appendChild(typeBadge);
-
-    const osTd = document.createElement('td');
-    osTd.textContent = item.os;
-
-    const statusTd = document.createElement('td');
-    const statusBadge = document.createElement('span');
-    statusBadge.className = `history-status ${(item.health || '').toLowerCase()}`;
-    statusBadge.textContent = item.health;
-    statusTd.appendChild(statusBadge);
-
-    const cpuTd = document.createElement('td');
-    cpuTd.textContent = `${item.cpu}%`;
-
-    const memTd = document.createElement('td');
-    memTd.textContent = `${item.memory}%`;
-
-    const diskTd = document.createElement('td');
-    diskTd.textContent = `${item.disk}%`;
-
-    const actionTd = document.createElement('td');
-    const reportLink = document.createElement('a');
-    reportLink.className = 'btn btn-small btn-primary';
-    reportLink.textContent = '보고서 보기';
-    reportLink.href = `/reports/detail?serverId=${encodeURIComponent(item.serverId)}&file=${encodeURIComponent(item.fileName)}`;
-    actionTd.appendChild(reportLink);
-
-    tr.appendChild(dateTd);
-    tr.appendChild(serverTd);
-    tr.appendChild(typeTd);
-    tr.appendChild(osTd);
-    tr.appendChild(statusTd);
-    tr.appendChild(cpuTd);
-    tr.appendChild(memTd);
-    tr.appendChild(diskTd);
-    tr.appendChild(actionTd);
-
-    tbody.appendChild(tr);
+    const type = typeOrder.includes(item.serverType) ? item.serverType : 'OTHER';
+    const servers = grouped[type];
+    if (!servers.has(item.serverId)) servers.set(item.serverId, []);
+    servers.get(item.serverId).push(item);
   });
+
+  typeOrder.forEach((type) => {
+    const servers = grouped[type];
+    const typeCount = [...servers.values()].reduce((sum, items) => sum + items.length, 0);
+    const typeNode = document.createElement('details');
+    typeNode.className = 'report-tree-type';
+    typeNode.open = true;
+    const typeSummary = document.createElement('summary');
+    typeSummary.className = 'report-tree-type-summary';
+    typeSummary.append(createTreeTitle(typeLabels[type], `${servers.size}개 서버 · ${typeCount}건`));
+    typeNode.appendChild(typeSummary);
+
+    if (servers.size === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'report-tree-empty';
+      empty.textContent = '검색 결과가 없습니다.';
+      typeNode.appendChild(empty);
+    }
+
+    [...servers.entries()]
+      .sort((a, b) => (a[1][0].serverName || a[0]).localeCompare(b[1][0].serverName || b[0], 'ko'))
+      .forEach(([serverId, items]) => {
+        items.sort((a, b) => (b.checkDate || '').localeCompare(a.checkDate || ''));
+        const serverNode = document.createElement('details');
+        serverNode.className = 'report-tree-server';
+        const serverSummary = document.createElement('summary');
+        serverSummary.className = 'report-tree-server-summary';
+        serverSummary.append(createTreeTitle(`${items[0].serverName || serverId} (${serverId})`, `${items.length}건 · 최근 ${items[0].checkDate || '-'}`));
+        serverNode.appendChild(serverSummary);
+        serverNode.appendChild(createServerReportsTable(items));
+        typeNode.appendChild(serverNode);
+      });
+    tree.appendChild(typeNode);
+  });
+}
+
+function createTreeTitle(title, meta) {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'report-tree-title';
+  const main = document.createElement('strong');
+  main.textContent = title;
+  const detail = document.createElement('small');
+  detail.textContent = meta;
+  wrapper.append(main, detail);
+  return wrapper;
+}
+
+function createServerReportsTable(items) {
+  const table = document.createElement('table');
+  table.className = 'server-table report-tree-table';
+  const thead = document.createElement('thead');
+  const header = document.createElement('tr');
+  ['점검일시', '상태', 'CPU', 'MEM', 'DISK', '보고서'].forEach((label) => {
+    const th = document.createElement('th'); th.textContent = label; header.appendChild(th);
+  });
+  thead.appendChild(header);
+  const tbody = document.createElement('tbody');
+  items.forEach((item) => {
+    const row = document.createElement('tr');
+    const date = document.createElement('td'); date.textContent = item.checkDate || '-';
+    const state = document.createElement('td');
+    const badge = document.createElement('span'); badge.className = `history-status ${(item.health || '').toLowerCase()}`; badge.textContent = item.health || '미판정'; state.appendChild(badge);
+    const cpu = document.createElement('td'); cpu.textContent = `${item.cpu ?? '-'}%`;
+    const memory = document.createElement('td'); memory.textContent = `${item.memory ?? '-'}%`;
+    const disk = document.createElement('td'); disk.textContent = `${item.disk ?? '-'}%`;
+    const action = document.createElement('td');
+    const link = document.createElement('a'); link.className = 'btn btn-small btn-primary'; link.textContent = '보고서 보기';
+    link.href = `/reports/detail?serverId=${encodeURIComponent(item.serverId)}&file=${encodeURIComponent(item.fileName || '')}`;
+    action.appendChild(link);
+    row.append(date, state, cpu, memory, disk, action);
+    tbody.appendChild(row);
+  });
+  table.append(thead, tbody);
+  return table;
 }
 
 document.addEventListener('DOMContentLoaded', init);

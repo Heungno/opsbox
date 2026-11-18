@@ -16,6 +16,7 @@ async function loadSummary() {
   document.getElementById('web-count').textContent = data.web;
   document.getElementById('was-count').textContent = data.was;
   document.getElementById('db-count').textContent = data.db;
+  document.getElementById('other-count').textContent = data.other;
 }
 
 async function loadRecentChecks() {
@@ -41,7 +42,7 @@ function renderRecentChecks(checks) {
     serverName.appendChild(linkServer);
 
     const serverType = document.createElement('td');
-    serverType.textContent = item.serverType;
+    serverType.textContent = item.serverType === 'OTHER' ? '기타' : item.serverType;
 
     const checkDate = document.createElement('td');
     checkDate.textContent = item.checkDate;

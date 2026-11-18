@@ -95,6 +95,13 @@ const REPORT_RULES = {
       category: 'network',
     },
   ],
+
+  OTHER: [
+    { key: 'cpu', label: 'CPU 사용률', category: 'resource' },
+    { key: 'memory', label: '메모리 사용률', category: 'resource' },
+    { key: 'disk', label: '디스크 사용률', category: 'resource' },
+    { key: 'network', label: '네트워크', category: 'network' },
+  ],
 };
 
 export function getReportFields(serverType: string) {

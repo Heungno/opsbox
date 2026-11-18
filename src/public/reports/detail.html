@@ -79,7 +79,9 @@
           <div id="report-result"></div>
         </section>
 
-        <section class="card">
+        <div id="type-report-form"></div>
+
+        <section id="process-report-details" class="card">
           <h2>프로세스 점검 결과</h2>
           <table class="server-table">
             <thead>
@@ -97,7 +99,7 @@
           </table>
         </section>
 
-        <section class="card">
+        <section id="disk-report-details" class="card">
           <h2>디스크별 사용량</h2>
           <table class="server-table">
             <thead><tr><th>디스크 / 마운트</th><th>사용량</th><th>전체 용량</th><th>사용률</th><th>판정</th></tr></thead>
@@ -105,19 +107,19 @@
           </table>
         </section>
 
-        <section class="card">
+        <section id="port-report-details" class="card">
           <h2>포트 리스닝 점검 결과</h2>
           <table class="server-table">
             <thead><tr><th>프로토콜</th><th>포트</th><th>설명</th><th>리스닝 상태</th><th>프로세스</th></tr></thead>
             <tbody id="port-report-list"><tr><td colspan="5">조회중...</td></tr></tbody>
           </table>
         </section>
-        <section class="card">
+        <section id="http-report-details" class="card">
           <h2>HTTP 응답 점검 결과</h2>
           <table class="server-table"><thead><tr><th>점검명</th><th>URL</th><th>상태 코드</th><th>응답 시간</th><th>판정</th></tr></thead><tbody id="http-check-report-list"><tr><td colspan="5">조회중...</td></tr></tbody></table>
         </section>
 
-        <section class="card">
+        <section id="directory-report-details" class="card">
           <h2>디렉토리 점검 결과</h2>
           <table class="server-table">
             <thead>
@@ -135,7 +137,7 @@
           </table>
         </section>
 
-        <section class="card">
+        <section id="file-report-details" class="card">
           <h2>특정 파일 크기 점검 결과</h2>
           <table class="server-table">
             <thead><tr><th>파일 경로</th><th>존재 여부</th><th>크기 (MB)</th><th>판정</th></tr></thead>
@@ -145,6 +147,45 @@
       </div>
     </main>
   </div>
+
+  <template id="report-form-WEB">
+    <section class="card type-report-card">
+      <h2>WEB 점검보고서 양식</h2>
+      <p class="policy-help">웹 서비스 프로세스, HTTP 응답, 서비스 포트와 웹 엔진·로그 저장 공간을 중심으로 확인합니다.</p>
+      <h3>WEB 서비스 점검표</h3>
+      <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <h3>현재 자동 수집되지 않는 항목</h3>
+      <table class="server-table type-check-table"><thead><tr><th>수동 확인 항목</th><th>상태</th><th>참고</th></tr></thead><tbody id="type-pending-list"></tbody></table>
+    </section>
+  </template>
+  <template id="report-form-WAS">
+    <section class="card type-report-card">
+      <h2>WAS 점검보고서 양식</h2>
+      <p class="policy-help">WAS 프로세스와 애플리케이션 HTTP 응답, 서비스 포트 및 로그·배포 경로를 확인합니다.</p>
+      <h3>WAS 서비스 점검표</h3>
+      <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <h3>현재 자동 수집되지 않는 항목</h3>
+      <table class="server-table type-check-table"><thead><tr><th>수동 확인 항목</th><th>상태</th><th>참고</th></tr></thead><tbody id="type-pending-list"></tbody></table>
+    </section>
+  </template>
+  <template id="report-form-DB">
+    <section class="card type-report-card">
+      <h2>DB 점검보고서 양식</h2>
+      <p class="policy-help">DB 프로세스·리스너, DB 엔진/로그 경로의 파일시스템 및 공통 자원 결과를 확인합니다.</p>
+      <h3>DB 서버 점검표</h3>
+      <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <h3>현재 자동 수집되지 않는 항목</h3>
+      <table class="server-table type-check-table"><thead><tr><th>수동 확인 항목</th><th>상태</th><th>참고</th></tr></thead><tbody id="type-pending-list"></tbody></table>
+    </section>
+  </template>
+  <template id="report-form-OTHER">
+    <section class="card type-report-card">
+      <h2>기타 서버 점검보고서 양식</h2>
+      <p class="policy-help">공통 시스템 자원과 등록된 프로세스·포트·경로 점검 결과를 표시합니다.</p>
+      <h3>공통 점검표</h3>
+      <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+    </section>
+  </template>
 
   <script src="/js/common.js"></script>
   <script src="/reports/detail.js"></script>

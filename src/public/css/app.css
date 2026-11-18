@@ -365,6 +365,84 @@ tbody tr:hover {
   width: 100%;
 }
 
+.report-tree-type {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.report-tree-type-summary,
+.report-tree-server-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.report-tree-type-summary::-webkit-details-marker,
+.report-tree-server-summary::-webkit-details-marker {
+  display: none;
+}
+
+.report-tree-type-summary {
+  padding: 14px 16px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.report-tree-type-summary::before,
+.report-tree-server-summary::before {
+  display: inline-block;
+  width: 18px;
+  color: var(--primary);
+  content: "▸";
+}
+
+.report-tree-type[open] > .report-tree-type-summary::before,
+.report-tree-server[open] > .report-tree-server-summary::before {
+  content: "▾";
+}
+
+.report-tree-server {
+  margin: 0 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card-bg);
+}
+
+.report-tree-server-summary {
+  padding: 12px 14px;
+  color: var(--text);
+}
+
+.report-tree-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.report-tree-title small,
+.report-tree-empty {
+  color: var(--text-light);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.report-tree-empty {
+  margin: 0;
+  padding: 10px 18px 14px 36px;
+}
+
+.report-tree-table {
+  min-width: 600px;
+  margin-bottom: 8px;
+}
+
+.report-tree-server {
+  overflow-x: auto;
+}
+
 .detail-table th {
   width: 150px;
   background: #f6f8fa;
@@ -611,6 +689,21 @@ select:focus {
 .history-status.critical {
   background: var(--danger-light);
   color: var(--danger);
+}
+
+.badge-muted {
+  background: var(--surface-muted);
+  color: var(--text-light);
+}
+
+.type-report-card h3 {
+  margin: 22px 0 10px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.type-check-table {
+  margin-bottom: 16px;
 }
 
 .result-date {

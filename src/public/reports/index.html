@@ -15,7 +15,7 @@
       <div class="container">
         <header class="header">
           <h1>점검 보고서 목록</h1>
-          <p>전체 서버의 점검 보고서 이력을 검색하고 조회할 수 있습니다.</p>
+          <p>서버 유형을 펼친 뒤 서버별 날짜 이력을 선택해 보고서를 엽니다.</p>
         </header>
 
         <!-- Search & Filter Card -->
@@ -45,32 +45,10 @@
 
         <!-- Reports List Table Card -->
         <section class="card">
-          <div class="section-title">
-            <h2>검색 결과 (<span id="report-count">0</span>건)</h2>
+          <div class="section-title"><h2>검색 결과 (<span id="report-count">0</span>건)</h2></div>
+          <div id="report-tree" class="report-tree" aria-live="polite">
+            <p class="report-tree-empty">조회중...</p>
           </div>
-
-          <table class="server-table">
-            <thead>
-              <tr>
-                <th>점검일시</th>
-                <th>서버</th>
-                <th>유형</th>
-                <th>OS</th>
-                <th>상태</th>
-                <th>CPU</th>
-                <th>MEM</th>
-                <th>DISK</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody id="report-list">
-              <tr>
-                <td colspan="9" style="text-align: center; color: var(--text-light); padding: 20px;">
-                  조회중...
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </section>
       </div>
     </main>

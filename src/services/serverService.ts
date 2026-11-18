@@ -19,6 +19,10 @@ function write(data: Server[]) {
 function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {
   const errors = [];
 
+  if (!['WEB', 'WAS', 'DB', 'OTHER'].includes(server.type ?? '')) {
+    errors.push({ field: 'type', message: '서버 유형은 WEB, WAS, DB, 기타 중 하나여야 합니다.' });
+  }
+
   if (!server.id || server.id.trim() === '') {
     errors.push({
       field: 'id',

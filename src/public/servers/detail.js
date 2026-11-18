@@ -41,7 +41,7 @@ function renderServerInfo(server) {
   document.getElementById('server-name').textContent = server.name;
   document.getElementById('server-product').textContent = server.product || '미지정';
   const httpPolicy = document.getElementById('http-check-policy');
-  if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows';
+  if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows' || server.type === 'DB';
   document.getElementById('server-ip').textContent = server.ip;
   document.getElementById('server-shared-path').textContent = server.sharedPath;
   document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
@@ -65,7 +65,7 @@ function renderServerInfo(server) {
 
   const typeBadge = document.createElement('span');
   typeBadge.className = 'server-badge';
-  typeBadge.textContent = server.type;
+  typeBadge.textContent = server.type === 'OTHER' ? '기타' : server.type;
   typeCell.appendChild(typeBadge);
 
   const osCell = document.getElementById('server-os');

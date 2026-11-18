@@ -1,6 +1,7 @@
 let currentReportData = null;
 let historyResults = [];
 let selectedCurrentFile = null;
+let currentServerType = '';
 
 async function init() {
   const params = new URLSearchParams(location.search);
@@ -25,6 +26,8 @@ async function init() {
 
 async function loadHistoryAndReport(serverId, fileName) {
   try {
+    const serverResponse = await fetch(`/api/servers/${encodeURIComponent(serverId)}`);
+    if (serverResponse.ok) currentServerType = (await serverResponse.json()).type || '';
     // 1. Fetch history results for comparison
     const historyRes = await fetch(`/api/results/${serverId}`);
     const historyJson = await historyRes.json();
@@ -78,7 +81,8 @@ function populateCompareSelect(currentFileName) {
 
     const option = document.createElement('option');
     option.value = item.fileName;
-    option.textContent = `${item.checkDate} (${item.serverType || 'Server'})`;
+    const typeLabel = item.serverType === 'OTHER' ? '기타' : (item.serverType || 'Server');
+    option.textContent = `${item.checkDate} (${typeLabel})`;
     
     // Auto-select the immediate previous check by default
     if (index === previousIndex) {
@@ -102,16 +106,147 @@ function renderReport() {
   const health = currentReportData.health;
   const compareData = getCompareResult();
 
-  document.getElementById('report-title').textContent = `서버: ${data.server || data.hostname || '-'} | 점검일시: ${data.checkDate}`;
+  const serverType = data.serverType || currentServerType || 'OTHER';
+  const typeLabel = serverType === 'OTHER' ? '기타' : serverType;
+  document.getElementById('report-title').textContent = `서버: ${data.server || data.hostname || '-'} | 유형: ${typeLabel} | 점검일시: ${data.checkDate}`;
+  document.getElementById('http-report-details').hidden = serverType === 'DB';
 
   renderHealth(health);
   renderMetrics(data, compareData);
+  renderTypeReportForm(serverType, data);
   renderDisks(data.disks);
   renderProcesses(data.processes, compareData?.processes);
   renderDirectories(data.directories, compareData?.directories);
   renderFileChecks(data.fileChecks);
   renderPorts(data.ports);
   renderHttpChecks(data.httpChecks);
+}
+
+function renderTypeReportForm(serverType, data) {
+  const type = ['WEB', 'WAS', 'DB', 'OTHER'].includes(serverType) ? serverType : 'OTHER';
+  const template = document.getElementById(`report-form-${type}`);
+  const container = document.getElementById('type-report-form');
+  container.replaceChildren(template.content.cloneNode(true));
+
+  const processCheck = summarizeProcesses(data.processes);
+  const portCheck = summarizePorts(data.ports);
+  const httpCheck = summarizeHttp(data.httpChecks);
+  const diskCheck = summarizeDisks(data.disks, data.disk);
+  const pathCheck = summarizePaths(data.directories, data.fileChecks);
+  const cpuCheck = summarizeMetric(data.cpu);
+  const memoryCheck = summarizeMetric(data.memory);
+
+  const checkRows = {
+    WEB: [
+      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
+      ['WEB 프로세스', processCheck, '등록된 웹 엔진 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
+      ['HTTP 응답', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['엔진·로그 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+    ],
+    WAS: [
+      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
+      ['WAS 프로세스', processCheck, '등록된 WAS 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
+      ['애플리케이션 HTTP', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['로그·배포 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+    ],
+    DB: [
+      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
+      ['DB 프로세스', processCheck, '등록한 DB 엔진 프로세스 실행 상태'], ['리스너 포트', portCheck, '등록한 DB 접속 포트의 로컬 리스닝 상태'],
+      ['DB 로그·엔진 경로', pathCheck, '등록 로그/엔진 경로의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+    ],
+    OTHER: [
+      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
+      ['프로세스', processCheck, '등록한 프로세스 실행 상태'], ['포트', portCheck, '등록한 포트의 로컬 리스닝 상태'],
+      ['경로·파일', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'], ['HTTP 응답', httpCheck, 'Windows에 등록된 HTTP URL 점검 결과'],
+    ],
+  };
+  renderChecklist('type-check-list', checkRows[type]);
+
+  const pendingRows = {
+    WEB: [
+      ['외부 포트 접속', '방화벽/보안장비를 포함한 원격 접속 확인은 미수집'],
+      ['사용자 요청량·처리시간', 'WEB 요청량 및 평균 처리시간은 제품 연계 필요'],
+      ['WEB-WAS 연결 상태', '커넥션 풀/연동 세션 상세는 제품 연계 필요'],
+    ],
+    WAS: [
+      ['JVM Heap', 'Heap 사용량·여유 공간 데이터는 미수집'],
+      ['Thread Pool', '활성·대기 스레드와 장기 작업 데이터는 미수집'],
+      ['DB Connection Pool', '풀 사용률 및 DB 세션 상태는 미수집'],
+      ['Deploy·처리시간', '애플리케이션 배포 상태와 평균 처리시간은 미수집'],
+    ],
+    DB: [
+      ['DB 접속·쿼리', '실제 DB 세션 또는 SQL 연결 점검은 미수집'],
+      ['테이블스페이스', '테이블스페이스 사용률은 미수집'],
+      ['백업·복구', '백업 완료 및 복구 가능 여부는 미수집'],
+      ['복제·이중화', '동기화 상태와 구성 파일 이중화는 미수집'],
+      ['트랜잭션 로그', 'DB 제품별 트랜잭션 로그 상태는 미수집'],
+    ],
+  };
+  if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
+}
+
+function summarizeMetric(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return { status: 'NotCollected', detail: '결과 값 없음' };
+  return { status: value >= 90 ? 'Critical' : value >= 70 ? 'Warning' : 'Healthy', detail: `${value}%` };
+}
+
+function summarizeProcesses(items) {
+  if (!items?.length) return { status: 'NotCollected', detail: '프로세스 결과 없음' };
+  const stopped = items.filter((item) => item.running === false).map((item) => item.name);
+  return { status: stopped.length ? 'Critical' : 'Healthy', detail: stopped.length ? `중지: ${stopped.join(', ')}` : `${items.length}개 프로세스 실행 중` };
+}
+
+function summarizePorts(items) {
+  if (!items?.length) return { status: 'NotCollected', detail: '포트 점검 미등록' };
+  const stopped = items.filter((item) => item.listening === false);
+  return { status: stopped.length ? 'Critical' : 'Healthy', detail: stopped.length ? `${stopped.length}개 포트 미수신` : `${items.length}개 포트 수신 중` };
+}
+
+function summarizeHttp(items) {
+  if (!items?.length) return { status: 'NotCollected', detail: 'HTTP 점검 미등록 또는 미수집' };
+  const failed = items.filter((item) => item.success === false);
+  const avg = Math.round(items.reduce((sum, item) => sum + (item.responseTimeMs || 0), 0) / items.length);
+  return { status: failed.length ? 'Critical' : 'Healthy', detail: failed.length ? `${failed.length}개 URL 실패` : `${items.length}개 URL 정상 · 평균 ${avg} ms` };
+}
+
+function summarizeDisks(disks, totalUsage) {
+  if (disks?.length) {
+    const worst = disks.reduce((max, item) => Math.max(max, item.usagePercent || 0), 0);
+    return { status: worst >= 90 ? 'Critical' : worst >= 70 ? 'Warning' : 'Healthy', detail: `${disks.length}개 디스크 · 최대 ${worst}%` };
+  }
+  return summarizeMetric(totalUsage);
+}
+
+function summarizePaths(directories, files) {
+  const count = (directories?.length || 0) + (files?.length || 0);
+  if (!count) return { status: 'NotCollected', detail: '경로·파일 점검 미등록' };
+  const missing = (directories || []).filter((item) => item.exists === false).length + (files || []).filter((item) => item.status === 'Critical' || item.exists === false).length;
+  const warning = (files || []).filter((item) => item.status === 'Warning').length;
+  return { status: missing ? 'Critical' : warning ? 'Warning' : 'Healthy', detail: `${count}개 경로 점검 · ${missing ? `${missing}개 확인 필요` : '대상 확인됨'}` };
+}
+
+function renderChecklist(targetId, rows) {
+  const tbody = document.getElementById(targetId);
+  rows.forEach(([label, result, note]) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = label;
+    const state = document.createElement('td');
+    const badge = document.createElement('span'); badge.className = `server-badge ${result.status === 'Healthy' ? 'badge-success' : result.status === 'Warning' ? 'badge-warning' : result.status === 'NotCollected' ? 'badge-muted' : 'badge-danger'}`;
+    badge.textContent = result.status === 'Healthy' ? '정상' : result.status === 'Warning' ? '경고' : result.status === 'NotCollected' ? '미수집' : '위험';
+    state.appendChild(badge);
+    const detail = document.createElement('td'); detail.textContent = `${result.detail} · ${note}`;
+    row.append(name, state, detail); tbody.appendChild(row);
+  });
+}
+
+function renderPendingChecklist(targetId, rows) {
+  const tbody = document.getElementById(targetId);
+  rows.forEach(([label, note]) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td'); name.textContent = label;
+    const state = document.createElement('td');
+    const badge = document.createElement('span'); badge.className = 'server-badge badge-muted'; badge.textContent = '미수집'; state.appendChild(badge);
+    const detail = document.createElement('td'); detail.textContent = note;
+    row.append(name, state, detail); tbody.appendChild(row);
+  });
 }
 
 function renderHealth(health) {

@@ -128,7 +128,7 @@ function renderServers() {
 
     const typeTd = document.createElement("td");
 
-    typeTd.textContent = server.type;
+    typeTd.textContent = getServerTypeLabel(server.type);
     typeTd.textContent += server.product ? ` · ${server.product}` : "";
 
     const osTd = document.createElement("td");
@@ -232,6 +232,11 @@ function updateSummary() {
   document.getElementById("was-count").textContent = was;
 
   document.getElementById("db-count").textContent = db;
+  document.getElementById("other-count").textContent = serverCache.filter((s) => s.type === "OTHER").length;
+}
+
+function getServerTypeLabel(type) {
+  return type === "OTHER" ? "기타" : type;
 }
 
 loadServers();

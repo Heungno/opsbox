@@ -8,6 +8,7 @@ export function getDashboardSummary() {
   let web = 0;
   let was = 0;
   let db = 0;
+  let other = 0;
 
   let healthy = 0;
   let warning = 0;
@@ -25,6 +26,9 @@ export function getDashboardSummary() {
 
       case 'DB':
         db++;
+        break;
+      case 'OTHER':
+        other++;
         break;
     }
 
@@ -56,6 +60,7 @@ export function getDashboardSummary() {
     web,
     was,
     db,
+    other,
     healthy,
     warning,
     critical,
