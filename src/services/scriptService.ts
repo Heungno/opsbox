@@ -124,12 +124,20 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   const wasProduct = getServerProduct(server, 'WAS');
   const dbProduct = getServerProduct(server, 'DB');
   const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
+  const quotePowerShell = (value: string) => `'${value.replace(/'/g, "''")}'`;
   const lines: string[] = [];
   lines.push('$ErrorActionPreference = "SilentlyContinue"');
+  lines.push('$opsboxRunStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss-fff"');
+  lines.push(`$opsboxResultDirectory = Join-Path (Join-Path (Join-Path ${quotePowerShell(server.sharedPath)} 'results') (Get-Date -Format 'yyyy')) ${quotePowerShell(server.id)}`);
+  lines.push('$opsboxResultPath = Join-Path $opsboxResultDirectory "$opsboxRunStamp.json"');
+  lines.push('$opsboxResultDirectoryReady = $true');
+  lines.push('try { New-Item -ItemType Directory -Path $opsboxResultDirectory -Force -ErrorAction Stop | Out-Null } catch { $opsboxResultDirectoryReady = $false }');
   lines.push('$opsboxLogPath = $env:OPSBOX_SCRIPT_LOG');
-  lines.push(`if ([string]::IsNullOrWhiteSpace($opsboxLogPath)) { $opsboxLogPath = Join-Path $PSScriptRoot "${server.id}_$(Get-Date -Format 'yyyyMMdd_HHmmss').log" }`);
-  lines.push('function Write-OpsBoxLog { param([string]$Message); try { Add-Content -LiteralPath $opsboxLogPath -Value "[$(Get-Date -Format \'yyyy-MM-dd HH:mm:ss\')] $Message" -Encoding UTF8 } catch {} }');
+  lines.push(`if ([string]::IsNullOrWhiteSpace($opsboxLogPath)) { if ($opsboxResultDirectoryReady) { $opsboxLogPath = Join-Path $opsboxResultDirectory "$opsboxRunStamp.log" } else { $opsboxLogPath = Join-Path $PSScriptRoot "${server.id}_$opsboxRunStamp.log" } }`);
+  const fallbackLogPath = `(Join-Path $PSScriptRoot (${quotePowerShell(`${server.id}_`)} + $opsboxRunStamp + '.log'))`;
+  lines.push('function Write-OpsBoxLog { param([string]$Message); $logLine = "[$(Get-Date -Format \'yyyy-MM-dd HH:mm:ss\')] $Message"; try { Add-Content -LiteralPath $opsboxLogPath -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch { try { Add-Content -LiteralPath ' + fallbackLogPath + ' -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch {} } }');
   lines.push('Write-OpsBoxLog "점검 스크립트 시작"');
+  lines.push('Write-OpsBoxLog "결과 저장 경로 준비: $opsboxResultDirectory (공유 경로 접근 가능=$opsboxResultDirectoryReady)"');
   lines.push('');
   lines.push('$hostname = $env:COMPUTERNAME');
   lines.push('$checkDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"');
@@ -164,8 +172,10 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('$webtobCheck = $null');
   lines.push('$databaseChecks = $null');
   lines.push('');
+  lines.push(`Write-OpsBoxLog "프로세스 점검 시작: ${(server.processes ?? []).length}개 대상"`);
 
   for (const process of server.processes ?? []) {
+    lines.push(`Write-OpsBoxLog ('프로세스 점검 시작: ' + ${quotePowerShell(process.name)})`);
     lines.push(
       '$proc = Get-Process -Name "' + process.name + '" -ErrorAction SilentlyContinue | Select-Object -First 1',
     );
@@ -191,9 +201,13 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('  }');
     lines.push('}');
     lines.push('');
+    lines.push(`Write-OpsBoxLog ('프로세스 점검 완료: ' + ${quotePowerShell(process.name)} + ' 실행=' + $processes[-1].running)`);
   }
+  lines.push('Write-OpsBoxLog "프로세스 점검 단계 완료"');
 
+  lines.push(`Write-OpsBoxLog "디렉토리 점검 시작: ${(server.directories ?? []).length}개 대상"`);
   for (const directory of server.directories ?? []) {
+    lines.push(`Write-OpsBoxLog ('디렉토리 점검 시작: ' + ${quotePowerShell(directory.path)})`);
     lines.push('if (Test-Path "' + directory.path + '")');
     lines.push('{');
     lines.push(
@@ -230,10 +244,14 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('  }');
     lines.push('}');
     lines.push('');
+    lines.push(`Write-OpsBoxLog ('디렉토리 점검 완료: ' + ${quotePowerShell(directory.path)} + ' 존재=' + $directories[-1].exists)`);
   }
+  lines.push('Write-OpsBoxLog "디렉토리 점검 단계 완료"');
 
+  lines.push(`Write-OpsBoxLog "파일 크기 점검 시작: ${(server.fileChecks ?? []).length}개 대상"`);
   for (const file of server.fileChecks ?? []) {
     const safePath = file.path.replace(/`/g, '``').replace(/"/g, '`"');
+    lines.push(`Write-OpsBoxLog ('파일 크기 점검 시작: ' + ${quotePowerShell(file.path)})`);
     lines.push(`$filePath = "${safePath}"`);
     lines.push('if (Test-Path -LiteralPath $filePath -PathType Leaf)');
     lines.push('{');
@@ -246,8 +264,11 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('{');
     lines.push('  $fileChecks += @{ path = $filePath; exists = $false; sizeBytes = 0; sizeMB = 0; status = "Critical" }');
     lines.push('}');
+    lines.push(`Write-OpsBoxLog ('파일 크기 점검 완료: ' + ${quotePowerShell(file.path)} + ' 상태=' + $fileChecks[-1].status)`);
   }
+  lines.push('Write-OpsBoxLog "파일 크기 점검 단계 완료"');
 
+  lines.push(`Write-OpsBoxLog "포트 점검 시작: ${(server.ports ?? []).length}개 대상"`);
   for (const port of server.ports ?? []) {
     const protocol = (port.protocol ?? 'TCP').toUpperCase();
     const description = (port.description ?? '').replace(/`/g, '``').replace(/"/g, '`"');
@@ -265,8 +286,11 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('}');
     lines.push('if ($endpoint -and $endpoint.OwningProcess) { $processName = (Get-Process -Id $endpoint.OwningProcess -ErrorAction SilentlyContinue).ProcessName }');
     lines.push(`$portChecks += @{ port = $portNumber; protocol = $protocol; description = "${description}"; listening = ($null -ne $endpoint); processName = $processName }`);
+    lines.push(`Write-OpsBoxLog "포트 점검 완료: ${protocol}/${port.port}, 수신=$($portChecks[-1].listening), 프로세스=$processName"`);
   }
+  lines.push('Write-OpsBoxLog "포트 점검 단계 완료"');
 
+  lines.push(`Write-OpsBoxLog "HTTP 응답 점검 시작: ${(server.httpChecks ?? []).length}개 대상"`);
   if (server.os === 'Windows') for (const check of server.httpChecks ?? []) {
     const safeName = check.name.replace(/`/g, '``').replace(/"/g, '`"');
     const safeUrl = check.url.replace(/`/g, '``').replace(/"/g, '`"');
@@ -279,8 +303,11 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('catch { if ($_.Exception.Response) { try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {} }; $errorKind = "RequestFailed" }');
     lines.push('$timer.Stop()');
     lines.push(`$httpChecks += @{ name = "${safeName}"; url = $httpUrl; expectedStatus = $expectedStatus; statusCode = $statusCode; responseTimeMs = $timer.ElapsedMilliseconds; success = $success; error = $errorKind }`);
+    lines.push(`Write-OpsBoxLog ('HTTP 응답 점검 완료: ' + ${quotePowerShell(check.name)} + ' 성공=' + $httpChecks[-1].success + ' 상태코드=' + $httpChecks[-1].statusCode)`);
   }
+  lines.push('Write-OpsBoxLog "HTTP 응답 점검 단계 완료"');
 
+  if (roles.includes('WAS')) lines.push(`Write-OpsBoxLog "WAS 런타임 점검 시작: ${wasProduct ?? 'WAS'}"`);
   if (roles.includes('WAS') && wasProduct !== 'Node.js') {
     lines.push('$javaProcesses = @(Get-CimInstance Win32_Process -Filter "Name = \'java.exe\'" -ErrorAction SilentlyContinue)');
     lines.push('$pathJstat = Get-Command jstat.exe -ErrorAction SilentlyContinue');
@@ -304,7 +331,9 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   } else if (roles.includes('WAS')) {
     lines.push('$wasChecks += @{ processId = 0; processName = "node"; status = "NotCollected"; message = "Node.js runtime metrics require an application-specific collector" }');
   }
+  if (roles.includes('WAS')) lines.push('Write-OpsBoxLog "WAS 런타임 점검 완료: $($wasChecks.Count)개 결과"');
 
+  if (roles.includes('WEB') && webProduct === 'WebtoB') lines.push('Write-OpsBoxLog "WebtoB wsadmin 점검 시작"');
   if (roles.includes('WEB') && webProduct === 'WebtoB') {
     lines.push('$wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue');
     lines.push('if (-not $wsadmin) { $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue }');
@@ -321,7 +350,9 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     lines.push('  } catch { $webtobCheck = @{ status = "NotCollected"; command = "wsadmin: wi, ci -s, st -v, st -s"; message = $_.Exception.Message } }');
     lines.push('}');
   }
+  if (roles.includes('WEB') && webProduct === 'WebtoB') lines.push('Write-OpsBoxLog "WebtoB wsadmin 점검 완료: $($webtobCheck.status)"');
 
+  if (roles.includes('DB')) lines.push(`Write-OpsBoxLog "DB 엔진 점검 시작: ${dbProduct ?? 'DB'}"`);
   if (roles.includes('DB')) {
     const safeIp = server.ip.replace(/'/g, "''");
     const sqlPort = server.ports?.find((port) => (port.protocol ?? 'TCP').toUpperCase() === 'TCP' && port.port === 1433)?.port ?? 1433;
@@ -345,6 +376,7 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
       lines.push(`$databaseChecks.message = "${dbProduct ?? 'DB'} Windows SQL client collection is not configured in this phase."`);
     }
   }
+  if (roles.includes('DB')) lines.push('Write-OpsBoxLog "DB 엔진 점검 완료: $($databaseChecks.status)"');
 
   lines.push('if ($Error.Count -gt 0) { Write-OpsBoxLog "수집 중 PowerShell 오류 $($Error.Count)건"; $Error | Select-Object -First 10 | ForEach-Object { Write-OpsBoxLog $_.ToString() } }');
   lines.push('Write-OpsBoxLog "역할별 수집 완료: 프로세스 $($processes.Count)개, 포트 $($portChecks.Count)개, WAS $($wasChecks.Count)개"');
@@ -372,10 +404,12 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('  product = "' + (server.product ?? '').replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('}');
   lines.push('');
-  lines.push('Write-OpsBoxLog "점검 결과 직렬화 시작"');
-  lines.push('$result | ConvertTo-Json -Depth 10');
-  lines.push('Write-OpsBoxLog "JSON 결과 생성 완료"');
+  lines.push('Write-OpsBoxLog "점검 결과 직렬화 및 저장 시작"');
+  lines.push('try { $jsonText = $result | ConvertTo-Json -Depth 10 -ErrorAction Stop; if ([string]::IsNullOrWhiteSpace($jsonText)) { throw "JSON 결과가 비어 있습니다." } } catch { Write-OpsBoxLog "JSON 직렬화 실패: $($_.Exception.Message)"; throw }');
+  lines.push('if (-not $opsboxResultDirectoryReady) { $saveError = "공유 결과 폴더에 접근할 수 없습니다: $opsboxResultDirectory"; Write-OpsBoxLog $saveError; throw $saveError }');
+  lines.push('try { Set-Content -LiteralPath $opsboxResultPath -Value $jsonText -Encoding UTF8 -ErrorAction Stop; Write-OpsBoxLog "JSON 결과 저장 완료: $opsboxResultPath" } catch { Write-OpsBoxLog "JSON 파일 저장 실패: $($_.Exception.Message)"; throw }');
   lines.push('Write-OpsBoxLog "점검 스크립트 정상 종료"');
+  lines.push('$jsonText');
 
   return lines.join('\n');
 }

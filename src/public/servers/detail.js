@@ -183,61 +183,24 @@ function loadScripts(server) {
   const desc = document.createElement('div');
   desc.className = 'script-desc';
   desc.textContent = server.os === 'Windows'
-    ? '스크립트 파일이 있는 폴더에서 실행하세요. 성공 시 JSON과 실행 로그를 저장하고, 실패 시 로그에 원인과 스크립트 출력을 기록합니다.'
+    ? server.scriptTemplateId
+      ? '스크립트 파일이 있는 폴더에서 실행하세요. 템플릿의 JSON 출력을 결과 파일로 저장하고 stderr와 실행 결과를 로그에 남깁니다.'
+      : '스크립트 파일이 있는 폴더에서 실행하세요. PS1이 결과 JSON과 단계별 실행 로그를 직접 저장합니다.'
     : '스크립트 파일이 있는 폴더에서 실행하세요. 결과 JSON은 서버 공유 경로에 저장됩니다.';
 
   const commandTitle = document.createElement('div');
   commandTitle.className = 'command-title';
-  commandTitle.textContent = server.os === 'Windows' ? '실행 명령어 (JSON 결과·실행 로그 저장)' : '실행 명령어 (JSON 결과 저장)';
+  commandTitle.textContent = server.os === 'Windows' ? '실행 명령어 (스크립트가 결과·로그 자동 저장)' : '실행 명령어 (JSON 결과 저장)';
 
-  const year = new Date().getFullYear();
   const scriptFileName = server.os.toLowerCase() === 'windows' ? `${server.id}.ps1` : `${server.id}.sh`;
   
   const quotePowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
+  const scriptFilter = quotePowerShell(`${server.id}*.ps1`);
+  const windowsCustomTemplateCommand = `$script = Get-ChildItem -Filter ${scriptFilter} -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; $year = (Get-Date).Year; $dir = Join-Path (Join-Path (Join-Path ${quotePowerShell(server.sharedPath)} 'results') $year) ${quotePowerShell(server.id)}; New-Item -ItemType Directory -Path $dir -Force | Out-Null; $stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'; $log = Join-Path $dir "$stamp.log"; $result = Join-Path $dir "$stamp.json"; $oldLog = $env:OPSBOX_SCRIPT_LOG; $env:OPSBOX_SCRIPT_LOG = $log; try { $output = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script 2>> $log); if ($LASTEXITCODE -ne 0) { throw "스크립트 종료 코드: $LASTEXITCODE" }; $json = ($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine; $parsed = ConvertFrom-Json -InputObject $json -ErrorAction Stop; if ($parsed.server -ne ${quotePowerShell(server.id)}) { throw '결과 서버 ID가 맞지 않습니다.' }; Set-Content -LiteralPath $result -Value $json -Encoding UTF8 -ErrorAction Stop; "성공: $result" | Add-Content -LiteralPath $log -Encoding UTF8 } catch { "실패: $($_.Exception.Message)" | Add-Content -LiteralPath $log -Encoding UTF8; if ($output) { $output | Out-String | Add-Content -LiteralPath $log -Encoding UTF8 }; throw } finally { if ($null -eq $oldLog) { Remove-Item Env:OPSBOX_SCRIPT_LOG -ErrorAction SilentlyContinue } else { $env:OPSBOX_SCRIPT_LOG = $oldLog } }`;
   const command = server.os.toLowerCase() === 'windows'
-    ? `$ErrorActionPreference = 'Stop'
-$serverId = ${quotePowerShell(server.id)}
-$sharedRoot = ${quotePowerShell(server.sharedPath)}
-$scriptPath = Get-ChildItem -LiteralPath (Get-Location).Path -Filter ${quotePowerShell(`${server.id}*.ps1`)} -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
-$year = (Get-Date).Year
-$resPath = Join-Path (Join-Path $sharedRoot "results\\$year") $serverId
-$stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'
-$resultFile = Join-Path $resPath "$stamp.json"
-$fallbackLogFile = Join-Path $env:TEMP "$serverId-$stamp.log"
-$logFile = $fallbackLogFile
-"[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 시작" | Set-Content -LiteralPath $logFile -Encoding UTF8
-$scriptOutput = @()
-$previousLogPath = $env:OPSBOX_SCRIPT_LOG
-try {
-  if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) { throw "스크립트 파일을 찾을 수 없습니다: $scriptPath (스크립트 파일이 있는 폴더에서 명령을 실행하세요)" }
-  New-Item -ItemType Directory -Path $resPath -Force | Out-Null
-  $sharedLogFile = Join-Path $resPath "$stamp.log"
-  "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 공유 결과 폴더에 로그 저장 시작" | Set-Content -LiteralPath $sharedLogFile -Encoding UTF8
-  $logFile = $sharedLogFile
-  Remove-Item -LiteralPath $fallbackLogFile -ErrorAction SilentlyContinue
-  $env:OPSBOX_SCRIPT_LOG = $logFile
-  "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 실행 스크립트: $scriptPath" | Add-Content -LiteralPath $logFile -Encoding UTF8
-  $powershellExe = (Get-Command powershell.exe -ErrorAction Stop).Source
-  $scriptOutput = @(& $powershellExe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $scriptPath 2>> $logFile)
-  $scriptExitCode = $LASTEXITCODE
-  if ($scriptExitCode -ne 0) { throw "점검 스크립트가 종료 코드 $scriptExitCode 로 종료되었습니다." }
-  $jsonText = ($scriptOutput | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
-  if ([string]::IsNullOrWhiteSpace($jsonText)) { throw '스크립트 출력이 비어 있어 결과 파일을 만들지 않았습니다.' }
-  $parsed = ConvertFrom-Json -InputObject $jsonText -ErrorAction Stop
-  if ($parsed.server -ne $serverId) { throw "결과의 서버 ID가 일치하지 않습니다: $($parsed.server)" }
-  Set-Content -LiteralPath $resultFile -Value $jsonText -Encoding UTF8
-  "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 성공: 결과 저장 $resultFile" | Add-Content -LiteralPath $logFile -Encoding UTF8
-  Write-Host "결과 파일: $resultFile"
-  Write-Host "실행 로그: $logFile"
-} catch {
-  $failure = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 실패: $($_.Exception.Message)"
-  $failure | Add-Content -LiteralPath $logFile -Encoding UTF8
-  if ($scriptOutput.Count -gt 0) { ($scriptOutput | Out-String) | Add-Content -LiteralPath $logFile -Encoding UTF8 }
-  Write-Error "$failure 로그를 확인하세요: $logFile"
-  throw
-} finally {
-  if ($null -eq $previousLogPath) { Remove-Item Env:OPSBOX_SCRIPT_LOG -ErrorAction SilentlyContinue } else { $env:OPSBOX_SCRIPT_LOG = $previousLogPath }
-}`
+    ? server.scriptTemplateId
+      ? windowsCustomTemplateCommand
+      : `$script = Get-ChildItem -Filter ${scriptFilter} -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script | Out-Null`
     : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
   const commandBox = document.createElement('pre');
