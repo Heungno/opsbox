@@ -27,9 +27,9 @@
       </section>
       <section class="server-form-section">
         <h3>템플릿 지정</h3>
-        <p class="policy-help">스크립트를 비우면 기본 자동 생성을 사용합니다. DB 쿼리 템플릿은 기본 Windows MSSQL 생성기에 적용됩니다. 템플릿은 설정 메뉴에서 관리합니다.</p>
+        <p class="policy-help">스크립트 템플릿을 지정하지 않으면 점검 항목별 스크립트를 서버 설정에 맞춰 하나로 조립합니다. DB 쿼리 템플릿은 Windows MSSQL 점검에 적용됩니다.</p>
         <div class="form-grid">
-          <div class="form-group"><label for="server-form-script-template">스크립트 템플릿</label><select id="server-form-script-template"><option value="">기본 자동 생성</option></select></div>
+          <div class="form-group"><label for="server-form-script-template">전체 스크립트 재정의 (선택)</label><select id="server-form-script-template"><option value="">점검 항목 템플릿 조립</option></select></div>
           <div class="form-group"><label for="server-form-query-template">DB 쿼리 템플릿</label><select id="server-form-query-template"><option value="">기본 MSSQL 쿼리</option></select></div>
         </div>
       </section>

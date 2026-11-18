@@ -16,10 +16,11 @@
         <form id="template-form">
           <div class="form-grid">
             <div class="form-group"><label for="template-name">이름</label><input id="template-name" required placeholder="예: Windows WEB 기본 점검" /></div>
-            <div class="form-group"><label for="template-kind">종류</label><select id="template-kind"><option value="SCRIPT">실행 스크립트</option><option value="QUERY">DB 쿼리</option></select></div>
+            <div class="form-group"><label for="template-kind">종류</label><select id="template-kind"><option value="SCRIPT_PART">점검 항목 스크립트</option><option value="SCRIPT">전체 스크립트(고급)</option><option value="QUERY">DB 쿼리</option></select></div>
             <div class="form-group template-script-option"><label for="template-os">운영체제</label><select id="template-os"><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
-            <div class="form-group template-script-option"><label for="template-role">대상 역할 (선택)</label><select id="template-role"><option value="">모든 역할</option><option>WEB</option><option>WAS</option><option>DB</option><option value="OTHER">기타</option></select></div>
-            <div class="form-group template-script-option"><label for="template-product">대상 제품 (선택)</label><input id="template-product" placeholder="예: WebtoB" /></div>
+            <div class="form-group template-part-option"><label for="template-item">점검 항목</label><select id="template-item"><option value="START">실행 준비·로깅</option><option value="OS_DISK">OS·디스크</option><option value="PROCESS">프로세스</option><option value="DIRECTORY">디렉터리</option><option value="FILE_SIZE">파일 크기</option><option value="PORT">포트</option><option value="HTTP">HTTP 응답</option><option value="WAS">WAS·JVM</option><option value="WEBTOB">WebtoB</option><option value="DATABASE">DB·MSSQL</option><option value="SAVE">결과 저장·종료</option></select></div>
+            <div class="form-group template-script-option template-target-option"><label for="template-role">대상 역할 (선택)</label><select id="template-role"><option value="">모든 역할</option><option>WEB</option><option>WAS</option><option>DB</option><option value="OTHER">기타</option></select></div>
+            <div class="form-group template-script-option template-target-option"><label for="template-product">대상 제품 (선택)</label><input id="template-product" placeholder="예: WebtoB" /></div>
             <label class="template-enabled"><input id="template-enabled" type="checkbox" checked /> 사용</label>
           </div>
           <div class="form-group template-content-group"><label for="template-content">템플릿 내용</label><div class="template-editor"><pre id="template-highlight" aria-hidden="true"><code></code></pre><textarea id="template-content" required spellcheck="false" wrap="off" aria-label="템플릿 코드"></textarea></div></div>
@@ -27,7 +28,7 @@
           <div class="button-area"><button id="btn-template-save" type="submit" class="btn btn-primary">템플릿 저장</button></div>
         </form>
       </section>
-      <section class="card"><div class="section-header"><h2>저장된 템플릿</h2><select id="template-filter"><option value="">전체</option><option value="SCRIPT">스크립트</option><option value="QUERY">쿼리</option></select></div><div id="template-list" class="template-list"></div></section>
+      <section class="card"><div class="section-header"><h2>저장된 템플릿</h2><select id="template-filter"><option value="">전체</option><option value="SCRIPT_PART">점검 항목 스크립트</option><option value="SCRIPT">전체 스크립트(고급)</option><option value="QUERY">DB 쿼리</option></select></div><div id="template-list" class="template-list"></div></section>
     </div></main>
   </div>
   <script src="/js/common.js"></script>

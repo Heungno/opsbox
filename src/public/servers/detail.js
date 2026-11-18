@@ -28,7 +28,7 @@ async function loadTemplateOptions(scriptId = '', queryId = '') {
   const selectedRoles = [...roleContainer.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
   const dbProduct = roleContainer.querySelector('select[data-role-product="DB"]')?.value;
   const canUseQuery = document.getElementById('server-form-os').value === 'Windows' && selectedRoles.includes('DB') && dbProduct === 'MSSQL';
-  scriptSelect.replaceChildren(new Option('기본 자동 생성', ''));
+  scriptSelect.replaceChildren(new Option('점검 항목 템플릿 조립', ''));
   querySelect.replaceChildren(new Option('기본 MSSQL 쿼리', ''));
   templates.filter((template) => template.enabled && (template.kind !== 'SCRIPT' || template.os === document.getElementById('server-form-os').value) && (template.kind !== 'QUERY' || canUseQuery)).forEach((template) => {
     const label = `${template.name}${template.os ? ` · ${template.os}` : ''}${template.role ? ` · ${template.role}` : ''}`;
