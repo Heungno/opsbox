@@ -182,17 +182,62 @@ function loadScripts(server) {
 
   const desc = document.createElement('div');
   desc.className = 'script-desc';
-  desc.textContent = '서버에 설정된 프로세스 및 디렉토리 점검 정책이 자동으로 반영된 실행 스크립트입니다.';
+  desc.textContent = server.os === 'Windows'
+    ? '스크립트 파일이 있는 폴더에서 실행하세요. 성공 시 JSON과 실행 로그를 저장하고, 실패 시 로그에 원인과 스크립트 출력을 기록합니다.'
+    : '스크립트 파일이 있는 폴더에서 실행하세요. 결과 JSON은 서버 공유 경로에 저장됩니다.';
 
   const commandTitle = document.createElement('div');
   commandTitle.className = 'command-title';
-  commandTitle.textContent = '실행 명령어 (결과 폴더 자동 저장)';
+  commandTitle.textContent = server.os === 'Windows' ? '실행 명령어 (JSON 결과·실행 로그 저장)' : '실행 명령어 (JSON 결과 저장)';
 
   const year = new Date().getFullYear();
   const scriptFileName = server.os.toLowerCase() === 'windows' ? `${server.id}.ps1` : `${server.id}.sh`;
   
+  const quotePowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
   const command = server.os.toLowerCase() === 'windows'
-    ? `$year = (Get-Date).Year; $resPath = "${server.sharedPath}\\results\\$year\\${server.id}"; if (-not (Test-Path $resPath)) { New-Item -ItemType Directory -Path $resPath -Force }; powershell -ExecutionPolicy Bypass -File ".\\${scriptFileName}" | Out-File -Encoding utf8 "$resPath\\$((Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')).json"`
+    ? `$ErrorActionPreference = 'Stop'
+$serverId = ${quotePowerShell(server.id)}
+$sharedRoot = ${quotePowerShell(server.sharedPath)}
+$scriptPath = Get-ChildItem -LiteralPath (Get-Location).Path -Filter ${quotePowerShell(`${server.id}*.ps1`)} -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+$year = (Get-Date).Year
+$resPath = Join-Path (Join-Path $sharedRoot "results\\$year") $serverId
+$stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'
+$resultFile = Join-Path $resPath "$stamp.json"
+$fallbackLogFile = Join-Path $env:TEMP "$serverId-$stamp.log"
+$logFile = $fallbackLogFile
+"[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 시작" | Set-Content -LiteralPath $logFile -Encoding UTF8
+$scriptOutput = @()
+$previousLogPath = $env:OPSBOX_SCRIPT_LOG
+try {
+  if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) { throw "스크립트 파일을 찾을 수 없습니다: $scriptPath (스크립트 파일이 있는 폴더에서 명령을 실행하세요)" }
+  New-Item -ItemType Directory -Path $resPath -Force | Out-Null
+  $sharedLogFile = Join-Path $resPath "$stamp.log"
+  "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 공유 결과 폴더에 로그 저장 시작" | Set-Content -LiteralPath $sharedLogFile -Encoding UTF8
+  $logFile = $sharedLogFile
+  Remove-Item -LiteralPath $fallbackLogFile -ErrorAction SilentlyContinue
+  $env:OPSBOX_SCRIPT_LOG = $logFile
+  "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 실행 스크립트: $scriptPath" | Add-Content -LiteralPath $logFile -Encoding UTF8
+  $powershellExe = (Get-Command powershell.exe -ErrorAction Stop).Source
+  $scriptOutput = @(& $powershellExe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $scriptPath 2>> $logFile)
+  $scriptExitCode = $LASTEXITCODE
+  if ($scriptExitCode -ne 0) { throw "점검 스크립트가 종료 코드 $scriptExitCode 로 종료되었습니다." }
+  $jsonText = ($scriptOutput | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+  if ([string]::IsNullOrWhiteSpace($jsonText)) { throw '스크립트 출력이 비어 있어 결과 파일을 만들지 않았습니다.' }
+  $parsed = ConvertFrom-Json -InputObject $jsonText -ErrorAction Stop
+  if ($parsed.server -ne $serverId) { throw "결과의 서버 ID가 일치하지 않습니다: $($parsed.server)" }
+  Set-Content -LiteralPath $resultFile -Value $jsonText -Encoding UTF8
+  "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 성공: 결과 저장 $resultFile" | Add-Content -LiteralPath $logFile -Encoding UTF8
+  Write-Host "결과 파일: $resultFile"
+  Write-Host "실행 로그: $logFile"
+} catch {
+  $failure = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 실패: $($_.Exception.Message)"
+  $failure | Add-Content -LiteralPath $logFile -Encoding UTF8
+  if ($scriptOutput.Count -gt 0) { ($scriptOutput | Out-String) | Add-Content -LiteralPath $logFile -Encoding UTF8 }
+  Write-Error "$failure 로그를 확인하세요: $logFile"
+  throw
+} finally {
+  if ($null -eq $previousLogPath) { Remove-Item Env:OPSBOX_SCRIPT_LOG -ErrorAction SilentlyContinue } else { $env:OPSBOX_SCRIPT_LOG = $previousLogPath }
+}`
     : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
   const commandBox = document.createElement('pre');

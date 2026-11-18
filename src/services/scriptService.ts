@@ -126,6 +126,10 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
   const lines: string[] = [];
   lines.push('$ErrorActionPreference = "SilentlyContinue"');
+  lines.push('$opsboxLogPath = $env:OPSBOX_SCRIPT_LOG');
+  lines.push(`if ([string]::IsNullOrWhiteSpace($opsboxLogPath)) { $opsboxLogPath = Join-Path $PSScriptRoot "${server.id}_$(Get-Date -Format 'yyyyMMdd_HHmmss').log" }`);
+  lines.push('function Write-OpsBoxLog { param([string]$Message); try { Add-Content -LiteralPath $opsboxLogPath -Value "[$(Get-Date -Format \'yyyy-MM-dd HH:mm:ss\')] $Message" -Encoding UTF8 } catch {} }');
+  lines.push('Write-OpsBoxLog "점검 스크립트 시작"');
   lines.push('');
   lines.push('$hostname = $env:COMPUTERNAME');
   lines.push('$checkDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"');
@@ -149,6 +153,7 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('})');
   lines.push('$disk = 0');
   lines.push('foreach ($diskInfo in $disks) { $usage = [double]$diskInfo["usagePercent"]; if ($usage -gt $disk) { $disk = $usage } }');
+  lines.push('Write-OpsBoxLog "OS 자원 및 디스크 수집 완료: 디스크 $($disks.Count)개, 최대 사용률 $disk%"');
   lines.push('');
   lines.push('$processes = @()');
   lines.push('$directories = @()');
@@ -341,6 +346,9 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
     }
   }
 
+  lines.push('if ($Error.Count -gt 0) { Write-OpsBoxLog "수집 중 PowerShell 오류 $($Error.Count)건"; $Error | Select-Object -First 10 | ForEach-Object { Write-OpsBoxLog $_.ToString() } }');
+  lines.push('Write-OpsBoxLog "역할별 수집 완료: 프로세스 $($processes.Count)개, 포트 $($portChecks.Count)개, WAS $($wasChecks.Count)개"');
+
   lines.push('$result = @{');
   lines.push('  server = "' + server.id.replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('  serverType = "' + server.type + '"');
@@ -364,7 +372,10 @@ function generateWindowsScript(server: Server, queryTemplate?: string): string {
   lines.push('  product = "' + (server.product ?? '').replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('}');
   lines.push('');
+  lines.push('Write-OpsBoxLog "점검 결과 직렬화 시작"');
   lines.push('$result | ConvertTo-Json -Depth 10');
+  lines.push('Write-OpsBoxLog "JSON 결과 생성 완료"');
+  lines.push('Write-OpsBoxLog "점검 스크립트 정상 종료"');
 
   return lines.join('\n');
 }
