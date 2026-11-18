@@ -1,59 +1,22 @@
 [
   {
-    "id": "WEB01",
-    "name": "업무웹01",
-    "type": "WEB",
-    "os": "Windows",
-    "ip": "10.10.10.112",
-    "sharedPath": "C:\\logs\\WeeklyCheck",
-    "processes": [
-      {
-        "name": "Code"
-      },
-      {
-        "name": "n6agent"
-      },
-      {
-        "name": "node"
-      }
-    ],
-    "directories": [
-      {
-        "path": "C:\\logs",
-        "warningPercent": 50,
-        "criticalPercent": 90
-      },
-      {
-        "path": "C:\\logs2",
-        "warningPercent": 1,
-        "criticalPercent": 2
-      }
-    ]
-  },
-  {
-    "id": "WAS01",
-    "name": "업무WAS01",
-    "type": "WAS",
-    "os": "Linux",
-    "ip": "10.10.10.21",
-    "sharedPath": "C:\\logs\\WeeklyCheck"
-  },
-  {
-    "id": "WEB02",
-    "name": "test",
-    "type": "WEB",
-    "os": "Windows",
-    "ip": "10.10.10.10",
-    "sharedPath": "C:\\logs\\WeeklyCheck"
-  },
-  {
     "id": "TEST-01",
     "name": "테스트",
     "type": "WEB",
     "os": "Windows",
-    "ip": "127.0.0.1",
+    "ip": "10.102.224.208",
     "sharedPath": "C:\\logs\\WeeklyCheck",
-    "processes": [],
+    "processes": [
+      {
+        "name": "webtob"
+      },
+      {
+        "name": "jeus"
+      },
+      {
+        "name": "sqlserver"
+      }
+    ],
     "directories": [
       {
         "path": "C:\\DEV\\VSCode\\",
@@ -67,6 +30,32 @@
         "warningSizeMB": 500,
         "criticalSizeMB": 1000
       }
-    ]
+    ],
+    "ports": [
+      {
+        "protocol": "TCP",
+        "port": 80,
+        "description": "nodejs"
+      },
+      {
+        "protocol": "TCP",
+        "port": 8799,
+        "description": ""
+      }
+    ],
+    "product": "WebtoB",
+    "httpChecks": [],
+    "roles": [
+      "WEB",
+      "WAS",
+      "DB"
+    ],
+    "products": {
+      "WEB": "WebtoB",
+      "WAS": "JEUS",
+      "DB": "MSSQL"
+    },
+    "scriptTemplateId": "",
+    "queryTemplateId": ""
   }
 ]

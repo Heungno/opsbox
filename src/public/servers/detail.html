@@ -146,7 +146,7 @@
             <p id="script-template-override-note" class="policy-help" hidden></p>
             <div class="table-scroll">
               <table class="server-table script-template-map-table">
-                <thead><tr><th>점검 정책</th><th>적용 상태</th><th>사용할 스크립트 템플릿</th></tr></thead>
+                <thead><tr><th>점검 정책</th><th>적용 상태</th><th>사용할 스크립트 템플릿</th><th>스크립트</th></tr></thead>
                 <tbody id="script-template-map"></tbody>
               </table>
             </div>
@@ -187,6 +187,21 @@
     </main>
 
   </div>
+
+  <dialog id="script-part-editor-modal" class="modal-dialog script-part-editor-modal">
+    <section class="card modal-card script-part-editor-card">
+      <div class="section-header">
+        <div><h2>점검 스크립트 수정</h2><p id="script-part-editor-name" class="policy-help"></p></div>
+        <button id="script-part-editor-close" type="button" class="btn" aria-label="닫기">닫기</button>
+      </div>
+      <p class="policy-help">저장하면 이 템플릿을 사용하는 서버의 다음 스크립트 다운로드부터 변경 내용이 반영됩니다.</p>
+      <textarea id="script-part-editor-content" class="script-part-editor-content" spellcheck="false" wrap="off" aria-label="점검 스크립트 내용"></textarea>
+      <div class="button-area">
+        <button id="script-part-editor-save" type="button" class="btn btn-primary">스크립트 저장</button>
+        <button id="script-part-editor-cancel" type="button" class="btn">취소</button>
+      </div>
+    </section>
+  </dialog>
 
   <script src="/js/common.js"></script>
   <script src="/servers/detail.js"></script>

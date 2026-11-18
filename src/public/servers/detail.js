@@ -3,6 +3,7 @@ const serverId = params.get('id');
 
 let currentServer = null;
 let managedTemplates = [];
+let editingScriptPartTemplateId = '';
 
 async function init() {
   if (!serverId) {
@@ -14,6 +15,7 @@ async function init() {
   if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
   await loadTemplateOptions();
+  bindScriptPartEditor();
   document.getElementById('server-form-os').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
   document.getElementById('server-form-role-products').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
 
@@ -735,7 +737,7 @@ function renderScriptTemplateMap(selectedParts = {}) {
   const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
   const products = currentServer.products || { [currentServer.type]: currentServer.product };
   const checks = [
-    ['START', '실행 준비·로깅', true], ['OS_DISK', '운영체제·디스크', true],
+    ['START', '공통 · 실행 준비·로깅', true], ['OS_DISK', '기본점검 · OS·CPU·메모리·디스크', true],
     ['PROCESS', '프로세스', (currentServer.processes ?? []).length > 0],
     ['DIRECTORY', '디렉터리', (currentServer.directories ?? []).length > 0],
     ['FILE_SIZE', '특정 파일 크기', (currentServer.fileChecks ?? []).length > 0],
@@ -743,7 +745,7 @@ function renderScriptTemplateMap(selectedParts = {}) {
     ['HTTP', 'HTTP 응답', (currentServer.httpChecks ?? []).length > 0],
     ['WAS', 'WAS·JVM', roles.includes('WAS')],
     ['WEBTOB', 'WebtoB wsadmin', roles.includes('WEB') && products.WEB === 'WebtoB'],
-    ['DATABASE', 'DB 상태', roles.includes('DB')], ['SAVE', '결과 저장·종료', true],
+    ['DATABASE', 'DB 상태', roles.includes('DB')], ['SAVE', '공통 · 결과 저장·종료', true],
   ];
   const body = document.getElementById('script-template-map');
   body.replaceChildren();
@@ -759,6 +761,7 @@ function renderScriptTemplateMap(selectedParts = {}) {
     const name = document.createElement('td'); name.textContent = label;
     const state = document.createElement('td'); state.textContent = overridden ? '전체 스크립트 사용' : active ? '조립 대상' : '정책 없음 · 미조립';
     const templateCell = document.createElement('td');
+    const actions = document.createElement('td'); actions.className = 'script-template-actions';
     const select = document.createElement('select'); select.dataset.scriptPart = item;
     select.setAttribute('aria-label', `${label} 스크립트 템플릿`);
     const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item);
@@ -771,10 +774,52 @@ function renderScriptTemplateMap(selectedParts = {}) {
       select.add(new Option('선택한 템플릿을 사용할 수 없음 · 다시 선택', selectedId));
     }
     select.value = selectedId;
-    select.disabled = overridden || !active;
+    const editTemplateId = selectedId || seededDefault?.id || (available.length === 1 ? available[0].id : '');
+    const editButton = document.createElement('button');
+    editButton.type = 'button'; editButton.className = 'btn btn-small'; editButton.textContent = '스크립트 수정';
+    editButton.disabled = overridden || !editTemplateId;
+    editButton.title = overridden ? '전체 스크립트 재정의가 우선 적용됩니다.' : editTemplateId ? '' : '템플릿을 선택하거나 템플릿 설정에서 추가하세요.';
+    editButton.addEventListener('click', () => openScriptPartEditor(select.value || editTemplateId));
+    select.disabled = overridden;
     templateCell.appendChild(select);
-    row.append(name, state, templateCell); body.appendChild(row);
+    actions.appendChild(editButton);
+    row.append(name, state, templateCell, actions); body.appendChild(row);
   });
+}
+
+function bindScriptPartEditor() {
+  const dialog = document.getElementById('script-part-editor-modal');
+  document.getElementById('script-part-editor-close').addEventListener('click', () => dialog.close());
+  document.getElementById('script-part-editor-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('script-part-editor-save').addEventListener('click', saveScriptPartEditor);
+}
+
+function openScriptPartEditor(templateId) {
+  const template = managedTemplates.find((item) => item.id === templateId && item.kind === 'SCRIPT_PART');
+  if (!template) { alert('편집할 점검 스크립트 템플릿을 찾을 수 없습니다.'); return; }
+  editingScriptPartTemplateId = template.id;
+  document.getElementById('script-part-editor-name').textContent = `${template.name} · ${template.item}`;
+  document.getElementById('script-part-editor-content').value = template.content;
+  document.getElementById('script-part-editor-modal').showModal();
+}
+
+async function saveScriptPartEditor() {
+  const template = managedTemplates.find((item) => item.id === editingScriptPartTemplateId);
+  if (!template) { alert('편집할 템플릿이 목록에서 사라졌습니다.'); return; }
+  const response = await fetch(`/api/templates/${encodeURIComponent(template.id)}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...template, content: document.getElementById('script-part-editor-content').value }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) { alert(result.message || '스크립트 저장에 실패했습니다.'); return; }
+  const updated = result.data;
+  managedTemplates = managedTemplates.map((item) => item.id === updated.id ? updated : item);
+  const selectedParts = Object.fromEntries([...document.querySelectorAll('[data-script-part]')]
+    .map((select) => [select.dataset.scriptPart, select.value])
+    .filter(([, templateId]) => templateId));
+  document.getElementById('script-part-editor-modal').close();
+  renderScriptTemplateMap(selectedParts);
+  alert('스크립트 템플릿을 저장했습니다. 다음 다운로드부터 적용됩니다.');
 }
 
 init().catch((error) => { console.error(error); alert(error.message || '서버 상세 화면을 초기화하지 못했습니다.'); });
