@@ -19,6 +19,7 @@ export interface CheckResult {
   network: string;
   logError: boolean;
   fileChecks?: Array<{ status?: string; exists?: boolean }>;
+  disks?: Array<{ status?: string; usagePercent?: number }>;
 }
 
 function readJsonFile(filePath: string) {
@@ -133,6 +134,7 @@ export function getResultByFile(serverId: string, fileName: string): CheckResult
 
 export function getHealthStatus(result: CheckResult): string {
   if (result.fileChecks?.some((file) => file.status === 'Critical' || file.exists === false)) return 'Critical';
+  if (result.disks?.some((disk) => disk.status === 'Critical')) return 'Critical';
   const max = Math.max(result.cpu, result.memory, result.disk);
 
   if (max >= 90) {
@@ -144,6 +146,7 @@ export function getHealthStatus(result: CheckResult): string {
   }
 
   if (result.fileChecks?.some((file) => file.status === 'Warning')) return 'Warning';
+  if (result.disks?.some((disk) => disk.status === 'Warning')) return 'Warning';
 
   return 'Healthy';
 }

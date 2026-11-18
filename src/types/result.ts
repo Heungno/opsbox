@@ -23,6 +23,16 @@ export interface FileCheckResult {
   status: 'Healthy' | 'Warning' | 'Critical';
 }
 
+export interface DiskCheckResult {
+  device: string;
+  mountPoint?: string;
+  totalGB: number;
+  usedGB: number;
+  freeGB: number;
+  usagePercent: number;
+  status: 'Healthy' | 'Warning' | 'Critical';
+}
+
 export interface PortCheckResult {
   port: number;
   protocol: 'TCP' | 'UDP';
@@ -40,5 +50,6 @@ export interface CheckResult {
   processes: ProcessCheckResult[];
   directories: DirectoryCheckResult[];
   fileChecks?: FileCheckResult[];
+  disks?: DiskCheckResult[];
   ports: PortCheckResult[];
 }

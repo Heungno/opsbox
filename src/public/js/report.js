@@ -106,6 +106,7 @@ function renderReport() {
 
   renderHealth(health);
   renderMetrics(data, compareData);
+  renderDisks(data.disks);
   renderProcesses(data.processes, compareData?.processes);
   renderDirectories(data.directories, compareData?.directories);
   renderFileChecks(data.fileChecks);
@@ -128,6 +129,38 @@ function renderHealth(health) {
   }
 
   container.appendChild(badge);
+}
+
+function renderDisks(disks) {
+  const tbody = document.getElementById('disk-report-list');
+  tbody.replaceChildren();
+  if (!disks || disks.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">디스크별 상세 정보가 없는 결과입니다. 새 스크립트를 실행하면 표시됩니다.</td>';
+    tbody.appendChild(row);
+    return;
+  }
+
+  disks.forEach((disk) => {
+    const row = document.createElement('tr');
+    const device = document.createElement('td');
+    device.textContent = disk.mountPoint && disk.mountPoint !== disk.device
+      ? `${disk.device} (${disk.mountPoint})`
+      : disk.device;
+    const used = document.createElement('td');
+    used.textContent = `${disk.usedGB ?? 0} GB`;
+    const total = document.createElement('td');
+    total.textContent = `${disk.totalGB ?? 0} GB`;
+    const usage = document.createElement('td');
+    usage.textContent = `${disk.usagePercent ?? 0}%`;
+    const status = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `server-badge ${disk.status === 'Healthy' ? 'badge-success' : disk.status === 'Warning' ? 'badge-warning' : 'badge-danger'}`;
+    badge.textContent = disk.status ?? '미판정';
+    status.appendChild(badge);
+    row.append(device, used, total, usage, status);
+    tbody.appendChild(row);
+  });
 }
 
 function createDiffBadge(currentVal, prevVal, isPercent = true) {

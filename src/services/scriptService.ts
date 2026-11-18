@@ -28,8 +28,23 @@ sleep 1
 cpu_after=$(awk '/^cpu / {idle=$5+$6; total=0; for(i=2;i<=NF;i++) total+=$i; print total, idle}' /proc/stat)
 cpu=$(awk -v before="$cpu_before" -v after="$cpu_after" 'BEGIN{split(before,b); split(after,a); total=a[1]-b[1]; idle=a[2]-b[2]; if(total>0) printf "%d", ((total-idle)/total)*100; else print 0}')
 memory=$(awk '/MemTotal:/ {total=$2} /MemAvailable:/ {available=$2} END{if(total>0) printf "%d", ((total-available)/total)*100; else print 0}' /proc/meminfo)
-disk=$(df -P / | awk 'NR==2 {gsub("%", "", $5); print $5+0}')
 json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\\\"/g'; }
+disks='['
+disk=0
+disk_index=0
+while read -r filesystem blocks used available percent mountPoint; do
+  [ "$filesystem" = "Filesystem" ] && continue
+  usage=\${percent%%%}
+  case "$usage" in ''|*[!0-9]*) continue ;; esac
+  [ "$disk_index" -gt 0 ] && disks+=','
+  deviceJson=$(json_escape "$filesystem")
+  mountJson=$(json_escape "$mountPoint")
+  if [ "$usage" -ge 90 ]; then status=Critical; elif [ "$usage" -ge 70 ]; then status=Warning; else status=Healthy; fi
+  disks+="{\"device\":\"$deviceJson\",\"mountPoint\":\"$mountJson\",\"totalGB\":$(awk -v n=$blocks 'BEGIN{printf \"%.2f\",n/1048576}'),\"usedGB\":$(awk -v n=$used 'BEGIN{printf \"%.2f\",n/1048576}'),\"freeGB\":$(awk -v n=$available 'BEGIN{printf \"%.2f\",n/1048576}'),\"usagePercent\":$usage,\"status\":\"$status\"}"
+  [ "$usage" -gt "$disk" ] && disk=$usage
+  disk_index=$((disk_index + 1))
+done < <(df -P -l -x tmpfs -x devtmpfs 2>/dev/null)
+disks+=']'
 processes='['
 directories='['
 fileChecks='['
@@ -55,7 +70,7 @@ ${(server.fileChecks ?? []).map((file, index) => {
 processes="${'${processes%,}'}]"
 directories="${'${directories%,}'}]"
 fileChecks="${'${fileChecks%,}'}]"
-printf '{"server":"${server.id}","serverType":"${server.type}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","processes":%s,"directories":%s,"fileChecks":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$processes" "$directories" "$fileChecks"
+printf '{"server":"${server.id}","serverType":"${server.type}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","disks":%s,"processes":%s,"directories":%s,"fileChecks":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$disks" "$processes" "$directories" "$fileChecks"
 
 `;
 }
@@ -79,8 +94,13 @@ function generateWindowsScript(server: Server): string {
     '$memory = [math]::Round((($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / $os.TotalVisibleMemorySize) * 100, 0)',
   );
   lines.push('');
-  lines.push('$diskInfo = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID=\'C:\'"');
-  lines.push('$disk = [math]::Round((($diskInfo.Size - $diskInfo.FreeSpace) / $diskInfo.Size) * 100, 0)');
+  lines.push('$disks = @(Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {');
+  lines.push('  $usagePercent = if ($_.Size -gt 0) { [math]::Round((($_.Size - $_.FreeSpace) / $_.Size) * 100, 0) } else { 0 }');
+  lines.push('  $status = if ($usagePercent -ge 90) { "Critical" } elseif ($usagePercent -ge 70) { "Warning" } else { "Healthy" }');
+  lines.push('  [ordered]@{ device = $_.DeviceID; mountPoint = $_.DeviceID; volumeName = $_.VolumeName; totalGB = [math]::Round($_.Size / 1GB, 2); usedGB = [math]::Round(($_.Size - $_.FreeSpace) / 1GB, 2); freeGB = [math]::Round($_.FreeSpace / 1GB, 2); usagePercent = $usagePercent; status = $status }');
+  lines.push('})');
+  lines.push('$disk = ($disks | Measure-Object -Property usagePercent -Maximum).Maximum');
+  lines.push('if ($null -eq $disk) { $disk = 0 }');
   lines.push('');
   lines.push('$processes = @()');
   lines.push('$directories = @()');
@@ -179,6 +199,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('  cpu = [math]::Round($cpu, 0)');
   lines.push('  memory = $memory');
   lines.push('  disk = $disk');
+  lines.push('  disks = $disks');
   lines.push('  processes = $processes');
   lines.push('  directories = $directories');
   lines.push('  fileChecks = $fileChecks');
