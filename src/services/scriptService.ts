@@ -18,8 +18,44 @@ export function generateScript(serverId: string): string {
 function generateLinuxScript(server: Server): string {
   return `
 #!/bin/bash
+set +e
 
-echo "Linux Generator TODO"
+hostname=$(hostname)
+checkDate=$(date '+%Y-%m-%d %H:%M:%S')
+uptimeMinutes=$(awk '{printf "%d", $1/60}' /proc/uptime)
+cpu_before=$(awk '/^cpu / {idle=$5+$6; total=0; for(i=2;i<=NF;i++) total+=$i; print total, idle}' /proc/stat)
+sleep 1
+cpu_after=$(awk '/^cpu / {idle=$5+$6; total=0; for(i=2;i<=NF;i++) total+=$i; print total, idle}' /proc/stat)
+cpu=$(awk -v before="$cpu_before" -v after="$cpu_after" 'BEGIN{split(before,b); split(after,a); total=a[1]-b[1]; idle=a[2]-b[2]; if(total>0) printf "%d", ((total-idle)/total)*100; else print 0}')
+memory=$(awk '/MemTotal:/ {total=$2} /MemAvailable:/ {available=$2} END{if(total>0) printf "%d", ((total-available)/total)*100; else print 0}' /proc/meminfo)
+disk=$(df -P / | awk 'NR==2 {gsub("%", "", $5); print $5+0}')
+json_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\\\"/g'; }
+processes='['
+directories='['
+fileChecks='['
+
+${(server.processes ?? []).map((process, index) => {
+    const name = process.name.replace(/'/g, "'\\''");
+    const comma = index ? ',' : '';
+    return `processes+="${comma}{\\\"name\\\":\\\"${name}\\\",\\\"running\\\":$(pgrep -x -- '${name.replace(/'/g, "'\\''")} >/dev/null 2>&1 && printf true || printf false)},"`;
+  }).join('\n')}
+
+${(server.directories ?? []).map((directory, index) => {
+    const path = directory.path.replace(/'/g, "'\\''");
+    const comma = index ? ',' : '';
+    return `if [ -d '${path}' ]; then size=$(du -sb -- '${path}' 2>/dev/null | awk '{print $1+0}'); usage=$(df -P -- '${path}' 2>/dev/null | awk 'NR==2 {gsub(\"%\", \"\", $5); print $5+0}'); exists=true; else size=0; usage=0; exists=false; fi; total=$(df -P -- '${path}' 2>/dev/null | awk 'NR==2 {print $2+0}'); used=$(df -P -- '${path}' 2>/dev/null | awk 'NR==2 {print $3+0}'); free=$(df -P -- '${path}' 2>/dev/null | awk 'NR==2 {print $4+0}'); p=$(json_escape '${path}'); directories+="${comma}{\\\"path\\\":\\\"$p\\\",\\\"exists\\\":$exists,\\\"sizeGB\\\":$(awk -v n=$size 'BEGIN{printf \"%.2f\",n/1073741824}'),\\\"usedGB\\\":$(awk -v n=$used 'BEGIN{printf \"%.2f\",n/1048576}'),\\\"freeGB\\\":$(awk -v n=$free 'BEGIN{printf \"%.2f\",n/1048576}'),\\\"totalGB\\\":$(awk -v n=$total 'BEGIN{printf \"%.2f\",n/1048576}'),\\\"usagePercent\\\":$usage},"`;
+  }).join('\n')}
+
+${(server.fileChecks ?? []).map((file, index) => {
+    const path = file.path.replace(/'/g, "'\\''");
+    const comma = index ? ',' : '';
+    return `if [ -f '${path}' ]; then bytes=$(stat -c %s -- '${path}' 2>/dev/null || echo 0); size=$(awk -v n=$bytes 'BEGIN{printf \"%.2f\",n/1048576}'); if awk -v n=$bytes -v c=${file.criticalSizeMB} 'BEGIN{exit !(n>=c*1048576)}'; then status=Critical; elif awk -v n=$bytes -v w=${file.warningSizeMB} 'BEGIN{exit !(n>=w*1048576)}'; then status=Warning; else status=Healthy; fi; exists=true; else bytes=0; size=0; status=Critical; exists=false; fi; p=$(json_escape '${path}'); fileChecks+="${comma}{\\\"path\\\":\\\"$p\\\",\\\"exists\\\":$exists,\\\"sizeBytes\\\":$bytes,\\\"sizeMB\\\":$size,\\\"status\\\":\\\"$status\\\"},"`;
+  }).join('\n')}
+
+processes="${'${processes%,}'}]"
+directories="${'${directories%,}'}]"
+fileChecks="${'${fileChecks%,}'}]"
+printf '{"server":"${server.id}","serverType":"${server.type}","hostname":"%s","checkDate":"%s","uptimeMinutes":%s,"cpu":%s,"memory":%s,"disk":%s,"network":"NotChecked","processes":%s,"directories":%s,"fileChecks":%s}\n' "$hostname" "$checkDate" "$uptimeMinutes" "$cpu" "$memory" "$disk" "$processes" "$directories" "$fileChecks"
 
 `;
 }
@@ -48,6 +84,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('');
   lines.push('$processes = @()');
   lines.push('$directories = @()');
+  lines.push('$fileChecks = @()');
   lines.push('');
 
   for (const process of server.processes ?? []) {
@@ -117,7 +154,25 @@ function generateWindowsScript(server: Server): string {
     lines.push('');
   }
 
+  for (const file of server.fileChecks ?? []) {
+    const safePath = file.path.replace(/`/g, '``').replace(/"/g, '`"');
+    lines.push(`$filePath = "${safePath}"`);
+    lines.push('if (Test-Path -LiteralPath $filePath -PathType Leaf)');
+    lines.push('{');
+    lines.push('  $sizeBytes = (Get-Item -LiteralPath $filePath).Length');
+    lines.push('  $sizeMB = [math]::Round($sizeBytes / 1MB, 2)');
+    lines.push(`  $status = if ($sizeBytes -ge (${file.criticalSizeMB} * 1MB)) { "Critical" } elseif ($sizeBytes -ge (${file.warningSizeMB} * 1MB)) { "Warning" } else { "Healthy" }`);
+    lines.push('  $fileChecks += @{ path = $filePath; exists = $true; sizeBytes = $sizeBytes; sizeMB = $sizeMB; status = $status }');
+    lines.push('}');
+    lines.push('else');
+    lines.push('{');
+    lines.push('  $fileChecks += @{ path = $filePath; exists = $false; sizeBytes = 0; sizeMB = 0; status = "Critical" }');
+    lines.push('}');
+  }
+
   lines.push('$result = @{');
+  lines.push('  server = "' + server.id.replace(/`/g, '``').replace(/"/g, '`"') + '"');
+  lines.push('  serverType = "' + server.type + '"');
   lines.push('  hostname = $hostname');
   lines.push('  checkDate = $checkDate');
   lines.push('  uptimeMinutes = $uptimeMinutes');
@@ -126,6 +181,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('  disk = $disk');
   lines.push('  processes = $processes');
   lines.push('  directories = $directories');
+  lines.push('  fileChecks = $fileChecks');
   lines.push('}');
   lines.push('');
   lines.push('$result | ConvertTo-Json -Depth 10');

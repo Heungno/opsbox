@@ -56,9 +56,16 @@
     "processes": [],
     "directories": [
       {
-        "path": "C:\\DEV\\VSCode\\opsbox.zip",
+        "path": "C:\\DEV\\VSCode\\",
         "warningPercent": 80,
         "criticalPercent": 90
+      }
+    ],
+    "fileChecks": [
+      {
+        "path": "C:\\DEV\\workspace\\opsbox.zip",
+        "warningSizeMB": 500,
+        "criticalSizeMB": 1000
       }
     ]
   }

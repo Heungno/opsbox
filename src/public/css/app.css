@@ -656,6 +656,15 @@ select:focus {
   margin-bottom: 8px;
 }
 
+.file-check-grid,
+.file-check-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 80px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 /* =========================================================
    Validation & Helpers
 ========================================================= */
@@ -680,6 +689,12 @@ select:focus {
   .directory-grid,
   .directory-row,
   .policy-header.directory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .file-check-grid,
+  .file-check-row,
+  .policy-header.file-check-grid {
     grid-template-columns: 1fr;
   }
 

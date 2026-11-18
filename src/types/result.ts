@@ -15,6 +15,14 @@ export interface DirectoryCheckResult {
   usagePercent: number;
 }
 
+export interface FileCheckResult {
+  path: string;
+  exists: boolean;
+  sizeBytes: number;
+  sizeMB: number;
+  status: 'Healthy' | 'Warning' | 'Critical';
+}
+
 export interface PortCheckResult {
   port: number;
   protocol: 'TCP' | 'UDP';
@@ -31,5 +39,6 @@ export interface CheckResult {
   disk: number;
   processes: ProcessCheckResult[];
   directories: DirectoryCheckResult[];
+  fileChecks?: FileCheckResult[];
   ports: PortCheckResult[];
 }

@@ -108,6 +108,7 @@ function renderReport() {
   renderMetrics(data, compareData);
   renderProcesses(data.processes, compareData?.processes);
   renderDirectories(data.directories, compareData?.directories);
+  renderFileChecks(data.fileChecks);
 }
 
 function renderHealth(health) {
@@ -290,6 +291,34 @@ function renderDirectories(directories, prevDirectories) {
     tr.appendChild(usageTd);
 
     tbody.appendChild(tr);
+  });
+}
+
+function renderFileChecks(fileChecks) {
+  const tbody = document.getElementById('file-check-report-list');
+  tbody.replaceChildren();
+  if (!fileChecks || fileChecks.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="4" style="text-align:center;color:var(--text-light);">점검된 파일이 없습니다.</td>';
+    tbody.appendChild(row);
+    return;
+  }
+
+  fileChecks.forEach((file) => {
+    const row = document.createElement('tr');
+    const path = document.createElement('td');
+    path.textContent = file.path;
+    const exists = document.createElement('td');
+    exists.textContent = file.exists ? '존재함' : '없음';
+    const size = document.createElement('td');
+    size.textContent = `${file.sizeMB ?? 0} MB`;
+    const status = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = `server-badge ${file.status === 'Healthy' ? 'badge-success' : file.status === 'Warning' ? 'badge-warning' : 'badge-danger'}`;
+    badge.textContent = file.status ?? 'Critical';
+    status.appendChild(badge);
+    row.append(path, exists, size, status);
+    tbody.appendChild(row);
   });
 }
 

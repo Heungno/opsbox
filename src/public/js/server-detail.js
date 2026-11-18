@@ -44,6 +44,7 @@ function renderServerInfo(server) {
   document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
   document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
   document.getElementById('btn-add-directory')?.addEventListener('click', addDirectoryRow);
+  document.getElementById('btn-add-file-check')?.addEventListener('click', addFileCheckRow);
   document.getElementById('btn-add-process')?.addEventListener('click', addProcessRow);
   document.getElementById('btn-save-policy')?.addEventListener('click', savePolicy);
 
@@ -317,6 +318,9 @@ function renderResultHistory(results) {
 }
 
 function getHealthStatus(result) {
+  if (result.fileChecks?.some((file) => file.status === 'Critical' || file.exists === false)) {
+    return 'Critical';
+  }
   const max = Math.max(result.cpu || 0, result.memory || 0, result.disk || 0);
 
   if (max >= 90) {
@@ -327,21 +331,11 @@ function getHealthStatus(result) {
     return 'Warning';
   }
 
+  if (result.fileChecks?.some((file) => file.status === 'Warning')) {
+    return 'Warning';
+  }
+
   return 'Healthy';
-}
-
-async function savePolicy() {
-  const directories = getDirectories();
-
-  const response = await fetch(`/api/servers/${serverId}/check-config`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ directories }),
-  });
-
-  const result = await response.json();
-
-  console.log(result);
 }
 
 async function loadPolicy(serverId) {
@@ -351,8 +345,10 @@ async function loadPolicy(serverId) {
   const config = await response.json();
   document.getElementById('process-container')?.replaceChildren();
   document.getElementById('directory-container')?.replaceChildren();
+  document.getElementById('file-check-container')?.replaceChildren();
   (config.processes ?? []).forEach((process) => addProcessRow(process));
   (config.directories ?? []).forEach((directory) => addDirectoryRow(directory));
+  (config.fileChecks ?? []).forEach((fileCheck) => addFileCheckRow(fileCheck));
 }
 
 function addDirectoryRow(data = {}) {
@@ -403,6 +399,52 @@ function getDirectories() {
   }));
 }
 
+function addFileCheckRow(data = {}) {
+  const container = document.getElementById('file-check-container');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.className = 'file-check-row';
+
+  const path = document.createElement('input');
+  path.className = 'file-check-path';
+  path.placeholder = 'C:\\app\\logs\\app.log 또는 /var/log/app.log';
+  path.value = data.path ?? '';
+
+  const warning = document.createElement('input');
+  warning.type = 'number';
+  warning.min = '0';
+  warning.step = '0.01';
+  warning.className = 'file-check-warning';
+  warning.placeholder = '100';
+  warning.value = data.warningSizeMB ?? '';
+
+  const critical = document.createElement('input');
+  critical.type = 'number';
+  critical.min = '0.01';
+  critical.step = '0.01';
+  critical.className = 'file-check-critical';
+  critical.placeholder = '500';
+  critical.value = data.criticalSizeMB ?? '';
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'btn btn-danger';
+  removeButton.textContent = '삭제';
+  removeButton.addEventListener('click', () => row.remove());
+
+  row.append(path, warning, critical, removeButton);
+  container.appendChild(row);
+}
+
+function getFileChecks() {
+  return [...document.querySelectorAll('.file-check-row')].map((row) => ({
+    path: row.querySelector('.file-check-path').value.trim(),
+    warningSizeMB: Number(row.querySelector('.file-check-warning').value),
+    criticalSizeMB: Number(row.querySelector('.file-check-critical').value),
+  }));
+}
+
 function addProcessRow(data = {}) {
   const container = document.getElementById('process-container');
   if (!container) {
@@ -441,6 +483,7 @@ async function savePolicy() {
   try {
     const processes = getProcesses();
     const directories = getDirectories();
+    const fileChecks = getFileChecks();
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
       headers: {
@@ -450,6 +493,7 @@ async function savePolicy() {
       body: JSON.stringify({
         processes,
         directories,
+        fileChecks,
       }),
     });
 

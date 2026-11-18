@@ -1,3 +1,6 @@
+import { DirectoryCheck, FileCheck, ProcessCheck } from '../types/server';
+import { ValidationError, ValidationResult } from '../types/validation';
+
 export function validateProcesses(processes: ProcessCheck[]): ValidationResult<ProcessCheck[]> {
   const errors: ValidationError[] = [];
 
@@ -100,4 +103,29 @@ export function validateDirectories(directories: DirectoryCheck[]): ValidationRe
 
     errors,
   };
+}
+export function validateFileChecks(fileChecks: FileCheck[]): ValidationResult<FileCheck[]> {
+  const errors: ValidationError[] = [];
+  const paths = new Set<string>();
+
+  fileChecks.forEach((item, index) => {
+    const filePath = item.path?.trim();
+    if (!filePath) {
+      errors.push({ field: 'fileChecks', index, message: '파일 경로가 비어있습니다.' });
+      return;
+    }
+    const key = filePath.toLowerCase();
+    if (paths.has(key)) errors.push({ field: 'fileChecks', index, message: `중복 파일 경로: ${filePath}` });
+    paths.add(key);
+    if (!Number.isFinite(item.warningSizeMB) || item.warningSizeMB <= 0) {
+      errors.push({ field: 'fileChecks', index, message: `${filePath} 경고 크기는 0보다 커야 합니다.` });
+    }
+    if (!Number.isFinite(item.criticalSizeMB) || item.criticalSizeMB <= 0) {
+      errors.push({ field: 'fileChecks', index, message: `${filePath} 위험 크기는 0보다 커야 합니다.` });
+    }
+    if (item.warningSizeMB >= item.criticalSizeMB) {
+      errors.push({ field: 'fileChecks', index, message: `${filePath} 경고 크기는 위험 크기보다 작아야 합니다.` });
+    }
+  });
+  return { valid: errors.length === 0, data: fileChecks, errors };
 }

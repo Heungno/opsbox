@@ -4,9 +4,14 @@ export interface ProcessCheck {
 
 export interface DirectoryCheck {
   path: string;
-
   warningPercent: number;
   criticalPercent: number;
+}
+
+export interface FileCheck {
+  path: string;
+  warningSizeMB: number;
+  criticalSizeMB: number;
 }
 
 export interface ServerPolicy {
@@ -29,6 +34,7 @@ export interface Server {
   sharedPath: string;
   processes: ProcessCheck[];
   directories: DirectoryCheck[];
+  fileChecks?: FileCheck[];
   ports?: PortCheck[];
 }
 

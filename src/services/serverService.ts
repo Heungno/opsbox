@@ -1,8 +1,8 @@
 import fs from 'fs';
 
-import { Server } from '../types/server';
+import { Server, DirectoryCheck, FileCheck, ProcessCheck } from '../types/server';
 
-import { validateProcesses, validateDirectories } from './serverValidation';
+import { validateProcesses, validateDirectories, validateFileChecks } from './serverValidation';
 
 import { ValidationError } from '../types/error';
 
@@ -43,10 +43,12 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   const processValidation = validateProcesses(server.processes ?? []);
 
   const directoryValidation = validateDirectories(server.directories ?? []);
+  const fileCheckValidation = validateFileChecks(server.fileChecks ?? []);
 
   errors.push(...processValidation.errors);
 
   errors.push(...directoryValidation.errors);
+  errors.push(...fileCheckValidation.errors);
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -124,6 +126,7 @@ export function getCheckConfig(id: string) {
     processes: server.processes ?? [],
 
     directories: server.directories ?? [],
+    fileChecks: server.fileChecks ?? [],
   };
 }
 
@@ -134,6 +137,7 @@ export function updateCheckConfig(
     processes?: ProcessCheck[];
 
     directories?: DirectoryCheck[];
+    fileChecks?: FileCheck[];
   },
 ) {
   const servers = read();
@@ -147,8 +151,9 @@ export function updateCheckConfig(
   const processValidation = validateProcesses(config.processes ?? []);
 
   const directoryValidation = validateDirectories(config.directories ?? []);
+  const fileCheckValidation = validateFileChecks(config.fileChecks ?? []);
 
-  const errors = [...processValidation.errors, ...directoryValidation.errors];
+  const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors];
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -157,6 +162,7 @@ export function updateCheckConfig(
   servers[index].processes = config.processes ?? [];
 
   servers[index].directories = config.directories ?? [];
+  servers[index].fileChecks = config.fileChecks ?? [];
 
   write(servers);
 
@@ -166,6 +172,7 @@ export function updateCheckConfig(
     processes: servers[index].processes,
 
     directories: servers[index].directories,
+    fileChecks: servers[index].fileChecks,
   };
 }
 
