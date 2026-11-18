@@ -15,7 +15,7 @@ function updateFormMode() {
   const script = kind.value === 'SCRIPT';
   document.querySelectorAll('.template-script-option').forEach((node) => node.hidden = !script);
   help.textContent = script
-    ? '스크립트는 선택한 운영체제에서 실행할 전체 내용을 작성합니다. 사용 가능 변수: {{SERVER_ID}}, {{SERVER_NAME}}, {{SERVER_IP}}, {{SHARED_PATH}}, {{OS}}, {{ROLES}}, {{ROLES_JSON}}, {{PRODUCTS_JSON}}, {{PROCESSES_JSON}}, {{DIRECTORIES_JSON}}, {{FILE_CHECKS_JSON}}, {{PORTS_JSON}}, {{HTTP_CHECKS_JSON}}. 예제 템플릿은 수정해 저장하거나 복사해 새 템플릿으로 관리할 수 있습니다.'
+    ? '스크립트 템플릿은 기본 생성 스크립트 전체를 대체합니다. 사용 가능 변수: {{SERVER_ID}}, {{SERVER_NAME}}, {{SERVER_IP}}, {{SHARED_PATH}}, {{OS}}, {{ROLES}}, {{ROLES_JSON}}, {{PRODUCTS_JSON}}, {{PROCESSES_JSON}}, {{DIRECTORIES_JSON}}, {{FILE_CHECKS_JSON}}, {{PORTS_JSON}}, {{HTTP_CHECKS_JSON}}. 공통 자원 예제는 등록 정책 및 WEB/WAS/DB 제품 점검을 수행하지 않습니다. 전체 점검은 서버 설정에서 스크립트 템플릿을 “기본 자동 생성”으로 두세요.'
     : '쿼리는 MSSQL 점검 스크립트에서 실행할 SQL입니다. {{SERVER_IP}}와 {{SERVER_NAME}}을 설정값으로 치환할 수 있습니다. 쿼리 결과는 기본 보고서의 컬럼 형식(SERVER|..., DATABASE|...)과 맞춰야 합니다.';
 }
 

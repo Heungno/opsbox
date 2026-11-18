@@ -12,8 +12,8 @@ function sampleTemplates(): ManagedTemplate[] {
     content: fs.readFileSync(path.join('src', 'template-samples', file), 'utf8'), updatedAt,
   });
   return [
-    sample('SAMPLE-WINDOWS-COMMON', '예제 · Windows 공통 자원', 'SCRIPT', 'windows-common.ps1', 'Windows'),
-    sample('SAMPLE-LINUX-COMMON', '예제 · Linux 공통 자원', 'SCRIPT', 'linux-common.sh', 'Linux'),
+    sample('SAMPLE-WINDOWS-COMMON', '예제 · Windows 공통 자원만 (정책·제품 점검 제외)', 'SCRIPT', 'windows-common.ps1', 'Windows'),
+    sample('SAMPLE-LINUX-COMMON', '예제 · Linux 공통 자원만 (정책·제품 점검 제외)', 'SCRIPT', 'linux-common.sh', 'Linux'),
     sample('SAMPLE-MSSQL-DATABASES', '예제 · MSSQL 데이터베이스 상태', 'QUERY', 'mssql-databases.sql'),
   ];
 }

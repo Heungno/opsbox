@@ -10,7 +10,11 @@ $disks = @(Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Obj
   $status = if ($usage -ge 90) { 'Critical' } elseif ($usage -ge 70) { 'Warning' } else { 'Healthy' }
   [ordered]@{ device = $_.DeviceID; mountPoint = $_.DeviceID; totalGB = [math]::Round($_.Size / 1GB, 2); usedGB = [math]::Round(($_.Size - $_.FreeSpace) / 1GB, 2); freeGB = [math]::Round($_.FreeSpace / 1GB, 2); usagePercent = $usage; status = $status }
 })
-$disk = if ($disks.Count) { ($disks | Measure-Object -Property usagePercent -Maximum).Maximum } else { 0 }
+$disk = 0
+foreach ($diskInfo in $disks) {
+  $usage = [double]$diskInfo['usagePercent']
+  if ($usage -gt $disk) { $disk = $usage }
+}
 $roles = @('{{ROLES}}'.Split(','))
 $products = ConvertFrom-Json '{{PRODUCTS_JSON}}'
 $product = ''
