@@ -53,6 +53,13 @@ export interface WasRuntimeCheckResult {
   message?: string;
 }
 
+export interface WebtoBCheckResult {
+  status: 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
+  command: string;
+  output?: string;
+  message?: string;
+}
+
 export interface CheckResult {
   hostname: string;
   checkDate: string;
@@ -67,4 +74,5 @@ export interface CheckResult {
   ports?: PortCheckResult[];
   httpChecks?: HttpCheckResult[];
   wasChecks?: WasRuntimeCheckResult[];
+  webtobCheck?: WebtoBCheckResult;
 }

@@ -128,6 +128,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('$portChecks = @()');
   lines.push('$httpChecks = @()');
   lines.push('$wasChecks = @()');
+  lines.push('$webtobCheck = $null');
   lines.push('');
 
   for (const process of server.processes ?? []) {
@@ -270,6 +271,22 @@ function generateWindowsScript(server: Server): string {
     lines.push('$wasChecks += @{ processId = 0; processName = "node"; status = "NotCollected"; message = "Node.js runtime metrics require an application-specific collector" }');
   }
 
+  if (server.type === 'WEB' && server.product === 'WebtoB') {
+    lines.push('$wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue');
+    lines.push('if (-not $wsadmin) { $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue }');
+    lines.push('if (-not $wsadmin) { $webtobCheck = @{ status = "NotCollected"; command = "wsadmin cli st"; message = "wsadmin을 PATH에서 찾을 수 없습니다." } }');
+    lines.push('else {');
+    lines.push('  try {');
+    lines.push('    $psi = New-Object System.Diagnostics.ProcessStartInfo');
+    lines.push('    $psi.FileName = $wsadmin.Source; $psi.Arguments = \'"cli" "st"\'; $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true');
+    lines.push('    $proc = New-Object System.Diagnostics.Process; $proc.StartInfo = $psi; [void]$proc.Start()');
+    lines.push('    $stdoutTask = $proc.StandardOutput.ReadToEndAsync(); $stderrTask = $proc.StandardError.ReadToEndAsync()');
+    lines.push('    if (-not $proc.WaitForExit(15000)) { $proc.Kill(); $webtobCheck = @{ status = "NotCollected"; command = "wsadmin cli st"; message = "wsadmin 실행 시간 초과(15초)" } }');
+    lines.push('    else { $output = ($stdoutTask.Result + "`n" + $stderrTask.Result).Trim(); $hasStatus = $output -match "(?im)^\\s*(HTH|\\d+\\s+\\S+\\s+\\(\\s*\\d+\\s*\\)\\s+(RDY|RUN|BLK|NRDY|STOP|DOWN))"; $badStatus = $output -match "(?i)\\b(BLK|NRDY|STOPPED|DOWN|ERROR)\\b"; $goodStatus = $output -match "(?i)\\b(RDY|RUN|RUNNING|READY)\\b"; $state = if ($hasStatus -and $badStatus) { "Critical" } elseif ($hasStatus -and $goodStatus) { "Healthy" } else { "NotCollected" }; $webtobCheck = @{ status = $state; command = "wsadmin cli st"; output = $output.Substring(0, [math]::Min(12000, $output.Length)); message = if ($state -eq "NotCollected") { "상태 출력을 판별하지 못했습니다. WebtoB 버전 및 wsadmin 실행 방식을 확인하세요." } else { $null } } }');
+    lines.push('  } catch { $webtobCheck = @{ status = "NotCollected"; command = "wsadmin cli st"; message = $_.Exception.Message } }');
+    lines.push('}');
+  }
+
   lines.push('$result = @{');
   lines.push('  server = "' + server.id.replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('  serverType = "' + server.type + '"');
@@ -286,6 +303,7 @@ function generateWindowsScript(server: Server): string {
   lines.push('  ports = $portChecks');
   lines.push('  httpChecks = $httpChecks');
   lines.push('  wasChecks = $wasChecks');
+  lines.push('  webtobCheck = $webtobCheck');
   lines.push('  product = "' + (server.product ?? '').replace(/`/g, '``').replace(/"/g, '`"') + '"');
   lines.push('}');
   lines.push('');

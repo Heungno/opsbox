@@ -125,6 +125,9 @@ function renderReport() {
   renderFileChecks(data.fileChecks);
   renderPorts(data.ports);
   renderHttpChecks(data.httpChecks);
+  const webtobDetails = document.getElementById('webtob-report-details');
+  webtobDetails.hidden = !(serverType === 'WEB' && (data.product || currentServerProduct) === 'WebtoB' && data.webtobCheck);
+  document.getElementById('webtob-check-output').textContent = data.webtobCheck?.output || data.webtobCheck?.message || 'wsadmin 결과 없음';
 }
 
 function renderTypeReportForm(serverType, data, product) {
@@ -146,6 +149,7 @@ function renderTypeReportForm(serverType, data, product) {
     WEB: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
       ['WEB 프로세스', processCheck, '등록된 웹 엔진 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
+      ...(product === 'WebtoB' ? [['WebtoB wsadmin', summarizeWebtoB(data.webtobCheck), 'wsadmin cli st의 엔진·서버 상태']] : []),
       ['HTTP 응답', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['엔진·로그 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
     ],
     WAS: [
@@ -189,6 +193,11 @@ function renderTypeReportForm(serverType, data, product) {
   };
   if (type === 'WAS' && product === 'Node.js') pendingRows.WAS.unshift(['Node.js Heap', '애플리케이션별 Node.js 런타임 수집기가 필요합니다.']);
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
+}
+
+function summarizeWebtoB(check) {
+  if (!check || check.status === 'NotCollected') return { status: 'NotCollected', detail: check?.message || 'wsadmin 결과 없음' };
+  return { status: check.status, detail: check.message || `${check.command} 실행 결과 확인` };
 }
 
 function summarizeWasRuntime(items, product) {

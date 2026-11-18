@@ -22,6 +22,7 @@ export interface CheckResult {
   ports?: Array<{ listening?: boolean }>;
   httpChecks?: Array<{ success?: boolean }>;
   wasChecks?: Array<{ status?: string }>;
+  webtobCheck?: { status?: string };
 }
 
 function readJsonFile(filePath: string) {
@@ -147,6 +148,7 @@ export function getHealthStatus(result: CheckResult): string {
   if (result.ports?.some((port) => port.listening === false)) return 'Critical';
   if (result.httpChecks?.some((check) => check.success === false)) return 'Critical';
   if (result.wasChecks?.some((check) => check.status === 'Critical')) return 'Critical';
+  if (result.webtobCheck?.status === 'Critical') return 'Critical';
   const max = Math.max(result.cpu, result.memory, result.disk);
 
   if (max >= 90) {
@@ -160,6 +162,7 @@ export function getHealthStatus(result: CheckResult): string {
   if (result.fileChecks?.some((file) => file.status === 'Warning')) return 'Warning';
   if (result.disks?.some((disk) => disk.status === 'Warning')) return 'Warning';
   if (result.wasChecks?.some((check) => check.status === 'Warning')) return 'Warning';
+  if (result.webtobCheck?.status === 'Warning') return 'Warning';
 
   return 'Healthy';
 }
