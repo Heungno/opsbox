@@ -268,16 +268,18 @@ export function updateCheckConfig(
       errors.push({ field: `rolePolicySettings.${item}.logDirectories`, message: `${label} 로그 점검 항목을 추가한 뒤 로그 폴더를 지정하세요.` });
     }
   }
-  for (const item of ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'] as const) {
-    if (!(roleChecks.DB ?? []).includes(item)) continue;
+  for (const item of roleChecks.DB ?? []) {
     if (servers[index].os !== 'Windows' || getServerProduct(servers[index], 'DB') !== 'MSSQL') continue;
+    const itemLabel = COMMON_CODES.scriptItems.find(({ value }) => value === item)?.label ?? item;
     const setting = rolePolicySettings[item] ?? {};
     const rawTargets: unknown = setting.instanceTargets;
     const targets: unknown = typeof rawTargets === 'string'
       ? rawTargets.split(/\r?\n/).map((target) => target.trim()).filter(Boolean)
       : rawTargets;
     if (!Array.isArray(targets) || targets.some((target: unknown) => typeof target !== 'string' || !target.trim() || target.length > 512)) {
-      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: 'MSSQL 인스턴스 대상은 비어 있지 않은 값으로 입력하세요.' });
+      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: `${itemLabel} MSSQL 인스턴스 대상을 올바르게 입력하세요.` });
+    } else if (targets.length === 0) {
+      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: `${itemLabel} 쿼리를 실행할 MSSQL 인스턴스를 하나 이상 지정하세요.` });
     } else {
       setting.instanceTargets = [...new Set((targets as string[]).map((target) => target.trim()))];
       rolePolicySettings[item] = setting;

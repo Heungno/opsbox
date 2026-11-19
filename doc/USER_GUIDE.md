@@ -104,7 +104,7 @@ Windows WAS 스크립트는 JDK의 `jstat.exe`를 찾을 수 있고 실행 계�
 
 DB 서버를 등록할 때 MSSQL, MariaDB, CUBRID, PostgreSQL 중 제품을 선택합니다. 현재 자동 SQL 점검은 Windows MSSQL 대상입니다. 서버에서 `sqlcmd`를 PATH로 실행할 수 있어야 하며, Windows 통합 인증(`-E`)으로 접속합니다. 스크립트는 서버명·버전·에디션, 데이터베이스별 상태·복구 모델·데이터 파일 크기를 읽기 전용 조회로 기록합니다. 데이터베이스 상태가 `OFFLINE`, `SUSPECT`, `RECOVERY_PENDING`, `EMERGENCY`면 위험, `ONLINE`이 아닌 다른 상태는 경고로 표시합니다.
 
-DB 정책에서 인스턴스 상태, 세션·프로세스, 데이터 영역, 백업, 아카이브 모드, 트랜잭션 로그, 복제·이중화 항목마다 SQL 쿼리 템플릿을 선택합니다. 인스턴스 대상은 DB 인스턴스·접속 항목에서 한 줄에 하나씩 지정하며, 다른 DB 점검 쿼리도 이 목록을 공유합니다. 예: `localhost\testdb`, `localhost\인스턴스명`, `localhost,1433`. 사용자가 만든 쿼리는 기타 사용자 쿼리에서 여러 개 선택할 수 있습니다. 쿼리 결과는 컬럼과 행을 표로 표시합니다. 첫 컬럼 이름을 `__OPSBOX_STATUS`로 지정하고 `Healthy`, `Warning`, `Critical` 중 하나를 반환하면 점검 상태도 판정합니다. 현재 자동 쿼리 수집은 Windows MSSQL만 지원하며 `sqlcmd`와 Windows 통합 인증(`-E`)을 사용합니다. 기본 대상은 서버 IP의 TCP 1433이며, 구형 설정에서는 `OPSBOX_MSSQL_TARGET` 환경변수도 사용할 수 있습니다. MariaDB, CUBRID, PostgreSQL과 Linux DB 쿼리 수집은 아직 지원하지 않습니다.
+DB 정책에서 인스턴스 상태, 세션·프로세스, 데이터 영역, 백업, 아카이브 모드, 트랜잭션 로그, 복제·이중화 항목마다 SQL 쿼리 템플릿과 실행 대상 MSSQL 인스턴스 목록을 지정합니다. 각 항목은 한 줄에 인스턴스 하나씩 입력하며, 그 항목의 쿼리가 입력한 모든 인스턴스에서 실행됩니다. 예: `localhost\testdb`, `localhost\인스턴스명`, `localhost,1433`. 사용자가 만든 쿼리는 기타 사용자 쿼리에서 여러 개 선택할 수 있고, 이 항목에도 별도 실행 대상을 입력합니다. 쿼리 결과는 컬럼과 행을 표로 표시합니다. 첫 컬럼 이름을 `__OPSBOX_STATUS`로 지정하고 `Healthy`, `Warning`, `Critical` 중 하나를 반환하면 점검 상태도 판정합니다. 현재 자동 쿼리 수집은 Windows MSSQL만 지원하며 `sqlcmd`와 Windows 통합 인증(`-E`)을 사용합니다. 각 항목의 초기 대상은 서버 IP의 TCP 1433이며, 구형 설정에 대상이 없으면 DB 인스턴스·접속 항목 대상을 대신 사용합니다. MariaDB, CUBRID, PostgreSQL과 Linux DB 쿼리 수집은 아직 지원하지 않습니다.
 
 ### 디스크 점검
 

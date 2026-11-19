@@ -682,7 +682,7 @@ async function savePolicy() {
     });
     document.querySelectorAll('[data-db-instance-targets]').forEach((input) => {
       const item = input.getAttribute('data-db-instance-targets');
-      if (!['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(item)) return;
+      if (!commonCodes.rolePolicies.DB.includes(item)) return;
       rolePolicySettings[item] = {
         ...(rolePolicySettings[item] ?? {}),
         instanceTargets: input.value.split(/\r?\n/).map((target) => target.trim()).filter(Boolean),
@@ -829,18 +829,28 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         periodField.append(periodLabel, periodInput);
         description.appendChild(periodField);
       }
-      if (item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY') {
+      if (role === 'DB' && products.DB === 'MSSQL') {
         const setting = selectedRolePolicySettings[item] ?? {};
         const instanceField = document.createElement('label'); instanceField.className = 'role-policy-option';
         const instanceLabel = document.createElement('span'); instanceLabel.textContent = 'MSSQL 인스턴스 대상 (한 줄에 하나씩)';
         const instanceInput = document.createElement('textarea'); instanceInput.rows = 2;
         instanceInput.placeholder = '예: .\\testdb 또는 localhost,1433';
-        instanceInput.value = (setting.instanceTargets ?? [`${currentServer.ip},1433`]).join('\n');
+        const inheritedTargets = selectedRolePolicySettings.DB_INSTANCE_STATUS?.instanceTargets;
+        const initialTargets = Array.isArray(setting.instanceTargets)
+          ? setting.instanceTargets
+          : inheritedTargets?.length ? inheritedTargets : [`${currentServer.ip},1433`];
+        instanceInput.value = initialTargets.join('\n');
         instanceInput.setAttribute('data-db-instance-targets', item);
         const instanceHelp = document.createElement('small');
         instanceHelp.textContent = item === 'DB_CUSTOM_QUERY'
-          ? '선택한 쿼리를 각 인스턴스에서 실행합니다. Windows 인증을 사용합니다.'
-          : '기본 또는 선택한 상태 쿼리를 각 인스턴스에서 실행합니다. Windows 인증을 사용합니다.';
+          ? '선택한 사용자 쿼리를 입력한 각 인스턴스에서 실행합니다. Windows 통합 인증을 사용합니다.'
+          : '이 항목에서 선택한 SQL 쿼리를 입력한 각 인스턴스에서 실행합니다. Windows 통합 인증을 사용합니다.';
+        instanceInput.addEventListener('input', () => {
+          selectedRolePolicySettings[item] = {
+            ...(selectedRolePolicySettings[item] ?? setting),
+            instanceTargets: instanceInput.value.split(/\r?\n/).map((target) => target.trim()).filter(Boolean),
+          };
+        });
         instanceField.append(instanceLabel, instanceInput, instanceHelp);
         description.appendChild(instanceField);
       }
@@ -855,6 +865,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         selectedRoleChecks[role] = (selectedRoleChecks[role] ?? []).filter((value) => value !== item);
         delete selectedScriptParts[item];
         if (item === 'DB_CUSTOM_QUERY') selectedCustomQueryTemplateIds = [];
+        if (role === 'DB') delete selectedRolePolicySettings[item];
         if (['WEB_LOG', 'WAS_LOG'].includes(item)) delete selectedRolePolicySettings[item];
         renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
       });
