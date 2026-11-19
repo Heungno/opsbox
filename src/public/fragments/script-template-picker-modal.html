@@ -16,13 +16,28 @@
       <select id="db-query-template-select"></select>
     </div>
     <div class="button-area script-template-picker-tools">
-      <a id="script-template-picker-manager" class="btn btn-small" href="/settings/templates" target="_blank" rel="noopener">스크립트 관리</a>
+      <button id="script-template-picker-edit" type="button" class="btn btn-small">선택 스크립트 수정</button>
       <button id="script-template-picker-refresh" type="button" class="btn btn-small">목록 새로고침</button>
     </div>
     <p class="policy-help">선택한 스크립트와 쿼리는 정책 저장 후 적용됩니다. 내용 수정은 스크립트 관리에서 할 수 있습니다.</p>
     <div class="button-area">
       <button id="script-template-picker-save" type="button" class="btn btn-primary">선택 적용</button>
       <button id="script-template-picker-cancel" type="button" class="btn">취소</button>
+    </div>
+  </section>
+</dialog>
+<dialog id="script-template-editor" class="modal-dialog script-template-editor">
+  <section class="card modal-card">
+    <div class="section-header">
+      <div><h2 id="script-template-editor-title">스크립트 수정</h2><p id="script-template-editor-label" class="policy-help"></p></div>
+      <button id="script-template-editor-close" type="button" class="btn">닫기</button>
+    </div>
+    <div class="form-group"><label for="script-template-editor-name">템플릿 이름</label><input id="script-template-editor-name" required /></div>
+    <label class="template-enabled"><input id="script-template-editor-enabled" type="checkbox" /> 사용</label>
+    <div class="form-group"><label for="script-template-editor-content">템플릿 내용</label><textarea id="script-template-editor-content" class="script-template-editor-content" spellcheck="false" wrap="off"></textarea></div>
+    <div class="button-area">
+      <button id="script-template-editor-save" type="button" class="btn btn-primary">변경 저장</button>
+      <button id="script-template-editor-cancel" type="button" class="btn">취소</button>
     </div>
   </section>
 </dialog>

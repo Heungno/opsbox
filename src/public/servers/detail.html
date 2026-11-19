@@ -66,6 +66,19 @@
                 </tr>
               </tbody>
             </table>
+            <div class="server-overview-checks">
+              <section class="server-overview-latest">
+                <h3>최근 점검 결과</h3>
+                <div id="latest-result">조회중...</div>
+              </section>
+              <section class="server-overview-history">
+                <h3>최근 점검 기록</h3>
+                <table class="history-table compact-history-table">
+                  <thead><tr><th>점검일시</th><th>CPU</th><th>MEM</th><th>DISK</th><th>상태</th><th>보고서</th></tr></thead>
+                  <tbody id="result-history"><tr><td colspan="6">조회중...</td></tr></tbody>
+                </table>
+              </section>
+            </div>
           </section>
 
           <div id="server-modal-container"></div>
@@ -151,34 +164,8 @@
           </section>
 
           <section class="card">
-            <h2>최근 점검 결과</h2>
-            <div id="latest-result">조회중...</div>
-          </section>
-
-          <section class="card">
             <h2>점검 스크립트</h2>
             <div id="script-list">조회중...</div>
-          </section>
-
-          <section class="card">
-            <h2>점검 이력</h2>
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>점검일시</th>
-                  <th>CPU</th>
-                  <th>MEM</th>
-                  <th>DISK</th>
-                  <th>상태</th>
-                  <th>리포트</th>
-                </tr>
-              </thead>
-              <tbody id="result-history">
-                <tr>
-                  <td colspan="6">조회중...</td>
-                </tr>
-              </tbody>
-            </table>
           </section>
       </div>
 

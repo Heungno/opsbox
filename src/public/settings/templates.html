@@ -7,17 +7,12 @@
   <link rel="stylesheet" href="/css/app.css" />
 </head>
 <body class="template-management-page">
-  <div class="layout">
-    <div id="sidebar-container"></div>
-    <main class="content"><div class="container">
+  <div id="shared-layout-root"></div>
+  <template id="page-content-template">
       <header class="header"><h1>스크립트 관리</h1><p>점검 항목별 스크립트와 DB 쿼리를 관리하고 서버 정책에 연결합니다.</p></header>
-      <div class="template-workspace">
-      <section class="card template-list-panel">
-        <div class="section-header"><h2>저장된 템플릿</h2><select id="template-filter" aria-label="템플릿 종류 필터"></select></div>
-        <div id="template-list" class="template-list"></div>
-      </section>
+      <div class="template-workspace template-editor-only">
       <section class="card template-editor-panel">
-        <div class="section-header"><h2 id="template-form-title">새 템플릿</h2><button type="button" id="btn-template-reset" class="btn">새로 작성</button></div>
+        <div class="section-header"><h2 id="template-form-title">새 템플릿</h2><div class="button-area"><button type="button" id="btn-template-open" class="btn">템플릿 목록</button><button type="button" id="btn-template-reset" class="btn">새로 작성</button></div></div>
         <form id="template-form">
           <div class="form-grid">
             <div class="form-group"><label for="template-name">이름</label><input id="template-name" required placeholder="예: Windows WEB 기본 점검" /></div>
@@ -34,8 +29,14 @@
         </form>
       </section>
       </div>
-    </div></main>
-  </div>
+  </template>
+  <dialog id="template-list-dialog" class="modal-dialog template-list-dialog">
+    <section class="card modal-card">
+      <div class="section-header"><h2>저장된 템플릿</h2><button type="button" id="btn-template-list-close" class="btn">닫기</button></div>
+      <div class="form-group"><label for="template-filter">템플릿 종류</label><select id="template-filter" aria-label="템플릿 종류 필터"></select></div>
+      <div id="template-list" class="template-list"></div>
+    </section>
+  </dialog>
   <dialog id="unsaved-template-dialog" class="modal-dialog unsaved-template-dialog">
     <section class="card modal-card">
       <div class="section-header"><h2>저장하지 않은 변경사항</h2></div>
@@ -48,6 +49,6 @@
     </section>
   </dialog>
   <script src="/js/common.js"></script>
-  <script src="/settings/templates.js"></script>
+  <script type="module" src="/settings/templates.js"></script>
 </body>
 </html>

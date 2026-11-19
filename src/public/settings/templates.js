@@ -1,3 +1,5 @@
+await window.opsboxLayoutReady;
+
 let templates = [];
 let editingId = '';
 let hasUnsavedChanges = false;
@@ -15,6 +17,8 @@ kind.addEventListener('change', updateFormMode);
 document.getElementById('template-item').addEventListener('change', renderOutputExample);
 document.getElementById('template-filter').addEventListener('change', loadTemplates);
 document.getElementById('btn-template-reset').addEventListener('click', resetForm);
+document.getElementById('btn-template-open').addEventListener('click', () => document.getElementById('template-list-dialog').showModal());
+document.getElementById('btn-template-list-close').addEventListener('click', () => document.getElementById('template-list-dialog').close());
 form.addEventListener('submit', saveTemplate);
 form.addEventListener('input', () => { hasUnsavedChanges = true; });
 form.addEventListener('change', () => { hasUnsavedChanges = true; });
@@ -158,6 +162,7 @@ function requestOpenTemplate(item) {
 
 function openTemplate(item) {
   if (!item) return;
+  document.getElementById('template-list-dialog').close();
   editingId = item.id;
   hasUnsavedChanges = false;
   document.getElementById('template-form-title').textContent = '템플릿 수정';

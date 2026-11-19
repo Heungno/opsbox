@@ -1,4 +1,16 @@
+async function applySharedLayout() {
+  const root = document.getElementById('shared-layout-root');
+  if (!root) return;
+  const response = await fetch('/fragments/layout.html');
+  if (!response.ok) throw new Error('공통 레이아웃을 불러오지 못했습니다.');
+  root.innerHTML = await response.text();
+  const page = document.getElementById('page-content');
+  const content = document.getElementById('page-content-template');
+  if (page && content) page.append(content.content.cloneNode(true));
+}
+
 async function loadSidebar() {
+  await window.opsboxLayoutReady;
   const response = await fetch('/fragments/sidebar.html');
 
   const html = await response.text();
@@ -103,6 +115,8 @@ function activateCurrentMenu() {
     }
   });
 }
+
+window.opsboxLayoutReady = applySharedLayout();
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSidebar();
