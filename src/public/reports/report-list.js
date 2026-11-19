@@ -144,4 +144,4 @@ function createServerReportsTable(items) {
   return table;
 }
 
-document.addEventListener('DOMContentLoaded', init);
+init();
