@@ -194,9 +194,9 @@ function loadScripts(server) {
   const scriptFileName = server.os.toLowerCase() === 'windows' ? `${server.id}.ps1` : `${server.id}.sh`;
   
   const quotePowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
-  const scriptSelector = `Where-Object { $_.Name.StartsWith(${quotePowerShell(server.id)}, [System.StringComparison]::OrdinalIgnoreCase) -and $_.Extension -eq '.ps1' }`;
+  const scriptFilter = quotePowerShell(`${server.id}*.ps1`);
   const command = server.os.toLowerCase() === 'windows'
-    ? `$script = Get-ChildItem -File | ${scriptSelector} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script`
+    ? `$script = Get-ChildItem -File -Filter ${scriptFilter} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script`
     : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
   const commandBox = document.createElement('pre');
