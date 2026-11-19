@@ -43,9 +43,50 @@ editor.addEventListener('scroll', () => {
 function renderHighlightedTemplate() {
   const source = editor.value || ' ';
   const escapeHtml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  highlight.innerHTML = source.split(/(\{\{[A-Z_]+\}\})/g).map((part) => /^\{\{[A-Z_]+\}\}$/.test(part)
-    ? `<span class="template-variable">${escapeHtml(part)}</span>`
-    : escapeHtml(part)).join('');
+  const language = kind.value === 'QUERY' ? 'sql' : document.getElementById('template-os').value === 'Linux' ? 'bash' : 'powershell';
+  const definitions = {
+    sql: {
+      token: /\{\{[A-Z_]+\}\}|--[^\r\n]*|\/\*[\s\S]*?\*\/|'(?:''|[^'])*'|"(?:""|[^"])*"|@[A-Za-z_][\w$]*|\b\d+(?:\.\d+)?\b|[A-Za-z_][\w$]*/g,
+      keywords: new Set('ADD ALL ALTER AND AS ASC BACKUP BEGIN BETWEEN BY CASE CAST CHECK CHECKPOINT CLOSE COALESCE COLLATE COLUMN COMMIT CONSTRAINT CONVERT CREATE CROSS CURSOR DATABASE DBCC DECLARE DEFAULT DELETE DESC DISTINCT DROP ELSE END EXEC EXECUTE EXISTS FETCH FILEPROPERTY FOR FOREIGN FROM FULL FUNCTION GROUP HAVING IF IN INDEX INNER INSERT IS JOIN KEY LEFT LIKE MAX MIN NEXT NOCOUNT NOT NULL ON OPEN OR ORDER OUTER OVER PARTITION PRIMARY PROCEDURE QUOTENAME REFERENCES RESTORE RETURN RIGHT ROLLBACK SELECT SET SUM TABLE THEN TOP TRANSACTION TRUNCATE UNION UNIQUE UPDATE USE VALUES WHEN WHERE WHILE WITH'.split(' ')),
+      builtins: new Set('AVG COUNT DATEADD DATEDIFF GETDATE ISNULL LOWER MAX NEWID SERVERPROPERTY SUM UPPER'.split(' ')),
+      variable: /^@/,
+    },
+    powershell: {
+      token: /\{\{[A-Z_]+\}\}|<#[\s\S]*?#>|#[^\r\n]*|'(?:''|[^'])*'|"(?:`.|[^"`])*"|\$\{[^}]+\}|\$[A-Za-z_?][\w:?]*|\b\d+(?:\.\d+)?\b|[A-Za-z_][\w-]*/g,
+      keywords: new Set('begin break catch class continue data define do dynamicparam else elseif end enum exit filter finally for foreach from function if in inlineparam param process return switch throw trap try until using var while workflow'.split(' ')),
+      builtins: new Set('add-content add-member convertfrom-json convertto-json get-childitem get-command get-content get-date get-filehash get-item get-location get-process get-service get-wmiobject measure-object new-item out-file select-object set-content sort-object split-path test-path where-object write-error write-host write-output'.split(' ')),
+      variable: /^\$/,
+    },
+    bash: {
+      token: /\{\{[A-Z_]+\}\}|#[^\r\n]*|'[^']*'|"(?:\\.|[^"\\])*"|\$\{[^}]+\}|\$[A-Za-z_?][\w?!#@*:$-]*|\b\d+(?:\.\d+)?\b|[A-Za-z_][\w-]*/g,
+      keywords: new Set('case do done elif else esac fi for function if in select then time until while'.split(' ')),
+      builtins: new Set('awk cat cd chmod cp date df dirname echo eval exec exit export false find grep head local printf pwd read rm sed set shift sleep source stat sudo test trap true type uname unset wc which'.split(' ')),
+      variable: /^\$/,
+    },
+  };
+  const rules = definitions[language];
+  const status = document.getElementById('template-highlight');
+  status.dataset.language = language;
+  let html = '';
+  let position = 0;
+  for (const match of source.matchAll(rules.token)) {
+    const token = match[0];
+    const offset = match.index ?? position;
+    html += escapeHtml(source.slice(position, offset));
+    let type = '';
+    const lower = token.toLowerCase();
+    if (/^\{\{[A-Z_]+\}\}$/.test(token)) type = 'template-variable';
+    else if ((language === 'sql' && /^(--|\/\*)/.test(token)) || (language !== 'sql' && /^(#|<#)/.test(token))) type = 'syntax-comment';
+    else if (/^(?:'|"|`)/.test(token)) type = 'syntax-string';
+    else if (rules.variable.test(token)) type = 'syntax-variable';
+    else if (/^\d/.test(token)) type = 'syntax-number';
+    else if (rules.keywords.has(lower)) type = 'syntax-keyword';
+    else if (rules.builtins.has(lower) || (language === 'powershell' && /^(get|set|new|remove|write|read|test|start|stop|invoke|convert|select|where|measure|out|import|export)-/i.test(token))) type = 'syntax-builtin';
+    html += type ? `<span class="${type}">${escapeHtml(token)}</span>` : escapeHtml(token);
+    position = offset + token.length;
+  }
+  html += escapeHtml(source.slice(position));
+  highlight.innerHTML = html;
 }
 
 function updateFormMode() {
@@ -76,6 +117,7 @@ function updateFormMode() {
       : kind.value === 'QUERY'
         ? '선택한 DB 점검 항목에서 실행할 SQL입니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
         : '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.';
+  renderHighlightedTemplate();
   renderOutputExample();
 }
 
