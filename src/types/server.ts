@@ -36,6 +36,7 @@ export interface RolePolicySetting {
   logDirectories?: string[];
   periodDays?: number;
   instanceTargets?: string[];
+  queryTemplateId?: string;
 }
 
 export interface Server {

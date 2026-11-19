@@ -48,6 +48,7 @@
     { "value": "WAS_STARTUP_SCRIPT", "label": "기동 스크립트 변경 상태", "group": "WAS", "role": "WAS", "description": "서버 기동 스크립트의 기준 대비 변경 여부를 확인합니다." },
     { "value": "WAS_LOG", "label": "WAS 로그 상태", "group": "WAS", "role": "WAS", "description": "지정한 로그 폴더와 기간을 기준으로 오류 유형별 건수를 집계합니다." },
     { "value": "DB_INSTANCE_STATUS", "label": "DB 인스턴스·접속 상태", "group": "DB", "role": "DB", "description": "DB 인스턴스 상태와 실제 접속·읽기 질의 가능 여부를 확인합니다." },
+    { "value": "DB_QUERY_RUNNER", "label": "DB 공통 쿼리 실행기", "group": "DB", "role": "DB", "description": "DB 점검 항목에 연결된 SQL 템플릿을 공통 실행기로 실행합니다." },
     { "value": "DB_PROCESS_LIMIT", "label": "세션·프로세스 사용률", "group": "DB", "role": "DB", "description": "현재 세션·프로세스 수를 설정 한도와 비교합니다." },
     { "value": "DB_TABLESPACE", "label": "데이터 영역 사용률", "group": "DB", "role": "DB", "description": "테이블스페이스 또는 데이터 파일의 사용률을 확인합니다." },
     { "value": "DB_BACKUP", "label": "백업 상태", "group": "DB", "role": "DB", "description": "최근 DB 백업의 실행 여부와 성공 상태를 확인합니다." },

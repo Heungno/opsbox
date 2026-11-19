@@ -5,25 +5,6 @@ import { getCommonCodes } from './commonCodeService';
 
 const CONFIG_TOKEN = '@@CONFIG_BASE64@@';
 
-const DEFAULT_MSSQL_QUERY = `SET NOCOUNT ON;
-SELECT (N'SERVER|' COLLATE DATABASE_DEFAULT)
-  + (ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')), N'') COLLATE DATABASE_DEFAULT)
-  + (N'|' COLLATE DATABASE_DEFAULT)
-  + (ISNULL(CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')), N'') COLLATE DATABASE_DEFAULT)
-  + (N'|' COLLATE DATABASE_DEFAULT)
-  + (ISNULL(CONVERT(nvarchar(256), SERVERPROPERTY('Edition')), N'') COLLATE DATABASE_DEFAULT);
-SELECT (N'DATABASE|' COLLATE DATABASE_DEFAULT)
-  + (CONVERT(nvarchar(256), d.name) COLLATE DATABASE_DEFAULT)
-  + (N'|' COLLATE DATABASE_DEFAULT)
-  + (CONVERT(nvarchar(60), d.state_desc) COLLATE DATABASE_DEFAULT)
-  + (N'|' COLLATE DATABASE_DEFAULT)
-  + (CONVERT(nvarchar(60), d.recovery_model_desc) COLLATE DATABASE_DEFAULT)
-  + (N'|' COLLATE DATABASE_DEFAULT)
-  + (CONVERT(nvarchar(32), CAST(ISNULL(SUM(CASE WHEN mf.type = 0 THEN CAST(mf.size AS bigint) ELSE 0 END), 0) * 8.0 / 1024 AS decimal(18,2))) COLLATE DATABASE_DEFAULT)
-FROM sys.databases d
-LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id
-GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc;`;
-
 function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   const roles = getServerRoles(server);
   const selected: ScriptPart[] = ['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
@@ -33,7 +14,11 @@ function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   if (server.ports?.length) selected.push('PORT');
   if (server.httpChecks?.length) selected.push('HTTP');
   for (const role of ['WEB', 'WAS', 'DB'] as const) {
-    if (roles.includes(role)) selected.push(...(server.roleChecks?.[role] ?? []));
+    if (!roles.includes(role)) continue;
+    const items = server.roleChecks?.[role] ?? [];
+    if (role === 'DB') {
+      if (items.length) selected.push('DB_QUERY_RUNNER');
+    } else selected.push(...items);
   }
   selected.push('SAVE');
 
@@ -52,13 +37,13 @@ function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   });
 }
 
-export function assembleWindowsScript(server: Server, templates: ManagedTemplate[], queryTemplate?: string, customQueryTemplates: ManagedTemplate[] = []): string {
+export function assembleWindowsScript(server: Server, templates: ManagedTemplate[], policyQueryTemplates: ManagedTemplate[] = [], customQueryTemplates: ManagedTemplate[] = []): string {
   const roles = getServerRoles(server);
   const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
-  const rawQuery = queryTemplate ?? DEFAULT_MSSQL_QUERY;
-  const query = rawQuery
-    .replace(/\{\{SERVER_IP\}\}/g, server.ip)
-    .replace(/\{\{SERVER_NAME\}\}/g, server.name);
+  const policyQueries = policyQueryTemplates.map(({ id, name, item, content }) => ({
+    id, name, item,
+    content: content.replace(/\{\{SERVER_IP\}\}/g, server.ip).replace(/\{\{SERVER_NAME\}\}/g, server.name),
+  }));
   const customQueries = customQueryTemplates.map(({ id, name, content }) => ({
     id,
     name,
@@ -88,7 +73,7 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
       rolePolicies,
       rolePolicySettings: server.rolePolicySettings ?? {},
     },
-    database: { query, customQueries },
+    database: { policyQueries, customQueries },
   };
   const encodedConfig = Buffer.from(JSON.stringify(config), 'utf8').toString('base64');
 

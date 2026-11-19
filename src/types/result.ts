@@ -94,4 +94,5 @@ export interface CheckResult {
   wasChecks?: WasRuntimeCheckResult[];
   webtobCheck?: WebtoBCheckResult;
   databaseChecks?: DatabaseCheckResult;
+  rolePolicies?: Record<string, { status?: string; items?: Array<{ status?: string }> }>;
 }

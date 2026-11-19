@@ -271,16 +271,13 @@ export function updateCheckConfig(
   for (const item of ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'] as const) {
     if (!(roleChecks.DB ?? []).includes(item)) continue;
     if (servers[index].os !== 'Windows' || getServerProduct(servers[index], 'DB') !== 'MSSQL') continue;
-    const selectedId = config.scriptParts?.[item] ?? servers[index].scriptParts?.[item] ?? `WINDOWS-PART-${item}`;
-    const script = getTemplate(selectedId);
-    if (script?.usesQueryTemplate !== true) continue;
     const setting = rolePolicySettings[item] ?? {};
     const rawTargets: unknown = setting.instanceTargets;
     const targets: unknown = typeof rawTargets === 'string'
       ? rawTargets.split(/\r?\n/).map((target) => target.trim()).filter(Boolean)
       : rawTargets;
-    if (!Array.isArray(targets) || targets.length === 0 || targets.some((target: unknown) => typeof target !== 'string' || !target.trim() || target.length > 512)) {
-      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: '쿼리 점검에 사용할 MSSQL 인스턴스 대상을 하나 이상 입력하세요.' });
+    if (!Array.isArray(targets) || targets.some((target: unknown) => typeof target !== 'string' || !target.trim() || target.length > 512)) {
+      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: 'MSSQL 인스턴스 대상은 비어 있지 않은 값으로 입력하세요.' });
     } else {
       setting.instanceTargets = [...new Set((targets as string[]).map((target) => target.trim()))];
       rolePolicySettings[item] = setting;
@@ -297,25 +294,31 @@ export function updateCheckConfig(
       if (!COMMON_CODES.rolePolicies[role]?.includes(item)) errors.push({ field: `roleChecks.${role}`, message: `${role} 점검 항목이 올바르지 않습니다.` });
       const selectedId = config.scriptParts?.[item] ?? servers[index].scriptParts?.[item];
       const defaultTemplate = getTemplate(`WINDOWS-PART-${item}`);
-      if (!selectedId && !defaultTemplate) errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
+      if (role === 'DB' && item !== 'DB_CUSTOM_QUERY') {
+        const queryId = rolePolicySettings[item]?.queryTemplateId || `WINDOWS-QUERY-${item}`;
+        const query = getTemplate(queryId);
+        if (servers[index].os === 'Windows' && getServerProduct(servers[index], 'DB') === 'MSSQL' && (!query?.enabled || query.kind !== 'QUERY' || (query.item && query.item !== item))) {
+          errors.push({ field: `rolePolicySettings.${item}.queryTemplateId`, message: `${item} 점검 쿼리 템플릿을 선택하세요.` });
+        } else if (query) rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: query.id };
+      } else if (role !== 'DB' && !selectedId && !defaultTemplate) {
+        errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
+      }
     });
   }
   const dbCustomQueryEnabled = (roleChecks.DB ?? []).includes('DB_CUSTOM_QUERY');
-  const customQueryScriptId = config.scriptParts?.DB_CUSTOM_QUERY ?? servers[index].scriptParts?.DB_CUSTOM_QUERY;
-  const customQueryScript = getTemplate(customQueryScriptId ?? 'WINDOWS-PART-DB_CUSTOM_QUERY');
   if (new Set(customQueryTemplateIds).size !== customQueryTemplateIds.length) errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 템플릿을 중복 등록할 수 없습니다.' });
   if (dbCustomQueryEnabled) {
     if (servers[index].os !== 'Windows' || getServerProduct(servers[index], 'DB') !== 'MSSQL') errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 실행은 현재 Windows MSSQL 서버에서만 지원합니다.' });
-    if (customQueryScript?.usesQueryTemplate !== true) errors.push({ field: 'scriptParts.DB_CUSTOM_QUERY', message: '기타 쿼리 스크립트에서 실행 쿼리 템플릿 사용을 켜세요.' });
     if (customQueryTemplateIds.length === 0) errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 항목에 실행할 쿼리를 하나 이상 선택하세요.' });
   } else if (customQueryTemplateIds.length > 0) {
     errors.push({ field: 'customQueryTemplateIds', message: 'DB 기타 쿼리 점검 항목을 추가한 후 쿼리를 선택하세요.' });
   }
   customQueryTemplateIds.forEach((templateId) => {
     const template = getTemplate(templateId);
-    if (!template || !template.enabled || template.kind !== 'QUERY') errors.push({ field: 'customQueryTemplateIds', message: '사용할 수 없는 DB 쿼리 템플릿이 포함되어 있습니다.' });
+    if (!template || !template.enabled || template.kind !== 'QUERY' || (template.item && template.item !== 'DB_CUSTOM_QUERY')) errors.push({ field: 'customQueryTemplateIds', message: '사용할 수 없는 DB 기타 쿼리 템플릿이 포함되어 있습니다.' });
   });
-  for (const [part, templateId] of Object.entries(config.scriptParts ?? {})) {
+  const requestedScriptParts = Object.fromEntries(Object.entries(config.scriptParts ?? servers[index].scriptParts ?? {}).filter(([part]) => !COMMON_CODES.rolePolicies.DB.includes(part as ScriptPart)));
+  for (const [part, templateId] of Object.entries(requestedScriptParts)) {
     if (!validParts.has(part as ScriptPart)) {
       errors.push({ field: `scriptParts.${part}`, message: '스크립트 점검 항목이 올바르지 않습니다.' });
       continue;
@@ -330,11 +333,6 @@ export function updateCheckConfig(
     const template = getTemplate(config.queryTemplateId);
     if (!template || !template.enabled || template.kind !== 'QUERY') errors.push({ field: 'queryTemplateId', message: '사용 중인 DB 쿼리 템플릿을 선택하세요.' });
     else if (servers[index].os !== 'Windows' || !getServerRoles(servers[index]).includes('DB') || getServerProduct(servers[index], 'DB') !== 'MSSQL') errors.push({ field: 'queryTemplateId', message: 'DB 쿼리 템플릿은 Windows MSSQL 점검에만 지정할 수 있습니다.' });
-    else {
-      const statusScriptId = config.scriptParts?.DB_INSTANCE_STATUS ?? servers[index].scriptParts?.DB_INSTANCE_STATUS;
-      const statusScript = getTemplate(statusScriptId ?? 'WINDOWS-PART-DB_INSTANCE_STATUS');
-      if (statusScript?.usesQueryTemplate !== true) errors.push({ field: 'scriptParts.DB_INSTANCE_STATUS', message: '선택한 DB 인스턴스 스크립트에서 실행 쿼리 템플릿 사용을 켜세요.' });
-    }
   }
   if (!getServerRoles(servers[index]).some((role) => role === 'WEB' || role === 'WAS') && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (servers[index].os === 'Linux' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
@@ -349,7 +347,7 @@ export function updateCheckConfig(
   servers[index].fileChecks = config.fileChecks ?? [];
   servers[index].ports = config.ports ?? [];
   servers[index].httpChecks = config.httpChecks ?? [];
-  servers[index].scriptParts = config.scriptParts ?? servers[index].scriptParts ?? {};
+  servers[index].scriptParts = requestedScriptParts;
   servers[index].roleChecks = roleChecks;
   servers[index].rolePolicySettings = rolePolicySettings;
   servers[index].customQueryTemplateIds = customQueryTemplateIds;

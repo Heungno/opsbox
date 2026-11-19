@@ -23,15 +23,16 @@ function markMigration(id: string) {
 function sampleTemplates(): ManagedTemplate[] {
   // First-run seed: preserve the requested MSSQL query example and all default Windows item scripts.
   const updatedAt = '2026-11-18T00:00:00.000Z';
-  const sample = (id: string, name: string, kind: ManagedTemplate['kind'], file: string, os?: ManagedTemplate['os']): ManagedTemplate => ({
-    id, name, kind, os, enabled: true,
+  const sample = (id: string, name: string, kind: ManagedTemplate['kind'], file: string, os?: ManagedTemplate['os'], item?: ScriptPart): ManagedTemplate => ({
+    id, name, kind, os, item, enabled: true,
     content: fs.readFileSync(path.join('src', 'template-samples', file), 'utf8'), updatedAt,
   });
   return [
     sample('SAMPLE-WINDOWS-COMMON', '예제 · Windows 공통 자원만 (정책·제품 점검 제외)', 'SCRIPT', 'windows-common.ps1', 'Windows'),
     sample('SAMPLE-LINUX-COMMON', '예제 · Linux 공통 자원만 (정책·제품 점검 제외)', 'SCRIPT', 'linux-common.sh', 'Linux'),
-    sample('SAMPLE-MSSQL-DATABASES', '예제 · MSSQL 데이터베이스 상태', 'QUERY', 'mssql-databases.sql'),
+    sample('SAMPLE-MSSQL-DATABASES', '예제 · MSSQL 데이터베이스 상태', 'QUERY', 'mssql-databases.sql', undefined, 'DB_CUSTOM_QUERY'),
     ...scriptParts(),
+    ...databaseQueryTemplates(),
   ];
 }
 
@@ -60,14 +61,7 @@ function scriptParts(): ManagedTemplate[] {
     ['WAS_HEAP_DUMP', 'Heap Dump 파일 상태', 'was/heap-dump-files.ps1'],
     ['WAS_STARTUP_SCRIPT', '기동 스크립트 변경 상태', 'was/startup-script-change.ps1'],
     ['WAS_LOG', 'WAS 로그 상태', 'was/log-analysis.ps1'],
-    ['DB_INSTANCE_STATUS', 'DB 인스턴스·접속 상태', 'db/instance-status.ps1'],
-    ['DB_CUSTOM_QUERY', '기타 사용자 쿼리', 'db/custom-query.ps1'],
-    ['DB_PROCESS_LIMIT', '세션·프로세스 사용률', 'db/session-limit.ps1'],
-    ['DB_TABLESPACE', '데이터 영역 사용률', 'db/data-file-usage.ps1'],
-    ['DB_BACKUP', '백업 상태', 'db/backup-status.ps1'],
-    ['DB_ARCHIVE_MODE', '아카이브 모드 상태', 'db/archive-log-status.ps1'],
-    ['DB_TRANSACTION_LOG', '트랜잭션 로그 사용률', 'db/transaction-log-usage.ps1'],
-    ['DB_REPLICATION', '복제·이중화 상태', 'db/replication-status.ps1'],
+    ['DB_QUERY_RUNNER', 'DB 공통 쿼리 실행기', 'db/query-runner.ps1'],
     ['SAVE', '결과 저장·종료', 'system/save-result.ps1'],
   ];
   return items.map(([item, label, file]) => {
@@ -79,12 +73,77 @@ function scriptParts(): ManagedTemplate[] {
       kind: 'SCRIPT_PART',
       os: 'Windows',
       item,
-      usesQueryTemplate: item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY',
+      usesQueryTemplate: item === 'DB_QUERY_RUNNER',
       enabled: true,
       content: fs.readFileSync(sourcePath, 'utf8'),
       updatedAt: '2026-11-18T00:00:00.000Z',
     };
   });
+}
+
+function databaseQueryTemplates(): ManagedTemplate[] {
+  const updatedAt = '2026-11-19T00:00:00.000Z';
+  const definitions: Array<[ScriptPart, string, string]> = [
+    ['DB_INSTANCE_STATUS', 'DB 인스턴스·접속 상태', `SET NOCOUNT ON;
+SELECT CASE WHEN d.state_desc = 'ONLINE' THEN 'Healthy' ELSE 'Critical' END AS __OPSBOX_STATUS,
+  CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')) AS serverName,
+  CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')) AS version,
+  CONVERT(nvarchar(256), SERVERPROPERTY('Edition')) AS edition,
+  d.name AS databaseName, d.state_desc AS state, d.recovery_model_desc AS recoveryModel,
+  CAST(SUM(CASE WHEN mf.type = 0 THEN mf.size ELSE 0 END) * 8.0 / 1024 AS decimal(18,2)) AS dataSizeMB
+FROM sys.databases d LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id
+GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc ORDER BY d.name;`],
+    ['DB_PROCESS_LIMIT', '세션·프로세스 사용률', `SET NOCOUNT ON;
+WITH counts AS (SELECT COUNT(*) AS currentSessions FROM sys.dm_exec_sessions WHERE is_user_process = 1),
+limits AS (SELECT ISNULL(NULLIF(value_in_use, 0), 32767) AS maxSessions FROM sys.configurations WHERE name = 'user connections')
+SELECT CASE WHEN currentSessions * 100.0 / maxSessions >= 90 THEN 'Critical' WHEN currentSessions * 100.0 / maxSessions >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,
+  currentSessions, maxSessions, CAST(currentSessions * 100.0 / maxSessions AS decimal(6,2)) AS usagePercent
+FROM counts CROSS JOIN limits;`],
+    ['DB_TABLESPACE', '데이터 영역 사용률', `SET NOCOUNT ON;
+CREATE TABLE #space (databaseName sysname, allocatedMB decimal(18,2), usedMB decimal(18,2));
+DECLARE @database sysname, @sql nvarchar(max);
+DECLARE db_cursor CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND database_id > 4;
+OPEN db_cursor; FETCH NEXT FROM db_cursor INTO @database;
+WHILE @@FETCH_STATUS = 0 BEGIN
+  SET @sql = N'USE ' + QUOTENAME(@database) + N'; INSERT INTO #space SELECT DB_NAME(), CAST(SUM(size) * 8.0 / 1024 AS decimal(18,2)), CAST(SUM(FILEPROPERTY(name, ''SpaceUsed'')) * 8.0 / 1024 AS decimal(18,2)) FROM sys.database_files WHERE type = 0;';
+  EXEC sys.sp_executesql @sql; FETCH NEXT FROM db_cursor INTO @database;
+END; CLOSE db_cursor; DEALLOCATE db_cursor;
+SELECT CASE WHEN allocatedMB > 0 AND usedMB * 100.0 / allocatedMB >= 90 THEN 'Critical'
+  WHEN allocatedMB > 0 AND usedMB * 100.0 / allocatedMB >= 80 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,
+  databaseName, allocatedMB, usedMB, CAST(CASE WHEN allocatedMB > 0 THEN usedMB * 100.0 / allocatedMB ELSE 0 END AS decimal(6,2)) AS usagePercent
+FROM #space ORDER BY databaseName;`],
+    ['DB_BACKUP', '백업 상태', `SET NOCOUNT ON;
+SELECT CASE WHEN MAX(b.backup_finish_date) IS NULL OR DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 336 THEN 'Critical'
+  WHEN DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 168 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,
+  d.name AS databaseName, ISNULL(CONVERT(varchar(19), MAX(b.backup_finish_date), 120), 'NONE') AS lastFullBackup,
+  ISNULL(DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()), -1) AS backupAgeHours
+FROM sys.databases d LEFT JOIN msdb.dbo.backupset b ON b.database_name = d.name AND b.type = 'D'
+WHERE d.state_desc = 'ONLINE' GROUP BY d.name ORDER BY d.name;`],
+    ['DB_ARCHIVE_MODE', '아카이브 모드 상태', `SET NOCOUNT ON;
+SELECT CASE WHEN d.recovery_model_desc = 'SIMPLE' THEN 'Warning' WHEN MAX(b.backup_finish_date) IS NULL THEN 'Warning'
+  WHEN DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 24 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,
+  d.name AS databaseName, d.recovery_model_desc AS recoveryModel,
+  ISNULL(DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()), -1) AS lastLogBackupAgeHours
+FROM sys.databases d LEFT JOIN msdb.dbo.backupset b ON b.database_name = d.name AND b.type = 'L'
+WHERE d.state_desc = 'ONLINE' GROUP BY d.name, d.recovery_model_desc ORDER BY d.name;`],
+    ['DB_TRANSACTION_LOG', '트랜잭션 로그 사용률', `SET NOCOUNT ON;
+CREATE TABLE #logspace (databaseName sysname, logSizeMB float, usagePercent float, status int);
+INSERT INTO #logspace EXEC ('DBCC SQLPERF(LOGSPACE)');
+SELECT CASE WHEN usagePercent >= 90 THEN 'Critical' WHEN usagePercent >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,
+  databaseName, CAST(logSizeMB AS decimal(18,2)) AS logSizeMB, CAST(usagePercent AS decimal(6,2)) AS usagePercent
+FROM #logspace ORDER BY databaseName;`],
+    ['DB_REPLICATION', '복제·이중화 상태', `SET NOCOUNT ON;
+SELECT CASE WHEN drs.synchronization_health_desc = 'NOT_HEALTHY' THEN 'Critical'
+  WHEN ars.connected_state_desc <> 'CONNECTED' OR drs.synchronization_state_desc <> 'SYNCHRONIZED' THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,
+  DB_NAME(drs.database_id) AS databaseName, ars.role_desc AS replicaRole, ars.connected_state_desc AS connectionState,
+  drs.synchronization_state_desc AS synchronizationState, drs.synchronization_health_desc AS health,
+  ISNULL(drs.log_send_queue_size, 0) AS sendQueueKB
+FROM sys.dm_hadr_database_replica_states drs JOIN sys.dm_hadr_availability_replica_states ars ON ars.replica_id = drs.replica_id AND ars.is_local = 1;`],
+  ];
+  return definitions.map(([item, label, content]) => ({
+    id: `WINDOWS-QUERY-${item}`, name: `MSSQL 쿼리 · ${label}`, kind: 'QUERY', os: 'Windows', role: 'DB', item,
+    enabled: true, content, updatedAt,
+  }));
 }
 
 function read(): ManagedTemplate[] {
@@ -132,6 +191,23 @@ function read(): ManagedTemplate[] {
     }
     markMigration(customQueryMigration);
   }
+  const databaseRunnerMigration = 'single-db-query-runner-v1';
+  if (!hasMigration(databaseRunnerMigration)) {
+    for (const template of items) {
+      if (template.kind === 'QUERY' && !template.item) { template.item = 'DB_CUSTOM_QUERY'; changed = true; }
+    }
+    for (let index = items.length - 1; index >= 0; index--) {
+      const item = items[index];
+      if (item.kind === 'SCRIPT_PART' && item.item?.startsWith('DB_') && item.item !== 'DB_QUERY_RUNNER') {
+        items.splice(index, 1);
+        changed = true;
+      }
+    }
+    for (const template of [...defaults.filter((item) => item.item === 'DB_QUERY_RUNNER'), ...databaseQueryTemplates()]) {
+      if (!items.some((existing) => existing.id === template.id)) { items.push(template); changed = true; }
+    }
+    markMigration(databaseRunnerMigration);
+  }
   const roleDefaultsMigration = 'windows-role-defaults-v1';
   if (!hasMigration(roleDefaultsMigration)) {
     const roleTypes: string[] = ['WEB', 'WAS', 'DB'];
@@ -177,7 +253,9 @@ function validate(input: Partial<ManagedTemplate>) {
   if (input.kind === 'SCRIPT_PART' && input.os !== 'Windows') errors.push({ field: 'os', message: '점검 항목 스크립트는 현재 Windows 템플릿만 지원합니다.' });
   if (input.kind === 'SCRIPT_PART' && !input.item) errors.push({ field: 'item', message: '스크립트 점검 항목을 지정해야 합니다.' });
   if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'SAVE', ...getCommonCodes().scriptItems.map(({ value }) => value)].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
-  if (input.usesQueryTemplate && !['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(input.item ?? '')) errors.push({ field: 'usesQueryTemplate', message: 'DB 인스턴스 상태 또는 기타 사용자 쿼리 스크립트에서만 쿼리 템플릿을 사용할 수 있습니다.' });
+  if (input.kind === 'QUERY' && input.item && !getCommonCodes().rolePolicies.DB.includes(input.item)) errors.push({ field: 'item', message: 'DB 쿼리의 점검 항목이 올바르지 않습니다.' });
+  if (input.kind === 'QUERY' && !input.item) errors.push({ field: 'item', message: 'DB 쿼리의 점검 항목을 선택하세요.' });
+  if (input.usesQueryTemplate && input.item !== 'DB_QUERY_RUNNER') errors.push({ field: 'usesQueryTemplate', message: 'DB 공통 쿼리 실행기에서만 쿼리 템플릿을 사용할 수 있습니다.' });
   if (input.role && !['WEB', 'WAS', 'DB', 'OTHER'].includes(input.role)) errors.push({ field: 'role', message: '대상 역할이 올바르지 않습니다.' });
   if (errors.length) throw new ValidationError(errors);
 }

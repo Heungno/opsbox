@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OpsBox | 점검 보고서 상세</title>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261119-dark-button-colors" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261119-db-query-runner" />
   <style>
     @page { size: A4 portrait; margin: 14mm 12mm 16mm; }
     @media print {
@@ -207,6 +207,8 @@
       <h3>DB 엔진 및 데이터베이스 상세</h3>
       <p id="database-check-summary" class="policy-help"></p>
       <table class="server-table type-check-table"><thead><tr><th>인스턴스</th><th>데이터베이스</th><th>상태</th><th>복구 모델</th><th>데이터 파일 (MB)</th></tr></thead><tbody id="database-check-list"></tbody></table>
+      <h3>DB 쿼리 점검 결과</h3>
+      <div id="db-query-results" class="db-query-results"></div>
       <h3>현재 자동 수집되지 않는 항목</h3>
       <table class="server-table type-check-table"><thead><tr><th>수동 확인 항목</th><th>상태</th><th>참고</th></tr></thead><tbody id="type-pending-list"></tbody></table>
     </section>
@@ -221,7 +223,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261119-wsadmin-console"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261119-db-query-runner"></script>
 </body>
 
 </html>

@@ -201,7 +201,10 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   };
   renderChecklist('type-check-list', checkRows[type]);
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
-  if (type === 'DB') renderDatabaseChecks(data.databaseChecks, product);
+  if (type === 'DB') {
+    renderDatabaseChecks(data.databaseChecks, product);
+    renderDatabaseQueryTables(rolePolicyItems);
+  }
 
   const pendingRows = {
     WEB: [
@@ -247,9 +250,11 @@ function summarizeRolePolicyDetail(item) {
   }
   if (['WEB_LOG', 'WAS_LOG'].includes(item.item) && item.detail?.categories) {
     const counts = item.detail.categories;
-    return `최근 ${item.detail.periodDays ?? 7}일 · 파일 ${item.detail.checkedFileCount ?? 0}개 · Fatal ${counts.fatal ?? 0} · Error/Exception ${counts.errorException ?? 0} · Warning ${counts.warning ?? 0} · HTTP 5xx ${counts.http5xx ?? 0} · HTTP 4xx ${counts.http4xx ?? 0}`;
+    const readError = item.detail.readErrors?.[0];
+    const readWarning = item.detail.readErrorCount ? ` · 읽기 실패 ${item.detail.readErrorCount}개${readError ? ` (${readError.path}: ${readError.message})` : ''}` : '';
+    return `최근 ${item.detail.periodDays ?? 7}일 · 파일 ${item.detail.checkedFileCount ?? 0}개 · Fatal ${counts.fatal ?? 0} · Error/Exception ${counts.errorException ?? 0} · Warning ${counts.warning ?? 0} · HTTP 5xx ${counts.http5xx ?? 0} · HTTP 4xx ${counts.http4xx ?? 0}${readWarning}`;
   }
-  if (Array.isArray(item.detail?.queries)) return item.detail.queries.map((query) => `${query.target ? `[${query.target}] ` : ''}${query.name || query.id}: ${query.status}${query.output ? ` · ${query.output}` : query.message ? ` · ${query.message}` : ''}`).join('\n').slice(0, 1200);
+  if (Array.isArray(item.detail?.queries)) return item.detail.queries.map((query) => `${query.target ? `[${query.target}] ` : ''}${query.name || query.id || item.detail.queryName || '쿼리'}: ${query.status}${query.rowCount !== undefined ? ` · ${query.rowCount}행` : ''}${query.output ? ` · ${query.output}` : query.message ? ` · ${query.message}` : ''}`).join('\n').slice(0, 1200);
   if (typeof item.detail === 'string') return item.detail.slice(0, 800);
   if (Array.isArray(item.detail)) return `${item.detail.length}개 상세 결과`;
   if (item.detail?.output) return String(item.detail.output).slice(0, 800);
@@ -305,6 +310,57 @@ function renderDatabaseChecks(check, product) {
     const size = document.createElement('td'); size.textContent = Number.isFinite(Number(database.sizeMB)) ? Number(database.sizeMB).toLocaleString() : '-';
     row.append(target, name, state, recovery, size);
     tbody.appendChild(row);
+  });
+}
+
+function renderDatabaseQueryTables(items) {
+  const container = document.getElementById('db-query-results' + reportRoleSuffix);
+  if (!container) return;
+  container.replaceChildren();
+  const results = [];
+  (items || []).forEach((item) => (item.detail?.queries || []).forEach((query) => results.push({ item, query })));
+  if (!results.length) {
+    const empty = document.createElement('p');
+    empty.className = 'policy-help';
+    empty.textContent = '표시할 DB 쿼리 결과가 없습니다.';
+    container.appendChild(empty);
+    return;
+  }
+  results.forEach(({ item, query }) => {
+    const section = document.createElement('section');
+    section.className = 'db-query-result';
+    const heading = document.createElement('div');
+    heading.className = 'db-query-result-heading';
+    const title = document.createElement('strong');
+    title.textContent = `${item.name || item.item || 'DB 쿼리'}${query.name ? ` · ${query.name}` : ''}`;
+    const meta = document.createElement('span');
+    meta.textContent = `${query.target || '-'} · ${query.status || item.status || '미수집'}`;
+    heading.append(title, meta);
+    section.appendChild(heading);
+    if (query.message) {
+      const message = document.createElement('p');
+      message.className = 'db-query-result-message';
+      message.textContent = query.message;
+      section.appendChild(message);
+    }
+    const columns = query.columns || [];
+    const rows = query.rows || [];
+    if (columns.length) {
+      const scroll = document.createElement('div'); scroll.className = 'table-scroll';
+      const table = document.createElement('table'); table.className = 'server-table db-query-result-table';
+      const thead = document.createElement('thead'); const headRow = document.createElement('tr');
+      columns.forEach((column) => { const th = document.createElement('th'); th.textContent = column === '__OPSBOX_STATUS' ? '상태' : column; headRow.appendChild(th); });
+      thead.appendChild(headRow);
+      const tbody = document.createElement('tbody');
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        columns.forEach((column, index) => { const td = document.createElement('td'); const value = Array.isArray(row) ? row[index] : row?.[column]; td.textContent = value == null ? '' : String(value); tr.appendChild(td); });
+        tbody.appendChild(tr);
+      });
+      if (!rows.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = columns.length; td.textContent = query.status === 'NotCollected' ? '쿼리 결과를 수집하지 못했습니다.' : '조회 결과가 없습니다.'; tr.appendChild(td); tbody.appendChild(tr); }
+      table.append(thead, tbody); scroll.appendChild(table); section.appendChild(scroll);
+    }
+    container.appendChild(section);
   });
 }
 

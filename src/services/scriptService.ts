@@ -10,15 +10,24 @@ export function generateScript(serverId: string): string {
     throw new Error(`Server not found: ${serverId}`);
   }
 
-  const queryTemplate = getTemplate(server.queryTemplateId);
-  if (queryTemplate?.enabled && queryTemplate.kind !== 'QUERY') throw new Error('선택한 쿼리 템플릿이 QUERY 유형이 아닙니다.');
+  const policyQueryTemplates = server.os === 'Windows' && getServerProduct(server, 'DB') === 'MSSQL' ? (server.roleChecks?.DB ?? [])
+    .filter((item) => item !== 'DB_CUSTOM_QUERY')
+    .map((item) => {
+      const selectedId = server.rolePolicySettings?.[item]?.queryTemplateId
+        || `WINDOWS-QUERY-${item}`;
+      const template = getTemplate(selectedId);
+      if (!template?.enabled || template.kind !== 'QUERY' || (template.item && template.item !== item)) {
+        throw new Error(`${item} 점검에 사용할 DB 쿼리 템플릿을 선택하세요.`);
+      }
+      return template;
+    }) : [];
   const customQueryTemplates = (server.customQueryTemplateIds ?? []).map((id) => {
     const template = getTemplate(id);
-    if (!template?.enabled || template.kind !== 'QUERY') throw new Error(`DB 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
+    if (!template?.enabled || template.kind !== 'QUERY' || (template.item && template.item !== 'DB_CUSTOM_QUERY')) throw new Error(`DB 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
     return template;
   });
   return server.os === 'Windows'
-    ? assembleWindowsScript(server, getTemplates({ kind: 'SCRIPT_PART' }), queryTemplate?.enabled ? queryTemplate.content : undefined, customQueryTemplates)
+    ? assembleWindowsScript(server, getTemplates({ kind: 'SCRIPT_PART' }), policyQueryTemplates, customQueryTemplates)
     : generateLinuxScript(server);
 }
 

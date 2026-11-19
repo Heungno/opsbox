@@ -537,6 +537,8 @@ tbody tr:hover {
    Form
 ========================================================= */
 
+[hidden] { display: none !important; }
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -1970,6 +1972,14 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
   color: #ffc0c3;
   background: #3b292d;
 }
+
+.db-query-results { display: grid; gap: 12px; }
+.db-query-result { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-soft); }
+.db-query-result-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.db-query-result-heading span, .db-query-result-message { color: var(--text-light); font-size: 12px; overflow-wrap: anywhere; }
+.db-query-result-message { margin: 0 0 8px; }
+.db-query-result-table { min-width: 0; }
+.db-query-result-table th, .db-query-result-table td { white-space: nowrap; }
 
 @media (max-width: 900px) {
   .sidebar { width: 220px; }

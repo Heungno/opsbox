@@ -51,20 +51,31 @@ function renderHighlightedTemplate() {
 function updateFormMode() {
   const script = kind.value === 'SCRIPT' || kind.value === 'SCRIPT_PART';
   const part = kind.value === 'SCRIPT_PART';
+  if (commonCodes) {
+    const itemSelect = document.getElementById('template-item');
+    const previousItem = itemSelect.value;
+    const itemCodes = kind.value === 'QUERY'
+      ? commonCodes.scriptItems.filter((entry) => entry.role === 'DB' && entry.value !== 'DB_QUERY_RUNNER')
+      : commonCodes.scriptItems;
+    populateCodeSelect(itemSelect, itemCodes);
+    if (itemCodes.some((entry) => entry.value === previousItem)) itemSelect.value = previousItem;
+  }
   document.querySelectorAll('.template-script-option').forEach((node) => node.hidden = !script);
   document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part);
+  document.querySelectorAll('.template-query-item-option').forEach((node) => node.hidden = kind.value !== 'QUERY');
   document.querySelectorAll('.template-target-option').forEach((node) => node.hidden = kind.value !== 'SCRIPT');
   const linuxOption = document.querySelector('#template-os option[value="Linux"]');
   if (linuxOption) linuxOption.disabled = part;
   if (part && document.getElementById('template-os').value !== 'Windows') document.getElementById('template-os').value = 'Windows';
   const selectedItem = commonCodes?.scriptItems.find((entry) => entry.value === document.getElementById('template-item').value);
-  const queryCapableItem = ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(selectedItem?.value);
-  document.querySelectorAll('.template-query-option').forEach((node) => { node.hidden = !(part && selectedItem?.role === 'DB' && queryCapableItem); });
+  document.querySelectorAll('.template-query-option').forEach((node) => { node.hidden = !(part && selectedItem?.value === 'DB_QUERY_RUNNER'); });
   help.textContent = part
     ? '점검 항목별 스크립트는 서버 정책에서 선택한 항목만 다운로드 시 조립됩니다. 각 항목은 자기 점검 결과만 수집하고, 최종 JSON 예시는 오른쪽에 표시됩니다. 실행 준비 항목의 @@CONFIG_BASE64@@ 토큰은 지우지 마세요.'
     : kind.value === 'SCRIPT'
       ? '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.'
-      : '쿼리는 Windows MSSQL 점검에서 실행할 SQL입니다. {{SERVER_IP}}와 {{SERVER_NAME}}을 사용할 수 있습니다. 결과는 SERVER|... 및 DATABASE|... 행 형식이어야 합니다.';
+      : kind.value === 'QUERY'
+        ? '선택한 DB 점검 항목에서 실행할 SQL입니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
+        : '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.';
   renderOutputExample();
 }
 
@@ -97,7 +108,7 @@ function renderOutputExample() {
       checks: { rolePolicies: { [definition.role]: { status: 'Healthy', items: [{ item, name: definition.label, status: 'Healthy', detail: { sample: true } }] } } },
     } : {});
   }
-  else if (kind.value === 'QUERY') example = { output: ['SERVER|SQL01|16.0|Standard', 'DATABASE|appdb|ONLINE|FULL|512.00'] };
+  else if (kind.value === 'QUERY') example = { columns: ['__OPSBOX_STATUS', 'databaseName', 'state'], rows: [['Healthy', 'appdb', 'ONLINE']] };
   else example = { schemaVersion: 2, server: { id: 'SERVER01', roles: ['WEB'] }, resources: {}, checks: {}, summary: { status: 'Healthy' } };
   pane.textContent = JSON.stringify(example, null, 2);
 }
@@ -244,8 +255,8 @@ async function persistTemplate() {
   const data = {
     name: document.getElementById('template-name').value.trim(), kind: kind.value,
     os: ['SCRIPT', 'SCRIPT_PART'].includes(kind.value) ? document.getElementById('template-os').value : undefined,
-    item: kind.value === 'SCRIPT_PART' ? document.getElementById('template-item').value : undefined,
-    usesQueryTemplate: kind.value === 'SCRIPT_PART' && ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(document.getElementById('template-item').value) && document.getElementById('template-uses-query').checked,
+    item: ['SCRIPT_PART', 'QUERY'].includes(kind.value) ? document.getElementById('template-item').value : undefined,
+    usesQueryTemplate: kind.value === 'SCRIPT_PART' && document.getElementById('template-item').value === 'DB_QUERY_RUNNER' && document.getElementById('template-uses-query').checked,
     role: kind.value === 'SCRIPT' ? document.getElementById('template-role').value || undefined : undefined,
     product: kind.value === 'SCRIPT' ? document.getElementById('template-product').value.trim() || undefined : undefined,
     enabled: document.getElementById('template-enabled').checked,

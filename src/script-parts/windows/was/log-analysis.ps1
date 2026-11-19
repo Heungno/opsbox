@@ -21,9 +21,10 @@ if ($logRoots.Count -eq 0) {
   $counts = [ordered]@{ fatal = 0; errorException = 0; warning = 0; http5xx = 0; http4xx = 0 }
   $samples = @(); $matchedLines = 0; $readErrors = @(); $scannedLines = 0
   foreach ($file in $logFiles) {
-    $reader = $null
+    $reader = $null; $fileStream = $null
     try {
-      $reader = [System.IO.StreamReader]::new($file.FullName, $true)
+      $fileStream = [System.IO.FileStream]::new($file.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, ([System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete))
+      $reader = [System.IO.StreamReader]::new($fileStream, $true)
       while (($line = $reader.ReadLine()) -ne $null) {
         $scannedLines++
         $lineTime = $null
@@ -53,10 +54,13 @@ if ($logRoots.Count -eq 0) {
           if ($samples.Count -lt 30) { $samples += @{ path = $file.FullName; timestamp = if ($lineTime) { $lineTime.ToString('yyyy-MM-dd HH:mm:ss') } else { $null }; text = $line.Trim() } }
         }
       }
-    } catch { $readErrors += @{ path = $file.FullName; message = $_.Exception.Message } }
-    finally { if ($reader) { $reader.Dispose() } }
+    } catch {
+      $message = if ($_.Exception.Message -match '(?i)being used by another process|다른 프로세스에서 사용 중') { '다른 프로세스가 사용 중이라 읽지 못했습니다.' } else { $_.Exception.Message }
+      $readErrors += @{ path = $file.FullName; message = $message }
+    }
+    finally { if ($reader) { $reader.Dispose() } elseif ($fileStream) { $fileStream.Dispose() } }
   }
-  $status = if ($counts.fatal -gt 0 -or $counts.errorException -gt 0 -or $counts.http5xx -gt 0) { 'Critical' } elseif ($counts.warning -gt 0 -or $counts.http4xx -gt 0) { 'Warning' } elseif ($scannedLines -eq 0 -and $readErrors.Count -gt 0) { 'NotCollected' } else { 'Healthy' }
+  $status = if ($counts.fatal -gt 0 -or $counts.errorException -gt 0 -or $counts.http5xx -gt 0) { 'Critical' } elseif ($counts.warning -gt 0 -or $counts.http4xx -gt 0 -or $readErrors.Count -gt 0) { 'Warning' } elseif ($scannedLines -eq 0) { 'NotCollected' } else { 'Healthy' }
   $detail = @{ status = $status; periodDays = $periodDays; since = $cutoff.ToString('yyyy-MM-dd HH:mm:ss'); checkedPaths = $logRoots; missingPaths = $missingRoots; checkedFileCount = $logFiles.Count; scannedLineCount = $scannedLines; matchedLineCount = $matchedLines; categories = $counts; readErrorCount = $readErrors.Count; readErrors = @($readErrors | Select-Object -First 10); samples = $samples }
 }
 $rolePolicyResults += @{ role = 'WAS'; item = 'WAS_LOG'; status = $detail.status; detail = $detail }

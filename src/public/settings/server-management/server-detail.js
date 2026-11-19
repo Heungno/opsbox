@@ -686,7 +686,7 @@ async function savePolicy() {
         instanceTargets: input.value.split(/\r?\n/).map((target) => target.trim()).filter(Boolean),
       };
     });
-    const queryTemplateId = selectedQueryTemplateId || '';
+    const queryTemplateId = '';
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
       headers: {
@@ -741,7 +741,7 @@ function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '', ro
   if (!currentServer) return;
   const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
   const products = currentServer.products || { [currentServer.type]: currentServer.product };
-  selectedScriptParts = { ...selectedParts };
+  selectedScriptParts = Object.fromEntries(Object.entries(selectedParts).filter(([item]) => !commonCodes?.rolePolicies.DB.includes(item)));
   selectedRoleChecks = structuredClone(roleChecks || {});
   selectedQueryTemplateId = queryTemplateId || '';
   const isWindows = currentServer.os === 'Windows';
@@ -827,7 +827,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         periodField.append(periodLabel, periodInput);
         description.appendChild(periodField);
       }
-      if (['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(item) && usesQueryTemplate(item)) {
+      if (item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY') {
         const setting = selectedRolePolicySettings[item] ?? {};
         const instanceField = document.createElement('label'); instanceField.className = 'role-policy-option';
         const instanceLabel = document.createElement('span'); instanceLabel.textContent = 'MSSQL 인스턴스 대상 (한 줄에 하나씩)';
@@ -867,6 +867,7 @@ function getScriptItemLabel(item) {
 }
 
 function usesQueryTemplate(item) {
+  if (commonCodes?.rolePolicies.DB.includes(item)) return true;
   const selectedId = selectedScriptParts[item];
   const template = selectedId
     ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
@@ -878,6 +879,16 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   const wrapper = document.createElement('div'); wrapper.className = `policy-script-control${showLabel ? ' is-common' : ''}`;
   wrapper.hidden = currentServer.os !== 'Windows';
   if (showLabel) { const title = document.createElement('label'); title.textContent = label; wrapper.appendChild(title); }
+  if (commonCodes?.rolePolicies.DB.includes(item)) {
+    const setting = selectedRolePolicySettings[item] ?? {};
+    const query = managedTemplates.find((template) => template.id === (setting.queryTemplateId || `WINDOWS-QUERY-${item}`) && template.kind === 'QUERY');
+    const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
+    choose.textContent = item === 'DB_CUSTOM_QUERY' ? `쿼리 ${selectedCustomQueryTemplateIds.length}개 선택` : (query?.name || `${label} 쿼리 선택`);
+    choose.setAttribute('aria-label', `${label} DB 쿼리 선택`);
+    choose.addEventListener('click', () => openScriptTemplatePicker(item, label));
+    wrapper.append(choose);
+    return wrapper;
+  }
   const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
   const selectedId = selectedScriptParts[item] || '';
   const selected = available.find((template) => template.id === selectedId);
@@ -903,11 +914,19 @@ function bindScriptTemplatePicker() {
   document.getElementById('script-template-picker-edit').addEventListener('click', openSelectedTemplatePage);
   document.getElementById('script-template-picker-select').addEventListener('change', () => {
     updateSelectedTemplateEditButton();
-    updateQueryTemplatePicker(dialog.dataset.item);
+    if (!commonCodes?.rolePolicies.DB.includes(dialog.dataset.item)) updateQueryTemplatePicker(dialog.dataset.item);
   });
   document.getElementById('script-template-picker-save').addEventListener('click', () => {
     const item = dialog.dataset.item;
     const templateId = document.getElementById('script-template-picker-select').value;
+    if (commonCodes?.rolePolicies.DB.includes(item)) {
+      const setting = selectedRolePolicySettings[item] ?? {};
+      if (item === 'DB_CUSTOM_QUERY') selectedCustomQueryTemplateIds = [...document.getElementById('db-query-template-select').selectedOptions].map((option) => option.value).filter(Boolean);
+      else selectedRolePolicySettings[item] = { ...setting, queryTemplateId: document.getElementById('db-query-template-select').value || `WINDOWS-QUERY-${item}` };
+      dialog.close();
+      renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId);
+      return;
+    }
     if (templateId) selectedScriptParts[item] = templateId; else delete selectedScriptParts[item];
     const queryOptionHidden = document.getElementById('db-query-template-option').hidden;
     if (item === 'DB_INSTANCE_STATUS') selectedQueryTemplateId = queryOptionHidden ? '' : document.getElementById('db-query-template-select').value;
@@ -918,8 +937,13 @@ function bindScriptTemplatePicker() {
 }
 
 function updateSelectedTemplateEditButton() {
-  const selectedId = document.getElementById('script-template-picker-select').value;
   const item = document.getElementById('script-template-picker').dataset.item;
+  if (commonCodes?.rolePolicies.DB.includes(item)) {
+    document.getElementById('script-template-picker-edit').hidden = !getDefaultScriptTemplate('DB_QUERY_RUNNER');
+    document.getElementById('script-template-picker-edit').textContent = '공통 DB 실행기 수정';
+    return;
+  }
+  const selectedId = document.getElementById('script-template-picker-select').value;
   const template = selectedId
     ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
     : getDefaultScriptTemplate(item);
@@ -931,7 +955,7 @@ function updateSelectedTemplateEditButton() {
 function openScriptTemplatePicker(item, label) {
   const dialog = document.getElementById('script-template-picker');
   dialog.dataset.item = item;
-  document.getElementById('script-template-picker-title').textContent = `${label} 스크립트 선택`;
+  document.getElementById('script-template-picker-title').textContent = commonCodes?.rolePolicies.DB.includes(item) ? `${label} 쿼리 선택` : `${label} 스크립트 선택`;
   document.getElementById('script-template-picker-label').textContent = `${currentServer.name} · ${currentServer.os}`;
   dialog.showModal();
   loadManagedTemplates().then(() => populateScriptTemplatePicker(item));
@@ -939,14 +963,18 @@ function openScriptTemplatePicker(item, label) {
 
 function populateScriptTemplatePicker(item) {
   const select = document.getElementById('script-template-picker-select');
+  const isDatabasePolicy = commonCodes?.rolePolicies.DB.includes(item) === true;
+  select.closest('.form-group').hidden = isDatabasePolicy;
   const defaultTemplate = getDefaultScriptTemplate(item);
   select.replaceChildren(new Option(`기본값 사용 · ${defaultTemplate?.name || getDefaultScriptTemplateName(item)}`, ''));
-  const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
+  const scriptItem = isDatabasePolicy ? 'DB_QUERY_RUNNER' : item;
+  const scriptDefault = getDefaultScriptTemplate(scriptItem);
+  const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === scriptItem);
   available.forEach((template) => {
     const category = isDefaultScriptTemplate(template, item) ? '기본 제공' : '사용자 지정';
     select.add(new Option(`${category} · ${template.name}`, template.id));
   });
-  const selectedId = selectedScriptParts[item] || '';
+  const selectedId = selectedScriptParts[scriptItem] || '';
   if (selectedId && !available.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
   select.value = selectedId;
   updateSelectedTemplateEditButton();
@@ -954,13 +982,23 @@ function populateScriptTemplatePicker(item) {
   querySelect.multiple = item === 'DB_CUSTOM_QUERY';
   querySelect.size = querySelect.multiple ? 7 : 1;
   querySelect.replaceChildren();
-  if (item === 'DB_INSTANCE_STATUS') querySelect.add(new Option('기본 DB 쿼리 사용', ''));
-  if (item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY') {
-    managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => querySelect.add(new Option(template.name, template.id)));
+  if (isDatabasePolicy) {
+    const setting = selectedRolePolicySettings[item] ?? {};
+    const itemQueries = managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY' && template.item === item);
+    if (item !== 'DB_CUSTOM_QUERY' && !itemQueries.some((template) => template.id === `WINDOWS-QUERY-${item}`)) querySelect.add(new Option('기본 쿼리 사용', `WINDOWS-QUERY-${item}`));
+    itemQueries.forEach((template) => querySelect.add(new Option(template.name, template.id)));
     if (item === 'DB_CUSTOM_QUERY') [...querySelect.options].forEach((option) => { option.selected = selectedCustomQueryTemplateIds.includes(option.value); });
-    else querySelect.value = selectedQueryTemplateId;
+    else querySelect.value = setting.queryTemplateId || `WINDOWS-QUERY-${item}`;
+  } else if (item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY') {
+    managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => querySelect.add(new Option(template.name, template.id)));
+    querySelect.value = selectedQueryTemplateId;
   }
-  updateQueryTemplatePicker(item);
+  updateSelectedTemplateEditButton();
+  document.getElementById('db-query-template-option').hidden = !isDatabasePolicy;
+  document.getElementById('db-query-template-help').hidden = true;
+  document.querySelector('#db-query-template-option label').textContent = item === 'DB_CUSTOM_QUERY'
+    ? '실행할 DB 쿼리 템플릿 (여러 개 선택 가능)'
+    : `${getScriptItemLabel(item)} 쿼리 템플릿`;
 }
 
 function updateQueryTemplatePicker(item) {
@@ -982,6 +1020,12 @@ function updateQueryTemplatePicker(item) {
 function openSelectedTemplatePage() {
   const selectedId = document.getElementById('script-template-picker-select').value;
   const item = document.getElementById('script-template-picker').dataset.item;
+  if (commonCodes?.rolePolicies.DB.includes(item)) {
+    const runner = getDefaultScriptTemplate('DB_QUERY_RUNNER');
+    if (!runner) { alert('공통 DB 쿼리 실행기를 찾을 수 없습니다.'); return; }
+    window.open(`/settings/script-management?id=${encodeURIComponent(runner.id)}`, '_blank', 'noopener');
+    return;
+  }
   const template = selectedId
     ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
     : getDefaultScriptTemplate(item);

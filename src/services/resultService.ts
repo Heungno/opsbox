@@ -178,6 +178,8 @@ export function getHealthStatus(result: CheckResult): string {
   if (result.wasChecks?.some((check) => check.status === 'Critical')) return 'Critical';
   if (result.webtobCheck?.status === 'Critical') return 'Critical';
   if (result.databaseChecks?.status === 'Critical') return 'Critical';
+  const rolePolicyStatuses = Object.values(result.rolePolicies ?? {}).flatMap((role) => [role.status, ...(role.items ?? []).map((item) => item.status)]);
+  if (rolePolicyStatuses.includes('Critical')) return 'Critical';
   const max = Math.max(result.cpu, result.memory, result.disk);
 
   if (max >= 90) {
@@ -193,6 +195,7 @@ export function getHealthStatus(result: CheckResult): string {
   if (result.wasChecks?.some((check) => check.status === 'Warning')) return 'Warning';
   if (result.webtobCheck?.status === 'Warning') return 'Warning';
   if (result.databaseChecks?.status === 'Warning') return 'Warning';
+  if (rolePolicyStatuses.includes('Warning')) return 'Warning';
 
   return 'Healthy';
 }
