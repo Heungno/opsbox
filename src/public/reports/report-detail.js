@@ -245,7 +245,7 @@ function summarizeRolePolicyDetail(item) {
     const counts = item.detail.categories;
     return `최근 ${item.detail.periodDays ?? 7}일 · 파일 ${item.detail.checkedFileCount ?? 0}개 · Fatal ${counts.fatal ?? 0} · Error/Exception ${counts.errorException ?? 0} · Warning ${counts.warning ?? 0} · HTTP 5xx ${counts.http5xx ?? 0} · HTTP 4xx ${counts.http4xx ?? 0}`;
   }
-  if (Array.isArray(item.detail?.queries)) return item.detail.queries.map((query) => `${query.name || query.id}: ${query.status}${query.output ? ` · ${query.output}` : query.message ? ` · ${query.message}` : ''}`).join('\n').slice(0, 1200);
+  if (Array.isArray(item.detail?.queries)) return item.detail.queries.map((query) => `${query.target ? `[${query.target}] ` : ''}${query.name || query.id}: ${query.status}${query.output ? ` · ${query.output}` : query.message ? ` · ${query.message}` : ''}`).join('\n').slice(0, 1200);
   if (typeof item.detail === 'string') return item.detail.slice(0, 800);
   if (Array.isArray(item.detail)) return `${item.detail.length}개 상세 결과`;
   if (item.detail?.output) return String(item.detail.output).slice(0, 800);
@@ -262,6 +262,11 @@ function summarizeWebtoB(check) {
 function summarizeDatabaseCheck(check, product) {
   if (!check || check.status === 'NotCollected') return { status: 'NotCollected', detail: check?.message || `${product || 'DB'} 연결 결과 없음` };
   if (check.message) return { status: check.status, detail: check.message };
+  if (check.instances?.length) {
+    const failed = check.instances.filter((instance) => instance.status === 'Critical');
+    if (failed.length) return { status: check.status, detail: failed.map((instance) => `${instance.target}: ${instance.message || '접속 실패'}`).join(' · ').slice(0, 800) };
+    return { status: check.status, detail: `${check.instances.length}개 인스턴스 점검 · ${check.databaseCount ?? 0}개 DB · ${check.instances.map((instance) => instance.serverName || instance.target).join(', ')}` };
+  }
   const serverInfo = [check.serverName, check.version, check.edition].filter(Boolean).join(' · ');
   const detail = `${check.databaseCount ?? 0}개 DB · 정상 ${Math.max(0, (check.databaseCount ?? 0) - (check.offlineCount ?? 0))}개${serverInfo ? ` · ${serverInfo}` : ''}`;
   return { status: check.status, detail };
@@ -270,19 +275,22 @@ function summarizeDatabaseCheck(check, product) {
 function renderDatabaseChecks(check, product) {
   const summary = document.getElementById('database-check-summary' + reportRoleSuffix);
   const tbody = document.getElementById('database-check-list' + reportRoleSuffix);
-  summary.textContent = check?.message || (check ? `${check.product || product} · ${check.serverName || '서버 정보 없음'} · 버전 ${check.version || '미수집'} · DB ${check.databaseCount ?? 0}개` : `${product || 'DB'} 엔진 상세는 미수집입니다. 제품별 CLI가 필요합니다.`);
+  const instanceSummary = check?.instances?.length ? check.instances.map((instance) => `${instance.target}: ${instance.status}${instance.message ? ` (${instance.message})` : ''}`).join(' · ') : '';
+  summary.textContent = check?.message || (check ? `${check.product || product} · ${instanceSummary || `${check.serverName || '서버 정보 없음'} · 버전 ${check.version || '미수집'}`} · DB ${check.databaseCount ?? 0}개` : `${product || 'DB'} 엔진 상세는 미수집입니다. 제품별 CLI가 필요합니다.`);
   tbody.replaceChildren();
   if (!check?.databases?.length) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
-    cell.colSpan = 4;
-    cell.textContent = check?.message || '데이터베이스 상세가 없습니다.';
+    cell.colSpan = 5;
+    const failedTargets = check?.instances?.filter((instance) => instance.status === 'Critical') ?? [];
+    cell.textContent = failedTargets.length ? failedTargets.map((instance) => `${instance.target}: ${instance.message || '접속 실패'}`).join(' · ') : check?.message || '데이터베이스 상세가 없습니다.';
     row.appendChild(cell);
     tbody.appendChild(row);
     return;
   }
   check.databases.forEach((database) => {
     const row = document.createElement('tr');
+    const target = document.createElement('td'); target.textContent = database.instanceTarget || '-';
     const name = document.createElement('td'); name.textContent = database.name;
     const state = document.createElement('td');
     const badge = document.createElement('span');
@@ -291,7 +299,7 @@ function renderDatabaseChecks(check, product) {
     state.appendChild(badge);
     const recovery = document.createElement('td'); recovery.textContent = database.recoveryModel || '-';
     const size = document.createElement('td'); size.textContent = Number.isFinite(Number(database.sizeMB)) ? Number(database.sizeMB).toLocaleString() : '-';
-    row.append(name, state, recovery, size);
+    row.append(target, name, state, recovery, size);
     tbody.appendChild(row);
   });
 }

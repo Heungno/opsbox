@@ -268,6 +268,24 @@ export function updateCheckConfig(
       errors.push({ field: `rolePolicySettings.${item}.logDirectories`, message: `${label} 로그 점검 항목을 추가한 뒤 로그 폴더를 지정하세요.` });
     }
   }
+  for (const item of ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'] as const) {
+    if (!(roleChecks.DB ?? []).includes(item)) continue;
+    if (servers[index].os !== 'Windows' || getServerProduct(servers[index], 'DB') !== 'MSSQL') continue;
+    const selectedId = config.scriptParts?.[item] ?? servers[index].scriptParts?.[item] ?? `WINDOWS-PART-${item}`;
+    const script = getTemplate(selectedId);
+    if (script?.usesQueryTemplate !== true) continue;
+    const setting = rolePolicySettings[item] ?? {};
+    const rawTargets: unknown = setting.instanceTargets;
+    const targets: unknown = typeof rawTargets === 'string'
+      ? rawTargets.split(/\r?\n/).map((target) => target.trim()).filter(Boolean)
+      : rawTargets;
+    if (!Array.isArray(targets) || targets.length === 0 || targets.some((target: unknown) => typeof target !== 'string' || !target.trim() || target.length > 512)) {
+      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: '쿼리 점검에 사용할 MSSQL 인스턴스 대상을 하나 이상 입력하세요.' });
+    } else {
+      setting.instanceTargets = [...new Set((targets as string[]).map((target) => target.trim()))];
+      rolePolicySettings[item] = setting;
+    }
+  }
   const requestedCustomQueryIds = config.customQueryTemplateIds ?? servers[index].customQueryTemplateIds ?? [];
   const customQueryTemplateIds = Array.isArray(requestedCustomQueryIds) ? requestedCustomQueryIds.filter((id): id is string => typeof id === 'string') : [];
   if (!Array.isArray(requestedCustomQueryIds)) errors.push({ field: 'customQueryTemplateIds', message: 'DB 쿼리 템플릿 목록 형식이 올바르지 않습니다.' });

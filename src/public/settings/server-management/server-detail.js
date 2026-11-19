@@ -678,6 +678,14 @@ async function savePolicy() {
       if (!['WEB_LOG', 'WAS_LOG'].includes(item)) return;
       rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), periodDays: Number(input.value) };
     });
+    document.querySelectorAll('[data-db-instance-targets]').forEach((input) => {
+      const item = input.getAttribute('data-db-instance-targets');
+      if (!['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(item)) return;
+      rolePolicySettings[item] = {
+        ...(rolePolicySettings[item] ?? {}),
+        instanceTargets: input.value.split(/\r?\n/).map((target) => target.trim()).filter(Boolean),
+      };
+    });
     const queryTemplateId = selectedQueryTemplateId || '';
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
@@ -819,6 +827,21 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         periodField.append(periodLabel, periodInput);
         description.appendChild(periodField);
       }
+      if (['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(item) && usesQueryTemplate(item)) {
+        const setting = selectedRolePolicySettings[item] ?? {};
+        const instanceField = document.createElement('label'); instanceField.className = 'role-policy-option';
+        const instanceLabel = document.createElement('span'); instanceLabel.textContent = 'MSSQL 인스턴스 대상 (한 줄에 하나씩)';
+        const instanceInput = document.createElement('textarea'); instanceInput.rows = 2;
+        instanceInput.placeholder = '예: .\\testdb 또는 localhost,1433';
+        instanceInput.value = (setting.instanceTargets ?? [`${currentServer.ip},1433`]).join('\n');
+        instanceInput.setAttribute('data-db-instance-targets', item);
+        const instanceHelp = document.createElement('small');
+        instanceHelp.textContent = item === 'DB_CUSTOM_QUERY'
+          ? '선택한 쿼리를 각 인스턴스에서 실행합니다. Windows 인증을 사용합니다.'
+          : '기본 또는 선택한 상태 쿼리를 각 인스턴스에서 실행합니다. Windows 인증을 사용합니다.';
+        instanceField.append(instanceLabel, instanceInput, instanceHelp);
+        description.appendChild(instanceField);
+      }
       if (item === 'DB_CUSTOM_QUERY') {
         const queryCount = document.createElement('small'); queryCount.className = 'custom-query-count';
         queryCount.textContent = `쿼리 ${selectedCustomQueryTemplateIds.length}개 선택`;
@@ -841,6 +864,14 @@ function renderRolePolicyGroups(roles, products, isWindows) {
 
 function getScriptItemLabel(item) {
   return commonCodes.scriptItems.find((entry) => entry.value === item)?.label || item;
+}
+
+function usesQueryTemplate(item) {
+  const selectedId = selectedScriptParts[item];
+  const template = selectedId
+    ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
+    : getDefaultScriptTemplate(item);
+  return template?.usesQueryTemplate === true;
 }
 
 function createPolicyScriptControl(item, label, showLabel = false) {

@@ -35,6 +35,7 @@ export type ServerProduct = 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 
 export interface RolePolicySetting {
   logDirectories?: string[];
   periodDays?: number;
+  instanceTargets?: string[];
 }
 
 export interface Server {
