@@ -808,7 +808,7 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
   choose.textContent = selected
     ? `${isDefaultScriptTemplate(selected, item) ? '기본' : '사용자'} · ${selected.name}`
-    : selectedId ? '저장된 템플릿 없음' : `기본 · ${defaultTemplate?.name || '기본 스크립트'}`;
+    : selectedId ? '저장된 템플릿 없음' : `기본 · ${defaultTemplate?.name || getDefaultScriptTemplateName(item)}`;
   choose.setAttribute('aria-label', `${label} 스크립트 선택`);
   choose.addEventListener('click', () => openScriptTemplatePicker(item, label));
   wrapper.append(choose);
@@ -863,7 +863,7 @@ function openScriptTemplatePicker(item, label) {
 function populateScriptTemplatePicker(item) {
   const select = document.getElementById('script-template-picker-select');
   const defaultTemplate = getDefaultScriptTemplate(item);
-  select.replaceChildren(new Option(`기본값 사용 · ${defaultTemplate?.name || getScriptItemLabel(item)}`, ''));
+  select.replaceChildren(new Option(`기본값 사용 · ${defaultTemplate?.name || getDefaultScriptTemplateName(item)}`, ''));
   const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
   available.forEach((template) => {
     const category = isDefaultScriptTemplate(template, item) ? '기본 제공' : '사용자 지정';
@@ -915,6 +915,15 @@ function openSelectedTemplatePage() {
 function getDefaultScriptTemplate(item) {
   return managedTemplates.find((template) => template.id === `${currentServer?.os?.toUpperCase()}-PART-${item}` && template.os === currentServer?.os && template.kind === 'SCRIPT_PART')
     || managedTemplates.find((template) => template.kind === 'SCRIPT_PART' && template.os === currentServer?.os && template.item === item && template.id.startsWith(`${currentServer?.os?.toUpperCase()}-PART-`));
+}
+
+function getDefaultScriptTemplateName(item) {
+  const names = {
+    HOST_INFO: '서버 기본정보·가동시간', CPU: 'CPU 사용률', MEMORY: '메모리 사용률', UPTIME: '서버 가동시간', DISK: '디스크 사용량',
+    PROCESS: '프로세스', DIRECTORY: '디렉터리', FILE_SIZE: '파일 크기', PORT: '포트', HTTP: 'HTTP 응답',
+    WEB_ENGINE_STATUS: 'WEB 엔진 상태', WAS_JVM_HEAP: 'JVM Heap 사용률', DB_INSTANCE_STATUS: 'DB 인스턴스·접속 상태', DB_CUSTOM_QUERY: '기타 사용자 쿼리',
+  };
+  return `${currentServer?.os || 'Windows'} 점검 항목 · ${names[item] || getScriptItemLabel(item)}`;
 }
 
 function isDefaultScriptTemplate(template, item) {
