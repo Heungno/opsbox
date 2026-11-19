@@ -1935,6 +1935,42 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
   }
 }
 
+:root[data-theme="dark"] .btn:not(.btn-primary):not(.btn-danger),
+:root[data-theme="dark"] .btn-secondary {
+  border-color: #3a3a3a;
+  color: #d2d2d2;
+  background: #292929;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .btn:not(.btn-primary):not(.btn-danger):hover,
+:root[data-theme="dark"] .btn-secondary:hover {
+  border-color: #4a4a4a;
+  color: #f0f0f0;
+  background: #333333;
+}
+:root[data-theme="dark"] .btn-primary {
+  border-color: #4a4a4a;
+  color: #ededed;
+  background: #393939;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .btn-primary:hover {
+  border-color: #5a5a5a;
+  color: #ffffff;
+  background: #454545;
+}
+:root[data-theme="dark"] .btn-danger {
+  border-color: #503438;
+  color: #f0a0a5;
+  background: #302326;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .btn-danger:hover {
+  border-color: #684148;
+  color: #ffc0c3;
+  background: #3b292d;
+}
+
 @media (max-width: 900px) {
   .sidebar { width: 220px; }
 }
