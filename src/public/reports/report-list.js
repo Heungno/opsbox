@@ -92,6 +92,7 @@ function renderReportList(reports) {
         items.sort((a, b) => (b.checkDate || '').localeCompare(a.checkDate || ''));
         const serverNode = document.createElement('details');
         serverNode.className = 'report-tree-server';
+        serverNode.open = true;
         const serverSummary = document.createElement('summary');
         serverSummary.className = 'report-tree-server-summary';
         serverSummary.append(createTreeTitle(`${items[0].serverName || serverId} (${serverId})`, `${items.length}건 · 최근 ${items[0].checkDate || '-'}`));
