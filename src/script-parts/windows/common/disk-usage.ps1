@@ -5,8 +5,10 @@ try {
     $status = if ($usage -ge 90) { 'Critical' } elseif ($usage -ge 70) { 'Warning' } else { 'Healthy' }
     [ordered]@{ device = $_.DeviceID; mountPoint = $_.DeviceID; volumeName = $_.VolumeName; totalGB = [math]::Round($_.Size / 1GB, 2); usedGB = [math]::Round(($_.Size - $_.FreeSpace) / 1GB, 2); freeGB = [math]::Round($_.FreeSpace / 1GB, 2); usagePercent = $usage; status = $status }
   })
-  $disk = if ($disks.Count) { ($disks | Measure-Object -Property usagePercent -Maximum).Maximum } else { $null }
-  $diskStatus = if (-not $disks.Count) { 'NotCollected' } elseif ($disks.status -contains 'Critical') { 'Critical' } elseif ($disks.status -contains 'Warning') { 'Warning' } else { 'Healthy' }
+  $usageValues = @($disks | ForEach-Object { [double]$_['usagePercent'] })
+  $diskStatuses = @($disks | ForEach-Object { [string]$_['status'] })
+  $disk = if ($usageValues.Count) { ($usageValues | Measure-Object -Maximum).Maximum } else { $null }
+  $diskStatus = if (-not $disks.Count) { 'NotCollected' } elseif ($diskStatuses -contains 'Critical') { 'Critical' } elseif ($diskStatuses -contains 'Warning') { 'Warning' } else { 'Healthy' }
 } catch {
   $disks = @()
   $disk = $null
