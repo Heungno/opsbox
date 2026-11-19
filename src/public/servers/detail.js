@@ -807,8 +807,8 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   const defaultTemplate = getDefaultScriptTemplate(item);
   const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
   choose.textContent = selected
-    ? `${isDefaultScriptTemplate(selected, item) ? '기본' : '사용자'} · ${selected.name}`
-    : selectedId ? '저장된 템플릿 없음' : `기본 · ${defaultTemplate?.name || getDefaultScriptTemplateName(item)}`;
+    ? `${isDefaultScriptTemplate(selected, item) ? '' : '사용자 · '}${selected.name}`
+    : selectedId ? '저장된 템플릿 없음' : (defaultTemplate?.name || getDefaultScriptTemplateName(item));
   choose.setAttribute('aria-label', `${label} 스크립트 선택`);
   choose.addEventListener('click', () => openScriptTemplatePicker(item, label));
   wrapper.append(choose);
