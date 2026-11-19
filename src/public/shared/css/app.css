@@ -1588,7 +1588,6 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .compact-history-table { font-size: 11px; }
 .compact-history-table th, .compact-history-table td { padding: 5px 6px; }
 .compact-history-table .btn { padding: 3px 7px; font-size: 10px; }
-.script-template-editor-content { min-height: min(58vh, 520px); font: 12px/1.55 Consolas, 'Courier New', monospace; white-space: pre; overflow: auto; }
 @media (max-width: 760px) {
   .server-overview-checks { grid-template-columns: minmax(0, 1fr); }
   .compact-history-table { display: block; overflow-x: auto; }
@@ -1622,10 +1621,8 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .template-variable { border-radius: 3px; background: rgb(9 105 218 / 18%); color: var(--primary-bright, #0969da); font-weight: 700; }
 .template-help { margin-top: 8px; color: var(--text-light); font-size: 12px; }
 .template-workspace { display: grid; grid-template-columns: minmax(260px, 0.36fr) minmax(0, 1fr); align-items: start; gap: 18px; }
-.template-editor-only { grid-template-columns: minmax(0, 1fr); }
-.template-editor-only .template-editor-panel { min-width: 0; }
-.template-list-dialog .modal-card { width: min(760px, 94vw); max-height: 86vh; overflow: auto; }
-.template-list-dialog .template-list { max-height: 62vh; overflow-y: auto; }
+.template-direct-edit .template-workspace { grid-template-columns: minmax(0, 1fr); }
+.template-direct-edit .template-list-panel { display: none; }
 .template-list-panel { position: static; min-width: 0; min-height: 0; overflow: hidden; }
 .template-editor-panel { min-width: 0; }
 .template-list { display: grid; gap: 10px; min-height: 0; overflow-y: auto; }

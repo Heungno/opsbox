@@ -1,17 +1,29 @@
 async function applySharedLayout() {
-  const root = document.getElementById('shared-layout-root');
-  if (!root) return;
-  const response = await fetch('/fragments/layout.html');
+  let root = document.getElementById('shared-layout-root');
+  let originalContent = null;
+  let pageTemplate = document.getElementById('page-content-template');
+  if (!root) {
+    const currentLayout = document.querySelector('.layout');
+    if (!currentLayout) return;
+    const contentContainer = currentLayout.querySelector('.content > .container');
+    if (!contentContainer) return;
+    originalContent = [...contentContainer.childNodes];
+    root = document.createElement('div');
+    root.id = 'shared-layout-root';
+    currentLayout.replaceWith(root);
+  }
+  const response = await fetch('/shared/fragments/layout.html');
   if (!response.ok) throw new Error('공통 레이아웃을 불러오지 못했습니다.');
   root.innerHTML = await response.text();
   const page = document.getElementById('page-content');
-  const content = document.getElementById('page-content-template');
-  if (page && content) page.append(content.content.cloneNode(true));
+  if (!page) return;
+  if (pageTemplate) page.append(pageTemplate.content.cloneNode(true));
+  else if (originalContent) page.append(...originalContent);
 }
 
 async function loadSidebar() {
   await window.opsboxLayoutReady;
-  const response = await fetch('/fragments/sidebar.html');
+  const response = await fetch('/shared/fragments/sidebar.html');
 
   const html = await response.text();
 

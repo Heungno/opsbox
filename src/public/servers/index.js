@@ -1,9 +1,11 @@
+await window.opsboxLayoutReady;
+
 let serverCache = [];
 let serverDialog, serverForm, searchBox, serverList, newButton, roleProductFields;
 let commonCodes;
 
 async function initializeServerList() {
-  const response = await fetch('/fragments/server-modal.html');
+  const response = await fetch('/shared/fragments/server-modal.html');
   if (!response.ok) throw new Error('서버 입력 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await response.text();
   const codeResponse = await fetch('/api/common-codes');

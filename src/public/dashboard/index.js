@@ -1,3 +1,5 @@
+await window.opsboxLayoutReady;
+
 async function init() {
   await loadSummary();
 

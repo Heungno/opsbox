@@ -1,3 +1,5 @@
+await window.opsboxLayoutReady;
+
 let currentReportData = null;
 let historyResults = [];
 let selectedCurrentFile = null;

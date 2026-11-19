@@ -17,8 +17,6 @@ kind.addEventListener('change', updateFormMode);
 document.getElementById('template-item').addEventListener('change', renderOutputExample);
 document.getElementById('template-filter').addEventListener('change', loadTemplates);
 document.getElementById('btn-template-reset').addEventListener('click', resetForm);
-document.getElementById('btn-template-open').addEventListener('click', () => document.getElementById('template-list-dialog').showModal());
-document.getElementById('btn-template-list-close').addEventListener('click', () => document.getElementById('template-list-dialog').close());
 form.addEventListener('submit', saveTemplate);
 form.addEventListener('input', () => { hasUnsavedChanges = true; });
 form.addEventListener('change', () => { hasUnsavedChanges = true; });
@@ -115,7 +113,9 @@ async function loadTemplates() {
   const filter = document.getElementById('template-filter').value;
   const response = await fetch(`/api/templates${filter ? `?kind=${filter}` : ''}`);
   templates = response.ok ? await response.json() : [];
-  const requestedItem = new URLSearchParams(location.search).get('item');
+  const requestedParams = new URLSearchParams(location.search);
+  const requestedItem = requestedParams.get('item');
+  const requestedId = requestedParams.get('id');
   if (requestedItem) {
     kind.value = 'SCRIPT_PART';
     document.getElementById('template-item').value = requestedItem;
@@ -123,6 +123,13 @@ async function loadTemplates() {
     templates = templates.filter((item) => item.kind === 'SCRIPT_PART' && item.item === requestedItem);
   }
   renderList();
+  if (requestedId) {
+    const selected = templates.find((item) => item.id === requestedId);
+    if (selected) {
+      document.body.classList.add('template-direct-edit');
+      openTemplate(selected);
+    }
+  }
 }
 
 function populateCodeSelect(select, codes, placeholder) {
@@ -162,7 +169,6 @@ function requestOpenTemplate(item) {
 
 function openTemplate(item) {
   if (!item) return;
-  document.getElementById('template-list-dialog').close();
   editingId = item.id;
   hasUnsavedChanges = false;
   document.getElementById('template-form-title').textContent = '템플릿 수정';

@@ -1,3 +1,5 @@
+await window.opsboxLayoutReady;
+
 const params = new URLSearchParams(window.location.search);
 const serverId = params.get('id');
 
@@ -14,10 +16,10 @@ async function init() {
     return;
   }
 
-  const modalResponse = await fetch('/fragments/server-modal.html');
+  const modalResponse = await fetch('/shared/fragments/server-modal.html');
   if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
-  const pickerResponse = await fetch('/fragments/script-template-picker-modal.html');
+  const pickerResponse = await fetch('/shared/fragments/script-template-picker-modal.html');
   if (!pickerResponse.ok) throw new Error('스크립트 선택 모달을 불러오지 못했습니다.');
   document.getElementById('script-template-picker-container').innerHTML = await pickerResponse.text();
   const codeResponse = await fetch('/api/common-codes');
@@ -323,26 +325,6 @@ function renderLatestResult(result, health) {
   container.appendChild(date);
 
   renderHealthSummary(health);
-}
-
-async function loadResultHistory(serverId) {
-  const response = await fetch(`/api/results/${serverId}`);
-  const result = await response.json();
-  const container = document.getElementById('result-history');
-
-  container.replaceChildren();
-
-  if (!result.success) {
-    container.textContent = '점검 이력이 없습니다.';
-    return;
-  }
-
-  result.data.forEach((item) => {
-    const row = document.createElement('div');
-    row.className = 'history-item';
-    row.textContent = `${item.checkDate} | CPU ${item.cpu}% | MEM ${item.memory}% | DISK ${item.disk}%`;
-    container.appendChild(row);
-  });
 }
 
 async function loadResultHistory(serverId) {
@@ -841,10 +823,7 @@ function bindScriptTemplatePicker() {
     await loadManagedTemplates();
     populateScriptTemplatePicker(dialog.dataset.item);
   });
-  document.getElementById('script-template-picker-edit').addEventListener('click', openSelectedTemplateEditor);
-  document.getElementById('script-template-editor-close').addEventListener('click', closeTemplateEditor);
-  document.getElementById('script-template-editor-cancel').addEventListener('click', closeTemplateEditor);
-  document.getElementById('script-template-editor-save').addEventListener('click', saveSelectedTemplate);
+  document.getElementById('script-template-picker-edit').addEventListener('click', openSelectedTemplatePage);
   document.getElementById('script-template-picker-save').addEventListener('click', () => {
     const item = dialog.dataset.item;
     const templateId = document.getElementById('script-template-picker-select').value;
@@ -890,57 +869,11 @@ function populateScriptTemplatePicker(item) {
   }
 }
 
-let editingPickerTemplate = null;
-let editorInitialValue = '';
-
-async function openSelectedTemplateEditor() {
-  const picker = document.getElementById('script-template-picker');
+function openSelectedTemplatePage() {
   const selectedId = document.getElementById('script-template-picker-select').value;
   const template = managedTemplates.find((item) => item.id === selectedId && item.kind === 'SCRIPT_PART');
   if (!template) { alert('수정할 스크립트를 먼저 선택하세요. 기본 스크립트는 수정할 수 없습니다.'); return; }
-  editingPickerTemplate = template;
-  document.getElementById('script-template-editor-title').textContent = `${template.item} 스크립트 수정`;
-  document.getElementById('script-template-editor-label').textContent = `${template.name} · ${template.os}`;
-  document.getElementById('script-template-editor-name').value = template.name;
-  document.getElementById('script-template-editor-enabled').checked = template.enabled;
-  document.getElementById('script-template-editor-content').value = template.content;
-  editorInitialValue = JSON.stringify([template.name, template.enabled, template.content]);
-  picker.close();
-  document.getElementById('script-template-editor').showModal();
-}
-
-function closeTemplateEditor() {
-  const dialog = document.getElementById('script-template-editor');
-  const currentValue = JSON.stringify([
-    document.getElementById('script-template-editor-name').value,
-    document.getElementById('script-template-editor-enabled').checked,
-    document.getElementById('script-template-editor-content').value,
-  ]);
-  if (currentValue !== editorInitialValue && !confirm('저장하지 않은 변경사항이 있습니다. 닫을까요?')) return;
-  dialog.close();
-  document.getElementById('script-template-picker').showModal();
-}
-
-async function saveSelectedTemplate() {
-  if (!editingPickerTemplate) return;
-  const payload = {
-    name: document.getElementById('script-template-editor-name').value.trim(),
-    kind: editingPickerTemplate.kind, os: editingPickerTemplate.os, item: editingPickerTemplate.item,
-    role: editingPickerTemplate.role, product: editingPickerTemplate.product,
-    enabled: document.getElementById('script-template-editor-enabled').checked,
-    content: document.getElementById('script-template-editor-content').value,
-  };
-  const response = await fetch(`/api/templates/${encodeURIComponent(editingPickerTemplate.id)}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) { alert(result.message || '스크립트 저장에 실패했습니다.'); return; }
-  await loadManagedTemplates();
-  populateScriptTemplatePicker(editingPickerTemplate.item);
-  document.getElementById('script-template-picker-select').value = editingPickerTemplate.id;
-  editorInitialValue = JSON.stringify([payload.name, payload.enabled, payload.content]);
-  document.getElementById('script-template-editor').close();
-  document.getElementById('script-template-picker').showModal();
+  window.open(`/settings/templates?id=${encodeURIComponent(template.id)}`, '_blank', 'noopener');
 }
 
 function getActiveScriptItems(roles, roleChecks) {
