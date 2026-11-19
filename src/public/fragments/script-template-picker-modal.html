@@ -1,0 +1,24 @@
+<dialog id="script-template-picker" class="modal-dialog script-template-picker">
+  <section class="card modal-card">
+    <div class="section-header">
+      <div>
+        <h2 id="script-template-picker-title">점검 스크립트 선택</h2>
+        <p id="script-template-picker-label" class="policy-help"></p>
+      </div>
+      <button id="script-template-picker-close" type="button" class="btn" aria-label="닫기">닫기</button>
+    </div>
+    <div class="form-group">
+      <label for="script-template-picker-select">사용할 스크립트</label>
+      <select id="script-template-picker-select"></select>
+    </div>
+    <div id="db-query-template-option" class="form-group" hidden>
+      <label for="db-query-template-select">DB 쿼리 템플릿</label>
+      <select id="db-query-template-select"></select>
+    </div>
+    <p class="policy-help">선택한 스크립트와 쿼리는 정책 저장 후 적용됩니다. 내용 수정은 스크립트 관리에서 할 수 있습니다.</p>
+    <div class="button-area">
+      <button id="script-template-picker-save" type="button" class="btn btn-primary">선택 적용</button>
+      <button id="script-template-picker-cancel" type="button" class="btn">취소</button>
+    </div>
+  </section>
+</dialog>

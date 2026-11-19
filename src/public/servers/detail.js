@@ -16,10 +16,14 @@ async function init() {
   const modalResponse = await fetch('/fragments/server-modal.html');
   if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
+  const pickerResponse = await fetch('/fragments/script-template-picker-modal.html');
+  if (!pickerResponse.ok) throw new Error('스크립트 선택 모달을 불러오지 못했습니다.');
+  document.getElementById('script-template-picker-container').innerHTML = await pickerResponse.text();
   const codeResponse = await fetch('/api/common-codes');
   if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
   commonCodes = await codeResponse.json();
   populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
+  bindScriptTemplatePicker();
   await loadManagedTemplates();
 
   await loadServer();
@@ -761,31 +765,67 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   const wrapper = document.createElement('div'); wrapper.className = `policy-script-control${showLabel ? ' is-common' : ''}`;
   wrapper.hidden = currentServer.os !== 'Windows';
   if (showLabel) { const title = document.createElement('label'); title.textContent = label; wrapper.appendChild(title); }
-  const select = document.createElement('select'); select.setAttribute('aria-label', `${label} 스크립트`);
   const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
-  select.add(new Option('기본 스크립트 사용', ''));
-  available.forEach((template) => select.add(new Option(template.name, template.id)));
   const selectedId = selectedScriptParts[item] || '';
-  if (selectedId && !available.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
-  select.value = selectedId;
-  select.addEventListener('change', () => { if (select.value) selectedScriptParts[item] = select.value; else delete selectedScriptParts[item]; });
+  const selected = available.find((template) => template.id === selectedId);
+  const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
+  choose.textContent = selected?.name || (selectedId ? '저장된 템플릿 없음' : '기본 스크립트');
+  choose.setAttribute('aria-label', `${label} 스크립트 선택`);
+  choose.addEventListener('click', () => openScriptTemplatePicker(item, label));
   const manager = document.createElement('a'); manager.className = 'policy-script-manager'; manager.textContent = '관리';
   manager.href = `/settings/templates?item=${encodeURIComponent(item)}`; manager.target = '_blank'; manager.rel = 'noopener';
-  wrapper.append(select, manager);
+  wrapper.append(choose, manager);
   return wrapper;
 }
 
 function createQueryTemplateControl() {
   const wrapper = document.createElement('div'); wrapper.className = 'policy-script-control';
-  const select = document.createElement('select'); select.setAttribute('aria-label', 'DB 쿼리 템플릿');
-  select.add(new Option('기본 DB 쿼리 사용', ''));
-  managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => select.add(new Option(template.name, template.id)));
-  select.value = selectedQueryTemplateId;
-  select.addEventListener('change', () => { selectedQueryTemplateId = select.value; });
+  const selected = managedTemplates.find((template) => template.id === selectedQueryTemplateId && template.enabled && template.kind === 'QUERY');
+  const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
+  choose.textContent = selected?.name || '기본 DB 쿼리';
+  choose.setAttribute('aria-label', 'DB 쿼리 템플릿 선택');
+  choose.addEventListener('click', () => openScriptTemplatePicker('DATABASE', 'DB 상태'));
   const manager = document.createElement('a'); manager.className = 'policy-script-manager'; manager.textContent = '쿼리 관리';
   manager.href = '/settings/templates?kind=QUERY'; manager.target = '_blank'; manager.rel = 'noopener';
-  wrapper.append(select, manager);
+  wrapper.append(choose, manager);
   return wrapper;
+}
+
+function bindScriptTemplatePicker() {
+  const dialog = document.getElementById('script-template-picker');
+  document.getElementById('script-template-picker-close').addEventListener('click', () => dialog.close());
+  document.getElementById('script-template-picker-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('script-template-picker-save').addEventListener('click', () => {
+    const item = dialog.dataset.item;
+    const templateId = document.getElementById('script-template-picker-select').value;
+    if (templateId) selectedScriptParts[item] = templateId; else delete selectedScriptParts[item];
+    if (item === 'DATABASE') selectedQueryTemplateId = document.getElementById('db-query-template-select').value;
+    dialog.close();
+    renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId);
+  });
+}
+
+function openScriptTemplatePicker(item, label) {
+  const dialog = document.getElementById('script-template-picker');
+  dialog.dataset.item = item;
+  document.getElementById('script-template-picker-title').textContent = `${label} 스크립트 선택`;
+  document.getElementById('script-template-picker-label').textContent = `${currentServer.name} · ${currentServer.os}`;
+  const select = document.getElementById('script-template-picker-select');
+  select.replaceChildren(new Option('기본 스크립트 사용', ''));
+  const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
+  available.forEach((template) => select.add(new Option(template.name, template.id)));
+  const selectedId = selectedScriptParts[item] || '';
+  if (selectedId && !available.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
+  select.value = selectedId;
+  const queryOption = document.getElementById('db-query-template-option');
+  queryOption.hidden = item !== 'DATABASE';
+  if (item === 'DATABASE') {
+    const querySelect = document.getElementById('db-query-template-select');
+    querySelect.replaceChildren(new Option('기본 DB 쿼리 사용', ''));
+    managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => querySelect.add(new Option(template.name, template.id)));
+    querySelect.value = selectedQueryTemplateId;
+  }
+  dialog.showModal();
 }
 
 function getActiveScriptItems(roles) {

@@ -49,7 +49,7 @@ function updateFormMode() {
   document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part);
   document.querySelectorAll('.template-target-option').forEach((node) => node.hidden = kind.value !== 'SCRIPT');
   const linuxOption = document.querySelector('#template-os option[value="Linux"]');
-  linuxOption.disabled = part;
+  if (linuxOption) linuxOption.disabled = part;
   if (part && document.getElementById('template-os').value !== 'Windows') document.getElementById('template-os').value = 'Windows';
   help.textContent = part
     ? '점검 항목별 스크립트는 서버 정책에서 선택한 항목만 다운로드 시 조립됩니다. 각 항목은 자기 점검 결과만 수집하고, 최종 JSON 예시는 오른쪽에 표시됩니다. 실행 준비 항목의 @@CONFIG_BASE64@@ 토큰은 지우지 마세요.'
@@ -94,6 +94,7 @@ async function loadTemplates() {
     populateCodeSelect(document.getElementById('template-item'), commonCodes.scriptItems);
     populateCodeSelect(document.getElementById('template-role'), commonCodes.serverRoles, '모든 역할');
     populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...commonCodes.templateKinds]);
+    updateFormMode();
   }
   const requestedKind = new URLSearchParams(location.search).get('kind');
   if (requestedKind && commonCodes.templateKinds.some((entry) => entry.value === requestedKind)) {
@@ -206,6 +207,5 @@ async function removeTemplate(item) {
 
 function resetForm() { editingId = ''; hasUnsavedChanges = false; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; updateFormMode(); renderList(); }
 
-updateFormMode();
 renderHighlightedTemplate();
 loadTemplates().catch((error) => { console.error(error); alert(error.message || '공통코드 또는 템플릿을 불러오지 못했습니다.'); });
