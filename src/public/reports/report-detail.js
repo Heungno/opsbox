@@ -497,7 +497,7 @@ function renderMetrics(data, compareData) {
     span.textContent = m.label;
 
     const strong = document.createElement('strong');
-    strong.textContent = m.formatter ? m.formatter(m.value) : `${m.value}${m.unit}`;
+    strong.textContent = m.formatter ? m.formatter(m.value, data.uptimeParts) : `${m.value}${m.unit}`;
 
     if (m.prevVal !== undefined && m.prevVal !== null && typeof m.value === 'number') {
       const diffBadge = createDiffBadge(m.value, m.prevVal, m.unit === '%');
@@ -518,20 +518,33 @@ function renderMetrics(data, compareData) {
   container.appendChild(grid);
 }
 
-function formatUptime(minutes) {
-  let remaining = Math.max(0, Math.floor(Number(minutes) || 0));
-  const minutesPerYear = 365 * 24 * 60;
-  const minutesPerMonth = 30 * 24 * 60;
-  let years = Math.floor(remaining / minutesPerYear);
-  remaining %= minutesPerYear;
-  let months = Math.floor(remaining / minutesPerMonth);
-  remaining %= minutesPerMonth;
-  if (months === 12) { years += 1; months = 0; }
-  const days = Math.floor(remaining / (24 * 60));
-  remaining %= 24 * 60;
-  const hours = Math.floor(remaining / 60);
-  const mins = remaining % 60;
-  return `${years}년 ${months}개월 ${days}일 ${hours}시간 ${mins}분`;
+function formatUptime(minutes, parts) {
+  let values;
+  if (parts && ['years', 'months', 'days', 'hours', 'minutes'].some((key) => Number(parts[key]) > 0)) {
+    values = [
+      [Number(parts.years) || 0, '년'],
+      [Number(parts.months) || 0, '개월'],
+      [Number(parts.days) || 0, '일'],
+      [Number(parts.hours) || 0, '시간'],
+      [Number(parts.minutes) || 0, '분'],
+    ];
+  } else {
+    let remaining = Math.max(0, Math.floor(Number(minutes) || 0));
+    const minutesPerYear = 365 * 24 * 60;
+    const minutesPerMonth = 30 * 24 * 60;
+    let years = Math.floor(remaining / minutesPerYear);
+    remaining %= minutesPerYear;
+    let months = Math.floor(remaining / minutesPerMonth);
+    remaining %= minutesPerMonth;
+    if (months === 12) { years += 1; months = 0; }
+    const days = Math.floor(remaining / (24 * 60));
+    remaining %= 24 * 60;
+    const hours = Math.floor(remaining / 60);
+    const mins = remaining % 60;
+    values = [[years, '년'], [months, '개월'], [days, '일'], [hours, '시간'], [mins, '분']];
+  }
+  const formatted = values.filter(([value]) => value > 0).map(([value, unit]) => `${value}${unit}`);
+  return formatted.length ? formatted.join(' ') : '0분';
 }
 
 function renderProcesses(processes, prevProcesses) {

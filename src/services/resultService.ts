@@ -46,6 +46,7 @@ function readJsonFile(filePath: string) {
     result.cpu = result.resources?.cpu?.usagePercent;
     result.memory = result.resources?.memory?.usagePercent;
     result.disk = result.resources?.disk?.maxUsagePercent;
+    result.uptimeParts = result.host?.uptime ?? result.resources?.uptime?.parts ?? result.uptimeParts;
     result.disks = checks.resources?.disks ?? result.resources?.disk?.volumes ?? [];
     result.processes = checks.processes?.items ?? [];
     result.directories = checks.directories?.items ?? [];
