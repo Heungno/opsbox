@@ -102,7 +102,6 @@ function read(): ManagedTemplate[] {
     return seeded;
   }
   let changed = false;
-  const splittingLegacyBasics = items.some((item) => item.kind === 'SCRIPT_PART' && (item.item as string | undefined) === 'OS_DISK');
   const roleItemRenames: Record<string, ScriptPart> = { WEB: 'WEB_ENGINE_STATUS', WAS: 'WAS_JVM_HEAP', DATABASE: 'DB_INSTANCE_STATUS' };
   for (let index = items.length - 1; index >= 0; index--) {
     const item = items[index];
@@ -119,11 +118,11 @@ function read(): ManagedTemplate[] {
       changed = true;
     }
   }
-  if (splittingLegacyBasics) {
-    const requiredBasics = defaults.filter((item) => ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'].includes(item.item ?? ''));
-    for (const item of requiredBasics) {
-      if (!items.some((existing) => existing.id === item.id)) { items.push(item); changed = true; }
-    }
+  // Resource basics are always assembled into a Windows script, so restore any
+  // missing canonical entries even when the original one-time migrations ran.
+  const requiredBasics = defaults.filter((item) => ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'].includes(item.item ?? ''));
+  for (const item of requiredBasics) {
+    if (!items.some((existing) => existing.id === item.id)) { items.push(item); changed = true; }
   }
   const customQueryMigration = 'db-custom-query-template-v1';
   if (!hasMigration(customQueryMigration)) {
