@@ -25,14 +25,14 @@ GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc;`;
 
 function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   const roles = getServerRoles(server);
-  const selected: ScriptPart[] = ['START', 'OS_DISK'];
+  const selected: ScriptPart[] = ['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
   if (server.processes?.length) selected.push('PROCESS');
   if (server.directories?.length) selected.push('DIRECTORY');
   if (server.fileChecks?.length) selected.push('FILE_SIZE');
   if (server.ports?.length) selected.push('PORT');
   if (server.httpChecks?.length) selected.push('HTTP');
   if (roles.includes('WAS')) selected.push('WAS');
-  if (roles.includes('WEB') && getServerProduct(server, 'WEB') === 'WebtoB') selected.push('WEBTOB');
+  if (roles.includes('WEB')) selected.push('WEB');
   if (roles.includes('DB')) selected.push('DATABASE');
   selected.push('SAVE');
 

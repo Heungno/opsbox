@@ -10,31 +10,11 @@ export function generateScript(serverId: string): string {
     throw new Error(`Server not found: ${serverId}`);
   }
 
-  const scriptTemplate = getTemplate(server.scriptTemplateId);
-  if (scriptTemplate?.enabled) {
-    if (scriptTemplate.kind !== 'SCRIPT' || scriptTemplate.os !== server.os) throw new Error('선택한 스크립트 템플릿의 종류 또는 운영체제가 서버 설정과 맞지 않습니다.');
-    if (scriptTemplate.role && !getServerRoles(server).includes(scriptTemplate.role)) throw new Error('스크립트 템플릿의 대상 역할이 서버에 설정되어 있지 않습니다.');
-    if (scriptTemplate.product && !Object.values(server.products ?? {}).includes(scriptTemplate.product as any) && server.product !== scriptTemplate.product) throw new Error('스크립트 템플릿의 대상 제품이 서버 설정과 맞지 않습니다.');
-    return renderScriptTemplate(scriptTemplate.content, server);
-  }
-
   const queryTemplate = getTemplate(server.queryTemplateId);
   if (queryTemplate?.enabled && queryTemplate.kind !== 'QUERY') throw new Error('선택한 쿼리 템플릿이 QUERY 유형이 아닙니다.');
   return server.os === 'Windows'
     ? assembleWindowsScript(server, getTemplates({ kind: 'SCRIPT_PART' }), queryTemplate?.enabled ? queryTemplate.content : undefined)
     : generateLinuxScript(server);
-}
-
-function renderScriptTemplate(content: string, server: Server) {
-  const roles = getServerRoles(server);
-  const values: Record<string, string> = {
-    SERVER_ID: server.id, SERVER_NAME: server.name, SERVER_IP: server.ip, SHARED_PATH: server.sharedPath, OS: server.os,
-    ROLES: roles.join(','), ROLES_JSON: JSON.stringify(roles), PRODUCTS_JSON: JSON.stringify(server.products ?? {}),
-    PROCESSES_JSON: JSON.stringify(server.processes ?? []), DIRECTORIES_JSON: JSON.stringify(server.directories ?? []),
-    FILE_CHECKS_JSON: JSON.stringify(server.fileChecks ?? []), PORTS_JSON: JSON.stringify(server.ports ?? []),
-    HTTP_CHECKS_JSON: JSON.stringify(server.httpChecks ?? []),
-  };
-  return content.replace(/\{\{([A-Z_]+)\}\}/g, (token, key: string) => values[key] ?? token);
 }
 
 function generateLinuxScript(server: Server): string {

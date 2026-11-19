@@ -39,7 +39,6 @@ export interface Server {
   product?: ServerProduct;
   roles?: ServerRole[];
   products?: Partial<Record<ServerRole, ServerProduct>>;
-  scriptTemplateId?: string;
   scriptParts?: Partial<Record<ScriptPart, string>>;
   queryTemplateId?: string;
   os: 'Windows' | 'Linux';

@@ -20,17 +20,9 @@
       <section class="server-form-section">
         <h3>접속 및 결과 정보</h3>
         <div class="form-grid">
-          <div class="form-group"><label for="server-form-os">운영체제</label><select id="server-form-os"><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
+          <div class="form-group"><label for="server-form-os">운영체제</label><select id="server-form-os"></select></div>
           <div class="form-group"><label for="server-form-ip">IP 주소</label><input id="server-form-ip" type="text" placeholder="10.10.10.11" required /></div>
           <div class="form-group"><label for="server-form-shared-path">공용 폴더</label><input id="server-form-shared-path" type="text" placeholder="\\NAS01\OpsBox" required /></div>
-        </div>
-      </section>
-      <section class="server-form-section">
-        <h3>템플릿 지정</h3>
-        <p class="policy-help">스크립트 템플릿을 지정하지 않으면 점검 항목별 스크립트를 서버 설정에 맞춰 하나로 조립합니다. DB 쿼리 템플릿은 Windows MSSQL 점검에 적용됩니다.</p>
-        <div class="form-grid">
-          <div class="form-group"><label for="server-form-script-template">전체 스크립트 재정의 (선택)</label><select id="server-form-script-template"><option value="">점검 항목 템플릿 조립</option></select></div>
-          <div class="form-group"><label for="server-form-query-template">DB 쿼리 템플릿</label><select id="server-form-query-template"><option value="">기본 MSSQL 쿼리</option></select></div>
         </div>
       </section>
       <div class="button-area">

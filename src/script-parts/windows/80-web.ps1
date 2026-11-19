@@ -1,8 +1,12 @@
+Write-OpsBoxLog "WEB 점검 시작: $($opsboxConfig.server.products.WEB)"
+if ($opsboxConfig.server.products.WEB -ne 'WebtoB') {
+  $webCheck = @{ product = $opsboxConfig.server.products.WEB; status = 'NotCollected'; message = '선택한 WEB 제품의 전용 수집기가 아직 등록되지 않았습니다.' }
+} else {
 Write-OpsBoxLog 'WebtoB wsadmin 점검 시작'
 $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue
 if (-not $wsadmin) { $wsadmin = Get-Command wsadmin.exe -ErrorAction SilentlyContinue }
 if (-not $wsadmin) {
-  $webtobCheck = @{ status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = 'wsadmin을 PATH에서 찾을 수 없습니다.' }
+  $webCheck = @{ product = 'WebtoB'; status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = 'wsadmin을 PATH에서 찾을 수 없습니다.' }
 } else {
   try {
     $wsadminPath = $wsadmin.Source
@@ -31,14 +35,15 @@ if (-not $wsadmin) {
     $wsadminProcess.StandardInput.Close()
     if (-not $wsadminProcess.WaitForExit(20000)) {
       $wsadminProcess.Kill()
-      $webtobCheck = @{ status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = 'wsadmin 실행 시간이 20초를 초과했습니다.' }
+      $webCheck = @{ product = 'WebtoB'; status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = 'wsadmin 실행 시간이 20초를 초과했습니다.' }
     } else {
       $output = ($stdoutTask.Result + "`n" + $stderrTask.Result).Trim()
       $hasReady = $output -match '(?i)\bRDY\b'
       $hasBad = $output -match '(?i)\b(NRDY|BLK|DOWN|STOPPED)\b'
       $status = if ($hasBad) { 'Critical' } elseif ($hasReady) { 'Healthy' } else { 'NotCollected' }
-      $webtobCheck = @{ status = $status; command = 'wsadmin: wi, ci -s, st -v, st -s'; output = $output.Substring(0, [math]::Min(12000, $output.Length)); message = if ($status -eq 'NotCollected') { 'WebtoB 상태 값을 확인할 수 없습니다.' } else { $null } }
+      $webCheck = @{ product = 'WebtoB'; status = $status; command = 'wsadmin: wi, ci -s, st -v, st -s'; output = $output.Substring(0, [math]::Min(12000, $output.Length)); message = if ($status -eq 'NotCollected') { 'WebtoB 상태 값을 확인할 수 없습니다.' } else { $null } }
     }
-  } catch { $webtobCheck = @{ status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = $_.Exception.Message } }
+  } catch { $webCheck = @{ product = 'WebtoB'; status = 'NotCollected'; command = 'wsadmin: wi, ci -s, st -v, st -s'; message = $_.Exception.Message } }
 }
-Write-OpsBoxLog "WebtoB 점검 완료: $($webtobCheck.status)"
+}
+Write-OpsBoxLog "WEB 점검 완료: $($webCheck.status)"

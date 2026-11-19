@@ -1,7 +1,7 @@
 import { ServerRole } from './server';
 
 export type TemplateKind = 'SCRIPT' | 'SCRIPT_PART' | 'QUERY';
-export type ScriptPart = 'START' | 'OS_DISK' | 'PROCESS' | 'DIRECTORY' | 'FILE_SIZE' | 'PORT' | 'HTTP' | 'WAS' | 'WEBTOB' | 'DATABASE' | 'SAVE';
+export type ScriptPart = 'START' | 'HOST_INFO' | 'CPU' | 'MEMORY' | 'UPTIME' | 'DISK' | 'PROCESS' | 'DIRECTORY' | 'FILE_SIZE' | 'PORT' | 'HTTP' | 'WEB' | 'WAS' | 'DATABASE' | 'SAVE';
 
 export interface ManagedTemplate {
   id: string;

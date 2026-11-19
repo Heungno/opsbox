@@ -7,15 +7,13 @@ import { validateProcesses, validateDirectories, validateFileChecks, validatePor
 
 import { ValidationError } from '../types/error';
 import { getTemplate } from './templateService';
+import { getCommonCodes } from './commonCodeService';
 
 const FILE = 'data/servers.json';
 
-const ROLES: ServerRole[] = ['WEB', 'WAS', 'DB', 'OTHER'];
-const PRODUCTS: Record<Exclude<ServerRole, 'OTHER'>, ServerProduct[]> = {
-  WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'],
-  WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'],
-  DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'],
-};
+const COMMON_CODES = getCommonCodes();
+const ROLES: ServerRole[] = COMMON_CODES.serverRoles.map(({ value }) => value as ServerRole);
+const PRODUCTS = COMMON_CODES.productsByRole as Record<Exclude<ServerRole, 'OTHER'>, ServerProduct[]>;
 
 export function getServerRoles(server: Pick<Server, 'type' | 'roles'>): ServerRole[] {
   const roles = Array.isArray(server.roles) ? server.roles.filter((role): role is ServerRole => ROLES.includes(role)) : [];
@@ -31,7 +29,12 @@ function normalizeServer(server: Server): Server {
   const products = { ...(server.products ?? {}) };
   if (server.product && !products[server.type]) products[server.type] = server.product;
   const type = roles.includes(server.type) ? server.type : roles[0];
-  return { ...server, roles, products, type, product: products[type] };
+  const scriptParts = { ...(server.scriptParts ?? {}) } as Partial<Record<ScriptPart, string>> & { OS_DISK?: string; WEBTOB?: string };
+  if (scriptParts.WEBTOB && !scriptParts.WEB) scriptParts.WEB = scriptParts.WEBTOB;
+  delete scriptParts.WEBTOB;
+  delete scriptParts.OS_DISK;
+  const { scriptTemplateId: _legacyScriptTemplateId, ...withoutLegacyOverride } = server as Server & { scriptTemplateId?: string };
+  return { ...withoutLegacyOverride, roles, products, type, product: products[type], scriptParts };
 }
 
 function read(): Server[] {
@@ -88,17 +91,6 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   }
   if (!roles.some((role) => role === 'WEB' || role === 'WAS') && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (server.os === 'Linux' && (server.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
-  if (server.scriptTemplateId) {
-    const template = getTemplate(server.scriptTemplateId);
-    if (!template || !template.enabled || template.kind !== 'SCRIPT' || template.os !== server.os) errors.push({ field: 'scriptTemplateId', message: '사용 중인 운영체제에 맞는 스크립트 템플릿을 선택해야 합니다.' });
-    else if (template.role && !roles.includes(template.role)) errors.push({ field: 'scriptTemplateId', message: '스크립트 템플릿의 대상 역할이 서버에 포함되어야 합니다.' });
-    else if (template.product && !Object.values(server.products ?? {}).includes(template.product as ServerProduct) && server.product !== template.product) errors.push({ field: 'scriptTemplateId', message: '스크립트 템플릿의 대상 제품이 서버 설정과 일치해야 합니다.' });
-  }
-  if (server.queryTemplateId) {
-    const template = getTemplate(server.queryTemplateId);
-    if (!template || !template.enabled || template.kind !== 'QUERY') errors.push({ field: 'queryTemplateId', message: '사용 중인 쿼리 템플릿을 선택하세요.' });
-    else if (server.os !== 'Windows' || !roles.includes('DB') || (server.products?.DB ?? (server.type === 'DB' ? server.product : undefined)) !== 'MSSQL') errors.push({ field: 'queryTemplateId', message: '쿼리 템플릿은 Windows MSSQL 역할에만 지정할 수 있습니다.' });
-  }
 
   if (errors.length > 0) {
     throw new ValidationError(errors);
@@ -180,6 +172,7 @@ export function getCheckConfig(id: string) {
     ports: server.ports ?? [],
     httpChecks: server.httpChecks ?? [],
     scriptParts: server.scriptParts ?? {},
+    queryTemplateId: server.queryTemplateId ?? '',
   };
 }
 
@@ -194,6 +187,7 @@ export function updateCheckConfig(
     ports?: PortCheck[];
     httpChecks?: HttpCheck[];
     scriptParts?: Partial<Record<ScriptPart, string>>;
+    queryTemplateId?: string;
   },
 ) {
   const servers = read();
@@ -212,7 +206,7 @@ export function updateCheckConfig(
   const httpValidation = validateHttpChecks(config.httpChecks ?? []);
 
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
-  const validParts: ScriptPart[] = ['START', 'OS_DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEBTOB', 'DATABASE', 'SAVE'];
+  const validParts: ScriptPart[] = ['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEB', 'DATABASE', 'SAVE'];
   for (const [part, templateId] of Object.entries(config.scriptParts ?? {})) {
     if (!validParts.includes(part as ScriptPart)) {
       errors.push({ field: `scriptParts.${part}`, message: '스크립트 점검 항목이 올바르지 않습니다.' });
@@ -223,6 +217,11 @@ export function updateCheckConfig(
     if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== 'Windows' || template.item !== part) {
       errors.push({ field: `scriptParts.${part}`, message: `${part} 점검에 사용할 Windows 템플릿을 선택하세요.` });
     }
+  }
+  if (config.queryTemplateId) {
+    const template = getTemplate(config.queryTemplateId);
+    if (!template || !template.enabled || template.kind !== 'QUERY') errors.push({ field: 'queryTemplateId', message: '사용 중인 DB 쿼리 템플릿을 선택하세요.' });
+    else if (servers[index].os !== 'Windows' || !getServerRoles(servers[index]).includes('DB') || getServerProduct(servers[index], 'DB') !== 'MSSQL') errors.push({ field: 'queryTemplateId', message: 'DB 쿼리 템플릿은 Windows MSSQL 점검에만 지정할 수 있습니다.' });
   }
   if (!getServerRoles(servers[index]).some((role) => role === 'WEB' || role === 'WAS') && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
   if (servers[index].os === 'Linux' && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'Linux HTTP 점검은 후속 단계에서 지원할 예정입니다.' });
@@ -238,6 +237,7 @@ export function updateCheckConfig(
   servers[index].ports = config.ports ?? [];
   servers[index].httpChecks = config.httpChecks ?? [];
   servers[index].scriptParts = config.scriptParts ?? servers[index].scriptParts ?? {};
+  servers[index].queryTemplateId = config.queryTemplateId ?? '';
 
   write(servers);
 
@@ -251,6 +251,7 @@ export function updateCheckConfig(
     ports: servers[index].ports,
     httpChecks: servers[index].httpChecks,
     scriptParts: servers[index].scriptParts,
+    queryTemplateId: servers[index].queryTemplateId,
   };
 }
 

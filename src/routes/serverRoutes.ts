@@ -49,13 +49,14 @@ export async function serverRoutes(app) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports, httpChecks, scriptParts } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, queryTemplateId } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
       ports?: any[];
       httpChecks?: any[];
       scriptParts?: Partial<Record<ScriptPart, string>>;
+      queryTemplateId?: string;
     };
 
     return updateCheckConfig(id, {
@@ -65,6 +66,7 @@ export async function serverRoutes(app) {
       ports,
       httpChecks,
       scriptParts,
+      queryTemplateId,
     });
   });
 }

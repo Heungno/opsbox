@@ -1,11 +1,15 @@
 let serverCache = [];
 let serverDialog, serverForm, searchBox, serverList, newButton, roleProductFields;
-const productsByType = { WEB: ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"], WAS: ["JEUS", "Apache Tomcat", "JBoss", "Node.js"], DB: ["MSSQL", "MariaDB", "CUBRID", "PostgreSQL"] };
+let commonCodes;
 
 async function initializeServerList() {
   const response = await fetch('/fragments/server-modal.html');
   if (!response.ok) throw new Error('서버 입력 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await response.text();
+  const codeResponse = await fetch('/api/common-codes');
+  if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
+  commonCodes = await codeResponse.json();
+  populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
   serverDialog = document.getElementById('server-modal');
   serverForm = document.getElementById('server-modal-form');
   roleProductFields = document.getElementById('server-form-role-products');
@@ -13,9 +17,6 @@ async function initializeServerList() {
   serverList = document.getElementById('server-list');
   newButton = document.getElementById('btn-new');
   renderRoleProducts(roleProductFields);
-  await loadTemplateOptions();
-  document.getElementById('server-form-os').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
-  roleProductFields.addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
   serverForm.addEventListener('submit', saveServer);
   document.getElementById('server-modal-close').addEventListener('click', closeServerDialog);
   document.getElementById('server-modal-cancel').addEventListener('click', closeServerDialog);
@@ -24,44 +25,31 @@ async function initializeServerList() {
   await loadServers();
 }
 
-async function loadTemplateOptions(selectedScript = '', selectedQuery = '') {
-  const response = await fetch('/api/templates');
-  const templates = response.ok ? await response.json() : [];
-  const scriptSelect = document.getElementById('server-form-script-template');
-  const querySelect = document.getElementById('server-form-query-template');
-  const selectedRoles = [...roleProductFields.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
-  const dbProduct = roleProductFields.querySelector('select[data-role-product="DB"]')?.value;
-  const canUseQuery = document.getElementById('server-form-os').value === 'Windows' && selectedRoles.includes('DB') && dbProduct === 'MSSQL';
-  scriptSelect.replaceChildren(new Option('점검 항목 템플릿 조립', ''));
-  querySelect.replaceChildren(new Option('기본 MSSQL 쿼리', ''));
-  templates.filter((template) => template.enabled && (template.kind !== 'SCRIPT' || template.os === document.getElementById('server-form-os').value) && (template.kind !== 'QUERY' || canUseQuery)).forEach((template) => {
-    const label = `${template.name}${template.os ? ` · ${template.os}` : ''}${template.role ? ` · ${template.role}` : ''}`;
-    if (template.kind === 'SCRIPT') scriptSelect.add(new Option(label, template.id));
-    if (template.kind === 'QUERY') querySelect.add(new Option(label, template.id));
-  });
-  scriptSelect.value = selectedScript;
-  querySelect.value = selectedQuery;
-}
-
 function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}) {
   if (!container) return;
   container.replaceChildren();
-  ['WEB', 'WAS', 'DB', 'OTHER'].forEach((role) => {
+  commonCodes.serverRoles.forEach(({ value: role, label: roleLabel }) => {
     const row = document.createElement('div'); row.className = 'role-product-row';
     const label = document.createElement('label');
     const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
     checkbox.className = 'role-choice-checkbox';
     checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;';
     label.className = 'role-choice-label';
-    label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.appendChild(label);
+    label.append(checkbox, document.createTextNode(` ${roleLabel}`)); row.appendChild(label);
     if (role !== 'OTHER') {
       const select = document.createElement('select'); select.dataset.roleProduct = role;
-      select.add(new Option('제품 선택', '')); (productsByType[role] || []).forEach((product) => select.add(new Option(product, product)));
+      select.add(new Option('제품 선택', '')); (commonCodes.productsByRole[role] || []).forEach((product) => select.add(new Option(product, product)));
       select.value = selectedProducts[role] || ''; row.appendChild(select);
     }
     checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked) { const select = row.querySelector('select'); if (select) select.value = ''; } });
     checkbox.dispatchEvent(new Event('change')); container.appendChild(row);
   });
+}
+function populateOptions(select, codes, placeholder) {
+  if (!select) return;
+  select.replaceChildren();
+  if (placeholder) select.add(new Option(placeholder, ''));
+  codes.forEach(({ value, label }) => select.add(new Option(label, value)));
 }
 function getRoleProductSelection(container) {
   const roles = [...container.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
@@ -104,8 +92,6 @@ async function saveServer(event) {
     ip: document.getElementById("server-form-ip").value.trim(),
 
     sharedPath: document.getElementById("server-form-shared-path").value.trim(),
-    scriptTemplateId: document.getElementById('server-form-script-template').value || undefined,
-    queryTemplateId: document.getElementById('server-form-query-template').value || undefined,
   };
 
   try {
@@ -240,8 +226,6 @@ function resetForm() {
   serverForm?.reset();
   renderRoleProducts(roleProductFields, ['WEB']);
   document.getElementById("server-form-shared-path").value = "";
-  document.getElementById('server-form-script-template').value = '';
-  document.getElementById('server-form-query-template').value = '';
 }
 
 function showNewForm() {

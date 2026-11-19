@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpsBox | 템플릿 설정</title>
+  <title>OpsBox | 스크립트 관리</title>
   <link rel="stylesheet" href="/css/app.css" />
 </head>
-<body>
+<body class="template-management-page">
   <div class="layout">
     <div id="sidebar-container"></div>
     <main class="content"><div class="container">
-      <header class="header"><h1>스크립트·쿼리 템플릿</h1><p>템플릿을 관리하고 서버별 생성 설정에 연결합니다.</p></header>
+      <header class="header"><h1>스크립트 관리</h1><p>점검 항목별 스크립트와 DB 쿼리를 관리하고 서버 정책에 연결합니다.</p></header>
       <div class="template-workspace">
       <section class="card template-list-panel">
-        <div class="section-header"><h2>저장된 템플릿</h2><select id="template-filter" aria-label="템플릿 종류 필터"><option value="">전체</option><option value="SCRIPT_PART">점검 항목 스크립트</option><option value="SCRIPT">전체 스크립트(고급)</option><option value="QUERY">DB 쿼리</option></select></div>
+        <div class="section-header"><h2>저장된 템플릿</h2><select id="template-filter" aria-label="템플릿 종류 필터"></select></div>
         <div id="template-list" class="template-list"></div>
       </section>
       <section class="card template-editor-panel">
@@ -21,14 +21,14 @@
         <form id="template-form">
           <div class="form-grid">
             <div class="form-group"><label for="template-name">이름</label><input id="template-name" required placeholder="예: Windows WEB 기본 점검" /></div>
-            <div class="form-group"><label for="template-kind">종류</label><select id="template-kind"><option value="SCRIPT_PART">점검 항목 스크립트</option><option value="SCRIPT">전체 스크립트(고급)</option><option value="QUERY">DB 쿼리</option></select></div>
-            <div class="form-group template-script-option"><label for="template-os">운영체제</label><select id="template-os"><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
-            <div class="form-group template-part-option"><label for="template-item">점검 항목</label><select id="template-item"><option value="START">실행 준비·로깅</option><option value="OS_DISK">OS·디스크</option><option value="PROCESS">프로세스</option><option value="DIRECTORY">디렉터리</option><option value="FILE_SIZE">파일 크기</option><option value="PORT">포트</option><option value="HTTP">HTTP 응답</option><option value="WAS">WAS·JVM</option><option value="WEBTOB">WebtoB</option><option value="DATABASE">DB·MSSQL</option><option value="SAVE">결과 저장·종료</option></select></div>
-            <div class="form-group template-script-option template-target-option"><label for="template-role">대상 역할 (선택)</label><select id="template-role"><option value="">모든 역할</option><option>WEB</option><option>WAS</option><option>DB</option><option value="OTHER">기타</option></select></div>
+            <div class="form-group"><label for="template-kind">종류</label><select id="template-kind"></select></div>
+            <div class="form-group template-script-option"><label for="template-os">운영체제</label><select id="template-os"></select></div>
+            <div class="form-group template-part-option"><label for="template-item">점검 항목</label><select id="template-item"></select></div>
+            <div class="form-group template-script-option template-target-option"><label for="template-role">대상 역할 (선택)</label><select id="template-role"></select></div>
             <div class="form-group template-script-option template-target-option"><label for="template-product">대상 제품 (선택)</label><input id="template-product" placeholder="예: WebtoB" /></div>
             <label class="template-enabled"><input id="template-enabled" type="checkbox" checked /> 사용</label>
           </div>
-          <div class="form-group template-content-group"><label for="template-content">템플릿 내용</label><div class="template-editor"><pre id="template-highlight" aria-hidden="true"><code></code></pre><textarea id="template-content" required spellcheck="false" wrap="off" aria-label="템플릿 코드"></textarea></div></div>
+          <div class="form-group template-content-group"><label for="template-content">템플릿 내용</label><div class="template-content-layout"><div class="template-editor"><pre id="template-highlight" aria-hidden="true"><code></code></pre><textarea id="template-content" required spellcheck="false" wrap="off" aria-label="템플릿 코드"></textarea></div><aside class="template-output-example"><h3>JSON 결과 예시</h3><pre id="template-output-example"></pre><small>점검 결과에 포함되는 항목 구조입니다.</small></aside></div></div>
           <div id="template-help" class="template-help"></div>
           <div class="button-area"><button id="btn-template-save" type="submit" class="btn btn-primary">템플릿 저장</button></div>
         </form>
@@ -36,6 +36,17 @@
       </div>
     </div></main>
   </div>
+  <dialog id="unsaved-template-dialog" class="modal-dialog unsaved-template-dialog">
+    <section class="card modal-card">
+      <div class="section-header"><h2>저장하지 않은 변경사항</h2></div>
+      <p id="unsaved-template-message" class="policy-help">현재 템플릿에 저장하지 않은 변경사항이 있습니다.</p>
+      <div class="button-area">
+        <button id="unsaved-template-save-open" type="button" class="btn btn-primary">저장 후 열기</button>
+        <button id="unsaved-template-discard-open" type="button" class="btn">저장하지 않고 열기</button>
+        <button id="unsaved-template-continue" type="button" class="btn">계속 편집</button>
+      </div>
+    </section>
+  </dialog>
   <script src="/js/common.js"></script>
   <script src="/settings/templates.js"></script>
 </body>

@@ -1,0 +1,43 @@
+{
+  "serverRoles": [
+    { "value": "WEB", "label": "WEB" },
+    { "value": "WAS", "label": "WAS" },
+    { "value": "DB", "label": "DB" },
+    { "value": "OTHER", "label": "기타" }
+  ],
+  "operatingSystems": [
+    { "value": "Windows", "label": "Windows" },
+    { "value": "Linux", "label": "Linux" }
+  ],
+  "productsByRole": {
+    "WEB": ["WebtoB", "Apache HTTP Server", "IIS", "Nginx"],
+    "WAS": ["JEUS", "Apache Tomcat", "JBoss", "Node.js"],
+    "DB": ["MSSQL", "MariaDB", "CUBRID", "PostgreSQL"]
+  },
+  "portProtocols": [
+    { "value": "TCP", "label": "TCP" },
+    { "value": "UDP", "label": "UDP" }
+  ],
+  "templateKinds": [
+    { "value": "SCRIPT_PART", "label": "점검 항목 스크립트" },
+    { "value": "SCRIPT", "label": "전체 스크립트(고급)" },
+    { "value": "QUERY", "label": "DB 쿼리" }
+  ],
+  "scriptItems": [
+    { "value": "START", "label": "실행 준비", "group": "시스템" },
+    { "value": "HOST_INFO", "label": "서버 기본정보", "group": "공통" },
+    { "value": "CPU", "label": "CPU 사용률", "group": "공통" },
+    { "value": "MEMORY", "label": "메모리 사용률", "group": "공통" },
+    { "value": "UPTIME", "label": "가동시간", "group": "공통" },
+    { "value": "DISK", "label": "디스크 사용량", "group": "공통" },
+    { "value": "PROCESS", "label": "프로세스", "group": "공통" },
+    { "value": "DIRECTORY", "label": "디렉터리 사용량", "group": "공통" },
+    { "value": "FILE_SIZE", "label": "파일 크기", "group": "공통" },
+    { "value": "PORT", "label": "포트 리스닝", "group": "공통" },
+    { "value": "HTTP", "label": "HTTP 응답", "group": "WEB/WAS" },
+    { "value": "WEB", "label": "WEB 엔진", "group": "WEB" },
+    { "value": "WAS", "label": "WAS·JVM", "group": "WAS" },
+    { "value": "DATABASE", "label": "DB 상태", "group": "DB" },
+    { "value": "SAVE", "label": "결과 저장", "group": "시스템" }
+  ]
+}

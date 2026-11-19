@@ -3,7 +3,9 @@ const serverId = params.get('id');
 
 let currentServer = null;
 let managedTemplates = [];
-let editingScriptPartTemplateId = '';
+let selectedScriptParts = {};
+let selectedQueryTemplateId = '';
+let commonCodes;
 
 async function init() {
   if (!serverId) {
@@ -14,33 +16,18 @@ async function init() {
   const modalResponse = await fetch('/fragments/server-modal.html');
   if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
-  await loadTemplateOptions();
-  bindScriptPartEditor();
-  document.getElementById('server-form-os').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
-  document.getElementById('server-form-role-products').addEventListener('change', () => loadTemplateOptions(document.getElementById('server-form-script-template').value, document.getElementById('server-form-query-template').value));
+  const codeResponse = await fetch('/api/common-codes');
+  if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
+  commonCodes = await codeResponse.json();
+  populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
+  await loadManagedTemplates();
 
   await loadServer();
 }
 
-async function loadTemplateOptions(scriptId = '', queryId = '') {
+async function loadManagedTemplates() {
   const response = await fetch('/api/templates');
-  const templates = response.ok ? await response.json() : [];
-  managedTemplates = templates;
-  const scriptSelect = document.getElementById('server-form-script-template');
-  const querySelect = document.getElementById('server-form-query-template');
-  const roleContainer = document.getElementById('server-form-role-products');
-  const selectedRoles = [...roleContainer.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
-  const dbProduct = roleContainer.querySelector('select[data-role-product="DB"]')?.value;
-  const canUseQuery = document.getElementById('server-form-os').value === 'Windows' && selectedRoles.includes('DB') && dbProduct === 'MSSQL';
-  scriptSelect.replaceChildren(new Option('점검 항목 템플릿 조립', ''));
-  querySelect.replaceChildren(new Option('기본 MSSQL 쿼리', ''));
-  templates.filter((template) => template.enabled && (template.kind !== 'SCRIPT' || template.os === document.getElementById('server-form-os').value) && (template.kind !== 'QUERY' || canUseQuery)).forEach((template) => {
-    const label = `${template.name}${template.os ? ` · ${template.os}` : ''}${template.role ? ` · ${template.role}` : ''}`;
-    if (template.kind === 'SCRIPT') scriptSelect.add(new Option(label, template.id));
-    if (template.kind === 'QUERY') querySelect.add(new Option(label, template.id));
-  });
-  scriptSelect.value = scriptId;
-  querySelect.value = queryId;
+  managedTemplates = response.ok ? await response.json() : [];
 }
 
 async function loadServer() {
@@ -113,15 +100,14 @@ function bindServerEdit() {
   const dialog = document.getElementById('server-modal');
   const form = document.getElementById('server-modal-form');
   const roleContainer = document.getElementById('server-form-role-products');
-  const productsByType = { WEB: ['WebtoB', 'Apache HTTP Server', 'IIS', 'Nginx'], WAS: ['JEUS', 'Apache Tomcat', 'JBoss', 'Node.js'], DB: ['MSSQL', 'MariaDB', 'CUBRID', 'PostgreSQL'] };
   const renderRoleProducts = (selectedRoles = [], selectedProducts = {}) => {
     roleContainer.replaceChildren();
-    ['WEB', 'WAS', 'DB', 'OTHER'].forEach((role) => {
+    commonCodes.serverRoles.forEach(({ value: role, label: roleLabel }) => {
       const row = document.createElement('div'); row.className = 'role-product-row';
       const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
       checkbox.className = 'role-choice-checkbox'; checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;'; label.className = 'role-choice-label';
-      label.append(checkbox, document.createTextNode(role === 'OTHER' ? ' 기타' : ` ${role}`)); row.append(label);
-      if (role !== 'OTHER') { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); (productsByType[role] || []).forEach((name) => select.add(new Option(name, name))); select.value = selectedProducts[role] || ''; row.append(select); }
+      label.append(checkbox, document.createTextNode(` ${roleLabel}`)); row.append(label);
+      if (role !== 'OTHER') { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); (commonCodes.productsByRole[role] || []).forEach((name) => select.add(new Option(name, name))); select.value = selectedProducts[role] || ''; row.append(select); }
       checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked && row.querySelector('select')) row.querySelector('select').value = ''; }); checkbox.dispatchEvent(new Event('change')); roleContainer.appendChild(row);
     });
   };
@@ -137,9 +123,6 @@ function bindServerEdit() {
     document.getElementById('server-form-os').value = currentServer.os;
     document.getElementById('server-form-ip').value = currentServer.ip;
     document.getElementById('server-form-shared-path').value = currentServer.sharedPath || '';
-    loadTemplateOptions(currentServer.scriptTemplateId || '', currentServer.queryTemplateId || '');
-    document.getElementById('server-form-script-template').value = currentServer.scriptTemplateId || '';
-    document.getElementById('server-form-query-template').value = currentServer.queryTemplateId || '';
     dialog.showModal();
   });
   document.getElementById('server-modal-close').addEventListener('click', () => dialog.close());
@@ -154,8 +137,6 @@ function bindServerEdit() {
       os: document.getElementById('server-form-os').value,
       ip: document.getElementById('server-form-ip').value.trim(),
       sharedPath: document.getElementById('server-form-shared-path').value.trim(),
-      scriptTemplateId: document.getElementById('server-form-script-template').value,
-      queryTemplateId: document.getElementById('server-form-query-template').value,
     };
     try {
       const response = await fetch(`/api/servers/${encodeURIComponent(currentServer.id)}`, {
@@ -174,6 +155,13 @@ function bindServerEdit() {
   });
 }
 
+function populateOptions(select, codes, placeholder) {
+  if (!select) return;
+  select.replaceChildren();
+  if (placeholder) select.add(new Option(placeholder, ''));
+  codes.forEach(({ value, label }) => select.add(new Option(label, value)));
+}
+
 function loadScripts(server) {
   const container = document.getElementById('script-list');
   container.replaceChildren();
@@ -187,24 +175,19 @@ function loadScripts(server) {
   const desc = document.createElement('div');
   desc.className = 'script-desc';
   desc.textContent = server.os === 'Windows'
-    ? server.scriptTemplateId
-      ? '스크립트 파일이 있는 폴더에서 실행하세요. 템플릿의 JSON 출력을 결과 파일로 저장하고 stderr와 실행 결과를 로그에 남깁니다.'
-      : '스크립트 파일이 있는 폴더에서 실행하세요. PS1이 결과 JSON과 단계별 실행 로그를 직접 저장합니다.'
+    ? '정책에 연결된 점검 스크립트를 조립합니다. 실행 로그는 콘솔에 출력하고 결과 JSON은 서버 결과 폴더에 저장합니다.'
     : '스크립트 파일이 있는 폴더에서 실행하세요. 결과 JSON은 서버 공유 경로에 저장됩니다.';
 
   const commandTitle = document.createElement('div');
   commandTitle.className = 'command-title';
-  commandTitle.textContent = server.os === 'Windows' ? '실행 명령어 (스크립트가 결과·로그 자동 저장)' : '실행 명령어 (JSON 결과 저장)';
+  commandTitle.textContent = server.os === 'Windows' ? '실행 명령어 (로그는 콘솔, 결과는 JSON 저장)' : '실행 명령어 (JSON 결과 저장)';
 
   const scriptFileName = server.os.toLowerCase() === 'windows' ? `${server.id}.ps1` : `${server.id}.sh`;
   
   const quotePowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
   const scriptSelector = `Where-Object { $_.Name.StartsWith(${quotePowerShell(server.id)}, [System.StringComparison]::OrdinalIgnoreCase) -and $_.Extension -eq '.ps1' }`;
-  const windowsCustomTemplateCommand = `$script = Get-ChildItem -File | ${scriptSelector} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; $year = (Get-Date).Year; $dir = Join-Path (Join-Path (Join-Path ${quotePowerShell(server.sharedPath)} 'results') $year) ${quotePowerShell(server.id)}; New-Item -ItemType Directory -Path $dir -Force | Out-Null; $stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'; $log = Join-Path $dir "$stamp.log"; $result = Join-Path $dir "$stamp.json"; $oldLog = $env:OPSBOX_SCRIPT_LOG; $env:OPSBOX_SCRIPT_LOG = $log; try { $output = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script 2>> $log); if ($LASTEXITCODE -ne 0) { throw "스크립트 종료 코드: $LASTEXITCODE" }; $json = ($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine; $parsed = ConvertFrom-Json -InputObject $json -ErrorAction Stop; if ($parsed.server -ne ${quotePowerShell(server.id)}) { throw '결과 서버 ID가 맞지 않습니다.' }; Set-Content -LiteralPath $result -Value $json -Encoding UTF8 -ErrorAction Stop; "성공: $result" | Add-Content -LiteralPath $log -Encoding UTF8 } catch { "실패: $($_.Exception.Message)" | Add-Content -LiteralPath $log -Encoding UTF8; if ($output) { $output | Out-String | Add-Content -LiteralPath $log -Encoding UTF8 }; throw } finally { if ($null -eq $oldLog) { Remove-Item Env:OPSBOX_SCRIPT_LOG -ErrorAction SilentlyContinue } else { $env:OPSBOX_SCRIPT_LOG = $oldLog } }`;
   const command = server.os.toLowerCase() === 'windows'
-    ? server.scriptTemplateId
-      ? windowsCustomTemplateCommand
-      : `$script = Get-ChildItem -File | ${scriptSelector} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script`
+    ? `$script = Get-ChildItem -File | ${scriptSelector} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script`
     : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
   const commandBox = document.createElement('pre');
@@ -475,7 +458,8 @@ async function loadPolicy(serverId) {
   if (!response.ok) return;
 
   const config = await response.json();
-  renderScriptTemplateMap(config.scriptParts ?? currentServer?.scriptParts ?? {});
+  selectedQueryTemplateId = config.queryTemplateId || currentServer?.queryTemplateId || '';
+  renderPolicyScriptControls(config.scriptParts ?? currentServer?.scriptParts ?? {}, config.queryTemplateId ?? currentServer?.queryTemplateId ?? '');
   document.getElementById('process-container')?.replaceChildren();
   document.getElementById('directory-container')?.replaceChildren();
   document.getElementById('file-check-container')?.replaceChildren();
@@ -591,7 +575,7 @@ function addPortRow(data = {}) {
 
   const protocol = document.createElement('select');
   protocol.className = 'port-protocol';
-  protocol.innerHTML = '<option value="TCP">TCP</option><option value="UDP">UDP</option>';
+  commonCodes.portProtocols.forEach(({ value, label }) => protocol.add(new Option(label, value)));
   protocol.value = data.protocol ?? 'TCP';
 
   const port = document.createElement('input');
@@ -687,9 +671,8 @@ async function savePolicy() {
     const fileChecks = getFileChecks();
     const ports = getPorts();
     const httpChecks = getHttpChecks();
-    const scriptParts = Object.fromEntries([...document.querySelectorAll('[data-script-part]')]
-      .map((select) => [select.dataset.scriptPart, select.value])
-      .filter(([, templateId]) => templateId));
+    const scriptParts = { ...selectedScriptParts };
+    const queryTemplateId = selectedQueryTemplateId || '';
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
       headers: {
@@ -703,6 +686,7 @@ async function savePolicy() {
         ports,
         httpChecks,
         scriptParts,
+        queryTemplateId,
       }),
     });
 
@@ -721,105 +705,130 @@ async function savePolicy() {
     currentServer.ports = ports;
     currentServer.httpChecks = httpChecks;
     currentServer.scriptParts = scriptParts;
-    renderScriptTemplateMap(scriptParts);
+    currentServer.queryTemplateId = queryTemplateId;
+    renderPolicyScriptControls(scriptParts, queryTemplateId);
   } catch (error) {
     console.error(error);
     alert('정책 저장 중 오류가 발생했습니다.');
   }
 }
 
-function renderScriptTemplateMap(selectedParts = {}) {
-  const panel = document.getElementById('script-template-policy');
-  if (!panel || !currentServer) return;
-  panel.hidden = currentServer.os !== 'Windows';
-  if (panel.hidden) return;
-
+function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '') {
+  if (!currentServer) return;
   const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
   const products = currentServer.products || { [currentServer.type]: currentServer.product };
-  const checks = [
-    ['START', '공통 · 실행 준비·로깅', true], ['OS_DISK', '기본점검 · OS·CPU·메모리·디스크', true],
-    ['PROCESS', '프로세스', (currentServer.processes ?? []).length > 0],
-    ['DIRECTORY', '디렉터리', (currentServer.directories ?? []).length > 0],
-    ['FILE_SIZE', '특정 파일 크기', (currentServer.fileChecks ?? []).length > 0],
-    ['PORT', '포트 리스닝', (currentServer.ports ?? []).length > 0],
-    ['HTTP', 'HTTP 응답', (currentServer.httpChecks ?? []).length > 0],
-    ['WAS', 'WAS·JVM', roles.includes('WAS')],
-    ['WEBTOB', 'WebtoB wsadmin', roles.includes('WEB') && products.WEB === 'WebtoB'],
-    ['DATABASE', 'DB 상태', roles.includes('DB')], ['SAVE', '공통 · 결과 저장·종료', true],
+  selectedScriptParts = { ...selectedParts };
+  selectedQueryTemplateId = queryTemplateId || '';
+  const isWindows = currentServer.os === 'Windows';
+  const commonPanel = document.getElementById('common-script-policy');
+  const rolePanel = document.getElementById('role-script-policy');
+  commonPanel.hidden = !isWindows;
+  rolePanel.hidden = !isWindows || !roles.some((role) => ['WEB', 'WAS', 'DB'].includes(role));
+  const commonItems = ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
+  const commonControls = document.getElementById('common-script-controls');
+  commonControls.replaceChildren();
+  commonItems.forEach((item) => commonControls.appendChild(createPolicyScriptControl(item, getScriptItemLabel(item), true)));
+
+  const policyControls = [
+    ['PROCESS', 'process-script-control'], ['DIRECTORY', 'directory-script-control'],
+    ['FILE_SIZE', 'file-script-control'], ['PORT', 'port-script-control'], ['HTTP', 'http-script-control'],
   ];
-  const body = document.getElementById('script-template-map');
-  body.replaceChildren();
-  const overridden = Boolean(currentServer.scriptTemplateId);
-  const note = document.getElementById('script-template-override-note');
-  note.hidden = !overridden;
-  note.textContent = overridden
-    ? '서버 정보에서 전체 스크립트 재정의가 선택되어 있습니다. 이 설정이 적용되는 동안 아래 항목별 선택은 사용되지 않습니다.'
-    : '점검 정책이 등록된 항목은 스크립트에 포함됩니다. 템플릿 선택을 비워두면 기본 템플릿을 사용합니다.';
-
-  checks.forEach(([item, label, active]) => {
-    const row = document.createElement('tr');
-    const name = document.createElement('td'); name.textContent = label;
-    const state = document.createElement('td'); state.textContent = overridden ? '전체 스크립트 사용' : active ? '조립 대상' : '정책 없음 · 미조립';
-    const templateCell = document.createElement('td');
-    const actions = document.createElement('td'); actions.className = 'script-template-actions';
-    const select = document.createElement('select'); select.dataset.scriptPart = item;
-    select.setAttribute('aria-label', `${label} 스크립트 템플릿`);
-    const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item);
-    const seededDefault = available.find((template) => template.id === `WINDOWS-PART-${item}`);
-    const defaultName = seededDefault?.name || (available.length === 1 ? available[0].name : available.length > 1 ? '기본 항목 없음 · 템플릿을 지정하세요' : '사용 가능한 템플릿 없음');
-    select.add(new Option(`기본 템플릿 · ${defaultName}`, ''));
-    available.forEach((template) => select.add(new Option(template.name, template.id)));
-    const selectedId = selectedParts[item] || '';
-    if (selectedId && !available.some((template) => template.id === selectedId)) {
-      select.add(new Option('선택한 템플릿을 사용할 수 없음 · 다시 선택', selectedId));
-    }
-    select.value = selectedId;
-    const editTemplateId = selectedId || seededDefault?.id || (available.length === 1 ? available[0].id : '');
-    const editButton = document.createElement('button');
-    editButton.type = 'button'; editButton.className = 'btn btn-small'; editButton.textContent = '스크립트 수정';
-    editButton.disabled = overridden || !editTemplateId;
-    editButton.title = overridden ? '전체 스크립트 재정의가 우선 적용됩니다.' : editTemplateId ? '' : '템플릿을 선택하거나 템플릿 설정에서 추가하세요.';
-    editButton.addEventListener('click', () => openScriptPartEditor(select.value || editTemplateId));
-    select.disabled = overridden;
-    templateCell.appendChild(select);
-    actions.appendChild(editButton);
-    row.append(name, state, templateCell, actions); body.appendChild(row);
+  policyControls.forEach(([item, id]) => {
+    const container = document.getElementById(id);
+    container.replaceChildren(createPolicyScriptControl(item, getScriptItemLabel(item)));
+    container.hidden = !isWindows || (item === 'HTTP' && !roles.some((role) => role === 'WEB' || role === 'WAS'));
   });
-}
 
-function bindScriptPartEditor() {
-  const dialog = document.getElementById('script-part-editor-modal');
-  document.getElementById('script-part-editor-close').addEventListener('click', () => dialog.close());
-  document.getElementById('script-part-editor-cancel').addEventListener('click', () => dialog.close());
-  document.getElementById('script-part-editor-save').addEventListener('click', saveScriptPartEditor);
-}
-
-function openScriptPartEditor(templateId) {
-  const template = managedTemplates.find((item) => item.id === templateId && item.kind === 'SCRIPT_PART');
-  if (!template) { alert('편집할 점검 스크립트 템플릿을 찾을 수 없습니다.'); return; }
-  editingScriptPartTemplateId = template.id;
-  document.getElementById('script-part-editor-name').textContent = `${template.name} · ${template.item}`;
-  document.getElementById('script-part-editor-content').value = template.content;
-  document.getElementById('script-part-editor-modal').showModal();
-}
-
-async function saveScriptPartEditor() {
-  const template = managedTemplates.find((item) => item.id === editingScriptPartTemplateId);
-  if (!template) { alert('편집할 템플릿이 목록에서 사라졌습니다.'); return; }
-  const response = await fetch(`/api/templates/${encodeURIComponent(template.id)}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...template, content: document.getElementById('script-part-editor-content').value }),
+  const roleControls = document.getElementById('role-script-controls');
+  roleControls.replaceChildren();
+  [
+    ['WEB', 'WEB', products.WEB], ['WAS', 'WAS', products.WAS], ['DB', 'DATABASE', products.DB],
+  ].filter(([role]) => roles.includes(role)).forEach(([role, item, product]) => {
+    const block = document.createElement('div'); block.className = 'role-script-policy-item';
+    const heading = document.createElement('h4'); heading.textContent = `${role} · ${product || role}`;
+    block.append(heading, createPolicyScriptControl(item, `${product || role} 점검`));
+    if (role === 'DB' && currentServer.os === 'Windows' && product === 'MSSQL') block.appendChild(createQueryTemplateControl());
+    roleControls.appendChild(block);
   });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) { alert(result.message || '스크립트 저장에 실패했습니다.'); return; }
-  const updated = result.data;
-  managedTemplates = managedTemplates.map((item) => item.id === updated.id ? updated : item);
-  const selectedParts = Object.fromEntries([...document.querySelectorAll('[data-script-part]')]
-    .map((select) => [select.dataset.scriptPart, select.value])
-    .filter(([, templateId]) => templateId));
-  document.getElementById('script-part-editor-modal').close();
-  renderScriptTemplateMap(selectedParts);
-  alert('스크립트 템플릿을 저장했습니다. 다음 다운로드부터 적용됩니다.');
+  renderFinalJsonExample(getActiveScriptItems(roles));
+}
+
+function getScriptItemLabel(item) {
+  return commonCodes.scriptItems.find((entry) => entry.value === item)?.label || item;
+}
+
+function createPolicyScriptControl(item, label, showLabel = false) {
+  const wrapper = document.createElement('div'); wrapper.className = `policy-script-control${showLabel ? ' is-common' : ''}`;
+  wrapper.hidden = currentServer.os !== 'Windows';
+  if (showLabel) { const title = document.createElement('label'); title.textContent = label; wrapper.appendChild(title); }
+  const select = document.createElement('select'); select.setAttribute('aria-label', `${label} 스크립트`);
+  const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
+  select.add(new Option('기본 스크립트 사용', ''));
+  available.forEach((template) => select.add(new Option(template.name, template.id)));
+  const selectedId = selectedScriptParts[item] || '';
+  if (selectedId && !available.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
+  select.value = selectedId;
+  select.addEventListener('change', () => { if (select.value) selectedScriptParts[item] = select.value; else delete selectedScriptParts[item]; });
+  const manager = document.createElement('a'); manager.className = 'policy-script-manager'; manager.textContent = '관리';
+  manager.href = `/settings/templates?item=${encodeURIComponent(item)}`; manager.target = '_blank'; manager.rel = 'noopener';
+  wrapper.append(select, manager);
+  return wrapper;
+}
+
+function createQueryTemplateControl() {
+  const wrapper = document.createElement('div'); wrapper.className = 'policy-script-control';
+  const select = document.createElement('select'); select.setAttribute('aria-label', 'DB 쿼리 템플릿');
+  select.add(new Option('기본 DB 쿼리 사용', ''));
+  managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => select.add(new Option(template.name, template.id)));
+  select.value = selectedQueryTemplateId;
+  select.addEventListener('change', () => { selectedQueryTemplateId = select.value; });
+  const manager = document.createElement('a'); manager.className = 'policy-script-manager'; manager.textContent = '쿼리 관리';
+  manager.href = '/settings/templates?kind=QUERY'; manager.target = '_blank'; manager.rel = 'noopener';
+  wrapper.append(select, manager);
+  return wrapper;
+}
+
+function getActiveScriptItems(roles) {
+  const items = ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
+  if (currentServer.processes?.length) items.push('PROCESS');
+  if (currentServer.directories?.length) items.push('DIRECTORY');
+  if (currentServer.fileChecks?.length) items.push('FILE_SIZE');
+  if (currentServer.ports?.length) items.push('PORT');
+  if (currentServer.httpChecks?.length && roles.some((role) => role === 'WEB' || role === 'WAS')) items.push('HTTP');
+  if (roles.includes('WEB')) items.push('WEB');
+  if (roles.includes('WAS')) items.push('WAS');
+  if (roles.includes('DB')) items.push('DATABASE');
+  return items;
+}
+
+function renderFinalJsonExample(activeItems) {
+  const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
+  const example = {
+    schemaVersion: 2,
+    server: { id: currentServer.id, name: currentServer.name, roles, products: currentServer.products || {} },
+    collectedAt: '2026-11-19 10:00:00',
+    host: { hostname: 'SERVER01', osName: 'Windows Server', osVersion: '10.0', uptimeMinutes: 123456, status: 'Healthy' },
+    resources: {
+      cpu: { usagePercent: 28, status: 'Healthy' }, memory: { usagePercent: 62, status: 'Healthy' },
+      uptime: { minutes: 123456, status: 'Healthy' }, disk: { maxUsagePercent: 71, status: 'Warning', volumes: [] },
+    },
+    checks: {},
+    summary: { status: 'Healthy', counts: { healthy: activeItems.length, warning: 0, critical: 0, notCollected: 0 } },
+  };
+  const shapes = {
+    PROCESS: { status: 'Healthy', items: [{ name: 'java', running: true, cpu: 1.2, memoryMB: 256, uptimeMinutes: 360 }] },
+    DIRECTORY: { status: 'Healthy', items: [{ path: 'C:\\logs', exists: true, sizeGB: 2.4, usagePercent: 35 }] },
+    FILE_SIZE: { status: 'Warning', items: [{ path: 'C:\\logs\\app.log', exists: true, sizeMB: 120, status: 'Warning' }] },
+    PORT: { status: 'Healthy', items: [{ protocol: 'TCP', port: 8080, listening: true, processName: 'java' }] },
+    HTTP: { status: 'Healthy', items: [{ name: 'health', url: 'http://localhost/health', statusCode: 200, responseTimeMs: 18, success: true }] },
+    WEB: { status: 'Healthy', product: currentServer.products?.WEB, detail: { status: 'Healthy' } },
+    WAS: { status: 'Healthy', product: currentServer.products?.WAS, items: [{ processId: 1200, heapUsagePercent: 48, status: 'Healthy' }] },
+    DATABASE: { status: 'Healthy', product: currentServer.products?.DB, detail: { serverName: 'SQL01', databaseCount: 4, offlineCount: 0 } },
+  };
+  const keys = { PROCESS: 'processes', DIRECTORY: 'directories', FILE_SIZE: 'files', PORT: 'ports', HTTP: 'http', WEB: 'web', WAS: 'was', DATABASE: 'database' };
+  activeItems.forEach((item) => { if (shapes[item]) example.checks[keys[item]] = shapes[item]; });
+  const preview = document.getElementById('server-final-json-example');
+  if (preview) preview.textContent = JSON.stringify(example, null, 2);
 }
 
 init().catch((error) => { console.error(error); alert(error.message || '서버 상세 화면을 초기화하지 못했습니다.'); });

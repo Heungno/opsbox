@@ -6,24 +6,27 @@ $opsboxResultDirectory = Join-Path (Join-Path (Join-Path $opsboxConfig.server.sh
 $opsboxResultPath = Join-Path $opsboxResultDirectory "$opsboxRunStamp.json"
 $opsboxResultDirectoryReady = $true
 try { New-Item -ItemType Directory -Path $opsboxResultDirectory -Force -ErrorAction Stop | Out-Null } catch { $opsboxResultDirectoryReady = $false }
-if ($opsboxResultDirectoryReady) { $opsboxLogPath = Join-Path $opsboxResultDirectory "$opsboxRunStamp.log" }
-else { $opsboxLogPath = Join-Path $PSScriptRoot "$($opsboxConfig.server.id)_$opsboxRunStamp.log" }
-
 function Write-OpsBoxLog {
   param([string]$Message)
   $logLine = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $Message"
   Write-Host $logLine
-  try { Add-Content -LiteralPath $opsboxLogPath -Value $logLine -Encoding UTF8 -ErrorAction Stop } catch {}
 }
 
 Write-OpsBoxLog '점검 스크립트 시작'
 Write-OpsBoxLog "결과 폴더: $opsboxResultDirectory (접근 가능=$opsboxResultDirectoryReady)"
 $hostname = $env:COMPUTERNAME
+$osName = $null
+$osVersion = $null
 $checkDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-$uptimeMinutes = 0
-$cpu = 0
-$memory = 0
-$disk = 0
+$hostInfoStatus = 'NotCollected'
+$uptimeMinutes = $null
+$uptimeStatus = 'NotCollected'
+$cpu = $null
+$cpuStatus = 'NotCollected'
+$memory = $null
+$memoryStatus = 'NotCollected'
+$disk = $null
+$diskStatus = 'NotCollected'
 $disks = @()
 $processes = @()
 $directories = @()
@@ -31,5 +34,5 @@ $fileChecks = @()
 $portChecks = @()
 $httpChecks = @()
 $wasChecks = @()
-$webtobCheck = $null
+$webCheck = $null
 $databaseChecks = $null

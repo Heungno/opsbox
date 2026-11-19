@@ -22,14 +22,18 @@ function sampleTemplates(): ManagedTemplate[] {
 function scriptParts(): ManagedTemplate[] {
   const items: Array<[ScriptPart, string, string]> = [
     ['START', '실행 준비·로깅', '00-start.ps1'],
-    ['OS_DISK', 'OS·디스크', '10-os-disk.ps1'],
+    ['HOST_INFO', '서버 기본정보·가동시간', '01-host-info.ps1'],
+    ['CPU', 'CPU 사용률', '10-cpu.ps1'],
+    ['MEMORY', '메모리 사용률', '11-memory.ps1'],
+    ['UPTIME', '서버 가동시간', '12-uptime.ps1'],
+    ['DISK', '디스크 사용량', '13-disk.ps1'],
     ['PROCESS', '프로세스', '20-process.ps1'],
     ['DIRECTORY', '디렉터리', '30-directory.ps1'],
     ['FILE_SIZE', '파일 크기', '40-file-size.ps1'],
     ['PORT', '포트', '50-port.ps1'],
     ['HTTP', 'HTTP 응답', '60-http.ps1'],
     ['WAS', 'WAS·JVM', '70-was.ps1'],
-    ['WEBTOB', 'WebtoB', '80-webtob.ps1'],
+    ['WEB', 'WEB 엔진', '80-web.ps1'],
     ['DATABASE', 'DB·MSSQL', '90-database.ps1'],
     ['SAVE', '결과 저장·종료', '99-save.ps1'],
   ];
@@ -55,6 +59,24 @@ function read(): ManagedTemplate[] {
     return seeded;
   }
   let changed = false;
+  const splittingLegacyBasics = items.some((item) => item.kind === 'SCRIPT_PART' && item.item === 'OS_DISK');
+  for (let index = items.length - 1; index >= 0; index--) {
+    const item = items[index];
+    if (item.kind !== 'SCRIPT_PART') continue;
+    if (item.item === 'OS_DISK') { items.splice(index, 1); changed = true; continue; }
+    if (item.item === 'WEBTOB') {
+      item.item = 'WEB';
+      if (item.id === 'WINDOWS-PART-WEBTOB') item.id = 'WINDOWS-PART-WEB';
+      item.name = item.name.replace('WebtoB', 'WEB 엔진');
+      changed = true;
+    }
+  }
+  if (splittingLegacyBasics) {
+    const requiredBasics = scriptParts().filter((item) => ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'].includes(item.item ?? ''));
+    for (const item of requiredBasics) {
+      if (!items.some((existing) => existing.id === item.id)) { items.push(item); changed = true; }
+    }
+  }
   for (const currentDefault of scriptParts()) {
     const index = items.findIndex((item) => item.id === currentDefault.id);
     if (index >= 0 && items[index].updatedAt === currentDefault.updatedAt && items[index].content !== currentDefault.content) {
@@ -78,7 +100,7 @@ function validate(input: Partial<ManagedTemplate>) {
   if (['SCRIPT', 'SCRIPT_PART'].includes(input.kind ?? '') && !['Windows', 'Linux'].includes(input.os ?? '')) errors.push({ field: 'os', message: '스크립트 템플릿은 운영체제를 지정해야 합니다.' });
   if (input.kind === 'SCRIPT_PART' && input.os !== 'Windows') errors.push({ field: 'os', message: '점검 항목 스크립트는 현재 Windows 템플릿만 지원합니다.' });
   if (input.kind === 'SCRIPT_PART' && !input.item) errors.push({ field: 'item', message: '스크립트 점검 항목을 지정해야 합니다.' });
-  if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'OS_DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEBTOB', 'DATABASE', 'SAVE'].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
+  if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEB', 'DATABASE', 'SAVE'].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
   if (input.role && !['WEB', 'WAS', 'DB', 'OTHER'].includes(input.role)) errors.push({ field: 'role', message: '대상 역할이 올바르지 않습니다.' });
   if (errors.length) throw new ValidationError(errors);
 }
