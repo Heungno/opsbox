@@ -61,4 +61,3 @@ if ($logRoots.Count -eq 0) {
 }
 $rolePolicyResults += @{ role = 'WAS'; item = 'WAS_LOG'; status = $detail.status; detail = $detail }
 Write-OpsBoxLog "WAS 로그 점검 완료: $($detail.status), 폴더=$($logRoots.Count), 파일=$($logFiles.Count), 기간=$periodDays 일"
-
