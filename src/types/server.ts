@@ -29,6 +29,7 @@ export interface PortCheck {
 export interface HttpCheck { name: string; url: string; expectedStatus?: number; }
 
 export type ServerRole = 'WEB' | 'WAS' | 'DB' | 'OTHER';
+export type RolePolicyType = 'WEB' | 'WAS' | 'DB';
 export type ServerProduct = 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
 
 export interface Server {
@@ -40,6 +41,7 @@ export interface Server {
   roles?: ServerRole[];
   products?: Partial<Record<ServerRole, ServerProduct>>;
   scriptParts?: Partial<Record<ScriptPart, string>>;
+  roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
   queryTemplateId?: string;
   os: 'Windows' | 'Linux';
   ip: string;

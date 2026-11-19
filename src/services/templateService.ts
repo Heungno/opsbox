@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { ManagedTemplate, ScriptPart } from '../types/template';
 import { ValidationError } from '../types/error';
+import { getCommonCodes } from './commonCodeService';
 
 const FILE = 'data/templates.json';
 
@@ -32,9 +33,9 @@ function scriptParts(): ManagedTemplate[] {
     ['FILE_SIZE', '파일 크기', '40-file-size.ps1'],
     ['PORT', '포트', '50-port.ps1'],
     ['HTTP', 'HTTP 응답', '60-http.ps1'],
-    ['WAS', 'WAS·JVM', '70-was.ps1'],
-    ['WEB', 'WEB 엔진', '80-web.ps1'],
-    ['DATABASE', 'DB·MSSQL', '90-database.ps1'],
+    ['WEB_ENGINE_STATUS', 'WEB 엔진 상태', '80-web.ps1'],
+    ['WAS_JVM_HEAP', 'JVM Heap 사용률', '70-was.ps1'],
+    ['DB_INSTANCE_STATUS', 'DB 인스턴스·접속 상태', '90-database.ps1'],
     ['SAVE', '결과 저장·종료', '99-save.ps1'],
   ];
   return items.map(([item, label, file]) => ({
@@ -60,14 +61,19 @@ function read(): ManagedTemplate[] {
   }
   let changed = false;
   const splittingLegacyBasics = items.some((item) => item.kind === 'SCRIPT_PART' && item.item === 'OS_DISK');
+  const roleItemRenames: Record<string, ScriptPart> = { WEB: 'WEB_ENGINE_STATUS', WAS: 'WAS_JVM_HEAP', DATABASE: 'DB_INSTANCE_STATUS' };
   for (let index = items.length - 1; index >= 0; index--) {
     const item = items[index];
     if (item.kind !== 'SCRIPT_PART') continue;
     if (item.item === 'OS_DISK') { items.splice(index, 1); changed = true; continue; }
     if (item.item === 'WEBTOB') {
-      item.item = 'WEB';
-      if (item.id === 'WINDOWS-PART-WEBTOB') item.id = 'WINDOWS-PART-WEB';
-      item.name = item.name.replace('WebtoB', 'WEB 엔진');
+      item.item = 'WEB_ENGINE_STATUS';
+      if (item.id === 'WINDOWS-PART-WEBTOB') item.id = 'WINDOWS-PART-WEB_ENGINE_STATUS';
+      changed = true;
+    } else if (item.item && roleItemRenames[item.item]) {
+      const previous = item.item;
+      item.item = roleItemRenames[previous];
+      if (item.id === `WINDOWS-PART-${previous}`) item.id = `WINDOWS-PART-${item.item}`;
       changed = true;
     }
   }
@@ -100,7 +106,7 @@ function validate(input: Partial<ManagedTemplate>) {
   if (['SCRIPT', 'SCRIPT_PART'].includes(input.kind ?? '') && !['Windows', 'Linux'].includes(input.os ?? '')) errors.push({ field: 'os', message: '스크립트 템플릿은 운영체제를 지정해야 합니다.' });
   if (input.kind === 'SCRIPT_PART' && input.os !== 'Windows') errors.push({ field: 'os', message: '점검 항목 스크립트는 현재 Windows 템플릿만 지원합니다.' });
   if (input.kind === 'SCRIPT_PART' && !input.item) errors.push({ field: 'item', message: '스크립트 점검 항목을 지정해야 합니다.' });
-  if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEB', 'DATABASE', 'SAVE'].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
+  if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'SAVE', ...getCommonCodes().scriptItems.map(({ value }) => value)].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
   if (input.role && !['WEB', 'WAS', 'DB', 'OTHER'].includes(input.role)) errors.push({ field: 'role', message: '대상 역할이 올바르지 않습니다.' });
   if (errors.length) throw new ValidationError(errors);
 }

@@ -35,9 +35,29 @@
     { "value": "FILE_SIZE", "label": "파일 크기", "group": "공통" },
     { "value": "PORT", "label": "포트 리스닝", "group": "공통" },
     { "value": "HTTP", "label": "HTTP 응답", "group": "WEB/WAS" },
-    { "value": "WEB", "label": "WEB 엔진", "group": "WEB" },
-    { "value": "WAS", "label": "WAS·JVM", "group": "WAS" },
-    { "value": "DATABASE", "label": "DB 상태", "group": "DB" },
+    { "value": "WEB_ENGINE_STATUS", "label": "WEB 엔진 상태", "group": "WEB", "role": "WEB", "description": "WebtoB wsadmin 등 제품별 관리 명령으로 서버와 서비스 상태를 확인합니다." },
+    { "value": "WEB_WAS_CONNECTION", "label": "WEB-WAS 연동 상태", "group": "WEB", "role": "WEB", "description": "WEB 커넥터와 WAS 대상 연결 상태를 확인합니다." },
+    { "value": "WEB_REQUEST_VOLUME", "label": "사용자 요청 처리량", "group": "WEB", "role": "WEB", "description": "관리 상태 페이지나 제품 명령에서 처리 중인 요청 수를 확인합니다." },
+    { "value": "WEB_LOG", "label": "WEB 로그 상태", "group": "WEB", "role": "WEB", "description": "Access/Error 로그의 신규 오류와 이상 징후를 확인합니다." },
+    { "value": "WAS_JVM_HEAP", "label": "JVM Heap 사용률", "group": "WAS", "role": "WAS", "description": "JVM Heap 사용량과 임계치를 확인합니다." },
+    { "value": "WAS_THREAD_POOL", "label": "Thread Pool 사용률", "group": "WAS", "role": "WAS", "description": "Work Thread Pool 사용률과 최대 설정값을 비교합니다." },
+    { "value": "WAS_LONG_RUNNING_THREAD", "label": "장기 수행 Thread", "group": "WAS", "role": "WAS", "description": "장시간 완료되지 않는 작업 스레드를 확인합니다." },
+    { "value": "WAS_DB_CONNECTION_POOL", "label": "DB Connection Pool 상태", "group": "WAS", "role": "WAS", "description": "DB 연결 풀의 사용량과 연결 상태를 확인합니다." },
+    { "value": "WAS_DEPLOYMENT", "label": "애플리케이션 배포 상태", "group": "WAS", "role": "WAS", "description": "컨테이너와 애플리케이션의 배포·기동 상태를 확인합니다." },
+    { "value": "WAS_HEAP_DUMP", "label": "Heap Dump 파일 상태", "group": "WAS", "role": "WAS", "description": "Heap Dump 생성 여부와 보관 파일을 확인합니다." },
+    { "value": "WAS_STARTUP_SCRIPT", "label": "기동 스크립트 변경 상태", "group": "WAS", "role": "WAS", "description": "서버 기동 스크립트의 기준 대비 변경 여부를 확인합니다." },
+    { "value": "DB_INSTANCE_STATUS", "label": "DB 인스턴스·접속 상태", "group": "DB", "role": "DB", "description": "DB 인스턴스 상태와 실제 접속·읽기 질의 가능 여부를 확인합니다." },
+    { "value": "DB_PROCESS_LIMIT", "label": "세션·프로세스 사용률", "group": "DB", "role": "DB", "description": "현재 세션·프로세스 수를 설정 한도와 비교합니다." },
+    { "value": "DB_TABLESPACE", "label": "데이터 영역 사용률", "group": "DB", "role": "DB", "description": "테이블스페이스 또는 데이터 파일의 사용률을 확인합니다." },
+    { "value": "DB_BACKUP", "label": "백업 상태", "group": "DB", "role": "DB", "description": "최근 DB 백업의 실행 여부와 성공 상태를 확인합니다." },
+    { "value": "DB_ARCHIVE_MODE", "label": "아카이브 모드 상태", "group": "DB", "role": "DB", "description": "온라인 백업에 필요한 아카이브 설정과 상태를 확인합니다." },
+    { "value": "DB_TRANSACTION_LOG", "label": "트랜잭션 로그 사용률", "group": "DB", "role": "DB", "description": "트랜잭션 로그·아카이브 로그의 사용량과 증가 상태를 확인합니다." },
+    { "value": "DB_REPLICATION", "label": "복제·이중화 상태", "group": "DB", "role": "DB", "description": "복제 지연과 Active-Standby 동기화 상태를 확인합니다." },
     { "value": "SAVE", "label": "결과 저장", "group": "시스템" }
-  ]
+  ],
+  "rolePolicies": {
+    "WEB": ["WEB_ENGINE_STATUS", "WEB_WAS_CONNECTION", "WEB_REQUEST_VOLUME", "WEB_LOG"],
+    "WAS": ["WAS_JVM_HEAP", "WAS_THREAD_POOL", "WAS_LONG_RUNNING_THREAD", "WAS_DB_CONNECTION_POOL", "WAS_DEPLOYMENT", "WAS_HEAP_DUMP", "WAS_STARTUP_SCRIPT"],
+    "DB": ["DB_INSTANCE_STATUS", "DB_PROCESS_LIMIT", "DB_TABLESPACE", "DB_BACKUP", "DB_ARCHIVE_MODE", "DB_TRANSACTION_LOG", "DB_REPLICATION"]
+  }
 }

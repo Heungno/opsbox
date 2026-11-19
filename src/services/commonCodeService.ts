@@ -10,6 +10,7 @@ export interface CommonCodes {
   portProtocols: CommonCode[];
   templateKinds: CommonCode[];
   scriptItems: CommonCode[];
+  rolePolicies: Record<'WEB' | 'WAS' | 'DB', string[]>;
 }
 
 export function getCommonCodes(): CommonCodes {

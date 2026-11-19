@@ -38,3 +38,4 @@ if ($opsboxConfig.server.products.DB -eq 'MSSQL') {
   }
 }
 Write-OpsBoxLog "DB 점검 완료: $($databaseChecks.status)"
+$rolePolicyResults += @{ role = 'DB'; item = 'DB_INSTANCE_STATUS'; status = $databaseChecks.status; detail = $databaseChecks }

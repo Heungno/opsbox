@@ -1543,6 +1543,11 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .server-form-section > h3 { margin: 0 0 12px; font-size: 14px; }
 .server-form-section .form-grid { padding: 0; }
 .policy-section { padding: 12px 14px; margin-top: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--control-bg, #f6f8fa); }
+.policy-category-group { margin-top: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
+.policy-category-heading { margin: 0 2px 10px; }
+.policy-category-heading h3 { font-size: 16px; }
+.policy-category-group > .policy-help { margin: 0 2px 10px; }
+.role-policy-block { margin-top: 14px; }
 .policy-section-heading { margin: 0 0 10px; }
 .policy-section-heading h3 { font-size: 14px; }
 .policy-section .policy-help { margin: 0 0 10px; }
@@ -1560,6 +1565,18 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .role-script-policy-item:first-child { border-top: 0; }
 .role-script-policy-item h4 { margin: 0 0 8px; color: var(--text); font-size: 13px; }
 .role-script-policy-item .policy-script-control { max-width: 520px; margin: 4px 0; }
+.role-policy-group { padding: 12px 0; border-top: 1px solid var(--border); }
+.role-policy-group:first-child { padding-top: 0; border-top: 0; }
+.role-policy-group-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.role-policy-group-header h4 { margin: 0; font-size: 14px; }
+.role-policy-add-controls { display: flex; align-items: center; gap: 8px; }
+.role-policy-add-controls select { min-width: 250px; }
+.role-policy-list { display: grid; gap: 8px; }
+.role-policy-row { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, auto) auto; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--card-bg); }
+.role-policy-description { display: grid; gap: 3px; }
+.role-policy-description small { color: var(--text-light); }
+.role-policy-row .policy-script-control { justify-content: flex-end; }
+.role-policy-query-heading { margin: 12px 0 6px; font-size: 13px; }
 .server-final-json-preview { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
 .server-final-json-preview summary { cursor: pointer; color: var(--primary); font-weight: 600; }
 .server-final-json-preview pre { max-height: 420px; overflow: auto; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--control-bg); color: var(--text); font: 11px/1.5 Consolas, 'Courier New', monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -1579,6 +1596,12 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .template-editor pre::-webkit-scrollbar { display: none; }
 .template-editor pre { scrollbar-width: none; }
 .template-editor textarea { resize: none; background: transparent; color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--text); box-shadow: none; }
+@media (max-width: 760px) {
+  .role-policy-group-header, .role-policy-add-controls { align-items: stretch; flex-direction: column; }
+  .role-policy-add-controls select { min-width: 0; width: 100%; }
+  .role-policy-row { grid-template-columns: 1fr; }
+  .role-policy-row .policy-script-control { justify-content: flex-start; }
+}
 .template-editor textarea::selection { background: rgb(9 105 218 / 28%); }
 .template-variable { border-radius: 3px; background: rgb(9 105 218 / 18%); color: var(--primary-bright, #0969da); font-weight: 700; }
 .template-help { margin-top: 8px; color: var(--text-light); font-size: 12px; }

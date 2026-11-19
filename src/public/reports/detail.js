@@ -163,6 +163,12 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   const memoryCheck = summarizeMetric(data.memory);
   const wasRuntimeCheck = summarizeWasRuntime(data.wasChecks, product);
   const databaseCheck = summarizeDatabaseCheck(data.databaseChecks, product);
+  const rolePolicyItems = data.rolePolicies?.[type]?.items ?? [];
+  const rolePolicyRows = rolePolicyItems.map((item) => [
+    item.name || item.item || `${type} 점검`,
+    { status: item.status || 'NotCollected', detail: summarizeRolePolicyDetail(item) },
+    '정책에 연결한 항목별 스크립트 결과',
+  ]);
 
   const checkRows = {
     WEB: [
@@ -170,17 +176,20 @@ function renderTypeReportForm(serverTypes, data, productMap) {
       ['WEB 프로세스', processCheck, '등록된 웹 엔진 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
       ...(product === 'WebtoB' ? [['WebtoB wsadmin', summarizeWebtoB(data.webtobCheck), 'WebtoB 정보·접속 수·서버/서비스 상태']] : []),
       ['HTTP 응답', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['엔진·로그 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+      ...rolePolicyRows,
     ],
     WAS: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
       ['WAS 프로세스', processCheck, '등록된 WAS 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
       ['JVM Heap', wasRuntimeCheck, 'Windows JDK jstat로 수집한 JVM Heap 사용률'], ['애플리케이션 HTTP', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['로그·배포 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+      ...rolePolicyRows,
     ],
     DB: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
       ['DB 프로세스', processCheck, '등록한 DB 엔진 프로세스 실행 상태'], ['리스너 포트', portCheck, '등록한 DB 접속 포트의 로컬 리스닝 상태'],
       ['DB 엔진 접속·상태', databaseCheck, '제품별 읽기 전용 CLI를 통한 연결 및 데이터베이스 상태'],
       ['DB 로그·엔진 경로', pathCheck, '등록 로그/엔진 경로의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+      ...rolePolicyRows,
     ],
     OTHER: [
       ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
@@ -210,12 +219,32 @@ function renderTypeReportForm(serverTypes, data, productMap) {
       ['복제·이중화', '제품별 동기화·복제 상태는 미수집'],
     ],
   };
+  const configuredPolicyItems = new Set(rolePolicyItems.map((item) => item.item));
+  const pendingItemMap = {
+    WEB: { WEB_WAS_CONNECTION: 'WEB-WAS 연결 상태', WEB_REQUEST_VOLUME: '사용자 요청량·처리시간' },
+    WAS: { WAS_THREAD_POOL: 'JEUS 6 Thread Pool (ti)', WAS_DB_CONNECTION_POOL: 'DB Connection Pool', WAS_DEPLOYMENT: 'Deploy·처리시간', WAS_STARTUP_SCRIPT: '기동 스크립트 변경' },
+    DB: { DB_BACKUP: 'DB 백업·복구', DB_TABLESPACE: 'DB 로그·용량', DB_TRANSACTION_LOG: 'DB 로그·용량', DB_REPLICATION: '복제·이중화' },
+  };
+  if (pendingRows[type] && pendingItemMap[type]) {
+    const configuredLabels = new Set([...configuredPolicyItems].map((item) => pendingItemMap[type][item]).filter(Boolean));
+    pendingRows[type] = pendingRows[type].filter(([label]) => !configuredLabels.has(label));
+  }
   if (type === 'DB' && product !== 'MSSQL') pendingRows.DB.unshift(['제품별 DB 연결', 'Windows CLI 연동 대상은 현재 MSSQL입니다. 다른 제품은 공통 프로세스·포트·파일시스템 점검 결과를 확인하세요.']);
   if (type === 'DB' && product === 'MSSQL' && currentServerOS === 'Linux') pendingRows.DB.unshift(['Linux MSSQL 연결', '현재 MSSQL sqlcmd 수집기는 Windows 점검 스크립트에 포함되어 있습니다.']);
   if (type === 'WAS' && product === 'Node.js') pendingRows.WAS.unshift(['Node.js Heap', '애플리케이션별 Node.js 런타임 수집기가 필요합니다.']);
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
   }
   reportRoleSuffix = '';
+}
+
+function summarizeRolePolicyDetail(item) {
+  if (item.message) return item.message;
+  if (typeof item.detail === 'string') return item.detail.slice(0, 800);
+  if (Array.isArray(item.detail)) return `${item.detail.length}개 상세 결과`;
+  if (item.detail?.output) return String(item.detail.output).slice(0, 800);
+  if (item.detail?.message) return item.detail.message;
+  if (item.detail && typeof item.detail === 'object') return Object.entries(item.detail).map(([key, value]) => `${key}: ${value}`).join(' · ').slice(0, 800);
+  return item.status || '결과 없음';
 }
 
 function summarizeWebtoB(check) {

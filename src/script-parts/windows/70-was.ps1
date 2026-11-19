@@ -29,3 +29,5 @@ if ($opsboxConfig.server.products.WAS -eq 'Node.js') {
   if ($javaProcesses.Count -eq 0) { $wasChecks += @{ processId = 0; processName = 'java'; status = 'NotCollected'; message = 'Java 프로세스를 찾을 수 없습니다.' } }
 }
 Write-OpsBoxLog "WAS 점검 완료: $($wasChecks.Count)개 결과"
+$wasPolicyStatus = if (@($wasChecks | Where-Object { $_.status -eq 'Critical' }).Count -gt 0) { 'Critical' } elseif (@($wasChecks | Where-Object { $_.status -eq 'Warning' }).Count -gt 0) { 'Warning' } elseif ($wasChecks.Count -gt 0 -and @($wasChecks | Where-Object { $_.status -ne 'NotCollected' }).Count -eq 0) { 'NotCollected' } else { 'Healthy' }
+$rolePolicyResults += @{ role = 'WAS'; item = 'WAS_JVM_HEAP'; status = $wasPolicyStatus; detail = @($wasChecks) }

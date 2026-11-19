@@ -49,13 +49,14 @@ export async function serverRoutes(app) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, queryTemplateId } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, queryTemplateId } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
       ports?: any[];
       httpChecks?: any[];
       scriptParts?: Partial<Record<ScriptPart, string>>;
+      roleChecks?: Partial<Record<'WEB' | 'WAS' | 'DB', ScriptPart[]>>;
       queryTemplateId?: string;
     };
 
@@ -66,6 +67,7 @@ export async function serverRoutes(app) {
       ports,
       httpChecks,
       scriptParts,
+      roleChecks,
       queryTemplateId,
     });
   });

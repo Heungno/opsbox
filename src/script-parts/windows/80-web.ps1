@@ -47,3 +47,4 @@ if (-not $wsadmin) {
 }
 }
 Write-OpsBoxLog "WEB 점검 완료: $($webCheck.status)"
+$rolePolicyResults += @{ role = 'WEB'; item = 'WEB_ENGINE_STATUS'; status = $webCheck.status; detail = $webCheck }

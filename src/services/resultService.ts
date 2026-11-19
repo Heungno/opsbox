@@ -24,6 +24,7 @@ export interface CheckResult {
   wasChecks?: Array<{ status?: string }>;
   webtobCheck?: { status?: string };
   databaseChecks?: { status?: string };
+  rolePolicies?: Partial<Record<'WEB' | 'WAS' | 'DB', { status?: string; items?: Array<{ item?: string; name?: string; status?: string; message?: string; detail?: unknown }> }>>;
 }
 
 function readJsonFile(filePath: string) {
@@ -32,6 +33,31 @@ function readJsonFile(filePath: string) {
   const json = content.replace(/^\uFEFF/, '');
 
   const result = JSON.parse(json);
+  if (result.schemaVersion >= 2 && result.checks) {
+    const roles = result.server?.roles ?? [];
+    const products = result.server?.products ?? {};
+    const checks = result.checks;
+    result.serverTypes = roles;
+    result.serverType = roles[0] ?? 'OTHER';
+    result.product = products[result.serverType];
+    result.server = result.server?.id ?? result.server?.name ?? '';
+    result.hostname = result.host?.hostname ?? '';
+    result.checkDate = result.collectedAt ?? '';
+    result.cpu = result.resources?.cpu?.usagePercent;
+    result.memory = result.resources?.memory?.usagePercent;
+    result.disk = result.resources?.disk?.maxUsagePercent;
+    result.disks = checks.resources?.disks ?? result.resources?.disk?.volumes ?? [];
+    result.processes = checks.processes?.items ?? [];
+    result.directories = checks.directories?.items ?? [];
+    result.fileChecks = checks.files?.items ?? [];
+    result.ports = checks.ports?.items ?? [];
+    result.httpChecks = checks.http?.items ?? [];
+    result.wasChecks = checks.was?.items ?? [];
+    result.webtobCheck = products.WEB === 'WebtoB' ? checks.web?.detail : undefined;
+    result.databaseChecks = checks.database?.detail;
+    result.rolePolicies = checks.rolePolicies ?? {};
+    result.logError = false;
+  }
   if (Array.isArray(result.disks) && result.disks.length > 0) {
     const usages = result.disks
       .map((disk: { usagePercent?: number | string }) => Number(disk.usagePercent))

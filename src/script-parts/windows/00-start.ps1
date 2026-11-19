@@ -36,3 +36,4 @@ $httpChecks = @()
 $wasChecks = @()
 $webCheck = $null
 $databaseChecks = $null
+$rolePolicyResults = @()

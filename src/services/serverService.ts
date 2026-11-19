@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { Server, ServerRole, ServerProduct, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
+import { Server, ServerRole, ServerProduct, RolePolicyType, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
 import type { ScriptPart } from '../types/template';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
@@ -14,6 +14,12 @@ const FILE = 'data/servers.json';
 const COMMON_CODES = getCommonCodes();
 const ROLES: ServerRole[] = COMMON_CODES.serverRoles.map(({ value }) => value as ServerRole);
 const PRODUCTS = COMMON_CODES.productsByRole as Record<Exclude<ServerRole, 'OTHER'>, ServerProduct[]>;
+const ROLE_POLICY_TYPES: RolePolicyType[] = ['WEB', 'WAS', 'DB'];
+const DEFAULT_ROLE_CHECKS: Partial<Record<RolePolicyType, ScriptPart[]>> = {
+  WEB: getTemplate('WINDOWS-PART-WEB_ENGINE_STATUS') ? ['WEB_ENGINE_STATUS'] : [],
+  WAS: getTemplate('WINDOWS-PART-WAS_JVM_HEAP') ? ['WAS_JVM_HEAP'] : [],
+  DB: getTemplate('WINDOWS-PART-DB_INSTANCE_STATUS') ? ['DB_INSTANCE_STATUS'] : [],
+};
 
 export function getServerRoles(server: Pick<Server, 'type' | 'roles'>): ServerRole[] {
   const roles = Array.isArray(server.roles) ? server.roles.filter((role): role is ServerRole => ROLES.includes(role)) : [];
@@ -29,12 +35,28 @@ function normalizeServer(server: Server): Server {
   const products = { ...(server.products ?? {}) };
   if (server.product && !products[server.type]) products[server.type] = server.product;
   const type = roles.includes(server.type) ? server.type : roles[0];
+  const roleChecks = { ...(server.roleChecks ?? {}) } as Partial<Record<RolePolicyType, ScriptPart[]>>;
+  ROLE_POLICY_TYPES.forEach((role) => {
+    if (!roles.includes(role)) { delete roleChecks[role]; return; }
+    if (!Array.isArray(roleChecks[role])) roleChecks[role] = server.os === 'Windows' ? (DEFAULT_ROLE_CHECKS[role] ?? []) : [];
+    roleChecks[role] = [...new Set(roleChecks[role])];
+  });
   const scriptParts = { ...(server.scriptParts ?? {}) } as Partial<Record<ScriptPart, string>> & { OS_DISK?: string; WEBTOB?: string };
-  if (scriptParts.WEBTOB && !scriptParts.WEB) scriptParts.WEB = scriptParts.WEBTOB;
+  if (scriptParts.WEBTOB && !scriptParts.WEB) scriptParts.WEB = scriptParts.WEBTOB === 'WINDOWS-PART-WEBTOB' ? 'WINDOWS-PART-WEB_ENGINE_STATUS' : scriptParts.WEBTOB;
   delete scriptParts.WEBTOB;
   delete scriptParts.OS_DISK;
+  const legacyRoleParts: Array<[keyof typeof scriptParts, ScriptPart]> = [
+    ['WEB', 'WEB_ENGINE_STATUS'], ['WAS', 'WAS_JVM_HEAP'], ['DATABASE', 'DB_INSTANCE_STATUS'],
+  ];
+  legacyRoleParts.forEach(([legacy, current]) => {
+    if (scriptParts[legacy] && !scriptParts[current]) {
+      const legacyId = scriptParts[legacy];
+      scriptParts[current] = legacyId === `WINDOWS-PART-${legacy}` ? `WINDOWS-PART-${current}` : legacyId;
+    }
+    delete scriptParts[legacy];
+  });
   const { scriptTemplateId: _legacyScriptTemplateId, ...withoutLegacyOverride } = server as Server & { scriptTemplateId?: string };
-  return { ...withoutLegacyOverride, roles, products, type, product: products[type], scriptParts };
+  return { ...withoutLegacyOverride, roles, products, type, product: products[type], scriptParts, roleChecks };
 }
 
 function read(): Server[] {
@@ -172,6 +194,7 @@ export function getCheckConfig(id: string) {
     ports: server.ports ?? [],
     httpChecks: server.httpChecks ?? [],
     scriptParts: server.scriptParts ?? {},
+    roleChecks: server.roleChecks ?? {},
     queryTemplateId: server.queryTemplateId ?? '',
   };
 }
@@ -187,6 +210,7 @@ export function updateCheckConfig(
     ports?: PortCheck[];
     httpChecks?: HttpCheck[];
     scriptParts?: Partial<Record<ScriptPart, string>>;
+    roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
     queryTemplateId?: string;
   },
 ) {
@@ -206,9 +230,21 @@ export function updateCheckConfig(
   const httpValidation = validateHttpChecks(config.httpChecks ?? []);
 
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
-  const validParts: ScriptPart[] = ['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK', 'PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP', 'WAS', 'WEB', 'DATABASE', 'SAVE'];
+  const validParts = new Set<ScriptPart>(['START', 'SAVE', ...COMMON_CODES.scriptItems.map(({ value }) => value as ScriptPart)]);
+  const roleChecks = config.roleChecks ?? servers[index].roleChecks ?? {};
+  for (const role of ROLE_POLICY_TYPES) {
+    const items = roleChecks[role] ?? [];
+    if (!getServerRoles(servers[index]).includes(role) && items.length) errors.push({ field: `roleChecks.${role}`, message: `${role} 역할이 있는 서버에서만 항목을 설정할 수 있습니다.` });
+    if (new Set(items).size !== items.length) errors.push({ field: `roleChecks.${role}`, message: `${role} 점검 항목을 중복 등록할 수 없습니다.` });
+    items.forEach((item) => {
+      if (!COMMON_CODES.rolePolicies[role]?.includes(item)) errors.push({ field: `roleChecks.${role}`, message: `${role} 점검 항목이 올바르지 않습니다.` });
+      const selectedId = config.scriptParts?.[item] ?? servers[index].scriptParts?.[item];
+      const defaultTemplate = getTemplate(`WINDOWS-PART-${item}`);
+      if (!selectedId && !defaultTemplate) errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
+    });
+  }
   for (const [part, templateId] of Object.entries(config.scriptParts ?? {})) {
-    if (!validParts.includes(part as ScriptPart)) {
+    if (!validParts.has(part as ScriptPart)) {
       errors.push({ field: `scriptParts.${part}`, message: '스크립트 점검 항목이 올바르지 않습니다.' });
       continue;
     }
@@ -237,6 +273,7 @@ export function updateCheckConfig(
   servers[index].ports = config.ports ?? [];
   servers[index].httpChecks = config.httpChecks ?? [];
   servers[index].scriptParts = config.scriptParts ?? servers[index].scriptParts ?? {};
+  servers[index].roleChecks = roleChecks;
   servers[index].queryTemplateId = config.queryTemplateId ?? '';
 
   write(servers);
@@ -251,6 +288,7 @@ export function updateCheckConfig(
     ports: servers[index].ports,
     httpChecks: servers[index].httpChecks,
     scriptParts: servers[index].scriptParts,
+    roleChecks: servers[index].roleChecks,
     queryTemplateId: servers[index].queryTemplateId,
   };
 }

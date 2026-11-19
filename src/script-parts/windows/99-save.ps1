@@ -20,6 +20,22 @@ $httpStatus = Get-OpsBoxCollectionStatus -Items $httpChecks -Kind 'http'
 $wasStatus = Get-OpsBoxCollectionStatus -Items $wasChecks -Kind 'was'
 $webStatus = if ($webCheck) { $webCheck.status } else { 'NotCollected' }
 $databaseStatus = if ($databaseChecks) { $databaseChecks.status } else { 'NotCollected' }
+$rolePolicyOutput = @{}
+foreach ($role in @('WEB', 'WAS', 'DB')) {
+  $roleItems = @()
+  $configuredPolicies = @($opsboxConfig.checks.rolePolicies.$role)
+  foreach ($policy in $configuredPolicies) {
+    $collected = @($rolePolicyResults | Where-Object { $_.role -eq $role -and $_.item -eq $policy.item } | Select-Object -Last 1)
+    if ($collected.Count -gt 0) {
+      $collected[0].name = $policy.name
+      $roleItems += $collected[0]
+    } else {
+      $roleItems += @{ role = $role; item = $policy.item; name = $policy.name; status = 'NotCollected'; message = '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' }
+    }
+  }
+  $roleStatus = if ($roleItems.Count -eq 0) { 'NotCollected' } elseif (@($roleItems | Where-Object { $_.status -eq 'Critical' }).Count -gt 0) { 'Critical' } elseif (@($roleItems | Where-Object { $_.status -eq 'Warning' }).Count -gt 0) { 'Warning' } elseif (@($roleItems | Where-Object { $_.status -eq 'Healthy' }).Count -eq 0) { 'NotCollected' } else { 'Healthy' }
+  if ($roleItems.Count -gt 0) { $rolePolicyOutput[$role] = @{ status = $roleStatus; items = $roleItems } }
+}
 
 $allStatuses = @($hostInfoStatus, $cpuStatus, $memoryStatus, $uptimeStatus, $diskStatus, $processStatus, $directoryStatus, $fileStatus, $portStatus, $httpStatus, $wasStatus, $webStatus, $databaseStatus)
 $criticalCount = @($allStatuses | Where-Object { $_ -eq 'Critical' }).Count
@@ -48,6 +64,7 @@ $result = [ordered]@{
     web = @{ status = $webStatus; product = $opsboxConfig.server.products.WEB; detail = $webCheck }
     was = @{ status = $wasStatus; product = $opsboxConfig.server.products.WAS; items = @($wasChecks) }
     database = @{ status = $databaseStatus; product = $opsboxConfig.server.products.DB; detail = $databaseChecks }
+    rolePolicies = $rolePolicyOutput
   }
   summary = @{ status = $overallStatus; counts = @{ healthy = $healthyCount; warning = $warningCount; critical = $criticalCount; notCollected = $notCollectedCount } }
 }

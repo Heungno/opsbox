@@ -1,6 +1,7 @@
 import { Server } from '../types/server';
 import { ManagedTemplate, ScriptPart } from '../types/template';
 import { getServerProduct, getServerRoles } from './serverService';
+import { getCommonCodes } from './commonCodeService';
 
 const CONFIG_TOKEN = '@@CONFIG_BASE64@@';
 
@@ -31,9 +32,9 @@ function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   if (server.fileChecks?.length) selected.push('FILE_SIZE');
   if (server.ports?.length) selected.push('PORT');
   if (server.httpChecks?.length) selected.push('HTTP');
-  if (roles.includes('WAS')) selected.push('WAS');
-  if (roles.includes('WEB')) selected.push('WEB');
-  if (roles.includes('DB')) selected.push('DATABASE');
+  for (const role of ['WEB', 'WAS', 'DB'] as const) {
+    if (roles.includes(role)) selected.push(...(server.roleChecks?.[role] ?? []));
+  }
   selected.push('SAVE');
 
   return selected.map((item) => {
@@ -58,6 +59,10 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
   const query = rawQuery
     .replace(/\{\{SERVER_IP\}\}/g, server.ip)
     .replace(/\{\{SERVER_NAME\}\}/g, server.name);
+  const labels = new Map(getCommonCodes().scriptItems.map(({ value, label }) => [value, label]));
+  const rolePolicies = Object.fromEntries(
+    (['WEB', 'WAS', 'DB'] as const).map((role) => [role, (server.roleChecks?.[role] ?? []).map((item) => ({ item, name: labels.get(item) ?? item }))]),
+  );
   const config = {
     server: {
       id: server.id,
@@ -75,6 +80,7 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
       fileChecks: server.fileChecks ?? [],
       ports: server.ports ?? [],
       httpChecks: (server.httpChecks ?? []).map((item) => ({ ...item, expectedStatus: item.expectedStatus ?? 200 })),
+      rolePolicies,
     },
     database: { query },
   };

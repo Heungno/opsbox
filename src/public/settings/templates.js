@@ -78,7 +78,13 @@ function renderOutputExample() {
   const pane = document.getElementById('template-output-example');
   if (!pane) return;
   let example;
-  if (kind.value === 'SCRIPT_PART') example = examples[document.getElementById('template-item').value] || {};
+  if (kind.value === 'SCRIPT_PART') {
+    const item = document.getElementById('template-item').value;
+    const definition = commonCodes?.scriptItems.find((entry) => entry.value === item);
+    example = examples[item] || (definition?.role ? {
+      checks: { rolePolicies: { [definition.role]: { status: 'Healthy', items: [{ item, name: definition.label, status: 'Healthy', detail: { sample: true } }] } } },
+    } : {});
+  }
   else if (kind.value === 'QUERY') example = { output: ['SERVER|SQL01|16.0|Standard', 'DATABASE|appdb|ONLINE|FULL|512.00'] };
   else example = { schemaVersion: 2, server: { id: 'SERVER01', roles: ['WEB'] }, resources: {}, checks: {}, summary: { status: 'Healthy' } };
   pane.textContent = JSON.stringify(example, null, 2);

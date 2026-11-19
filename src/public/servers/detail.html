@@ -78,8 +78,10 @@
                 정책 저장
               </button>
             </div>
+            <div id="common-basic-policy-group" class="policy-category-group">
+            <div class="section-header policy-category-heading"><h3>공통 기본점검</h3></div>
             <section id="common-script-policy" class="policy-section">
-              <div class="section-header policy-section-heading"><h3>공통 기본 점검</h3></div>
+              <div class="section-header policy-section-heading"><h3>자원 기본 점검</h3></div>
               <p class="policy-help">CPU·메모리·가동시간·디스크 항목은 기본 점검에 포함됩니다. 각 항목에서 사용할 스크립트를 선택하세요.</p>
               <div id="common-script-controls" class="policy-script-controls"></div>
             </section>
@@ -126,10 +128,21 @@
               <div class="policy-header http-check-grid"><div>점검명</div><div>URL</div><div>기대 코드</div><div>관리</div></div>
               <div id="http-check-container"></div>
             </section>
-            <section id="role-script-policy" class="policy-section">
-              <div class="section-header policy-section-heading"><h3>역할별 점검</h3></div>
-              <p class="policy-help">서버 역할에 해당하는 WEB·WAS·DB 점검 스크립트를 선택하세요.</p>
-              <div id="role-script-controls" class="policy-script-controls"></div>
+            </div>
+            <section id="web-role-policy" class="policy-category-group role-policy-block" hidden>
+              <div class="section-header policy-category-heading"><h3 id="web-role-policy-title">WEB 점검</h3></div>
+              <p class="policy-help">웹 엔진 상태, WEB-WAS 연동, 요청 처리량, 로그를 점검 항목으로 관리합니다.</p>
+              <div id="web-role-policy-controls"></div>
+            </section>
+            <section id="was-role-policy" class="policy-category-group role-policy-block" hidden>
+              <div class="section-header policy-category-heading"><h3 id="was-role-policy-title">WAS 점검</h3></div>
+              <p class="policy-help">JVM, Thread/Connection Pool, 배포 상태와 Dump·기동 설정을 점검 항목으로 관리합니다.</p>
+              <div id="was-role-policy-controls"></div>
+            </section>
+            <section id="db-role-policy" class="policy-category-group role-policy-block" hidden>
+              <div class="section-header policy-category-heading"><h3 id="db-role-policy-title">DB 점검</h3></div>
+              <p class="policy-help">DB 접속·세션, 데이터·트랜잭션 로그, 백업과 복제 상태를 점검 항목으로 관리합니다.</p>
+              <div id="db-role-policy-controls"></div>
             </section>
             <details class="server-final-json-preview">
               <summary>최종 점검 결과 JSON 구조 보기</summary>

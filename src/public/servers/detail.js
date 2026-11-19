@@ -4,6 +4,7 @@ const serverId = params.get('id');
 let currentServer = null;
 let managedTemplates = [];
 let selectedScriptParts = {};
+let selectedRoleChecks = {};
 let selectedQueryTemplateId = '';
 let commonCodes;
 
@@ -463,7 +464,8 @@ async function loadPolicy(serverId) {
 
   const config = await response.json();
   selectedQueryTemplateId = config.queryTemplateId || currentServer?.queryTemplateId || '';
-  renderPolicyScriptControls(config.scriptParts ?? currentServer?.scriptParts ?? {}, config.queryTemplateId ?? currentServer?.queryTemplateId ?? '');
+  selectedRoleChecks = config.roleChecks ?? currentServer?.roleChecks ?? {};
+  renderPolicyScriptControls(config.scriptParts ?? currentServer?.scriptParts ?? {}, config.queryTemplateId ?? currentServer?.queryTemplateId ?? '', selectedRoleChecks);
   document.getElementById('process-container')?.replaceChildren();
   document.getElementById('directory-container')?.replaceChildren();
   document.getElementById('file-check-container')?.replaceChildren();
@@ -690,6 +692,7 @@ async function savePolicy() {
         ports,
         httpChecks,
         scriptParts,
+        roleChecks: selectedRoleChecks,
         queryTemplateId,
       }),
     });
@@ -709,6 +712,7 @@ async function savePolicy() {
     currentServer.ports = ports;
     currentServer.httpChecks = httpChecks;
     currentServer.scriptParts = scriptParts;
+    currentServer.roleChecks = selectedRoleChecks;
     currentServer.queryTemplateId = queryTemplateId;
     renderPolicyScriptControls(scriptParts, queryTemplateId);
   } catch (error) {
@@ -717,17 +721,16 @@ async function savePolicy() {
   }
 }
 
-function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '') {
+function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '', roleChecks = selectedRoleChecks) {
   if (!currentServer) return;
   const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
   const products = currentServer.products || { [currentServer.type]: currentServer.product };
   selectedScriptParts = { ...selectedParts };
+  selectedRoleChecks = structuredClone(roleChecks || {});
   selectedQueryTemplateId = queryTemplateId || '';
   const isWindows = currentServer.os === 'Windows';
   const commonPanel = document.getElementById('common-script-policy');
-  const rolePanel = document.getElementById('role-script-policy');
   commonPanel.hidden = !isWindows;
-  rolePanel.hidden = !isWindows || !roles.some((role) => ['WEB', 'WAS', 'DB'].includes(role));
   const commonItems = ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
   const commonControls = document.getElementById('common-script-controls');
   commonControls.replaceChildren();
@@ -743,18 +746,61 @@ function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '') {
     container.hidden = !isWindows || (item === 'HTTP' && !roles.some((role) => role === 'WEB' || role === 'WAS'));
   });
 
-  const roleControls = document.getElementById('role-script-controls');
-  roleControls.replaceChildren();
-  [
-    ['WEB', 'WEB', products.WEB], ['WAS', 'WAS', products.WAS], ['DB', 'DATABASE', products.DB],
-  ].filter(([role]) => roles.includes(role)).forEach(([role, item, product]) => {
-    const block = document.createElement('div'); block.className = 'role-script-policy-item';
-    const heading = document.createElement('h4'); heading.textContent = `${role} · ${product || role}`;
-    block.append(heading, createPolicyScriptControl(item, `${product || role} 점검`));
-    if (role === 'DB' && currentServer.os === 'Windows' && product === 'MSSQL') block.appendChild(createQueryTemplateControl());
-    roleControls.appendChild(block);
+  renderRolePolicyGroups(roles, products, isWindows);
+  renderFinalJsonExample(getActiveScriptItems(roles, selectedRoleChecks), selectedRoleChecks);
+}
+
+function renderRolePolicyGroups(roles, products, isWindows) {
+  ['WEB', 'WAS', 'DB'].forEach((role) => {
+    const suffix = role.toLowerCase();
+    const block = document.getElementById(`${suffix}-role-policy`);
+    const container = document.getElementById(`${suffix}-role-policy-controls`);
+    block.hidden = !isWindows || !roles.includes(role);
+    container.replaceChildren();
+    if (block.hidden) return;
+    document.getElementById(`${suffix}-role-policy-title`).textContent = `${role} 점검 · ${products[role] || role}`;
+    const header = document.createElement('div'); header.className = 'role-policy-group-header';
+    const addControls = document.createElement('div'); addControls.className = 'role-policy-add-controls';
+    const chooser = document.createElement('select'); chooser.setAttribute('aria-label', `${role} 점검 항목 선택`);
+    chooser.add(new Option('점검 항목 선택', ''));
+    const currentItems = selectedRoleChecks[role] ?? [];
+    commonCodes.rolePolicies[role].forEach((item) => {
+      const policy = commonCodes.scriptItems.find((entry) => entry.value === item);
+      const option = new Option(policy?.label || item, item);
+      option.disabled = currentItems.includes(item);
+      chooser.add(option);
+    });
+    const addButton = document.createElement('button'); addButton.type = 'button'; addButton.className = 'btn btn-small btn-primary'; addButton.textContent = `+ ${role} 점검 추가`;
+    addButton.addEventListener('click', () => {
+      if (!chooser.value) { alert('추가할 점검 항목을 선택하세요.'); return; }
+      selectedRoleChecks[role] = [...(selectedRoleChecks[role] ?? []), chooser.value];
+      renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
+    });
+    addControls.append(chooser, addButton);
+    header.appendChild(addControls); container.appendChild(header);
+    const list = document.createElement('div'); list.className = 'role-policy-list';
+    currentItems.forEach((item) => {
+      const policy = commonCodes.scriptItems.find((entry) => entry.value === item);
+      const row = document.createElement('div'); row.className = 'role-policy-row';
+      const description = document.createElement('div'); description.className = 'role-policy-description';
+      const name = document.createElement('strong'); name.textContent = policy?.label || item;
+      const help = document.createElement('small'); help.textContent = policy?.description || '점검 결과는 연결된 항목별 스크립트가 생성합니다.';
+      description.append(name, help);
+      row.append(description, createPolicyScriptControl(item, policy?.label || item));
+      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제';
+      remove.addEventListener('click', () => {
+        selectedRoleChecks[role] = (selectedRoleChecks[role] ?? []).filter((value) => value !== item);
+        delete selectedScriptParts[item];
+        renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
+      });
+      row.appendChild(remove); list.appendChild(row);
+    });
+    container.appendChild(list);
+    if (role === 'DB' && products.DB === 'MSSQL') {
+      const queryHeading = document.createElement('h4'); queryHeading.className = 'role-policy-query-heading'; queryHeading.textContent = 'MSSQL 쿼리';
+      container.append(queryHeading, createQueryTemplateControl());
+    }
   });
-  renderFinalJsonExample(getActiveScriptItems(roles));
 }
 
 function getScriptItemLabel(item) {
@@ -784,7 +830,7 @@ function createQueryTemplateControl() {
   const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
   choose.textContent = selected?.name || '기본 DB 쿼리';
   choose.setAttribute('aria-label', 'DB 쿼리 템플릿 선택');
-  choose.addEventListener('click', () => openScriptTemplatePicker('DATABASE', 'DB 상태'));
+  choose.addEventListener('click', () => openScriptTemplatePicker('DB_INSTANCE_STATUS', 'DB 인스턴스·접속 상태'));
   const manager = document.createElement('a'); manager.className = 'policy-script-manager'; manager.textContent = '쿼리 관리';
   manager.href = '/settings/templates?kind=QUERY'; manager.target = '_blank'; manager.rel = 'noopener';
   wrapper.append(choose, manager);
@@ -795,11 +841,15 @@ function bindScriptTemplatePicker() {
   const dialog = document.getElementById('script-template-picker');
   document.getElementById('script-template-picker-close').addEventListener('click', () => dialog.close());
   document.getElementById('script-template-picker-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('script-template-picker-refresh').addEventListener('click', async () => {
+    await loadManagedTemplates();
+    populateScriptTemplatePicker(dialog.dataset.item);
+  });
   document.getElementById('script-template-picker-save').addEventListener('click', () => {
     const item = dialog.dataset.item;
     const templateId = document.getElementById('script-template-picker-select').value;
     if (templateId) selectedScriptParts[item] = templateId; else delete selectedScriptParts[item];
-    if (item === 'DATABASE') selectedQueryTemplateId = document.getElementById('db-query-template-select').value;
+    if (item === 'DATABASE' || item.startsWith('DB_')) selectedQueryTemplateId = document.getElementById('db-query-template-select').value;
     dialog.close();
     renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId);
   });
@@ -810,6 +860,13 @@ function openScriptTemplatePicker(item, label) {
   dialog.dataset.item = item;
   document.getElementById('script-template-picker-title').textContent = `${label} 스크립트 선택`;
   document.getElementById('script-template-picker-label').textContent = `${currentServer.name} · ${currentServer.os}`;
+  const manager = document.getElementById('script-template-picker-manager');
+  manager.href = `/settings/templates?item=${encodeURIComponent(item)}`;
+  loadManagedTemplates().then(() => populateScriptTemplatePicker(item));
+  dialog.showModal();
+}
+
+function populateScriptTemplatePicker(item) {
   const select = document.getElementById('script-template-picker-select');
   select.replaceChildren(new Option('기본 스크립트 사용', ''));
   const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
@@ -818,8 +875,9 @@ function openScriptTemplatePicker(item, label) {
   if (selectedId && !available.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
   select.value = selectedId;
   const queryOption = document.getElementById('db-query-template-option');
-  queryOption.hidden = item !== 'DATABASE';
-  if (item === 'DATABASE') {
+  const needsQueryTemplate = item === 'DATABASE' || item.startsWith('DB_');
+  queryOption.hidden = !needsQueryTemplate;
+  if (needsQueryTemplate) {
     const querySelect = document.getElementById('db-query-template-select');
     querySelect.replaceChildren(new Option('기본 DB 쿼리 사용', ''));
     managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => querySelect.add(new Option(template.name, template.id)));
@@ -828,20 +886,18 @@ function openScriptTemplatePicker(item, label) {
   dialog.showModal();
 }
 
-function getActiveScriptItems(roles) {
+function getActiveScriptItems(roles, roleChecks) {
   const items = ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
   if (currentServer.processes?.length) items.push('PROCESS');
   if (currentServer.directories?.length) items.push('DIRECTORY');
   if (currentServer.fileChecks?.length) items.push('FILE_SIZE');
   if (currentServer.ports?.length) items.push('PORT');
   if (currentServer.httpChecks?.length && roles.some((role) => role === 'WEB' || role === 'WAS')) items.push('HTTP');
-  if (roles.includes('WEB')) items.push('WEB');
-  if (roles.includes('WAS')) items.push('WAS');
-  if (roles.includes('DB')) items.push('DATABASE');
+  for (const role of ['WEB', 'WAS', 'DB']) if (roles.includes(role)) items.push(...(roleChecks[role] ?? []));
   return items;
 }
 
-function renderFinalJsonExample(activeItems) {
+function renderFinalJsonExample(activeItems, roleChecks) {
   const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
   const example = {
     schemaVersion: 2,
@@ -852,7 +908,7 @@ function renderFinalJsonExample(activeItems) {
       cpu: { usagePercent: 28, status: 'Healthy' }, memory: { usagePercent: 62, status: 'Healthy' },
       uptime: { minutes: 123456, status: 'Healthy' }, disk: { maxUsagePercent: 71, status: 'Warning', volumes: [] },
     },
-    checks: {},
+    checks: { rolePolicies: {} },
     summary: { status: 'Healthy', counts: { healthy: activeItems.length, warning: 0, critical: 0, notCollected: 0 } },
   };
   const shapes = {
@@ -867,6 +923,14 @@ function renderFinalJsonExample(activeItems) {
   };
   const keys = { PROCESS: 'processes', DIRECTORY: 'directories', FILE_SIZE: 'files', PORT: 'ports', HTTP: 'http', WEB: 'web', WAS: 'was', DATABASE: 'database' };
   activeItems.forEach((item) => { if (shapes[item]) example.checks[keys[item]] = shapes[item]; });
+  ['WEB', 'WAS', 'DB'].forEach((role) => {
+    const items = roleChecks[role] ?? [];
+    if (!items.length) return;
+    example.checks.rolePolicies[role] = {
+      status: 'NotCollected',
+      items: items.map((item) => ({ item, name: getScriptItemLabel(item), status: 'NotCollected', message: '연결한 항목별 스크립트가 결과를 기록합니다.' })),
+    };
+  });
   const preview = document.getElementById('server-final-json-example');
   if (preview) preview.textContent = JSON.stringify(example, null, 2);
 }
