@@ -86,6 +86,7 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
       ports: server.ports ?? [],
       httpChecks: (server.httpChecks ?? []).map((item) => ({ ...item, expectedStatus: item.expectedStatus ?? 200 })),
       rolePolicies,
+      rolePolicySettings: server.rolePolicySettings ?? {},
     },
     database: { query, customQueries },
   };

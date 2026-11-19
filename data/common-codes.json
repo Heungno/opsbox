@@ -46,6 +46,7 @@
     { "value": "WAS_DEPLOYMENT", "label": "애플리케이션 배포 상태", "group": "WAS", "role": "WAS", "description": "컨테이너와 애플리케이션의 배포·기동 상태를 확인합니다." },
     { "value": "WAS_HEAP_DUMP", "label": "Heap Dump 파일 상태", "group": "WAS", "role": "WAS", "description": "Heap Dump 생성 여부와 보관 파일을 확인합니다." },
     { "value": "WAS_STARTUP_SCRIPT", "label": "기동 스크립트 변경 상태", "group": "WAS", "role": "WAS", "description": "서버 기동 스크립트의 기준 대비 변경 여부를 확인합니다." },
+    { "value": "WAS_LOG", "label": "WAS 로그 상태", "group": "WAS", "role": "WAS", "description": "지정한 로그 폴더와 기간을 기준으로 오류 유형별 건수를 집계합니다." },
     { "value": "DB_INSTANCE_STATUS", "label": "DB 인스턴스·접속 상태", "group": "DB", "role": "DB", "description": "DB 인스턴스 상태와 실제 접속·읽기 질의 가능 여부를 확인합니다." },
     { "value": "DB_PROCESS_LIMIT", "label": "세션·프로세스 사용률", "group": "DB", "role": "DB", "description": "현재 세션·프로세스 수를 설정 한도와 비교합니다." },
     { "value": "DB_TABLESPACE", "label": "데이터 영역 사용률", "group": "DB", "role": "DB", "description": "테이블스페이스 또는 데이터 파일의 사용률을 확인합니다." },
@@ -58,7 +59,7 @@
   ],
   "rolePolicies": {
     "WEB": ["WEB_ENGINE_STATUS", "WEB_WAS_CONNECTION", "WEB_REQUEST_VOLUME", "WEB_LOG"],
-    "WAS": ["WAS_JVM_HEAP", "WAS_THREAD_POOL", "WAS_LONG_RUNNING_THREAD", "WAS_DB_CONNECTION_POOL", "WAS_DEPLOYMENT", "WAS_HEAP_DUMP", "WAS_STARTUP_SCRIPT"],
+    "WAS": ["WAS_JVM_HEAP", "WAS_THREAD_POOL", "WAS_LONG_RUNNING_THREAD", "WAS_DB_CONNECTION_POOL", "WAS_DEPLOYMENT", "WAS_HEAP_DUMP", "WAS_STARTUP_SCRIPT", "WAS_LOG"],
     "DB": ["DB_INSTANCE_STATUS", "DB_PROCESS_LIMIT", "DB_TABLESPACE", "DB_BACKUP", "DB_ARCHIVE_MODE", "DB_TRANSACTION_LOG", "DB_REPLICATION", "DB_CUSTOM_QUERY"]
   }
 }

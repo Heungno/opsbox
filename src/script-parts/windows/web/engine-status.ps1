@@ -1,6 +1,19 @@
 Write-OpsBoxLog "WEB 점검 시작: $($opsboxConfig.server.products.WEB)"
 if ($opsboxConfig.server.products.WEB -ne 'WebtoB') {
-  $webCheck = @{ product = $opsboxConfig.server.products.WEB; status = 'NotCollected'; message = '선택한 WEB 제품의 전용 수집기가 아직 등록되지 않았습니다.' }
+  $product = [string]$opsboxConfig.server.products.WEB
+  $processNames = switch ($product) { 'Apache HTTP Server' { @('httpd'); break } 'Nginx' { @('nginx'); break } default { @() } }
+  $processes = @()
+  if ($processNames.Count -gt 0) { $processes = @(Get-Process -Name $processNames -ErrorAction SilentlyContinue | Select-Object ProcessName, Id) }
+  $services = @()
+  if ($product -eq 'IIS') { $services = @(Get-Service -Name 'W3SVC', 'WAS' -ErrorAction SilentlyContinue | Select-Object Name, Status) }
+  if ($product -eq 'Apache HTTP Server' -or $product -eq 'Nginx') {
+    $services = @(Get-Service -ErrorAction SilentlyContinue | Where-Object { ($product -eq 'Apache HTTP Server' -and $_.DisplayName -match '(?i)apache') -or ($product -eq 'Nginx' -and $_.Name -match '(?i)nginx') } | Select-Object Name, Status)
+  }
+  $runningProcessCount = @($processes).Count
+  $runningServiceCount = @($services | Where-Object { $_.Status -eq 'Running' }).Count
+  $status = if ($runningProcessCount -gt 0 -or $runningServiceCount -gt 0) { 'Healthy' } elseif ($services.Count -gt 0) { 'Critical' } else { 'NotCollected' }
+  $message = if ($status -eq 'NotCollected') { 'WEB 프로세스 또는 서비스를 찾지 못했습니다. 제품 설치와 실행 계정을 확인하세요.' } else { $null }
+  $webCheck = @{ product = $product; status = $status; processes = @($processes); services = @($services); message = $message }
 } else {
 Write-OpsBoxLog 'WebtoB wsadmin 점검 시작'
 $wsadmin = Get-Command wsadmin -ErrorAction SilentlyContinue

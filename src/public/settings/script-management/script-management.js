@@ -81,6 +81,8 @@ function renderOutputExample() {
     PORT: { checks: { ports: { status: 'Healthy', items: [{ protocol: 'TCP', port: 8080, listening: true, processName: 'java' }] } } },
     HTTP: { checks: { http: { status: 'Healthy', items: [{ name: 'health', url: 'http://localhost/health', expectedStatus: 200, statusCode: 200, responseTimeMs: 18, success: true }] } } },
     WEB: { checks: { web: { status: 'Healthy', product: 'WebtoB', detail: { status: 'Healthy', command: 'wsadmin: wi, ci -s, st -v, st -s' } } } },
+    WEB_LOG: { checks: { rolePolicies: { WEB: { status: 'Warning', items: [{ item: 'WEB_LOG', name: 'WEB 로그 상태', status: 'Warning', detail: { periodDays: 7, checkedFileCount: 18, matchedLineCount: 5, categories: { fatal: 0, errorException: 2, warning: 1, http5xx: 1, http4xx: 1 } } }] } } } },
+    WAS_LOG: { checks: { rolePolicies: { WAS: { status: 'Warning', items: [{ item: 'WAS_LOG', name: 'WAS 로그 상태', status: 'Warning', detail: { periodDays: 7, checkedFileCount: 12, matchedLineCount: 3, categories: { fatal: 0, errorException: 2, warning: 1, http5xx: 0, http4xx: 0 } } }] } } } },
     WAS: { checks: { was: { status: 'Healthy', product: 'JEUS', items: [{ processId: 1200, processName: 'java', heapUsagePercent: 48, status: 'Healthy' }] } } },
     DATABASE: { checks: { database: { status: 'Healthy', product: 'MSSQL', detail: { serverName: 'SQL01', version: '16.0', databaseCount: 4, offlineCount: 0 } } } },
     DB_CUSTOM_QUERY: { checks: { rolePolicies: { DB: { status: 'Healthy', items: [{ item: 'DB_CUSTOM_QUERY', name: '기타 사용자 쿼리', status: 'Healthy', detail: { queries: [{ name: '활성 세션 조회', status: 'Healthy', rowCount: 1, output: 'session_count | 12' }] } }] } } } },

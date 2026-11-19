@@ -44,6 +44,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - Windows 스크립트의 HTTP/HTTPS 상태 코드 및 응답 시간 점검
 - Windows WAS 서버의 JDK `jstat` 기반 JVM Heap 사용률 점검
 - Windows WebtoB WEB 서버의 `wsadmin` 정보·클라이언트 수·서버/서비스 상태 점검 (WebtoB 4.1)
+- WEB/WAS 로그 점검은 서버별 폴더·기간을 저장하고 하위 폴더까지 검색해 오류 유형별 건수 집계
 - DB 제품 분류(MSSQL, MariaDB, CUBRID, PostgreSQL)
 - Windows MSSQL `sqlcmd`와 Windows 통합 인증을 이용한 읽기 전용 서버·데이터베이스 상태 점검
 - Windows PowerShell 점검 스크립트의 UTF-8 BOM 적용으로 한글 메시지 인코딩 지원
@@ -82,6 +83,8 @@ src/public/
 ```
 
 서버 상세에서 스크립트를 수정하면 스크립트 관리 전체 화면을 열고, 목록 전체를 보여주면서 해당 스크립트를 선택합니다. 기존 `/servers` 및 `/settings/templates` 경로도 호환용으로 유지합니다.
+
+Windows 스크립트 원본은 `src/script-parts/windows` 아래의 `common`, `web`, `was`, `db`, `system` 폴더에 점검 항목별 파일로 둡니다. 기본 템플릿은 이 원본 파일에서 생성되며, 현재 등록된 Windows 스크립트 원본은 모두 기본 템플릿에서 사용합니다.
 
 ---
 

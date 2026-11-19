@@ -1561,6 +1561,8 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .role-policy-row { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, auto) auto; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--card-bg); }
 .role-policy-description { display: grid; gap: 3px; }
 .role-policy-description small { color: var(--text-light); }
+.role-policy-option { display: grid; gap: 4px; margin-top: 6px; color: var(--text-light); font-size: 11px; }
+.role-policy-option textarea { min-height: 52px; padding: 7px 9px; font-size: 12px; }
 .role-policy-row .policy-script-control { justify-content: flex-end; }
 .role-policy-query-heading { margin: 12px 0 6px; font-size: 13px; }
 .custom-query-count { align-self: center; color: var(--text-light); white-space: nowrap; }
@@ -1615,7 +1617,7 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .template-filters .form-group { min-width: 0; margin: 0; }
 .template-filters label { font-size: 11px; }
 .template-filters select { width: 100%; height: 34px; font-size: 12px; }
-.template-list { display: grid; gap: 10px; min-height: 0; overflow-y: auto; }
+.template-list { display: grid; align-content: start; gap: 10px; min-height: 0; overflow-y: auto; }
 .template-list-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); }
 .template-list-item.is-selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 16%, transparent); }
 .template-list-item[role="button"] { cursor: pointer; }

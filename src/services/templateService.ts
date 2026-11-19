@@ -37,42 +37,67 @@ function sampleTemplates(): ManagedTemplate[] {
 
 function scriptParts(): ManagedTemplate[] {
   const items: Array<[ScriptPart, string, string]> = [
-    ['START', '실행 준비·로깅', '00-start.ps1'],
-    ['HOST_INFO', '서버 기본정보·가동시간', '01-host-info.ps1'],
-    ['CPU', 'CPU 사용률', '10-cpu.ps1'],
-    ['MEMORY', '메모리 사용률', '11-memory.ps1'],
-    ['UPTIME', '서버 가동시간', '12-uptime.ps1'],
-    ['DISK', '디스크 사용량', '13-disk.ps1'],
-    ['PROCESS', '프로세스', '20-process.ps1'],
-    ['DIRECTORY', '디렉터리', '30-directory.ps1'],
-    ['FILE_SIZE', '파일 크기', '40-file-size.ps1'],
-    ['PORT', '포트', '50-port.ps1'],
-    ['HTTP', 'HTTP 응답', '60-http.ps1'],
-    ['WEB_ENGINE_STATUS', 'WEB 엔진 상태', '80-web.ps1'],
-    ['WAS_JVM_HEAP', 'JVM Heap 사용률', '70-was.ps1'],
-    ['DB_INSTANCE_STATUS', 'DB 인스턴스·접속 상태', '90-database.ps1'],
-    ['DB_CUSTOM_QUERY', '기타 사용자 쿼리', '91-db-custom-query.ps1'],
-    ['SAVE', '결과 저장·종료', '99-save.ps1'],
+    ['START', '실행 준비·로깅', 'system/start.ps1'],
+    ['HOST_INFO', '서버 기본정보', 'common/server-info.ps1'],
+    ['CPU', 'CPU 사용률', 'common/cpu-usage.ps1'],
+    ['MEMORY', '메모리 사용률', 'common/memory-usage.ps1'],
+    ['UPTIME', '서버 가동시간', 'common/uptime.ps1'],
+    ['DISK', '디스크 사용량', 'common/disk-usage.ps1'],
+    ['PROCESS', '프로세스', 'common/process-check.ps1'],
+    ['DIRECTORY', '디렉터리', 'common/directory-check.ps1'],
+    ['FILE_SIZE', '파일 크기', 'common/file-size-check.ps1'],
+    ['PORT', '포트', 'common/port-listening.ps1'],
+    ['HTTP', 'HTTP 응답', 'common/http-response.ps1'],
+    ['WEB_ENGINE_STATUS', 'WEB 엔진 상태', 'web/engine-status.ps1'],
+    ['WEB_WAS_CONNECTION', 'WEB-WAS 연동 상태', 'web/was-connection.ps1'],
+    ['WEB_REQUEST_VOLUME', '사용자 요청 처리량', 'web/request-volume.ps1'],
+    ['WEB_LOG', 'WEB 로그 상태', 'web/log-analysis.ps1'],
+    ['WAS_JVM_HEAP', 'JVM Heap 사용률', 'was/jvm-heap-usage.ps1'],
+    ['WAS_THREAD_POOL', 'Thread Pool 사용률', 'was/thread-pool-usage.ps1'],
+    ['WAS_LONG_RUNNING_THREAD', '장기 수행 Thread', 'was/long-running-thread.ps1'],
+    ['WAS_DB_CONNECTION_POOL', 'DB Connection Pool 상태', 'was/db-connection-pool.ps1'],
+    ['WAS_DEPLOYMENT', '애플리케이션 배포 상태', 'was/deployment-status.ps1'],
+    ['WAS_HEAP_DUMP', 'Heap Dump 파일 상태', 'was/heap-dump-files.ps1'],
+    ['WAS_STARTUP_SCRIPT', '기동 스크립트 변경 상태', 'was/startup-script-change.ps1'],
+    ['WAS_LOG', 'WAS 로그 상태', 'was/log-analysis.ps1'],
+    ['DB_INSTANCE_STATUS', 'DB 인스턴스·접속 상태', 'db/instance-status.ps1'],
+    ['DB_CUSTOM_QUERY', '기타 사용자 쿼리', 'db/custom-query.ps1'],
+    ['DB_PROCESS_LIMIT', '세션·프로세스 사용률', 'db/session-limit.ps1'],
+    ['DB_TABLESPACE', '데이터 영역 사용률', 'db/data-file-usage.ps1'],
+    ['DB_BACKUP', '백업 상태', 'db/backup-status.ps1'],
+    ['DB_ARCHIVE_MODE', '아카이브 모드 상태', 'db/archive-log-status.ps1'],
+    ['DB_TRANSACTION_LOG', '트랜잭션 로그 사용률', 'db/transaction-log-usage.ps1'],
+    ['DB_REPLICATION', '복제·이중화 상태', 'db/replication-status.ps1'],
+    ['SAVE', '결과 저장·종료', 'system/save-result.ps1'],
   ];
-  return items.map(([item, label, file]) => ({
-    id: `WINDOWS-PART-${item}`,
-    name: `Windows 점검 항목 · ${label}`,
-    kind: 'SCRIPT_PART',
-    os: 'Windows',
-    item,
-    usesQueryTemplate: item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY',
-    enabled: true,
-    content: fs.readFileSync(path.join('src', 'script-parts', 'windows', file), 'utf8'),
-    updatedAt: '2026-11-18T00:00:00.000Z',
-  }));
+  return items.map(([item, label, file]) => {
+    const sourcePath = path.join('src', 'script-parts', 'windows', file);
+    if (!fs.existsSync(sourcePath)) throw new Error(`Windows 기본 점검 스크립트 파일을 찾을 수 없습니다: ${sourcePath}`);
+    return {
+      id: `WINDOWS-PART-${item}`,
+      name: `Windows 점검 항목 · ${label}`,
+      kind: 'SCRIPT_PART',
+      os: 'Windows',
+      item,
+      usesQueryTemplate: item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY',
+      enabled: true,
+      content: fs.readFileSync(sourcePath, 'utf8'),
+      updatedAt: '2026-11-18T00:00:00.000Z',
+    };
+  });
 }
 
 function read(): ManagedTemplate[] {
   if (!fs.existsSync(FILE)) return sampleTemplates();
   const items = JSON.parse(fs.readFileSync(FILE, 'utf8')) as ManagedTemplate[];
+  let defaults: ManagedTemplate[];
+  try { defaults = scriptParts(); } catch (error) {
+    console.error('기본 스크립트 소스를 읽지 못했습니다. 저장된 템플릿으로 계속 실행합니다.', error);
+    return items;
+  }
   // Migrate existing stores once; explicit deletions remain respected afterward.
   if (!items.some((item) => item.kind === 'SCRIPT_PART')) {
-    const seeded = [...items, ...scriptParts()];
+    const seeded = [...items, ...defaults];
     write(seeded);
     return seeded;
   }
@@ -95,7 +120,7 @@ function read(): ManagedTemplate[] {
     }
   }
   if (splittingLegacyBasics) {
-    const requiredBasics = scriptParts().filter((item) => ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'].includes(item.item ?? ''));
+    const requiredBasics = defaults.filter((item) => ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'].includes(item.item ?? ''));
     for (const item of requiredBasics) {
       if (!items.some((existing) => existing.id === item.id)) { items.push(item); changed = true; }
     }
@@ -103,14 +128,23 @@ function read(): ManagedTemplate[] {
   const customQueryMigration = 'db-custom-query-template-v1';
   if (!hasMigration(customQueryMigration)) {
     if (!items.some((item) => item.kind === 'SCRIPT_PART' && item.item === 'DB_CUSTOM_QUERY')) {
-      const customQueryPart = scriptParts().find((item) => item.item === 'DB_CUSTOM_QUERY');
+      const customQueryPart = defaults.find((item) => item.item === 'DB_CUSTOM_QUERY');
       if (customQueryPart) { items.push(customQueryPart); changed = true; }
     }
     markMigration(customQueryMigration);
   }
-  for (const currentDefault of scriptParts()) {
+  const roleDefaultsMigration = 'windows-role-defaults-v1';
+  if (!hasMigration(roleDefaultsMigration)) {
+    const roleTypes: string[] = ['WEB', 'WAS', 'DB'];
+    for (const defaultTemplate of defaults.filter((item) => roleTypes.includes(String(getCommonCodes().scriptItems.find((entry) => entry.value === item.item)?.role ?? '')))) {
+      if (!items.some((existing) => existing.id === defaultTemplate.id)) { items.push(defaultTemplate); changed = true; }
+    }
+    markMigration(roleDefaultsMigration);
+  }
+  for (const currentDefault of defaults) {
     const index = items.findIndex((item) => item.id === currentDefault.id);
     if (index >= 0 && items[index].updatedAt === currentDefault.updatedAt) {
+      if (items[index].name !== currentDefault.name) { items[index].name = currentDefault.name; changed = true; }
       if (items[index].content !== currentDefault.content) { items[index] = currentDefault; changed = true; }
       else if (currentDefault.usesQueryTemplate && items[index].usesQueryTemplate !== true) { items[index].usesQueryTemplate = true; changed = true; }
     }

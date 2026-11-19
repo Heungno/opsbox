@@ -7,6 +7,7 @@ let currentServer = null;
 let managedTemplates = [];
 let selectedScriptParts = {};
 let selectedRoleChecks = {};
+let selectedRolePolicySettings = {};
 let selectedQueryTemplateId = '';
 let selectedCustomQueryTemplateIds = [];
 let commonCodes;
@@ -449,6 +450,7 @@ async function loadPolicy(serverId) {
   selectedQueryTemplateId = config.queryTemplateId || currentServer?.queryTemplateId || '';
   selectedCustomQueryTemplateIds = config.customQueryTemplateIds ?? currentServer?.customQueryTemplateIds ?? [];
   selectedRoleChecks = config.roleChecks ?? currentServer?.roleChecks ?? {};
+  selectedRolePolicySettings = config.rolePolicySettings ?? currentServer?.rolePolicySettings ?? {};
   renderPolicyScriptControls(config.scriptParts ?? currentServer?.scriptParts ?? {}, config.queryTemplateId ?? currentServer?.queryTemplateId ?? '', selectedRoleChecks);
   document.getElementById('process-container')?.replaceChildren();
   document.getElementById('directory-container')?.replaceChildren();
@@ -662,6 +664,18 @@ async function savePolicy() {
     const ports = getPorts();
     const httpChecks = getHttpChecks();
     const scriptParts = { ...selectedScriptParts };
+    const rolePolicySettings = structuredClone(selectedRolePolicySettings);
+    document.querySelectorAll('[data-log-directories]').forEach((input) => {
+      const item = input.dataset.logDirectories;
+      rolePolicySettings[item] = {
+        ...(rolePolicySettings[item] ?? {}),
+        logDirectories: input.value.split(/\r?\n/).map((path) => path.trim()).filter(Boolean),
+      };
+    });
+    document.querySelectorAll('[data-log-period-days]').forEach((input) => {
+      const item = input.dataset.logPeriodDays;
+      rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), periodDays: Number(input.value) };
+    });
     const queryTemplateId = selectedQueryTemplateId || '';
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
@@ -677,6 +691,7 @@ async function savePolicy() {
         httpChecks,
         scriptParts,
         roleChecks: selectedRoleChecks,
+        rolePolicySettings,
         queryTemplateId,
         customQueryTemplateIds: selectedCustomQueryTemplateIds,
       }),
@@ -698,6 +713,8 @@ async function savePolicy() {
     currentServer.httpChecks = httpChecks;
     currentServer.scriptParts = scriptParts;
     currentServer.roleChecks = selectedRoleChecks;
+    selectedRolePolicySettings = rolePolicySettings;
+    currentServer.rolePolicySettings = rolePolicySettings;
     currentServer.queryTemplateId = queryTemplateId;
     currentServer.customQueryTemplateIds = selectedCustomQueryTemplateIds;
     renderPolicyScriptControls(scriptParts, queryTemplateId);
@@ -774,6 +791,29 @@ function renderRolePolicyGroups(roles, products, isWindows) {
       const help = document.createElement('small'); help.textContent = policy?.description || '점검 결과는 연결된 항목별 스크립트가 생성합니다.';
       description.append(name, help);
       const scriptControl = createPolicyScriptControl(item, policy?.label || item);
+      if (['WEB_LOG', 'WAS_LOG'].includes(item)) {
+        const setting = selectedRolePolicySettings[item] ?? { logDirectories: [], periodDays: 7 };
+        const folderField = document.createElement('label'); folderField.className = 'role-policy-option';
+        const folderLabel = document.createElement('span'); folderLabel.textContent = `${role} 로그 폴더 (한 줄에 하나씩)`;
+        const folderInput = document.createElement('textarea'); folderInput.rows = 2; folderInput.placeholder = item === 'WEB_LOG' ? '예: C:\\WebtoB\\log' : '예: C:\\JEUS6\\domains\\domain1\\servers\\server1\\logs'; folderInput.value = (setting.logDirectories ?? []).join('\n');
+        folderInput.dataset.logDirectories = item;
+        const folderHelp = document.createElement('small'); folderHelp.textContent = '지정한 폴더의 하위 폴더도 함께 검사합니다.';
+        folderInput.addEventListener('input', () => {
+          selectedRolePolicySettings[item] = { ...setting, ...(selectedRolePolicySettings[item] ?? {}), logDirectories: folderInput.value.split(/\r?\n/).map((path) => path.trim()).filter(Boolean) };
+        });
+        folderField.append(folderLabel, folderInput, folderHelp);
+        description.appendChild(folderField);
+        const periodField = document.createElement('label'); periodField.className = 'role-policy-option';
+        const periodLabel = document.createElement('span'); periodLabel.textContent = '조회 기간 (최근 일)';
+        const periodInput = document.createElement('input'); periodInput.type = 'number'; periodInput.min = '1'; periodInput.max = '90'; periodInput.step = '1'; periodInput.value = String(setting.periodDays ?? 7);
+        periodInput.dataset.logPeriodDays = item;
+        periodInput.addEventListener('input', () => {
+          const periodDays = Number(periodInput.value);
+          selectedRolePolicySettings[item] = { ...setting, ...(selectedRolePolicySettings[item] ?? {}), periodDays };
+        });
+        periodField.append(periodLabel, periodInput);
+        description.appendChild(periodField);
+      }
       if (item === 'DB_CUSTOM_QUERY') {
         const queryCount = document.createElement('small'); queryCount.className = 'custom-query-count';
         queryCount.textContent = `쿼리 ${selectedCustomQueryTemplateIds.length}개 선택`;
@@ -785,6 +825,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         selectedRoleChecks[role] = (selectedRoleChecks[role] ?? []).filter((value) => value !== item);
         delete selectedScriptParts[item];
         if (item === 'DB_CUSTOM_QUERY') selectedCustomQueryTemplateIds = [];
+        if (['WEB_LOG', 'WAS_LOG'].includes(item)) delete selectedRolePolicySettings[item];
         renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
       });
       row.appendChild(remove); list.appendChild(row);
@@ -919,9 +960,9 @@ function getDefaultScriptTemplate(item) {
 
 function getDefaultScriptTemplateName(item) {
   const names = {
-    HOST_INFO: '서버 기본정보·가동시간', CPU: 'CPU 사용률', MEMORY: '메모리 사용률', UPTIME: '서버 가동시간', DISK: '디스크 사용량',
+    HOST_INFO: '서버 기본정보', CPU: 'CPU 사용률', MEMORY: '메모리 사용률', UPTIME: '서버 가동시간', DISK: '디스크 사용량',
     PROCESS: '프로세스', DIRECTORY: '디렉터리', FILE_SIZE: '파일 크기', PORT: '포트', HTTP: 'HTTP 응답',
-    WEB_ENGINE_STATUS: 'WEB 엔진 상태', WAS_JVM_HEAP: 'JVM Heap 사용률', DB_INSTANCE_STATUS: 'DB 인스턴스·접속 상태', DB_CUSTOM_QUERY: '기타 사용자 쿼리',
+    WEB_ENGINE_STATUS: 'WEB 엔진 상태', WAS_JVM_HEAP: 'JVM Heap 사용률', WAS_LOG: 'WAS 로그 상태', DB_INSTANCE_STATUS: 'DB 인스턴스·접속 상태', DB_CUSTOM_QUERY: '기타 사용자 쿼리',
   };
   return `${currentServer?.os || 'Windows'} 점검 항목 · ${names[item] || getScriptItemLabel(item)}`;
 }

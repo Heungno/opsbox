@@ -241,6 +241,10 @@ function renderTypeReportForm(serverTypes, data, productMap) {
 
 function summarizeRolePolicyDetail(item) {
   if (item.message) return item.message;
+  if (['WEB_LOG', 'WAS_LOG'].includes(item.item) && item.detail?.categories) {
+    const counts = item.detail.categories;
+    return `최근 ${item.detail.periodDays ?? 7}일 · 파일 ${item.detail.checkedFileCount ?? 0}개 · Fatal ${counts.fatal ?? 0} · Error/Exception ${counts.errorException ?? 0} · Warning ${counts.warning ?? 0} · HTTP 5xx ${counts.http5xx ?? 0} · HTTP 4xx ${counts.http4xx ?? 0}`;
+  }
   if (Array.isArray(item.detail?.queries)) return item.detail.queries.map((query) => `${query.name || query.id}: ${query.status}${query.output ? ` · ${query.output}` : query.message ? ` · ${query.message}` : ''}`).join('\n').slice(0, 1200);
   if (typeof item.detail === 'string') return item.detail.slice(0, 800);
   if (Array.isArray(item.detail)) return `${item.detail.length}개 상세 결과`;

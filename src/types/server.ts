@@ -32,6 +32,11 @@ export type ServerRole = 'WEB' | 'WAS' | 'DB' | 'OTHER';
 export type RolePolicyType = 'WEB' | 'WAS' | 'DB';
 export type ServerProduct = 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
 
+export interface RolePolicySetting {
+  logDirectories?: string[];
+  periodDays?: number;
+}
+
 export interface Server {
   id: string;
   name: string;
@@ -42,6 +47,7 @@ export interface Server {
   products?: Partial<Record<ServerRole, ServerProduct>>;
   scriptParts?: Partial<Record<ScriptPart, string>>;
   roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
+  rolePolicySettings?: Partial<Record<ScriptPart, RolePolicySetting>>;
   queryTemplateId?: string;
   customQueryTemplateIds?: string[];
   os: 'Windows' | 'Linux';

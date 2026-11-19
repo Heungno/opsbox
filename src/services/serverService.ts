@@ -196,6 +196,7 @@ export function getCheckConfig(id: string) {
     httpChecks: server.httpChecks ?? [],
     scriptParts: server.scriptParts ?? {},
     roleChecks: server.roleChecks ?? {},
+    rolePolicySettings: server.rolePolicySettings ?? {},
     queryTemplateId: server.queryTemplateId ?? '',
     customQueryTemplateIds: server.customQueryTemplateIds ?? [],
   };
@@ -213,6 +214,7 @@ export function updateCheckConfig(
     httpChecks?: HttpCheck[];
     scriptParts?: Partial<Record<ScriptPart, string>>;
     roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
+    rolePolicySettings?: Server['rolePolicySettings'];
     queryTemplateId?: string;
     customQueryTemplateIds?: string[];
   },
@@ -235,6 +237,34 @@ export function updateCheckConfig(
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
   const validParts = new Set<ScriptPart>(['START', 'SAVE', ...COMMON_CODES.scriptItems.map(({ value }) => value as ScriptPart)]);
   const roleChecks = config.roleChecks ?? servers[index].roleChecks ?? {};
+  const rolePolicySettings = { ...(config.rolePolicySettings ?? servers[index].rolePolicySettings ?? {}) };
+  const logPolicies = [
+    { role: 'WEB' as const, item: 'WEB_LOG' as const, label: 'WEB' },
+    { role: 'WAS' as const, item: 'WAS_LOG' as const, label: 'WAS' },
+  ];
+  for (const logPolicy of logPolicies) {
+    const { item, role, label } = logPolicy;
+    const setting = rolePolicySettings[item] ?? {};
+    const directories = setting.logDirectories;
+    if (directories !== undefined) {
+      if (!Array.isArray(directories) || directories.some((path) => typeof path !== 'string' || !path.trim() || path.length > 1024)) {
+        errors.push({ field: `rolePolicySettings.${item}.logDirectories`, message: `${label} 로그 폴더는 비어 있지 않은 경로 목록이어야 합니다.` });
+      } else {
+        setting.logDirectories = [...new Set(directories.map((path) => path.trim()))];
+      }
+    }
+    const enabled = (roleChecks[role] ?? []).includes(item);
+    if (enabled && (!Array.isArray(setting.logDirectories) || setting.logDirectories.length === 0)) {
+      errors.push({ field: `rolePolicySettings.${item}.logDirectories`, message: `${label} 로그 점검을 위해 로그 폴더를 하나 이상 지정하세요.` });
+    }
+    if (setting.periodDays !== undefined && (!Number.isInteger(setting.periodDays) || setting.periodDays < 1 || setting.periodDays > 90)) {
+      errors.push({ field: `rolePolicySettings.${item}.periodDays`, message: `${label} 로그 조회 기간은 1~90일 사이의 정수로 입력하세요.` });
+    }
+    if (enabled) rolePolicySettings[item] = { ...setting, logDirectories: setting.logDirectories ?? [], periodDays: setting.periodDays ?? 7 };
+    if (!enabled && (setting.logDirectories?.length ?? 0) > 0) {
+      errors.push({ field: `rolePolicySettings.${item}.logDirectories`, message: `${label} 로그 점검 항목을 추가한 뒤 로그 폴더를 지정하세요.` });
+    }
+  }
   const requestedCustomQueryIds = config.customQueryTemplateIds ?? servers[index].customQueryTemplateIds ?? [];
   const customQueryTemplateIds = Array.isArray(requestedCustomQueryIds) ? requestedCustomQueryIds.filter((id): id is string => typeof id === 'string') : [];
   if (!Array.isArray(requestedCustomQueryIds)) errors.push({ field: 'customQueryTemplateIds', message: 'DB 쿼리 템플릿 목록 형식이 올바르지 않습니다.' });
@@ -300,6 +330,7 @@ export function updateCheckConfig(
   servers[index].httpChecks = config.httpChecks ?? [];
   servers[index].scriptParts = config.scriptParts ?? servers[index].scriptParts ?? {};
   servers[index].roleChecks = roleChecks;
+  servers[index].rolePolicySettings = rolePolicySettings;
   servers[index].customQueryTemplateIds = customQueryTemplateIds;
   servers[index].queryTemplateId = config.queryTemplateId ?? '';
 
@@ -316,6 +347,7 @@ export function updateCheckConfig(
     httpChecks: servers[index].httpChecks,
     scriptParts: servers[index].scriptParts,
     roleChecks: servers[index].roleChecks,
+    rolePolicySettings: servers[index].rolePolicySettings,
     queryTemplateId: servers[index].queryTemplateId,
     customQueryTemplateIds: servers[index].customQueryTemplateIds,
   };

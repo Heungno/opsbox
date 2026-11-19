@@ -20,6 +20,7 @@ $osVersion = $null
 $checkDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 $hostInfoStatus = 'NotCollected'
 $uptimeMinutes = $null
+$uptimeParts = $null
 $uptimeStatus = 'NotCollected'
 $cpu = $null
 $cpuStatus = 'NotCollected'

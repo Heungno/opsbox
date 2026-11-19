@@ -36,7 +36,7 @@ npm run dev
 사이드바는 **대시보드**, **점검 보고서**, **설정**으로 구성됩니다. 설정을 펼치면 **서버 관리**와 **스크립트 관리**를 선택할 수 있습니다. 사이드바 아래 해/달 토글로 밝은 테마와 어두운 테마를 바꿉니다.
 스크립트 관리 화면은 `/settings/script-management`에서 엽니다. 화면별 HTML과 JavaScript는 `src/public` 안의 메뉴 이름 폴더에 함께 둡니다. 템플릿 초기 데이터에는 Windows 항목별 스크립트와 MSSQL 쿼리 참고 예제가 들어 있습니다. 각 항목을 선택하면 해당 항목의 JSON 결과 예시를 확인할 수 있습니다. 템플릿은 `data/templates.json`에 저장됩니다.
 
-점검 항목 조립은 현재 Windows PowerShell을 대상으로 합니다. Linux 다운로드는 기존 Linux 점검 스크립트를 사용하며, 항목별 Linux 템플릿은 후속 단계에서 같은 방식으로 분리합니다.
+점검 항목 조립은 현재 Windows PowerShell을 대상으로 합니다. Windows 스크립트 원본은 `src/script-parts/windows` 아래에서 `common`, `web`, `was`, `db`, `system` 폴더로 구분합니다. Linux 다운로드는 기존 Linux 점검 스크립트를 사용하며, 항목별 Linux 템플릿은 후속 단계에서 같은 방식으로 분리합니다.
 
 ## 3. 서버 등록
 
@@ -49,7 +49,9 @@ npm run dev
 
 서버 상세의 **점검 정책**은 **공통 기본점검**, **WEB**, **WAS**, **DB** 블록으로 나뉩니다. 공통 블록에는 CPU·메모리·가동시간·디스크와 프로세스·디렉터리·파일 크기·포트·HTTP 정책이 있습니다. 공통 자원 항목은 각 선택 버튼으로, 목록형 정책은 해당 정책의 추가 버튼 옆에서 스크립트를 선택합니다. 스크립트 선택 모달에서 선택된 사용자 템플릿을 바로 수정할 수 있습니다.
 
-WEB 항목은 엔진 상태, WEB-WAS 연동, 요청 처리량, WEB 로그입니다. WAS 항목은 JVM Heap, Thread Pool, 장기 수행 Thread, DB Connection Pool, 배포 상태, Heap Dump, 기동 스크립트입니다. DB 항목은 인스턴스·접속, 세션 한도, 데이터 영역, 백업, 아카이브 모드, 트랜잭션 로그, 복제 상태, 기타 사용자 쿼리입니다. 각 역할 블록에서 항목을 추가·삭제하고 항목별 스크립트를 연결합니다. 선택 버튼은 공통 모달을 열며, 모달 HTML은 `src/public/shared/fragments/script-template-picker-modal.html`에서 관리합니다.
+WEB 또는 WAS **로그 상태** 항목을 추가하면 해당 서버의 로그 폴더와 조회 기간을 정책에 저장할 수 있습니다. 기본 기간은 최근 7일이며 1~90일로 설정할 수 있습니다. 지정한 폴더와 모든 하위 폴더에서 로그 파일을 읽어 Fatal, Error/Exception, Warning, HTTP 5xx, HTTP 4xx 건수를 집계합니다. 로그 줄에서 날짜를 인식하면 설정 기간 내 줄만 계산하고, 날짜 형식이 없으면 파일 수정 시각으로 기간을 판단합니다. 제품 로그 위치에 맞는 경로를 등록하세요.
+
+WEB 항목은 엔진 상태, WEB-WAS 연동, 요청 처리량, WEB 로그입니다. WAS 항목은 JVM Heap, Thread Pool, 장기 수행 Thread, DB Connection Pool, 배포 상태, Heap Dump, 기동 스크립트, WAS 로그입니다. DB 항목은 인스턴스·접속, 세션 한도, 데이터 영역, 백업, 아카이브 모드, 트랜잭션 로그, 복제 상태, 기타 사용자 쿼리입니다. 각 역할 블록에서 항목을 추가·삭제하고 항목별 스크립트를 연결합니다. 선택 버튼은 공통 모달을 열며, 모달 HTML은 `src/public/shared/fragments/script-template-picker-modal.html`에서 관리합니다.
 
 기본 연결은 WebtoB 엔진 상태, JVM Heap, Windows MSSQL 인스턴스·접속 상태에 제공됩니다. 나머지 제품별 항목은 스크립트 관리에서 해당 점검 항목 템플릿을 먼저 작성한 뒤 서버 정책에서 연결하세요. 사용자 템플릿은 `$opsboxConfig.checks.rolePolicies`의 역할별 항목을 읽고 `$rolePolicyResults`에 `role`, `item`, `status`, `detail`을 기록합니다. 스크립트가 결과를 기록하지 않으면 보고서에 미수집으로 표시됩니다. 선택 변경은 **정책 저장** 후 다음 다운로드부터 적용되며, 점검 정책 아래에서 최종 JSON 구조를 확인할 수 있습니다. Linux는 현재 기존 Linux 스크립트 생성 방식을 사용합니다.
 

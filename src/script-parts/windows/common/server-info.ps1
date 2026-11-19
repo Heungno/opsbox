@@ -1,7 +1,7 @@
 Write-OpsBoxLog '서버 기본정보 점검 시작'
 try {
   $osInfo = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
-  $hostname = $osInfo.CSName
+  $hostname = if ($osInfo.CSName) { $osInfo.CSName } else { $env:COMPUTERNAME }
   $osName = $osInfo.Caption
   $osVersion = $osInfo.Version
   $hostInfoStatus = 'Healthy'

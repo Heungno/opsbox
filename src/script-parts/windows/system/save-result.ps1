@@ -38,7 +38,7 @@ foreach ($role in @('WEB', 'WAS', 'DB')) {
 }
 
 $rolePolicyStatuses = @($rolePolicyOutput.Values | ForEach-Object { $_.status })
-$allStatuses = @($hostInfoStatus, $cpuStatus, $memoryStatus, $uptimeStatus, $diskStatus, $processStatus, $directoryStatus, $fileStatus, $portStatus, $httpStatus, $wasStatus, $webStatus, $databaseStatus) + $rolePolicyStatuses
+$allStatuses = @($hostInfoStatus, $cpuStatus, $memoryStatus, $uptimeStatus, $diskStatus, $processStatus, $directoryStatus, $fileStatus, $portStatus, $httpStatus) + $rolePolicyStatuses
 $criticalCount = @($allStatuses | Where-Object { $_ -eq 'Critical' }).Count
 $warningCount = @($allStatuses | Where-Object { $_ -eq 'Warning' }).Count
 $notCollectedCount = @($allStatuses | Where-Object { $_ -eq 'NotCollected' }).Count
@@ -49,11 +49,11 @@ $result = [ordered]@{
   schemaVersion = 2
   server = [ordered]@{ id = $opsboxConfig.server.id; name = $opsboxConfig.server.name; ip = $opsboxConfig.server.ip; roles = $opsboxConfig.server.roles; products = $opsboxConfig.server.products }
   collectedAt = $checkDate
-  host = [ordered]@{ hostname = $hostname; osName = $osName; osVersion = $osVersion; uptimeMinutes = $uptimeMinutes; status = $hostInfoStatus }
+  host = [ordered]@{ hostname = $hostname; osName = $osName; osVersion = $osVersion; uptimeMinutes = $uptimeMinutes; uptime = $uptimeParts; status = $hostInfoStatus }
   resources = [ordered]@{
     cpu = @{ usagePercent = $cpu; status = $cpuStatus }
     memory = @{ usagePercent = $memory; status = $memoryStatus }
-    uptime = @{ minutes = $uptimeMinutes; status = $uptimeStatus }
+    uptime = @{ minutes = $uptimeMinutes; parts = $uptimeParts; status = $uptimeStatus }
     disk = @{ maxUsagePercent = $disk; status = $diskStatus; volumes = @($disks) }
   }
   checks = [ordered]@{

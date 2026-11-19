@@ -1,6 +1,8 @@
 Write-OpsBoxLog 'CPU 점검 시작'
 try {
-  $cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time' -ErrorAction Stop).CounterSamples[0].CookedValue, 0)
+  $processor = Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor -Filter "Name = '_Total'" -ErrorAction Stop
+  if ($null -eq $processor.PercentProcessorTime) { throw 'CPU 사용률 값을 읽을 수 없습니다.' }
+  $cpu = [math]::Round([double]$processor.PercentProcessorTime, 0)
   $cpuStatus = if ($cpu -ge 90) { 'Critical' } elseif ($cpu -ge 70) { 'Warning' } else { 'Healthy' }
 } catch {
   $cpu = $null
