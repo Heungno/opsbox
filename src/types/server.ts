@@ -43,6 +43,7 @@ export interface Server {
   scriptParts?: Partial<Record<ScriptPart, string>>;
   roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
   queryTemplateId?: string;
+  customQueryTemplateIds?: string[];
   os: 'Windows' | 'Linux';
   ip: string;
   policy?: ServerPolicy;

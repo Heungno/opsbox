@@ -8,25 +8,26 @@
       <span class="menu-icon">▦</span>
       <span class="menu-text">대시보드</span>
     </a>
-    <a href="/servers" data-menu="servers">
-      <span class="menu-icon">▣</span>
-      <span class="menu-text">서버 관리</span>
-    </a>
     <a href="/reports" data-menu="reports">
       <span class="menu-icon">▤</span>
       <span class="menu-text">점검 보고서</span>
     </a>
-    <a href="/settings/templates" data-menu="settings">
-      <span class="menu-icon">⚙</span>
-      <span class="menu-text">스크립트 관리</span>
-    </a>
+    <div class="sidebar-group settings-menu-group">
+      <button id="settings-menu-toggle" class="settings-menu-toggle" type="button" aria-expanded="false" aria-controls="settings-submenu">
+        <span class="menu-icon">⚙</span>
+        <span class="menu-text">설정</span>
+        <span class="settings-menu-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div id="settings-submenu" class="sidebar-submenu" hidden>
+        <a href="/servers" data-menu="servers"><span class="menu-text">서버 관리</span></a>
+        <a href="/settings/templates" data-menu="settings-scripts"><span class="menu-text">스크립트 관리</span></a>
+      </div>
+    </div>
   </nav>
   <div class="sidebar-footer">
-    <label for="sidebar-theme">사이드바 테마</label>
-    <select id="sidebar-theme" class="sidebar-theme-select" aria-label="사이드바 테마 선택">
-      <option value="ocean">블루 슬레이트</option>
-      <option value="light">밝은 회색</option>
-      <option value="forest">포레스트</option>
-    </select>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="어두운 테마로 전환">
+      <span id="theme-toggle-icon" aria-hidden="true">☾</span>
+      <span id="theme-toggle-label">어두운 테마</span>
+    </button>
   </div>
 </aside>

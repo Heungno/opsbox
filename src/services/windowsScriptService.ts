@@ -52,13 +52,18 @@ function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   });
 }
 
-export function assembleWindowsScript(server: Server, templates: ManagedTemplate[], queryTemplate?: string): string {
+export function assembleWindowsScript(server: Server, templates: ManagedTemplate[], queryTemplate?: string, customQueryTemplates: ManagedTemplate[] = []): string {
   const roles = getServerRoles(server);
   const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
   const rawQuery = queryTemplate ?? DEFAULT_MSSQL_QUERY;
   const query = rawQuery
     .replace(/\{\{SERVER_IP\}\}/g, server.ip)
     .replace(/\{\{SERVER_NAME\}\}/g, server.name);
+  const customQueries = customQueryTemplates.map(({ id, name, content }) => ({
+    id,
+    name,
+    content: content.replace(/\{\{SERVER_IP\}\}/g, server.ip).replace(/\{\{SERVER_NAME\}\}/g, server.name),
+  }));
   const labels = new Map(getCommonCodes().scriptItems.map(({ value, label }) => [value, label]));
   const rolePolicies = Object.fromEntries(
     (['WEB', 'WAS', 'DB'] as const).map((role) => [role, (server.roleChecks?.[role] ?? []).map((item) => ({ item, name: labels.get(item) ?? item }))]),
@@ -82,7 +87,7 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
       httpChecks: (server.httpChecks ?? []).map((item) => ({ ...item, expectedStatus: item.expectedStatus ?? 200 })),
       rolePolicies,
     },
-    database: { query },
+    database: { query, customQueries },
   };
   const encodedConfig = Buffer.from(JSON.stringify(config), 'utf8').toString('base64');
 

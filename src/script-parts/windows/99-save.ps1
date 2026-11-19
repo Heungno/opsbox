@@ -37,7 +37,8 @@ foreach ($role in @('WEB', 'WAS', 'DB')) {
   if ($roleItems.Count -gt 0) { $rolePolicyOutput[$role] = @{ status = $roleStatus; items = $roleItems } }
 }
 
-$allStatuses = @($hostInfoStatus, $cpuStatus, $memoryStatus, $uptimeStatus, $diskStatus, $processStatus, $directoryStatus, $fileStatus, $portStatus, $httpStatus, $wasStatus, $webStatus, $databaseStatus)
+$rolePolicyStatuses = @($rolePolicyOutput.Values | ForEach-Object { $_.status })
+$allStatuses = @($hostInfoStatus, $cpuStatus, $memoryStatus, $uptimeStatus, $diskStatus, $processStatus, $directoryStatus, $fileStatus, $portStatus, $httpStatus, $wasStatus, $webStatus, $databaseStatus) + $rolePolicyStatuses
 $criticalCount = @($allStatuses | Where-Object { $_ -eq 'Critical' }).Count
 $warningCount = @($allStatuses | Where-Object { $_ -eq 'Warning' }).Count
 $notCollectedCount = @($allStatuses | Where-Object { $_ -eq 'NotCollected' }).Count

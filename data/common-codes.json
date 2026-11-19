@@ -53,11 +53,12 @@
     { "value": "DB_ARCHIVE_MODE", "label": "아카이브 모드 상태", "group": "DB", "role": "DB", "description": "온라인 백업에 필요한 아카이브 설정과 상태를 확인합니다." },
     { "value": "DB_TRANSACTION_LOG", "label": "트랜잭션 로그 사용률", "group": "DB", "role": "DB", "description": "트랜잭션 로그·아카이브 로그의 사용량과 증가 상태를 확인합니다." },
     { "value": "DB_REPLICATION", "label": "복제·이중화 상태", "group": "DB", "role": "DB", "description": "복제 지연과 Active-Standby 동기화 상태를 확인합니다." },
+    { "value": "DB_CUSTOM_QUERY", "label": "기타 사용자 쿼리", "group": "DB", "role": "DB", "description": "등록한 MSSQL 쿼리 템플릿을 여러 개 선택해 실행하고 결과를 항목별로 저장합니다." },
     { "value": "SAVE", "label": "결과 저장", "group": "시스템" }
   ],
   "rolePolicies": {
     "WEB": ["WEB_ENGINE_STATUS", "WEB_WAS_CONNECTION", "WEB_REQUEST_VOLUME", "WEB_LOG"],
     "WAS": ["WAS_JVM_HEAP", "WAS_THREAD_POOL", "WAS_LONG_RUNNING_THREAD", "WAS_DB_CONNECTION_POOL", "WAS_DEPLOYMENT", "WAS_HEAP_DUMP", "WAS_STARTUP_SCRIPT"],
-    "DB": ["DB_INSTANCE_STATUS", "DB_PROCESS_LIMIT", "DB_TABLESPACE", "DB_BACKUP", "DB_ARCHIVE_MODE", "DB_TRANSACTION_LOG", "DB_REPLICATION"]
+    "DB": ["DB_INSTANCE_STATUS", "DB_PROCESS_LIMIT", "DB_TABLESPACE", "DB_BACKUP", "DB_ARCHIVE_MODE", "DB_TRANSACTION_LOG", "DB_REPLICATION", "DB_CUSTOM_QUERY"]
   }
 }

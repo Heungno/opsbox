@@ -13,3 +13,10 @@ export class ValidationError extends AppError {
     super('VALIDATION_ERROR', 400, errors);
   }
 }
+
+export class NotFoundError extends AppError {
+  constructor(message: string) {
+    super('NOT_FOUND', 404);
+    this.message = message;
+  }
+}

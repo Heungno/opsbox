@@ -1,3 +1,4 @@
+import type { FastifyInstance } from 'fastify';
 import {
   createServer,
   deleteServer,
@@ -9,7 +10,7 @@ import {
 } from '../services/serverService';
 import type { ScriptPart } from '../types/template';
 
-export async function serverRoutes(app) {
+export async function serverRoutes(app: FastifyInstance) {
   app.get('/servers', async () => {
     return getAllServers();
   });
@@ -49,7 +50,7 @@ export async function serverRoutes(app) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, queryTemplateId } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, queryTemplateId, customQueryTemplateIds } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
@@ -58,6 +59,7 @@ export async function serverRoutes(app) {
       scriptParts?: Partial<Record<ScriptPart, string>>;
       roleChecks?: Partial<Record<'WEB' | 'WAS' | 'DB', ScriptPart[]>>;
       queryTemplateId?: string;
+      customQueryTemplateIds?: string[];
     };
 
     return updateCheckConfig(id, {
@@ -69,6 +71,7 @@ export async function serverRoutes(app) {
       scriptParts,
       roleChecks,
       queryTemplateId,
+      customQueryTemplateIds,
     });
   });
 }

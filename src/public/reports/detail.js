@@ -241,6 +241,7 @@ function renderTypeReportForm(serverTypes, data, productMap) {
 
 function summarizeRolePolicyDetail(item) {
   if (item.message) return item.message;
+  if (Array.isArray(item.detail?.queries)) return item.detail.queries.map((query) => `${query.name || query.id}: ${query.status}${query.output ? ` · ${query.output}` : query.message ? ` · ${query.message}` : ''}`).join('\n').slice(0, 1200);
   if (typeof item.detail === 'string') return item.detail.slice(0, 800);
   if (Array.isArray(item.detail)) return `${item.detail.length}개 상세 결과`;
   if (item.detail?.output) return String(item.detail.output).slice(0, 800);

@@ -1,6 +1,7 @@
 await window.opsboxLayoutReady;
 
 let templates = [];
+let allTemplates = [];
 let editingId = '';
 let hasUnsavedChanges = false;
 let pendingTemplate = null;
@@ -14,8 +15,11 @@ const editor = document.getElementById('template-content');
 const highlight = document.querySelector('#template-highlight code');
 
 kind.addEventListener('change', updateFormMode);
-document.getElementById('template-item').addEventListener('change', renderOutputExample);
-document.getElementById('template-filter').addEventListener('change', loadTemplates);
+document.getElementById('template-item').addEventListener('change', () => { updateFormMode(); renderOutputExample(); });
+document.getElementById('template-filter').addEventListener('change', applyTemplateFilters);
+document.getElementById('template-os-filter').addEventListener('change', applyTemplateFilters);
+document.getElementById('template-group-filter').addEventListener('change', () => { updateTemplateItemFilter(); applyTemplateFilters(); });
+document.getElementById('template-item-filter').addEventListener('change', applyTemplateFilters);
 document.getElementById('btn-template-reset').addEventListener('click', resetForm);
 form.addEventListener('submit', saveTemplate);
 form.addEventListener('input', () => { hasUnsavedChanges = true; });
@@ -53,6 +57,9 @@ function updateFormMode() {
   const linuxOption = document.querySelector('#template-os option[value="Linux"]');
   if (linuxOption) linuxOption.disabled = part;
   if (part && document.getElementById('template-os').value !== 'Windows') document.getElementById('template-os').value = 'Windows';
+  const selectedItem = commonCodes?.scriptItems.find((entry) => entry.value === document.getElementById('template-item').value);
+  const queryCapableItem = ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(selectedItem?.value);
+  document.querySelectorAll('.template-query-option').forEach((node) => { node.hidden = !(part && selectedItem?.role === 'DB' && queryCapableItem); });
   help.textContent = part
     ? '점검 항목별 스크립트는 서버 정책에서 선택한 항목만 다운로드 시 조립됩니다. 각 항목은 자기 점검 결과만 수집하고, 최종 JSON 예시는 오른쪽에 표시됩니다. 실행 준비 항목의 @@CONFIG_BASE64@@ 토큰은 지우지 마세요.'
     : kind.value === 'SCRIPT'
@@ -76,6 +83,7 @@ function renderOutputExample() {
     WEB: { checks: { web: { status: 'Healthy', product: 'WebtoB', detail: { status: 'Healthy', command: 'wsadmin: wi, ci -s, st -v, st -s' } } } },
     WAS: { checks: { was: { status: 'Healthy', product: 'JEUS', items: [{ processId: 1200, processName: 'java', heapUsagePercent: 48, status: 'Healthy' }] } } },
     DATABASE: { checks: { database: { status: 'Healthy', product: 'MSSQL', detail: { serverName: 'SQL01', version: '16.0', databaseCount: 4, offlineCount: 0 } } } },
+    DB_CUSTOM_QUERY: { checks: { rolePolicies: { DB: { status: 'Healthy', items: [{ item: 'DB_CUSTOM_QUERY', name: '기타 사용자 쿼리', status: 'Healthy', detail: { queries: [{ name: '활성 세션 조회', status: 'Healthy', rowCount: 1, output: 'session_count | 12' }] } }] } } } },
   };
   const pane = document.getElementById('template-output-example');
   if (!pane) return;
@@ -102,6 +110,9 @@ async function loadTemplates() {
     populateCodeSelect(document.getElementById('template-item'), commonCodes.scriptItems);
     populateCodeSelect(document.getElementById('template-role'), commonCodes.serverRoles, '모든 역할');
     populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...commonCodes.templateKinds]);
+    populateCodeSelect(document.getElementById('template-os-filter'), [{ value: '', label: '전체 OS' }, ...commonCodes.operatingSystems]);
+    populateCodeSelect(document.getElementById('template-group-filter'), [{ value: '', label: '전체 영역' }, { value: 'COMMON', label: '공통 기본' }, { value: 'WEB', label: 'WEB' }, { value: 'WAS', label: 'WAS' }, { value: 'DB', label: 'DB' }, { value: 'SYSTEM', label: '시스템·전체 스크립트' }]);
+    updateTemplateItemFilter();
     updateFormMode();
   }
   const requestedKind = new URLSearchParams(location.search).get('kind');
@@ -110,26 +121,72 @@ async function loadTemplates() {
     kind.value = requestedKind;
     updateFormMode();
   }
-  const filter = document.getElementById('template-filter').value;
-  const response = await fetch(`/api/templates${filter ? `?kind=${filter}` : ''}`);
-  templates = response.ok ? await response.json() : [];
+  const response = await fetch('/api/templates');
+  allTemplates = response.ok ? await response.json() : [];
   const requestedParams = new URLSearchParams(location.search);
   const requestedItem = requestedParams.get('item');
   const requestedId = requestedParams.get('id');
   if (requestedItem) {
     kind.value = 'SCRIPT_PART';
     document.getElementById('template-item').value = requestedItem;
+    const definition = commonCodes.scriptItems.find((entry) => entry.value === requestedItem);
+    document.getElementById('template-group-filter').value = definition?.role || (['START', 'SAVE'].includes(requestedItem) ? 'SYSTEM' : 'COMMON');
+    updateTemplateItemFilter();
+    document.getElementById('template-item-filter').value = requestedItem;
     updateFormMode();
-    templates = templates.filter((item) => item.kind === 'SCRIPT_PART' && item.item === requestedItem);
   }
-  renderList();
   if (requestedId) {
-    const selected = templates.find((item) => item.id === requestedId);
+    const selected = allTemplates.find((item) => item.id === requestedId);
+    if (selected) setTemplateFilters(selected);
+  }
+  applyTemplateFilters();
+  if (requestedId) {
+    const selected = allTemplates.find((item) => item.id === requestedId);
     if (selected) {
       document.body.classList.add('template-direct-edit');
       openTemplate(selected);
     }
   }
+}
+
+function getTemplateGroup(template) {
+  if (template.kind === 'QUERY') return 'DB';
+  if (['WEB', 'WAS', 'DB'].includes(template.role)) return template.role;
+  if (template.kind === 'SCRIPT') return 'SYSTEM';
+  const definition = commonCodes.scriptItems.find((entry) => entry.value === template.item);
+  if (definition?.role) return definition.role;
+  return ['START', 'SAVE'].includes(template.item) ? 'SYSTEM' : 'COMMON';
+}
+
+function setTemplateFilters(template) {
+  document.getElementById('template-filter').value = template.kind;
+  document.getElementById('template-os-filter').value = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
+  document.getElementById('template-group-filter').value = getTemplateGroup(template);
+  updateTemplateItemFilter();
+  document.getElementById('template-item-filter').value = template.item || '';
+}
+
+function updateTemplateItemFilter() {
+  if (!commonCodes) return;
+  const group = document.getElementById('template-group-filter').value;
+  const items = commonCodes.scriptItems.filter((entry) => !group || getTemplateGroup({ kind: 'SCRIPT_PART', item: entry.value, role: entry.role }) === group);
+  populateCodeSelect(document.getElementById('template-item-filter'), [{ value: '', label: '전체 항목' }, ...items]);
+}
+
+function applyTemplateFilters() {
+  if (!commonCodes) return;
+  const kindFilter = document.getElementById('template-filter').value;
+  const osFilter = document.getElementById('template-os-filter').value;
+  const groupFilter = document.getElementById('template-group-filter').value;
+  const itemFilter = document.getElementById('template-item-filter').value;
+  templates = allTemplates.filter((template) => {
+    const templateOs = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
+    return (!kindFilter || template.kind === kindFilter)
+      && (!osFilter || templateOs === osFilter)
+      && (!groupFilter || getTemplateGroup(template) === groupFilter)
+      && (!itemFilter || template.item === itemFilter || (template.kind === 'QUERY' && itemFilter === 'DB_CUSTOM_QUERY'));
+  });
+  renderList();
 }
 
 function populateCodeSelect(select, codes, placeholder) {
@@ -150,7 +207,8 @@ function renderList() {
     const info = document.createElement('div');
     const title = document.createElement('strong'); title.textContent = item.name;
     const typeLabel = item.kind === 'SCRIPT_PART' ? `점검 항목 · ${item.item || '미지정'}` : item.kind === 'SCRIPT' ? '전체 스크립트' : 'DB 쿼리';
-    const meta = document.createElement('small'); meta.textContent = `${typeLabel}${item.os ? ` · ${item.os}` : ''}${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''} · ${item.enabled ? '사용' : '중지'}`;
+    const osLabel = item.os || (item.kind === 'QUERY' ? 'Windows' : '');
+    const meta = document.createElement('small'); meta.textContent = `${typeLabel}${osLabel ? ` · ${osLabel}` : ''}${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''} · ${item.enabled ? '사용' : '중지'}`;
     info.append(title, meta);
     const actions = document.createElement('div'); actions.className = 'button-area';
     const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.setAttribute('aria-label', `${item.name} 삭제`);
@@ -177,6 +235,7 @@ function openTemplate(item) {
   kind.value = item.kind;
   document.getElementById('template-os').value = item.os || 'Windows';
   document.getElementById('template-item').value = item.item || 'START';
+  document.getElementById('template-uses-query').checked = item.usesQueryTemplate === true;
   document.getElementById('template-role').value = item.role || '';
   document.getElementById('template-product').value = item.product || '';
   document.getElementById('template-enabled').checked = item.enabled;
@@ -197,6 +256,7 @@ async function persistTemplate() {
     name: document.getElementById('template-name').value.trim(), kind: kind.value,
     os: ['SCRIPT', 'SCRIPT_PART'].includes(kind.value) ? document.getElementById('template-os').value : undefined,
     item: kind.value === 'SCRIPT_PART' ? document.getElementById('template-item').value : undefined,
+    usesQueryTemplate: kind.value === 'SCRIPT_PART' && ['DB_INSTANCE_STATUS', 'DB_CUSTOM_QUERY'].includes(document.getElementById('template-item').value) && document.getElementById('template-uses-query').checked,
     role: kind.value === 'SCRIPT' ? document.getElementById('template-role').value || undefined : undefined,
     product: kind.value === 'SCRIPT' ? document.getElementById('template-product').value.trim() || undefined : undefined,
     enabled: document.getElementById('template-enabled').checked,
@@ -208,10 +268,10 @@ async function persistTemplate() {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) { alert(result.message || '템플릿 저장에 실패했습니다.'); return false; }
   const saved = result.data;
-  templates = templates.some((item) => item.id === saved.id) ? templates.map((item) => item.id === saved.id ? saved : item) : [...templates, saved];
+  allTemplates = allTemplates.some((item) => item.id === saved.id) ? allTemplates.map((item) => item.id === saved.id ? saved : item) : [...allTemplates, saved];
   editingId = saved.id;
   hasUnsavedChanges = false;
-  renderList();
+  applyTemplateFilters();
   return true;
 }
 

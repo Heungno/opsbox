@@ -12,8 +12,13 @@ export function generateScript(serverId: string): string {
 
   const queryTemplate = getTemplate(server.queryTemplateId);
   if (queryTemplate?.enabled && queryTemplate.kind !== 'QUERY') throw new Error('선택한 쿼리 템플릿이 QUERY 유형이 아닙니다.');
+  const customQueryTemplates = (server.customQueryTemplateIds ?? []).map((id) => {
+    const template = getTemplate(id);
+    if (!template?.enabled || template.kind !== 'QUERY') throw new Error(`DB 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
+    return template;
+  });
   return server.os === 'Windows'
-    ? assembleWindowsScript(server, getTemplates({ kind: 'SCRIPT_PART' }), queryTemplate?.enabled ? queryTemplate.content : undefined)
+    ? assembleWindowsScript(server, getTemplates({ kind: 'SCRIPT_PART' }), queryTemplate?.enabled ? queryTemplate.content : undefined, customQueryTemplates)
     : generateLinuxScript(server);
 }
 

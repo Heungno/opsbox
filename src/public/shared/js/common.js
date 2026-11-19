@@ -40,31 +40,38 @@ async function loadSidebar() {
   initializeSidebarTheme();
 
   bindSidebarToggle();
+  bindSettingsMenu();
 
   activateCurrentMenu();
 }
 
 function initializeSidebarTheme() {
   const sidebar = document.getElementById('sidebar');
-  const select = document.getElementById('sidebar-theme');
-  if (!sidebar || !select) return;
+  const button = document.getElementById('theme-toggle');
+  if (!sidebar || !button) return;
 
-  const themes = ['ocean', 'light', 'forest'];
-  const savedTheme = localStorage.getItem('sidebar-theme');
-  const theme = themes.includes(savedTheme) ? savedTheme : 'ocean';
+  const savedTheme = localStorage.getItem('opsbox-theme');
+  const theme = savedTheme === 'dark' ? 'dark' : 'light';
   applyTheme(theme, sidebar);
-  select.value = theme;
-
-  select.addEventListener('change', () => {
-    const selectedTheme = themes.includes(select.value) ? select.value : 'ocean';
-    applyTheme(selectedTheme, sidebar);
-    localStorage.setItem('sidebar-theme', selectedTheme);
+  button.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme, sidebar);
+    localStorage.setItem('opsbox-theme', nextTheme);
   });
 }
 
 function applyTheme(theme, sidebar) {
   document.documentElement.dataset.theme = theme;
   sidebar.dataset.theme = theme;
+  const button = document.getElementById('theme-toggle');
+  const icon = document.getElementById('theme-toggle-icon');
+  const label = document.getElementById('theme-toggle-label');
+  if (button && icon && label) {
+    const nextLabel = theme === 'dark' ? '밝은 테마' : '어두운 테마';
+    icon.textContent = theme === 'dark' ? '☀' : '☾';
+    label.textContent = nextLabel;
+    button.setAttribute('aria-label', `${nextLabel}로 전환`);
+  }
 }
 
 function bindSidebarToggle() {
@@ -86,6 +93,27 @@ function bindSidebarToggle() {
     const collapsed = sidebar.classList.contains('collapsed');
 
     localStorage.setItem('sidebar-collapsed', collapsed);
+  });
+}
+
+function bindSettingsMenu() {
+  const button = document.getElementById('settings-menu-toggle');
+  const submenu = document.getElementById('settings-submenu');
+  if (!button || !submenu) return;
+  button.addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
+    const layout = document.querySelector('.layout');
+    if (sidebar?.classList.contains('collapsed')) {
+      sidebar.classList.remove('collapsed');
+      layout?.classList.remove('sidebar-collapsed');
+      localStorage.setItem('sidebar-collapsed', 'false');
+      button.setAttribute('aria-expanded', 'true');
+      submenu.hidden = false;
+      return;
+    }
+    const expanded = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!expanded));
+    submenu.hidden = expanded;
   });
 }
 
@@ -119,13 +147,21 @@ function activateCurrentMenu() {
   if (path.includes('report')) {
     activeMenu = 'reports';
   }
-  if (path.includes('settings')) activeMenu = 'settings';
+  if (path.includes('settings')) activeMenu = 'settings-scripts';
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {
     if (link.dataset.menu === activeMenu) {
       link.classList.add('active');
     }
   });
+  const settingsActive = ['servers', 'settings-scripts'].includes(activeMenu);
+  const settingsButton = document.getElementById('settings-menu-toggle');
+  const settingsSubmenu = document.getElementById('settings-submenu');
+  if (settingsButton && settingsSubmenu) {
+    settingsButton.classList.toggle('active', settingsActive);
+    settingsButton.setAttribute('aria-expanded', String(settingsActive));
+    settingsSubmenu.hidden = !settingsActive;
+  }
 }
 
 window.opsboxLayoutReady = applySharedLayout();
