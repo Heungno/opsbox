@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OpsBox | 점검 보고서 상세</title>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261119-textarea-style" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261119-wsadmin-console" />
   <style>
     @page { size: A4 portrait; margin: 14mm 12mm 16mm; }
     @media print {
@@ -180,7 +180,7 @@
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
       <section id="webtob-report-details" class="report-subsection" hidden>
         <h3>WebtoB wsadmin 점검 결과</h3>
-        <pre id="webtob-check-output" class="policy-help" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+        <pre id="webtob-check-output" class="webtob-console-output"></pre>
       </section>
       <h3>현재 자동 수집되지 않는 항목</h3>
       <table class="server-table type-check-table"><thead><tr><th>수동 확인 항목</th><th>상태</th><th>참고</th></tr></thead><tbody id="type-pending-list"></tbody></table>
@@ -221,7 +221,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261119-uptime-units"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261119-wsadmin-console"></script>
 </body>
 
 </html>

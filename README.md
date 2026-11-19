@@ -54,6 +54,18 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 서버 역할, 운영체제, 제품, 포트 프로토콜, 스크립트 항목 등 선택값을 `data/common-codes.json`에서 관리
 - `/api/common-codes`를 통해 화면 선택 목록을 공통코드 JSON과 동기화
 
+## 실행 및 빌드
+
+```powershell
+npm install
+npm run build
+npm start
+```
+
+`npm run build`는 TypeScript 서버 코드와 화면·스크립트·템플릿 초기 데이터를 `dist/`에 모읍니다. 실행 환경은 Node.js 22 이상이어야 합니다. 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요. `dist/data`의 JSON 파일은 운영 중 변경되는 서버·정책 데이터이므로 배포 갱신 때 보존해야 합니다.
+
+빌드 없이 개발할 때는 `npm run dev`를 사용합니다.
+
 ---
 
 ## 화면 파일 구조

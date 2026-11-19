@@ -1,3 +1,4 @@
+import type { FastifyInstance } from 'fastify';
 import { serverRoutes } from './serverRoutes';
 import { scriptRoutes } from './scriptRoutes';
 import { resultRoutes } from './resultRoutes';

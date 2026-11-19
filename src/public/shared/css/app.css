@@ -1594,6 +1594,7 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .compact-history-table { font-size: 11px; }
 .compact-history-table th, .compact-history-table td { padding: 5px 6px; }
 .compact-history-table .btn { padding: 3px 7px; font-size: 10px; }
+.webtob-console-output { max-height: 560px; overflow: auto; margin: 8px 0 0; padding: 16px; border: 1px solid #29384e; border-radius: 10px; background: #111923; color: #d6e2f2; font: 12px/1.65 Consolas, 'Courier New', monospace; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4; }
 @media (max-width: 760px) {
   .server-overview-checks { grid-template-columns: minmax(0, 1fr); }
   .compact-history-table { display: block; overflow-x: auto; }

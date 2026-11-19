@@ -1,5 +1,6 @@
 # 로컬 환경 설정에는 공유 폴더 경로 등 개인별 설정이 들어갈 수 있습니다.
 node_modules/
+dist/
 data/
 .prettierrc
 .env

@@ -241,6 +241,10 @@ function renderTypeReportForm(serverTypes, data, productMap) {
 
 function summarizeRolePolicyDetail(item) {
   if (item.message) return item.message;
+  if (item.item === 'WEB_ENGINE_STATUS') {
+    const command = item.detail?.command || item.command;
+    return command ? `${command} 실행 결과 확인` : 'WebtoB 엔진 상태 확인';
+  }
   if (['WEB_LOG', 'WAS_LOG'].includes(item.item) && item.detail?.categories) {
     const counts = item.detail.categories;
     return `최근 ${item.detail.periodDays ?? 7}일 · 파일 ${item.detail.checkedFileCount ?? 0}개 · Fatal ${counts.fatal ?? 0} · Error/Exception ${counts.errorException ?? 0} · Warning ${counts.warning ?? 0} · HTTP 5xx ${counts.http5xx ?? 0} · HTTP 4xx ${counts.http4xx ?? 0}`;
