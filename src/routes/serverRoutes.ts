@@ -9,6 +9,7 @@ import {
   getCheckConfig,
 } from '../services/serverService';
 import type { ScriptPart } from '../types/template';
+import type { Server } from '../types/server';
 
 export async function serverRoutes(app: FastifyInstance) {
   app.get('/servers', async () => {
@@ -50,7 +51,7 @@ export async function serverRoutes(app: FastifyInstance) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, queryTemplateId, customQueryTemplateIds } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, rolePolicySettings, queryTemplateId, customQueryTemplateIds } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
@@ -58,6 +59,7 @@ export async function serverRoutes(app: FastifyInstance) {
       httpChecks?: any[];
       scriptParts?: Partial<Record<ScriptPart, string>>;
       roleChecks?: Partial<Record<'WEB' | 'WAS' | 'DB', ScriptPart[]>>;
+      rolePolicySettings?: Server['rolePolicySettings'];
       queryTemplateId?: string;
       customQueryTemplateIds?: string[];
     };
@@ -70,6 +72,7 @@ export async function serverRoutes(app: FastifyInstance) {
       httpChecks,
       scriptParts,
       roleChecks,
+      rolePolicySettings,
       queryTemplateId,
       customQueryTemplateIds,
     });

@@ -666,14 +666,16 @@ async function savePolicy() {
     const scriptParts = { ...selectedScriptParts };
     const rolePolicySettings = structuredClone(selectedRolePolicySettings);
     document.querySelectorAll('[data-log-directories]').forEach((input) => {
-      const item = input.dataset.logDirectories;
+      const item = input.getAttribute('data-log-directories') || input.dataset.logDirectories;
+      if (!['WEB_LOG', 'WAS_LOG'].includes(item)) return;
       rolePolicySettings[item] = {
         ...(rolePolicySettings[item] ?? {}),
         logDirectories: input.value.split(/\r?\n/).map((path) => path.trim()).filter(Boolean),
       };
     });
     document.querySelectorAll('[data-log-period-days]').forEach((input) => {
-      const item = input.dataset.logPeriodDays;
+      const item = input.getAttribute('data-log-period-days') || input.dataset.logPeriodDays;
+      if (!['WEB_LOG', 'WAS_LOG'].includes(item)) return;
       rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), periodDays: Number(input.value) };
     });
     const queryTemplateId = selectedQueryTemplateId || '';
@@ -701,7 +703,10 @@ async function savePolicy() {
 
     if (!response.ok) {
       console.error(result);
-      alert(result.message ?? '정책 저장에 실패했습니다.');
+      const validationMessages = Array.isArray(result.errors)
+        ? result.errors.map((error) => error.message).filter(Boolean).join('\n')
+        : '';
+      alert(validationMessages || result.message || '정책 저장에 실패했습니다.');
       return;
     }
 
@@ -796,7 +801,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         const folderField = document.createElement('label'); folderField.className = 'role-policy-option';
         const folderLabel = document.createElement('span'); folderLabel.textContent = `${role} 로그 폴더 (한 줄에 하나씩)`;
         const folderInput = document.createElement('textarea'); folderInput.rows = 2; folderInput.placeholder = item === 'WEB_LOG' ? '예: C:\\WebtoB\\log' : '예: C:\\JEUS6\\domains\\domain1\\servers\\server1\\logs'; folderInput.value = (setting.logDirectories ?? []).join('\n');
-        folderInput.dataset.logDirectories = item;
+        folderInput.setAttribute('data-log-directories', item);
         const folderHelp = document.createElement('small'); folderHelp.textContent = '지정한 폴더의 하위 폴더도 함께 검사합니다.';
         folderInput.addEventListener('input', () => {
           selectedRolePolicySettings[item] = { ...setting, ...(selectedRolePolicySettings[item] ?? {}), logDirectories: folderInput.value.split(/\r?\n/).map((path) => path.trim()).filter(Boolean) };
@@ -806,7 +811,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         const periodField = document.createElement('label'); periodField.className = 'role-policy-option';
         const periodLabel = document.createElement('span'); periodLabel.textContent = '조회 기간 (최근 일)';
         const periodInput = document.createElement('input'); periodInput.type = 'number'; periodInput.min = '1'; periodInput.max = '90'; periodInput.step = '1'; periodInput.value = String(setting.periodDays ?? 7);
-        periodInput.dataset.logPeriodDays = item;
+        periodInput.setAttribute('data-log-period-days', item);
         periodInput.addEventListener('input', () => {
           const periodDays = Number(periodInput.value);
           selectedRolePolicySettings[item] = { ...setting, ...(selectedRolePolicySettings[item] ?? {}), periodDays };

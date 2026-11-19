@@ -237,7 +237,7 @@ export function updateCheckConfig(
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
   const validParts = new Set<ScriptPart>(['START', 'SAVE', ...COMMON_CODES.scriptItems.map(({ value }) => value as ScriptPart)]);
   const roleChecks = config.roleChecks ?? servers[index].roleChecks ?? {};
-  const rolePolicySettings = { ...(config.rolePolicySettings ?? servers[index].rolePolicySettings ?? {}) };
+  const rolePolicySettings = { ...(servers[index].rolePolicySettings ?? {}), ...(config.rolePolicySettings ?? {}) };
   const logPolicies = [
     { role: 'WEB' as const, item: 'WEB_LOG' as const, label: 'WEB' },
     { role: 'WAS' as const, item: 'WAS_LOG' as const, label: 'WAS' },
@@ -245,12 +245,15 @@ export function updateCheckConfig(
   for (const logPolicy of logPolicies) {
     const { item, role, label } = logPolicy;
     const setting = rolePolicySettings[item] ?? {};
-    const directories = setting.logDirectories;
+    const rawDirectories: unknown = setting.logDirectories;
+    const directories: unknown = typeof rawDirectories === 'string'
+      ? rawDirectories.split(/\r?\n/).map((directory) => directory.trim()).filter(Boolean)
+      : rawDirectories;
     if (directories !== undefined) {
-      if (!Array.isArray(directories) || directories.some((path) => typeof path !== 'string' || !path.trim() || path.length > 1024)) {
+      if (!Array.isArray(directories) || directories.some((path: unknown) => typeof path !== 'string' || !path.trim() || path.length > 1024)) {
         errors.push({ field: `rolePolicySettings.${item}.logDirectories`, message: `${label} 로그 폴더는 비어 있지 않은 경로 목록이어야 합니다.` });
       } else {
-        setting.logDirectories = [...new Set(directories.map((path) => path.trim()))];
+        setting.logDirectories = [...new Set((directories as string[]).map((path) => path.trim()))];
       }
     }
     const enabled = (roleChecks[role] ?? []).includes(item);
