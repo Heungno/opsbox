@@ -804,8 +804,11 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
   const selectedId = selectedScriptParts[item] || '';
   const selected = available.find((template) => template.id === selectedId);
+  const defaultTemplate = getDefaultScriptTemplate(item);
   const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
-  choose.textContent = selected?.name || (selectedId ? '저장된 템플릿 없음' : '기본 스크립트');
+  choose.textContent = selected
+    ? `${isDefaultScriptTemplate(selected, item) ? '기본' : '사용자'} · ${selected.name}`
+    : selectedId ? '저장된 템플릿 없음' : `기본 · ${defaultTemplate?.name || '기본 스크립트'}`;
   choose.setAttribute('aria-label', `${label} 스크립트 선택`);
   choose.addEventListener('click', () => openScriptTemplatePicker(item, label));
   wrapper.append(choose);
@@ -839,7 +842,13 @@ function bindScriptTemplatePicker() {
 
 function updateSelectedTemplateEditButton() {
   const selectedId = document.getElementById('script-template-picker-select').value;
-  document.getElementById('script-template-picker-edit').hidden = !managedTemplates.some((template) => template.id === selectedId && template.kind === 'SCRIPT_PART');
+  const item = document.getElementById('script-template-picker').dataset.item;
+  const template = selectedId
+    ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
+    : getDefaultScriptTemplate(item);
+  const editButton = document.getElementById('script-template-picker-edit');
+  editButton.hidden = !template;
+  editButton.textContent = selectedId ? '선택 스크립트 수정' : '기본 스크립트 수정';
 }
 
 function openScriptTemplatePicker(item, label) {
@@ -853,9 +862,13 @@ function openScriptTemplatePicker(item, label) {
 
 function populateScriptTemplatePicker(item) {
   const select = document.getElementById('script-template-picker-select');
-  select.replaceChildren(new Option('기본 스크립트 사용', ''));
+  const defaultTemplate = getDefaultScriptTemplate(item);
+  select.replaceChildren(new Option(`기본값 사용 · ${defaultTemplate?.name || getScriptItemLabel(item)}`, ''));
   const available = managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === currentServer.os && template.item === item);
-  available.forEach((template) => select.add(new Option(template.name, template.id)));
+  available.forEach((template) => {
+    const category = isDefaultScriptTemplate(template, item) ? '기본 제공' : '사용자 지정';
+    select.add(new Option(`${category} · ${template.name}`, template.id));
+  });
   const selectedId = selectedScriptParts[item] || '';
   if (selectedId && !available.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
   select.value = selectedId;
@@ -891,9 +904,21 @@ function updateQueryTemplatePicker(item) {
 
 function openSelectedTemplatePage() {
   const selectedId = document.getElementById('script-template-picker-select').value;
-  const template = managedTemplates.find((item) => item.id === selectedId && item.kind === 'SCRIPT_PART');
-  if (!template) { alert('수정할 스크립트를 먼저 선택하세요. 기본 스크립트는 수정할 수 없습니다.'); return; }
+  const item = document.getElementById('script-template-picker').dataset.item;
+  const template = selectedId
+    ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
+    : getDefaultScriptTemplate(item);
+  if (!template) { alert('수정할 스크립트를 찾을 수 없습니다. 스크립트 관리에서 확인하세요.'); return; }
   window.open(`/settings/templates?id=${encodeURIComponent(template.id)}`, '_blank', 'noopener');
+}
+
+function getDefaultScriptTemplate(item) {
+  return managedTemplates.find((template) => template.id === `${currentServer?.os?.toUpperCase()}-PART-${item}` && template.os === currentServer?.os && template.kind === 'SCRIPT_PART')
+    || managedTemplates.find((template) => template.kind === 'SCRIPT_PART' && template.os === currentServer?.os && template.item === item && template.id.startsWith(`${currentServer?.os?.toUpperCase()}-PART-`));
+}
+
+function isDefaultScriptTemplate(template, item) {
+  return template.id === `WINDOWS-PART-${item}` || template.id === `${currentServer?.os?.toUpperCase()}-PART-${item}`;
 }
 
 function getActiveScriptItems(roles, roleChecks) {
