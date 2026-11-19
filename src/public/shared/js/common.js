@@ -147,7 +147,7 @@ function activateCurrentMenu() {
   if (path.includes('report')) {
     activeMenu = 'reports';
   }
-  if (path.includes('settings')) activeMenu = 'settings-scripts';
+  if (path.includes('/settings/script-management') || path.includes('/settings/templates')) activeMenu = 'settings-scripts';
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {
     if (link.dataset.menu === activeMenu) {

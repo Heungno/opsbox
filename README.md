@@ -30,9 +30,9 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 전체 화면에서 공통 레이아웃을 사용하고 공통 CSS·JavaScript·HTML 조각을 `src/public/shared`에 배치해 페이지별 폴더와 구분
 - 사이드바 메뉴를 대시보드, 점검 보고서, 설정으로 구성하고 설정 아래에 서버 관리·스크립트 관리를 배치
 - 해/달 토글로 전체 화면 밝은 테마와 어두운 테마를 전환
-- 스크립트 관리 화면은 목록과 편집기를 함께 표시하며, 서버 상세에서 선택 스크립트를 수정할 때는 해당 템플릿 편집 화면을 바로 엶
+- 스크립트 관리 화면은 전체 목록과 편집기를 함께 표시하며, 서버 상세에서 수정할 때는 해당 템플릿을 목록에서 선택한 상태로 엶
 - 서버 상세의 점검 정책별 Windows 스크립트 템플릿 지정 및 다운로드 조립
-- 서버 상세 점검 정책에서 공통·WEB/WAS·DB 항목별 선택 모달로 스크립트를 지정하고, 선택한 스크립트는 목록 없이 해당 편집 화면에서 수정
+- 서버 상세 점검 정책에서 공통·WEB/WAS·DB 항목별 선택 모달로 스크립트를 지정하고, 수정 화면에서도 전체 목록과 선택 항목을 함께 표시
 - DB 쿼리 선택은 MSSQL 쿼리를 실행하는 DB 인스턴스·접속 스크립트에만 표시
 - DB 점검의 기타 사용자 쿼리에서 여러 개의 사용자 SQL 템플릿을 선택하고 항목별 실행 결과를 보고서에 기록
 - 스크립트 관리 목록에서 템플릿 종류, OS, 점검 영역, 점검 항목별 필터 제공
@@ -52,6 +52,36 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI
 - 서버 역할, 운영체제, 제품, 포트 프로토콜, 스크립트 항목 등 선택값을 `data/common-codes.json`에서 관리
 - `/api/common-codes`를 통해 화면 선택 목록을 공통코드 JSON과 동기화
+
+---
+
+## 화면 파일 구조
+
+화면은 메뉴 기준으로 폴더와 파일명을 맞추고, 각 화면의 HTML과 JavaScript를 같은 폴더에 둡니다.
+
+```text
+src/public/
+├─ dashboard/
+│  ├─ dashboard.html
+│  └─ dashboard.js
+├─ reports/
+│  ├─ report-list.html
+│  ├─ report-list.js
+│  ├─ report-detail.html
+│  └─ report-detail.js
+├─ settings/
+│  ├─ server-management/
+│  │  ├─ server-list.html / server-list.js
+│  │  └─ server-detail.html / server-detail.js
+│  └─ script-management/
+│     └─ script-management.html / script-management.js
+└─ shared/
+   ├─ css/
+   ├─ fragments/
+   └─ js/
+```
+
+서버 상세에서 스크립트를 수정하면 스크립트 관리 전체 화면을 열고, 목록 전체를 보여주면서 해당 스크립트를 선택합니다. 기존 `/servers` 및 `/settings/templates` 경로도 호환용으로 유지합니다.
 
 ---
 
@@ -105,7 +135,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 
 - 스크립트 템플릿은 서버별로 지정해 사용자 변수로 서버 설정을 삽입할 수 있습니다.
 - DB 쿼리 템플릿은 MSSQL 점검에서 선택적으로 사용하며, 지정하지 않으면 내장 읽기 전용 기본 쿼리를 사용합니다.
-- 템플릿 관리는 `/settings/templates`에서 수행합니다.
+- 스크립트 관리는 `/settings/script-management`에서 수행합니다.
 
 ---
 

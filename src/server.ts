@@ -40,18 +40,21 @@ app.register(fastifyStatic, {
  * Home
  */
 app.get('/', async (request, reply) => {
-  return reply.sendFile('dashboard/index.html');
+  return reply.sendFile('dashboard/dashboard.html');
 });
 
-app.get('/dashboard', async (request, reply) => reply.sendFile('dashboard/index.html'));
-app.get('/servers', async (request, reply) => reply.sendFile('servers/index.html'));
-app.get('/servers/detail', async (request, reply) => reply.sendFile('servers/detail.html'));
-app.get('/reports', async (request, reply) => reply.sendFile('reports/index.html'));
-app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/detail.html'));
-app.get('/settings/templates', async (request, reply) => reply.sendFile('settings/templates.html'));
+app.get('/dashboard', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
+app.get('/servers', async (request, reply) => reply.sendFile('settings/server-management/server-list.html'));
+app.get('/settings/server-management', async (request, reply) => reply.sendFile('settings/server-management/server-list.html'));
+app.get('/servers/detail', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
+app.get('/settings/server-management/detail', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
+app.get('/reports', async (request, reply) => reply.sendFile('reports/report-list.html'));
+app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/report-detail.html'));
+app.get('/settings/templates', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
+app.get('/settings/script-management', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
 
 // Keep previous page URLs working for existing bookmarks.
-app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/index.html'));
+app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
 app.get('/server', async (request, reply) => reply.redirect('/servers'));
 app.get('/server.html', async (request, reply) => reply.redirect('/servers'));
 app.get('/server-detail.html', async (request, reply) => reply.redirect(`/servers/detail${request.url.slice('/server-detail.html'.length)}`));

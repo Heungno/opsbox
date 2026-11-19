@@ -17,7 +17,7 @@ async function init() {
 
   if (!serverId || !file) {
     alert('잘못된 접근입니다.');
-    location.href = '/servers';
+    location.href = '/settings/server-management';
     return;
   }
 
@@ -25,7 +25,7 @@ async function init() {
 
   const backBtn = document.getElementById('btn-back');
   if (backBtn) {
-    backBtn.href = `/servers/detail?id=${encodeURIComponent(serverId)}`;
+    backBtn.href = `/settings/server-management/detail?id=${encodeURIComponent(serverId)}`;
   }
 
   await loadHistoryAndReport(serverId, file);

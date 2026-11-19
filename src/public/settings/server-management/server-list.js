@@ -143,7 +143,7 @@ function renderServers() {
 
     const link = document.createElement("a");
 
-    link.href = `/servers/detail?id=${encodeURIComponent(server.id)}`;
+    link.href = `/settings/server-management/detail?id=${encodeURIComponent(server.id)}`;
 
     link.textContent = server.id;
 
@@ -170,7 +170,7 @@ function renderServers() {
     const detailButton = document.createElement("a");
     detailButton.textContent = "상세";
     detailButton.className = "btn btn-small";
-    detailButton.href = `/servers/detail?id=${encodeURIComponent(server.id)}`;
+    detailButton.href = `/settings/server-management/detail?id=${encodeURIComponent(server.id)}`;
 
     const deleteButton = document.createElement("button");
 

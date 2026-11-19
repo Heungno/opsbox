@@ -38,7 +38,7 @@ function renderRecentChecks(checks) {
     const serverName = document.createElement('td');
     const linkServer = document.createElement('a');
 
-    linkServer.href = `/servers/detail?id=${encodeURIComponent(item.serverId)}`;
+    linkServer.href = `/settings/server-management/detail?id=${encodeURIComponent(item.serverId)}`;
     linkServer.textContent = item.serverName;
     linkServer.className = 'server-link';
     serverName.appendChild(linkServer);

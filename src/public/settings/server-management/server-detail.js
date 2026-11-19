@@ -13,7 +13,7 @@ let commonCodes;
 
 async function init() {
   if (!serverId) {
-    location.href = '/servers';
+    location.href = '/settings/server-management';
     return;
   }
 
@@ -909,7 +909,7 @@ function openSelectedTemplatePage() {
     ? managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
     : getDefaultScriptTemplate(item);
   if (!template) { alert('수정할 스크립트를 찾을 수 없습니다. 스크립트 관리에서 확인하세요.'); return; }
-  window.open(`/settings/templates?id=${encodeURIComponent(template.id)}`, '_blank', 'noopener');
+  window.open(`/settings/script-management?id=${encodeURIComponent(template.id)}`, '_blank', 'noopener');
 }
 
 function getDefaultScriptTemplate(item) {
