@@ -1,3 +1,5 @@
+import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
+
 await window.opsboxLayoutReady;
 
 const params = new URLSearchParams(window.location.search);
@@ -1097,7 +1099,7 @@ function renderFinalJsonExample(activeItems, roleChecks) {
     };
   });
   const preview = document.getElementById('server-final-json-example');
-  if (preview) preview.textContent = JSON.stringify(example, null, 2);
+  if (preview) highlightJsonBlock(preview, JSON.stringify(example, null, 2));
 }
 
 init().catch((error) => { console.error(error); alert(error.message || '서버 상세 화면을 초기화하지 못했습니다.'); });

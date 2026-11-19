@@ -1,3 +1,5 @@
+import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
+
 await window.opsboxLayoutReady;
 
 let currentReportData = null;
@@ -152,7 +154,7 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     const webtobDetails = document.getElementById('webtob-report-details-WEB');
     if (webtobDetails) {
       webtobDetails.hidden = product !== 'WebtoB' || !data.webtobCheck;
-      document.getElementById('webtob-check-output-WEB').textContent = data.webtobCheck?.output || data.webtobCheck?.message || 'wsadmin 결과 없음';
+      highlightConsoleOutput(document.getElementById('webtob-check-output-WEB'), data.webtobCheck?.output || data.webtobCheck?.message || 'wsadmin 결과 없음');
     }
   }
 

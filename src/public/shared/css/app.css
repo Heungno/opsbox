@@ -1597,6 +1597,22 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .compact-history-table th, .compact-history-table td { padding: 5px 6px; }
 .compact-history-table .btn { padding: 3px 7px; font-size: 10px; }
 .webtob-console-output { max-height: 560px; overflow: auto; margin: 8px 0 0; padding: 16px; border: 1px solid #29384e; border-radius: 10px; background: #111923; color: #d6e2f2; font: 12px/1.65 Consolas, 'Courier New', monospace; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4; }
+.webtob-console-output .console-command { color: #a5d6ff; font-weight: 600; }
+.webtob-console-output .console-danger { color: #ff7b72; font-weight: 600; }
+.webtob-console-output .console-warning { color: #ffa657; font-weight: 600; }
+.webtob-console-output .console-success { color: #7ee787; font-weight: 600; }
+.webtob-console-output .console-info { color: #79c0ff; }
+.server-final-json-preview pre .syntax-json-key { color: #8250df; }
+.server-final-json-preview pre .syntax-json-string { color: #0a7f42; }
+.server-final-json-preview pre .syntax-json-number { color: #0550ae; }
+.server-final-json-preview pre .syntax-json-boolean { color: #cf222e; font-weight: 600; }
+.server-final-json-preview pre .syntax-json-null { color: #6e7781; font-style: italic; }
+.server-final-json-preview pre .syntax-json-punctuation { color: var(--text-light); }
+:root[data-theme="dark"] .server-final-json-preview pre .syntax-json-key { color: #d2a8ff; }
+:root[data-theme="dark"] .server-final-json-preview pre .syntax-json-string { color: #7ee787; }
+:root[data-theme="dark"] .server-final-json-preview pre .syntax-json-number { color: #79c0ff; }
+:root[data-theme="dark"] .server-final-json-preview pre .syntax-json-boolean { color: #ff7b72; }
+:root[data-theme="dark"] .server-final-json-preview pre .syntax-json-null { color: #8b949e; }
 @media (max-width: 760px) {
   .server-overview-checks { grid-template-columns: minmax(0, 1fr); }
   .compact-history-table { display: block; overflow-x: auto; }

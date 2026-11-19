@@ -7,6 +7,11 @@ import { getCommonCodes } from './commonCodeService';
 const FILE = 'data/templates.json';
 const MIGRATION_FILE = 'data/template-migrations.json';
 
+function bundledFile(directory: string, ...segments: string[]) {
+  const packagedPath = path.join(directory, ...segments);
+  return fs.existsSync(packagedPath) ? packagedPath : path.join('src', directory, ...segments);
+}
+
 function hasMigration(id: string) {
   if (!fs.existsSync(MIGRATION_FILE)) return false;
   try { return (JSON.parse(fs.readFileSync(MIGRATION_FILE, 'utf8')) as string[]).includes(id); } catch { return false; }
@@ -25,7 +30,7 @@ function sampleTemplates(): ManagedTemplate[] {
   const updatedAt = '2026-11-18T00:00:00.000Z';
   const sample = (id: string, name: string, kind: ManagedTemplate['kind'], file: string, os?: ManagedTemplate['os'], item?: ScriptPart): ManagedTemplate => ({
     id, name, kind, os, item, enabled: true,
-    content: fs.readFileSync(path.join('src', 'template-samples', file), 'utf8'), updatedAt,
+    content: fs.readFileSync(bundledFile('template-samples', file), 'utf8'), updatedAt,
   });
   return [
     sample('SAMPLE-WINDOWS-COMMON', '예제 · Windows 공통 자원만 (정책·제품 점검 제외)', 'SCRIPT', 'windows-common.ps1', 'Windows'),
@@ -65,7 +70,7 @@ function scriptParts(): ManagedTemplate[] {
     ['SAVE', '결과 저장·종료', 'system/save-result.ps1'],
   ];
   return items.map(([item, label, file]) => {
-    const sourcePath = path.join('src', 'script-parts', 'windows', file);
+    const sourcePath = bundledFile('script-parts', 'windows', file);
     if (!fs.existsSync(sourcePath)) throw new Error(`Windows 기본 점검 스크립트 파일을 찾을 수 없습니다: ${sourcePath}`);
     return {
       id: `WINDOWS-PART-${item}`,

@@ -27,6 +27,7 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 설정 화면에서 점검 항목별 PowerShell 템플릿과 SQL 쿼리를 관리하고, 다운로드 시 서버 설정에 맞춰 한 파일로 조립
 - Windows/Linux 공통 점검 스크립트 및 MSSQL 상태 쿼리 샘플 기본 제공
 - 템플릿 편집기에서 SQL, PowerShell, Bash 구문과 `{{변수}}` 토큰 색상 강조
+- 점검 보고서 WebtoB 콘솔 출력과 서버 상세 JSON 예시에도 구문별 색상 강조
 - 전체 화면에서 공통 레이아웃을 사용하고 공통 CSS·JavaScript·HTML 조각을 `src/public/shared`에 배치해 페이지별 폴더와 구분
 - 사이드바 메뉴를 대시보드, 점검 보고서, 설정으로 구성하고 설정 아래에 서버 관리·스크립트 관리를 배치
 - 해/달 토글로 전체 화면 밝은 테마와 어두운 테마를 전환
@@ -62,7 +63,7 @@ npm run build
 npm start
 ```
 
-`npm run build`는 TypeScript 서버 코드와 화면·스크립트·템플릿 초기 데이터를 `dist/`에 모읍니다. 실행 환경은 Node.js 22 이상이어야 합니다. 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요. `dist/data`의 JSON 파일은 운영 중 변경되는 서버·정책 데이터이므로 배포 갱신 때 보존해야 합니다.
+`npm run build`는 TypeScript 서버 코드, 화면, `dist/script-parts`, 템플릿 샘플과 공통코드를 `dist/`에 모읍니다. 실행 환경은 Node.js 22 이상이어야 합니다. 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요. `dist/data`의 운영 서버·정책·템플릿 데이터는 배포 갱신 때 보존해야 합니다.
 
 빌드 없이 개발할 때는 `npm run dev`를 사용합니다.
 
@@ -96,7 +97,7 @@ src/public/
 
 서버 상세에서 스크립트를 수정하면 스크립트 관리 전체 화면을 열고, 목록 전체를 보여주면서 해당 스크립트를 선택합니다. 기존 `/servers` 및 `/settings/templates` 경로도 호환용으로 유지합니다.
 
-Windows 스크립트 원본은 `src/script-parts/windows` 아래의 `common`, `web`, `was`, `db`, `system` 폴더에 점검 항목별 파일로 둡니다. 기본 템플릿은 이 원본 파일에서 생성되며, 현재 등록된 Windows 스크립트 원본은 모두 기본 템플릿에서 사용합니다.
+Windows 스크립트 원본은 `src/script-parts/windows` 아래의 `common`, `web`, `was`, `db`, `system` 폴더에 점검 항목별 파일로 둡니다. 기본 템플릿은 이 원본 파일에서 생성되며, 현재 등록된 Windows 스크립트 원본은 모두 기본 템플릿에서 사용합니다. 빌드 산출물에서는 기본 원본이 `dist/script-parts`에 포함됩니다.
 
 ---
 
