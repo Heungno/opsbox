@@ -1609,8 +1609,6 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .template-variable { border-radius: 3px; background: rgb(9 105 218 / 18%); color: var(--primary-bright, #0969da); font-weight: 700; }
 .template-help { margin-top: 8px; color: var(--text-light); font-size: 12px; }
 .template-workspace { display: grid; grid-template-columns: minmax(260px, 0.36fr) minmax(0, 1fr); align-items: start; gap: 18px; }
-.template-direct-edit .template-workspace { grid-template-columns: minmax(0, 1fr); }
-.template-direct-edit .template-list-panel { display: none; }
 .template-list-panel { position: static; min-width: 0; min-height: 0; overflow: hidden; }
 .template-editor-panel { min-width: 0; }
 .template-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 12px 12px; }

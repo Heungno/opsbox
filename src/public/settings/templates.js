@@ -135,15 +135,10 @@ async function loadTemplates() {
     document.getElementById('template-item-filter').value = requestedItem;
     updateFormMode();
   }
-  if (requestedId) {
-    const selected = allTemplates.find((item) => item.id === requestedId);
-    if (selected) setTemplateFilters(selected);
-  }
   applyTemplateFilters();
   if (requestedId) {
     const selected = allTemplates.find((item) => item.id === requestedId);
     if (selected) {
-      document.body.classList.add('template-direct-edit');
       openTemplate(selected);
     }
   }
@@ -156,14 +151,6 @@ function getTemplateGroup(template) {
   const definition = commonCodes.scriptItems.find((entry) => entry.value === template.item);
   if (definition?.role) return definition.role;
   return ['START', 'SAVE'].includes(template.item) ? 'SYSTEM' : 'COMMON';
-}
-
-function setTemplateFilters(template) {
-  document.getElementById('template-filter').value = template.kind;
-  document.getElementById('template-os-filter').value = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
-  document.getElementById('template-group-filter').value = getTemplateGroup(template);
-  updateTemplateItemFilter();
-  document.getElementById('template-item-filter').value = template.item || '';
 }
 
 function updateTemplateItemFilter() {
