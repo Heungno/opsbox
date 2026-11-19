@@ -140,6 +140,18 @@ function read(): ManagedTemplate[] {
     }
     markMigration(roleDefaultsMigration);
   }
+  // WAS log analysis was added after the original role-default migration had
+  // already run for existing installations. Add its canonical Windows script
+  // once without replacing any user-managed template.
+  const wasLogMigration = 'windows-was-log-default-v1';
+  if (!hasMigration(wasLogMigration)) {
+    const wasLogDefault = defaults.find((item) => item.id === 'WINDOWS-PART-WAS_LOG');
+    if (wasLogDefault && !items.some((item) => item.id === wasLogDefault.id)) {
+      items.push(wasLogDefault);
+      changed = true;
+    }
+    markMigration(wasLogMigration);
+  }
   for (const currentDefault of defaults) {
     const index = items.findIndex((item) => item.id === currentDefault.id);
     if (index >= 0 && items[index].updatedAt === currentDefault.updatedAt) {
