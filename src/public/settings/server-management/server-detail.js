@@ -184,7 +184,7 @@ function loadScripts(server) {
   const desc = document.createElement('div');
   desc.className = 'script-desc';
   desc.textContent = server.os === 'Windows'
-    ? '정책에 연결된 점검 스크립트를 조립합니다. 실행 로그는 콘솔에 출력하고 결과 JSON은 서버 결과 폴더에 저장합니다.'
+    ? '정책에 연결된 점검 스크립트를 조립합니다. 실행 명령의 $resultDirectory에 경로를 입력하면 그곳에 저장하고, 비워 두면 서버정보의 공유 경로를 사용합니다.'
     : '스크립트 파일이 있는 폴더에서 실행하세요. 결과 JSON은 서버 공유 경로에 저장됩니다.';
 
   const commandTitle = document.createElement('div');
@@ -196,7 +196,7 @@ function loadScripts(server) {
   const quotePowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
   const scriptFilter = quotePowerShell(`${server.id}*.ps1`);
   const command = server.os.toLowerCase() === 'windows'
-    ? `$script = Get-ChildItem -File -Filter ${scriptFilter} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script`
+    ? `$resultDirectory = ''; $script = Get-ChildItem -File -Filter ${scriptFilter} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; $scriptArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script); if (-not [string]::IsNullOrWhiteSpace($resultDirectory)) { $scriptArgs += @('-ResultDirectory', $resultDirectory) }; powershell.exe @scriptArgs`
     : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
 
   const commandBox = document.createElement('pre');

@@ -1,8 +1,10 @@
+param([string]$ResultDirectory)
+
 $ErrorActionPreference = 'Continue'
 $configJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('@@CONFIG_BASE64@@'))
 $opsboxConfig = ConvertFrom-Json -InputObject $configJson -ErrorAction Stop
 $opsboxRunStamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'
-$opsboxResultDirectory = Join-Path (Join-Path (Join-Path $opsboxConfig.server.sharedPath 'results') (Get-Date -Format 'yyyy')) $opsboxConfig.server.id
+$opsboxResultDirectory = if ([string]::IsNullOrWhiteSpace($ResultDirectory)) { Join-Path (Join-Path (Join-Path $opsboxConfig.server.sharedPath 'results') (Get-Date -Format 'yyyy')) $opsboxConfig.server.id } else { $ResultDirectory.Trim() }
 $opsboxResultPath = Join-Path $opsboxResultDirectory "$opsboxRunStamp.json"
 $opsboxResultDirectoryReady = $true
 try { New-Item -ItemType Directory -Path $opsboxResultDirectory -Force -ErrorAction Stop | Out-Null } catch { $opsboxResultDirectoryReady = $false }
