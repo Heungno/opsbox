@@ -1553,12 +1553,13 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .policy-section-heading h3 { font-size: 14px; }
 .policy-section .policy-help { margin: 0 0 10px; }
 .table-scroll { min-width: 0; overflow-x: auto; }
-.policy-script-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.policy-script-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
 .policy-script-control { display: flex; align-items: center; gap: 6px; min-width: 180px; }
 .policy-script-control select { min-width: 0; width: 100%; }
 .policy-script-select { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.policy-script-control.is-common { display: grid; grid-template-columns: 1fr auto; }
-.policy-script-control.is-common label { grid-column: 1 / -1; font-size: 12px; font-weight: 600; }
+.policy-script-control.is-common { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--card-bg); }
+.policy-script-control.is-common label { font-size: 12px; font-weight: 600; line-height: 1.4; }
+.policy-script-control.is-common .policy-script-select { width: 100%; max-width: none; min-height: 34px; justify-content: center; }
 .policy-script-manager { flex: 0 0 auto; font-size: 12px; }
 .policy-heading-actions { display: flex; align-items: center; gap: 8px; }
 .policy-heading-actions > div { min-width: 220px; }
