@@ -2,5 +2,6 @@
 node_modules/
 dist/
 data/servers.json
+data/user.json
 .prettierrc
 .env
