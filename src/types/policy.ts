@@ -1,4 +1,6 @@
-export type OperatingSystem = 'Windows' | 'Linux';
+import type { CommonCodeValue } from './commonCode';
+
+export type OperatingSystem = CommonCodeValue;
 export type PolicyCategory = 'BASIC' | 'WEB' | 'WAS' | 'DB';
 export type PolicyRoleCategory = Exclude<PolicyCategory, 'BASIC'>;
 

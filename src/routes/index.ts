@@ -7,8 +7,10 @@ import { reportRoutes } from './reportRoutes';
 import { templateRoutes } from './templateRoutes';
 import { commonCodeRoutes } from './commonCodeRoutes';
 import { policyRoutes } from './policyRoutes';
+import { authRoutes } from './authRoutes';
 
 export async function routes(app: FastifyInstance) {
+  await app.register(authRoutes);
   await app.register(serverRoutes);
   await app.register(scriptRoutes);
   await app.register(resultRoutes);

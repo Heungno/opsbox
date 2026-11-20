@@ -65,7 +65,7 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
   );
   const basicPolicy = assignedPolicies.find((policy) => policy.category === 'BASIC');
   const basicPolicyItems = (basicPolicy?.items ?? []).filter((item) => item.enabled && !getCommonCodes().scriptItems.some((code) => code.value === item.id))
-    .map((item) => ({ item: item.id, name: item.name, result: item.result, executorType: item.executor.type }));
+    .map((item) => ({ item: item.id, name: item.name, result: item.result, executorType: item.executor.type, inputs: item.inputs }));
   const config = {
     server: {
       id: server.id,
@@ -85,7 +85,7 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
       httpChecks: (server.httpChecks ?? []).map((item) => ({ ...item, expectedStatus: item.expectedStatus ?? 200 })),
       rolePolicies,
       basicPolicyItems,
-      policyItems: Object.fromEntries(assignedPolicies.flatMap((policy) => policy.items.map((item) => [item.id, item]))),
+      policyItems: Object.fromEntries(assignedPolicies.filter((policy) => policy.enabled).flatMap((policy) => policy.items.filter((item) => item.enabled).map((item) => [item.id, item]))),
       rolePolicySettings: server.rolePolicySettings ?? {},
     },
     database: { policyQueries, customQueries },
@@ -94,5 +94,8 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
 
   return getParts(server, templates)
     .map((part) => part.replace(CONFIG_TOKEN, encodedConfig))
-    .join('\r\n\r\n');
+    .join('\r\n\r\n')
+    // Persist the definitions used for this run so historical reports can
+    // render the saved result using its original component configuration.
+    .replace('checks = [ordered]@{', 'checks = [ordered]@{\n    policyDefinitions = $opsboxConfig.checks.policyItems');
 }

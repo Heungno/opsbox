@@ -1,5 +1,6 @@
 import type { ScriptPart } from './template';
-import type { PolicyCategory, PolicyRoleCategory } from './policy';
+import type { OperatingSystem, PolicyCategory, PolicyRoleCategory } from './policy';
+import type { CommonCodeValue } from './commonCode';
 export type { PolicyCategory } from './policy';
 
 export interface ProcessCheck {
@@ -24,21 +25,22 @@ export interface ServerPolicy {
 
 export interface PortCheck {
   port: number;
-  protocol?: "TCP" | "UDP";
+  protocol?: CommonCodeValue;
   description?: string;
 }
 
 export interface HttpCheck { name: string; url: string; expectedStatus?: number; }
 
-export type ServerRole = 'WEB' | 'WAS' | 'DB' | 'OTHER';
+export type ServerRole = CommonCodeValue;
 export type RolePolicyType = PolicyRoleCategory;
-export type ServerProduct = 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
+export type ServerProduct = CommonCodeValue;
 
 export interface RolePolicySetting {
   logDirectories?: string[];
   periodDays?: number;
   instanceTargets?: string[];
   queryTemplateId?: string;
+  inputs?: Record<string, string | number>;
 }
 
 export interface Server {
@@ -55,7 +57,7 @@ export interface Server {
   policyIds?: Partial<Record<PolicyCategory, string>>;
   queryTemplateId?: string;
   customQueryTemplateIds?: string[];
-  os: 'Windows' | 'Linux';
+  os: OperatingSystem;
   ip: string;
   policy?: ServerPolicy;
   sharedPath: string;

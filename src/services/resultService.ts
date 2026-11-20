@@ -25,6 +25,7 @@ export interface CheckResult {
   webtobCheck?: { status?: string };
   databaseChecks?: { status?: string };
   rolePolicies?: Partial<Record<'WEB' | 'WAS' | 'DB', { status?: string; items?: Array<{ item?: string; name?: string; status?: string; message?: string; detail?: unknown }> }>>;
+  summary?: { status?: string };
 }
 
 function readJsonFile(filePath: string) {
@@ -171,6 +172,11 @@ export function getResultByFile(serverId: string, fileName: string): CheckResult
 }
 
 export function getHealthStatus(result: CheckResult): string {
+  // Version 2 results store the status calculated with the policy used during
+  // collection. Keep historical reports tied to that snapshot instead of
+  // re-evaluating them against today's policy thresholds.
+  if (result.summary?.status) return result.summary.status;
+
   if (result.fileChecks?.some((file) => file.status === 'Critical' || file.exists === false)) return 'Critical';
   if (result.disks?.some((disk) => disk.status === 'Critical')) return 'Critical';
   if (result.ports?.some((port) => port.listening === false)) return 'Critical';

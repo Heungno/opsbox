@@ -41,6 +41,10 @@ async function loadSidebar() {
 
   bindSidebarToggle();
   bindSettingsMenu();
+  document.getElementById('logout-button')?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.replace('/login');
+  });
 
   activateCurrentMenu();
 }

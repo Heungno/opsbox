@@ -130,11 +130,36 @@ function renderReport() {
 
   renderHealth(health);
   renderMetrics(data, compareData);
-  const basicPolicyItems = data.checks?.policyItems || [];
+  const capturedPolicyDefinitions = data.checks?.policyDefinitions || {};
+  const collectedBasicItems = data.checks?.policyItems || [];
+  const collectedIds = new Set(collectedBasicItems.map((item) => item.item));
+  const basicPolicyItems = [...collectedBasicItems];
+  const capturedBasicOutputs = {
+    HOST_INFO: { status: data.host?.status, detail: { rows: data.host ? [{ hostname: data.hostname, osName: data.host.osName, osVersion: data.host.osVersion, status: data.host.status }] : [] } },
+    CPU: { value: data.cpu, status: data.resources?.cpu?.status },
+    MEMORY: { value: data.memory, status: data.resources?.memory?.status },
+    UPTIME: { value: data.uptimeMinutes, status: data.resources?.uptime?.status },
+    DISK: { value: data.disk, status: data.resources?.disk?.status, rows: data.disks || [] },
+    PROCESS: { status: data.checks?.processes?.status, rows: data.processes || [] },
+    DIRECTORY: { status: data.checks?.directories?.status, rows: data.directories || [] },
+    FILE_SIZE: { status: data.checks?.files?.status, rows: data.fileChecks || [] },
+    PORT: { status: data.checks?.ports?.status, rows: data.ports || [] },
+    HTTP: { status: data.checks?.http?.status, rows: data.httpChecks || [] },
+  };
+  Object.entries(capturedBasicOutputs).forEach(([id, output]) => {
+    const definition = capturedPolicyDefinitions[id];
+    const hasOutput = output.value !== undefined && output.value !== null || output.rows?.length > 0;
+    if (definition && !collectedIds.has(id) && hasOutput) {
+      const detail = output.detail || (output.rows ? { rows: output.rows } : { value: output.value });
+      if (output.value !== undefined) detail.value = output.value;
+      detail.status = output.status;
+      basicPolicyItems.push({ item: id, name: definition.name || id, result: definition.result, status: output.status || 'NotCollected', detail });
+    }
+  });
   const basicPolicySection = document.getElementById('basic-policy-item-section');
   basicPolicySection.hidden = basicPolicyItems.length === 0;
+  document.getElementById('basic-log-results').closest('.report-subsection').hidden = true;
   renderPolicyItemOutputs(basicPolicyItems, 'basic-policy-item-results');
-  renderLogAnalysisTables(basicPolicyItems, 'basic-log-results');
   renderTypeReportForm(serverTypes, data, data.products || currentServerProduct);
   renderDisks(data.disks);
   renderProcesses(data.processes, compareData?.processes);
@@ -142,6 +167,18 @@ function renderReport() {
   renderFileChecks(data.fileChecks);
   renderPorts(data.ports);
   renderHttpChecks(data.httpChecks);
+  // Only include sections that have data in this saved inspection result.
+  // This keeps older reports faithful to the checks that actually ran.
+  [
+    ['process-report-details', data.processes],
+    ['disk-report-details', data.disks],
+    ['port-report-details', data.ports],
+    ['directory-report-details', data.directories],
+    ['file-report-details', data.fileChecks],
+  ].forEach(([sectionId, items]) => {
+    document.getElementById(sectionId).hidden = !Array.isArray(items) || items.length === 0;
+  });
+  document.getElementById('http-report-details').hidden = !Array.isArray(data.httpChecks) || data.httpChecks.length === 0;
 }
 
 function renderTypeReportForm(serverTypes, data, productMap) {
@@ -167,34 +204,27 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   const wasRuntimeCheck = summarizeWasRuntime(data.wasChecks, product);
   const databaseCheck = summarizeDatabaseCheck(data.databaseChecks, product);
   const rolePolicyItems = data.rolePolicies?.[type]?.items ?? [];
-  const rolePolicyRows = rolePolicyItems.map((item) => [
-    item.name || item.item || `${type} 점검`,
-    { status: item.status || 'NotCollected', detail: summarizeRolePolicyDetail(item) },
-    '정책에 연결한 항목별 스크립트 결과',
-  ]);
-
   const checkRows = {
     WEB: [
       ...(product === 'WebtoB' ? [['WebtoB wsadmin', summarizeWebtoB(data.webtobCheck), 'WebtoB 정보·접속 수·서버/서비스 상태']] : []),
-      ...rolePolicyRows,
     ],
     WAS: [
       ['JVM Heap', wasRuntimeCheck, 'Windows JDK jstat로 수집한 JVM Heap 사용률'],
-      ...rolePolicyRows,
     ],
     DB: [
       ['DB 엔진 접속·상태', databaseCheck, '제품별 읽기 전용 CLI를 통한 연결 및 데이터베이스 상태'],
-      ...rolePolicyRows,
     ],
     OTHER: [],
   };
   renderChecklist('type-check-list', checkRows[type]);
   renderPolicyItemOutputs(rolePolicyItems);
-  if (type === 'WEB' || type === 'WAS') renderLogAnalysisTables(rolePolicyItems);
+  const legacyLogSection = document.getElementById('log-analysis-results' + reportRoleSuffix);
+  if (legacyLogSection) legacyLogSection.closest('.report-subsection').hidden = true;
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
   if (type === 'DB') {
     renderDatabaseChecks(data.databaseChecks, product);
-    renderDatabaseQueryTables(rolePolicyItems);
+    document.getElementById('db-query-results' + reportRoleSuffix).hidden = true;
+    document.getElementById('db-query-results' + reportRoleSuffix).previousElementSibling.hidden = true;
   }
 
   const pendingRows = {
@@ -276,21 +306,47 @@ function renderPolicyItemOutputs(items, targetId = 'policy-item-output-results' 
     const components = item.result?.components || [];
     const views = components.map((component) => component.type);
     const detail = item.detail || {};
-    views.filter((view) => !['SUMMARY', 'LOG_TABLE'].includes(view)).forEach((view) => {
+    views.filter((view) => view !== 'SUMMARY').forEach((view) => {
       const section = document.createElement('section'); section.className = 'report-subsection';
-      const heading = document.createElement('h3'); heading.textContent = `${item.name || item.item} · ${view === 'METRIC' ? '측정값' : view === 'CONSOLE' ? '콘솔 결과' : 'JSON 상세'}`; section.append(heading);
-      if (view === 'TABLE') {
+      const labels = { METRIC: '측정값', TABLE: '표', CONSOLE: '콘솔 결과', JSON: 'JSON 상세' };
+      const heading = document.createElement('h3'); heading.textContent = `${item.name || item.item} · ${labels[view] || view}`; section.append(heading);
+      if (view === 'LOG_TABLE') {
+        const configuredColumns = components.find((component) => component.type === 'LOG_TABLE')?.columns || [];
+        const samples = Array.isArray(detail.samples) ? detail.samples : [];
+        const columns = configuredColumns.length ? configuredColumns : [{ key: 'timestamp', label: '시각' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
+        const rows = samples.map((sample) => ({ ...sample, message: sample.text || sample.message }));
+        const table = document.createElement('table'); table.className = 'server-table';
+        const head = document.createElement('thead'); const headerRow = document.createElement('tr'); columns.forEach((column) => { const th = document.createElement('th'); th.textContent = column.label || column.key; headerRow.append(th); }); head.append(headerRow);
+        const body = document.createElement('tbody');
+        if (!rows.length) { const row = document.createElement('tr'); const cell = document.createElement('td'); cell.colSpan = columns.length; cell.textContent = detail.message || '표시할 로그 데이터가 없습니다.'; row.append(cell); body.append(row); }
+        else rows.forEach((values) => { const row = document.createElement('tr'); columns.forEach((column) => { const cell = document.createElement('td'); cell.textContent = String(values[column.key] ?? ''); row.append(cell); }); body.append(row); });
+        table.append(head, body); section.append(table);
+      } else if (view === 'TABLE') {
         const configuredColumns = components.find((component) => component.type === 'TABLE')?.columns || [];
-        const columns = Array.isArray(detail.columns) && detail.columns.length ? detail.columns : configuredColumns.map((column) => column.key);
+        const queryResults = Array.isArray(detail.queries) ? detail.queries : null;
         const rows = Array.isArray(detail.rows) ? detail.rows : [];
-        if (!columns.length || !rows.length) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = '표시할 행 데이터가 없습니다.'; section.append(message); }
-        else {
+        const columns = Array.isArray(detail.columns) && detail.columns.length ? detail.columns : configuredColumns.length ? configuredColumns : (rows[0] && !Array.isArray(rows[0]) ? Object.keys(rows[0]).map((key) => ({ key, label: key })) : []);
+        if ((!columns.length || !rows.length) && !queryResults) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = '표시할 행 데이터가 없습니다.'; section.append(message); }
+        else if (!queryResults) {
           const scroll = document.createElement('div'); scroll.className = 'table-scroll'; const table = document.createElement('table'); table.className = 'server-table';
           const head = document.createElement('thead'); const headRow = document.createElement('tr');
-          columns.forEach((column, index) => { const th = document.createElement('th'); th.textContent = configuredColumns[index]?.label || String(column); headRow.append(th); }); head.append(headRow);
-          const body = document.createElement('tbody'); rows.forEach((values) => { const row = document.createElement('tr'); columns.forEach((column, index) => { const cell = document.createElement('td'); const value = Array.isArray(values) ? values[index] : values?.[column]; cell.textContent = value == null ? '' : String(value); row.append(cell); }); body.append(row); });
+          columns.forEach((column, index) => { const th = document.createElement('th'); th.textContent = column.label || configuredColumns[index]?.label || String(column.key || column); headRow.append(th); }); head.append(headRow);
+          const body = document.createElement('tbody'); rows.forEach((values) => { const row = document.createElement('tr'); columns.forEach((column, index) => { const key = column.key || column; const cell = document.createElement('td'); const value = Array.isArray(values) ? values[index] : values?.[key]; cell.textContent = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value); row.append(cell); }); body.append(row); });
           table.append(head, body); scroll.append(table); section.append(scroll);
         }
+        if (queryResults) queryResults.forEach((query) => {
+          const querySection = document.createElement('section'); querySection.className = 'report-subsection';
+          const title = document.createElement('h4'); title.textContent = [query.name, query.target].filter(Boolean).join(' · ') || item.name || item.item; querySection.append(title);
+          if (query.message) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = query.message; querySection.append(message); }
+          const queryColumns = configuredColumns.length ? configuredColumns : (query.columns || []).map((key) => ({ key, label: key }));
+          const queryRows = query.rows || [];
+          if (queryColumns.length && queryRows.length) {
+            const queryTable = document.createElement('table'); queryTable.className = 'server-table';
+            const queryHead = document.createElement('thead'); const queryHeaderRow = document.createElement('tr'); queryColumns.forEach((column) => { const th = document.createElement('th'); th.textContent = column.label || column.key; queryHeaderRow.append(th); }); queryHead.append(queryHeaderRow);
+            const queryBody = document.createElement('tbody'); queryRows.forEach((values) => { const row = document.createElement('tr'); queryColumns.forEach((column, index) => { const cell = document.createElement('td'); const value = Array.isArray(values) ? values[index] : values?.[column.key]; cell.textContent = value == null ? '' : String(value); row.append(cell); }); queryBody.append(row); }); queryTable.append(queryHead, queryBody); querySection.append(queryTable);
+          } else { const empty = document.createElement('p'); empty.className = 'policy-help'; empty.textContent = '표시할 행 데이터가 없습니다.'; querySection.append(empty); }
+          section.append(querySection);
+        });
       } else if (view === 'CONSOLE') {
         const output = detail.output || detail.console?.stdout || detail.command || detail.message || '콘솔 출력이 없습니다.';
         const pre = document.createElement('pre'); pre.className = 'webtob-console-output'; pre.textContent = String(output); section.append(pre);
@@ -305,6 +361,16 @@ function renderPolicyItemOutputs(items, targetId = 'policy-item-output-results' 
       }
       container.append(section);
     });
+    if (views.includes('SUMMARY')) {
+      const section = document.createElement('section'); section.className = 'report-subsection';
+      const heading = document.createElement('h3'); heading.textContent = `${item.name || item.item} · 요약`; section.append(heading);
+      const status = item.status || detail.status || 'NotCollected';
+      const badge = document.createElement('span'); badge.className = `server-badge ${status === 'Healthy' ? 'badge-success' : status === 'Warning' ? 'badge-warning' : 'badge-danger'}`; badge.textContent = status;
+      const summary = document.createElement('p'); summary.append(badge);
+      const message = item.message || detail.message;
+      if (message) summary.append(document.createTextNode(` ${message}`));
+      section.append(summary); container.append(section);
+    }
   });
 }
 

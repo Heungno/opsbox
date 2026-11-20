@@ -5,6 +5,7 @@ import path from 'path';
 
 import { routes } from './routes';
 import { handleError } from './utils/errorHandler';
+import { readSessionCookie } from './services/authService';
 
 const app = Fastify({
   logger: {
@@ -28,6 +29,21 @@ app.setErrorHandler((error, request, reply) => {
   reply.send(response);
 });
 
+app.addHook('preHandler', async (request, reply) => {
+  const pathname = new URL(request.url, 'http://localhost').pathname;
+  const publicPaths = new Set(['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/me', '/api/health']);
+  if (publicPaths.has(pathname)) return;
+  if (pathname.startsWith('/api/')) {
+    if (!readSessionCookie(request.headers.cookie)) return reply.code(401).send({ success: false, code: 'UNAUTHENTICATED', message: '로그인이 필요합니다.' });
+    return;
+  }
+  const protectedPage = ['/', '/dashboard', '/servers', '/settings/server-management', '/servers/detail', '/settings/server-management/detail', '/reports', '/reports/detail', '/settings/templates', '/settings/script-management', '/settings/policy-management', '/settings/common-code-management'].includes(pathname)
+    || (/\.(html)$/.test(pathname) && /^\/(dashboard|reports|settings)\//.test(pathname));
+  if (protectedPage) {
+    if (!readSessionCookie(request.headers.cookie)) return reply.redirect(`/login?next=${encodeURIComponent(request.url)}`);
+  }
+});
+
 /*
  * Static Files
  */
@@ -42,6 +58,8 @@ app.register(fastifyStatic, {
 app.get('/', async (request, reply) => {
   return reply.sendFile('dashboard/dashboard.html');
 });
+
+app.get('/login', async (_request, reply) => reply.sendFile('login.html'));
 
 app.get('/dashboard', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
 app.get('/servers', async (request, reply) => reply.sendFile('settings/server-management/server-list.html'));

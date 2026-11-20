@@ -502,7 +502,8 @@
           "enabled": true,
           "executor": {
             "type": "SCRIPT",
-            "options": {}
+            "options": {},
+            "templateId": "WINDOWS-PART-START"
           },
           "inputs": [],
           "result": {
@@ -2105,6 +2106,14 @@
           }
         }
       ]
+    },
+    {
+      "id": "c0874692-a019-4daf-97ce-7f818d1f2564",
+      "name": "windows 테스트 정책",
+      "os": "Windows",
+      "category": "BASIC",
+      "enabled": true,
+      "items": []
     }
   ]
 }

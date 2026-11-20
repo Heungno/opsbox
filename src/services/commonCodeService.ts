@@ -1,8 +1,9 @@
 import fs from 'fs';
+import type { CommonCode } from '../types/commonCode';
 
 const FILE = 'data/common-codes.json';
 
-export interface CommonCode { value: string; label: string; [key: string]: unknown }
+export type { CommonCode } from '../types/commonCode';
 export interface CommonCodes {
   serverRoles: CommonCode[];
   operatingSystems: CommonCode[];
@@ -10,7 +11,7 @@ export interface CommonCodes {
   portProtocols: CommonCode[];
   templateKinds: CommonCode[];
   scriptItems: CommonCode[];
-  rolePolicies: Record<'WEB' | 'WAS' | 'DB', string[]>;
+  rolePolicies: Record<string, string[]>;
 }
 
 export function getRawCommonCodes(): CommonCodes {

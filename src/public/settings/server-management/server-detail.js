@@ -16,6 +16,7 @@ let commonCodes;
 let policies = [];
 let selectedBasicPolicyChecks = [];
 let selectedCatalogPolicyIds = {};
+let basicDetailSections;
 
 function getPolicyItemDefinition(itemId) {
   return policies.flatMap((policy) => policy.items || []).find((item) => item.id === itemId);
@@ -466,6 +467,7 @@ async function loadPolicy(serverId) {
   selectedCustomQueryTemplateIds = config.customQueryTemplateIds ?? currentServer?.customQueryTemplateIds ?? [];
   selectedRoleChecks = config.roleChecks ?? currentServer?.roleChecks ?? {};
   selectedCatalogPolicyIds = config.policyIds ?? currentServer?.policyIds ?? {};
+  selectedScriptParts = config.scriptParts ?? currentServer?.scriptParts ?? {};
   const applicableCategories = ['BASIC', ...(currentServer?.roles ?? [currentServer?.type]).filter((role) => ['WEB', 'WAS', 'DB'].includes(role))];
   applicableCategories.forEach((category) => {
     const currentId = selectedCatalogPolicyIds[category];
@@ -479,6 +481,13 @@ async function loadPolicy(serverId) {
     if (category === 'BASIC') selectedBasicPolicyChecks = policy.checks;
     else if (['WEB', 'WAS', 'DB'].includes(category)) selectedRoleChecks[category] = policy.checks;
   }
+  const basicPolicy = getSelectedBasicPolicy();
+  basicPolicy?.items.filter((item) => item.enabled).forEach((item) => {
+    if (!selectedScriptParts[item.id]) {
+      const defaultTemplate = getDefaultScriptTemplate(item.id);
+      if (defaultTemplate) selectedScriptParts[item.id] = defaultTemplate.id;
+    }
+  });
   selectedRolePolicySettings = config.rolePolicySettings ?? currentServer?.rolePolicySettings ?? {};
   renderPolicyScriptControls(config.scriptParts ?? currentServer?.scriptParts ?? {}, config.queryTemplateId ?? currentServer?.queryTemplateId ?? '', selectedRoleChecks);
   document.getElementById('process-container')?.replaceChildren();
@@ -715,6 +724,13 @@ async function savePolicy() {
         instanceTargets: input.value.split(/\r?\n/).map((target) => target.trim()).filter(Boolean),
       };
     });
+    document.querySelectorAll('[data-policy-item-input]').forEach((input) => {
+      const [item, key] = input.dataset.policyItemInput.split('::');
+      const setting = rolePolicySettings[item] ?? {};
+      const values = { ...(setting.inputs ?? {}) };
+      values[key] = input.type === 'number' ? Number(input.value) : input.value;
+      rolePolicySettings[item] = { ...setting, inputs: values };
+    });
     const queryTemplateId = '';
     const response = await fetch(`/api/servers/${serverId}/check-config`, {
       method: 'PUT',
@@ -816,6 +832,7 @@ function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '', ro
   const commonControls = document.getElementById('common-script-controls');
   commonControls.replaceChildren();
   commonItems.forEach((item) => commonControls.appendChild(createPolicyScriptControl(item, getScriptItemLabel(item), true)));
+  renderBasicPolicyItems();
 
   const policyControls = [
     ['PROCESS', 'process-script-control'], ['DIRECTORY', 'directory-script-control'],
@@ -831,6 +848,96 @@ function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '', ro
 
   renderRolePolicyGroups(roles, products, isWindows);
   renderFinalJsonExample(getActiveScriptItems(roles, selectedRoleChecks), selectedRoleChecks);
+}
+
+function getSelectedBasicPolicy() {
+  return policies.find((policy) => policy.id === selectedCatalogPolicyIds.BASIC && policy.os === currentServer?.os && policy.category === 'BASIC');
+}
+
+function renderBasicPolicyItems() {
+  const container = document.getElementById('basic-policy-items');
+  const commonPanel = document.getElementById('common-script-policy');
+  if (!container || !commonPanel) return;
+  const builtInIds = new Set(commonCodes.scriptItems.map((item) => item.value));
+  const policy = getSelectedBasicPolicy();
+  const items = policy
+    ? policy.items.filter((item) => item.enabled)
+    : selectedBasicPolicyChecks.map((id) => ({ id, name: getScriptItemLabel(id), enabled: true, executor: { type: 'SCRIPT' }, inputs: [], result: { components: [] } }));
+  basicDetailSections ??= new Map([
+    ['PROCESS', document.getElementById('process-script-control')?.closest('.policy-section')],
+    ['DIRECTORY', document.getElementById('directory-script-control')?.closest('.policy-section')],
+    ['FILE_SIZE', document.getElementById('file-script-control')?.closest('.policy-section')],
+    ['PORT', document.getElementById('port-script-control')?.closest('.policy-section')],
+    ['HTTP', document.getElementById('http-script-control')?.closest('.policy-section')],
+  ]);
+  const detailSections = basicDetailSections;
+  container.replaceChildren();
+  commonPanel.hidden = true;
+  detailSections.forEach((section) => { if (section) section.hidden = true; });
+  items.forEach((item) => {
+    const label = item.name || getScriptItemLabel(item.id);
+    const section = detailSections.get(item.id);
+    if (builtInIds.has(item.id) && section) {
+      const title = section.querySelector('h3');
+      if (title) title.textContent = label;
+      const help = document.createElement('p');
+      help.className = 'policy-help basic-policy-item-summary';
+      help.textContent = `${item.executor?.type || 'SCRIPT'} · ${(item.result?.components || []).map((component) => component.type).join(', ') || '결과 구성 미지정'}`;
+      section.querySelector('.section-header')?.after(help);
+      [...section.querySelectorAll('.basic-policy-item-summary')].slice(0, -1).forEach((entry) => entry.remove());
+      appendBasicPolicyInputs(item, section);
+      section.hidden = false;
+      container.appendChild(section);
+      return;
+    }
+    const row = document.createElement('section');
+    row.className = 'policy-section role-policy-row';
+    row.dataset.basicPolicyItem = item.id;
+    const description = document.createElement('div');
+    description.className = 'role-policy-description';
+    const name = document.createElement('strong');
+    name.textContent = label;
+    const details = document.createElement('small');
+    details.textContent = `${item.executor?.type || 'SCRIPT'} · ${(item.result?.components || []).map((component) => component.type).join(', ') || '결과 구성 미지정'}`;
+    description.append(name, details);
+    appendBasicPolicyInputs(item, description);
+    const control = createPolicyScriptControl(item.id, label);
+    row.append(description, control);
+    container.appendChild(row);
+  });
+}
+
+function appendBasicPolicyInputs(item, host) {
+  host.querySelectorAll('.basic-policy-input-field').forEach((field) => field.remove());
+  (item.inputs ?? []).forEach((input) => {
+    const field = document.createElement('label');
+    field.className = 'role-policy-option basic-policy-input-field';
+    const fieldName = document.createElement('span');
+    fieldName.textContent = `${input.label || input.key}${input.required ? ' *' : ''}`;
+    const stored = selectedRolePolicySettings?.[item.id]?.inputs?.[input.key];
+    const defaultValue = input.defaultValue ?? '';
+    if (input.scope === 'SERVER') {
+      let control;
+      if (input.type === 'PATH_LIST') {
+        control = document.createElement('textarea');
+        control.rows = 2;
+        control.value = String(stored ?? defaultValue).replaceAll(';', '\n');
+      } else {
+        control = document.createElement('input');
+        control.type = input.type === 'NUMBER' || input.type === 'PORT' ? 'number' : 'text';
+        control.value = String(stored ?? defaultValue);
+        if (input.type === 'PORT') { control.min = '1'; control.max = '65535'; }
+      }
+      control.dataset.policyItemInput = `${item.id}::${input.key}`;
+      control.required = input.required === true;
+      field.append(fieldName, control);
+    } else {
+      const policyValue = document.createElement('small');
+      policyValue.textContent = `정책 기본값: ${String(defaultValue || '미지정')}`;
+      field.append(fieldName, policyValue);
+    }
+    host.appendChild(field);
+  });
 }
 
 function populatePolicySources() {
@@ -853,7 +960,9 @@ function applyCatalogPolicy(category) {
   if (category === 'BASIC') {
     selectedBasicPolicyChecks = policy.checks;
     selectedCatalogPolicyIds.BASIC = policy.id;
-    policy.items?.forEach((item) => { if (item.executor?.templateId) selectedScriptParts[item.id] = item.executor.templateId; });
+    policy.items?.forEach((item) => {
+      if (item.executor?.type !== 'SQL_QUERY') selectedScriptParts[item.id] = item.executor?.templateId || getDefaultScriptTemplate(item.id)?.id || selectedScriptParts[item.id];
+    });
     renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
     return;
   }
@@ -879,38 +988,21 @@ function renderRolePolicyGroups(roles, products, isWindows) {
     container.replaceChildren();
     if (block.hidden) return;
     document.getElementById(`${suffix}-role-policy-title`).textContent = `${role} 점검 · ${products[role] || role}`;
-    const header = document.createElement('div'); header.className = 'role-policy-group-header';
-    const addControls = document.createElement('div'); addControls.className = 'role-policy-add-controls';
-    const chooser = document.createElement('select'); chooser.setAttribute('aria-label', `${role} 점검 항목 선택`);
-    chooser.add(new Option('점검 항목 선택', ''));
     const currentItems = selectedRoleChecks[role] ?? [];
-    const catalogItems = [...new Set(policies.filter((policy) => policy.os === currentServer.os && policy.category === role).flatMap((policy) => policy.checks))];
-    [...new Set([...catalogItems, ...currentItems])].forEach((item) => {
-      // Custom queries are being replaced by assigning a query template to a DB policy.
-      if (role === 'DB' && item === 'DB_CUSTOM_QUERY') return;
-      const policy = commonCodes.scriptItems.find((entry) => entry.value === item) || getPolicyItemDefinition(item);
-      const option = new Option(policy?.label || item, item);
-      option.disabled = currentItems.includes(item);
-      chooser.add(option);
-    });
-    const addButton = document.createElement('button'); addButton.type = 'button'; addButton.className = 'btn btn-small btn-primary'; addButton.textContent = `+ ${role} 점검 추가`;
-    addButton.addEventListener('click', () => {
-      if (!chooser.value) { alert('추가할 점검 항목을 선택하세요.'); return; }
-      selectedRoleChecks[role] = [...(selectedRoleChecks[role] ?? []), chooser.value];
-      renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
-    });
-    addControls.append(chooser, addButton);
-    header.appendChild(addControls); container.appendChild(header);
     const list = document.createElement('div'); list.className = 'role-policy-list';
     currentItems.forEach((item) => {
-      const policy = commonCodes.scriptItems.find((entry) => entry.value === item) || getPolicyItemDefinition(item);
+      const assignedPolicy = policies.find((entry) => entry.id === selectedCatalogPolicyIds[role] && entry.category === role);
+      const definition = assignedPolicy?.items?.find((entry) => entry.id === item);
+      const policy = commonCodes.scriptItems.find((entry) => entry.value === item) || definition || getPolicyItemDefinition(item);
+      const policyLabel = policy?.label || policy?.name || item;
       const row = document.createElement('div'); row.className = 'role-policy-row';
       row.dataset.rolePolicyItem = item;
       const description = document.createElement('div'); description.className = 'role-policy-description';
-      const name = document.createElement('strong'); name.textContent = policy?.label || item;
+      const name = document.createElement('strong'); name.textContent = policyLabel;
       const help = document.createElement('small'); help.textContent = policy?.description || '점검 결과는 연결된 항목별 스크립트가 생성합니다.';
       description.append(name, help);
-      const scriptControl = createPolicyScriptControl(item, policy?.label || item);
+      appendBasicPolicyInputs(definition || { id: item, inputs: [] }, description);
+      const scriptControl = createPolicyScriptControl(item, policyLabel);
       if (['WEB_LOG', 'WAS_LOG'].includes(item)) {
         const setting = selectedRolePolicySettings[item] ?? { logDirectories: [], periodDays: 7 };
         const folderField = document.createElement('label'); folderField.className = 'role-policy-option';
@@ -965,16 +1057,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         scriptControl.appendChild(queryCount);
       }
       row.append(description, scriptControl);
-      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제';
-      remove.addEventListener('click', () => {
-        selectedRoleChecks[role] = (selectedRoleChecks[role] ?? []).filter((value) => value !== item);
-        delete selectedScriptParts[item];
-        if (item === 'DB_CUSTOM_QUERY') selectedCustomQueryTemplateIds = [];
-        if (role === 'DB') delete selectedRolePolicySettings[item];
-        if (['WEB_LOG', 'WAS_LOG'].includes(item)) delete selectedRolePolicySettings[item];
-        renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId, selectedRoleChecks);
-      });
-      row.appendChild(remove); list.appendChild(row);
+      list.appendChild(row);
     });
     container.appendChild(list);
   });
@@ -1204,6 +1287,10 @@ function isDefaultScriptTemplate(template, item) {
 
 function getActiveScriptItems(roles, roleChecks) {
   const items = ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
+  const basicPolicy = getSelectedBasicPolicy();
+  const builtInIds = new Set(commonCodes.scriptItems.map((item) => item.value));
+  const customBasicItems = (basicPolicy?.items ?? []).filter((item) => item.enabled && !builtInIds.has(item.id)).map((item) => item.id);
+  items.push(...customBasicItems);
   if (currentServer.processes?.length) items.push('PROCESS');
   if (currentServer.directories?.length) items.push('DIRECTORY');
   if (currentServer.fileChecks?.length) items.push('FILE_SIZE');
@@ -1239,6 +1326,16 @@ function renderFinalJsonExample(activeItems, roleChecks) {
   };
   const keys = { PROCESS: 'processes', DIRECTORY: 'directories', FILE_SIZE: 'files', PORT: 'ports', HTTP: 'http', WEB: 'web', WAS: 'was', DATABASE: 'database' };
   activeItems.forEach((item) => { if (shapes[item]) example.checks[keys[item]] = shapes[item]; });
+  const basicPolicy = getSelectedBasicPolicy();
+  const builtInIds = new Set(commonCodes.scriptItems.map((item) => item.value));
+  const customBasicItems = (basicPolicy?.items ?? []).filter((item) => item.enabled && !builtInIds.has(item.id));
+  if (customBasicItems.length) {
+    example.checks.policyItems = customBasicItems.map((item) => ({
+      role: 'BASIC', item: item.id, name: item.name,
+      result: item.result, executorType: item.executor?.type, status: 'NotCollected',
+      message: '연결된 점검 스크립트가 결과를 기록하면 상세 결과가 표시됩니다.',
+    }));
+  }
   ['WEB', 'WAS', 'DB'].forEach((role) => {
     const items = roleChecks[role] ?? [];
     if (!items.length) return;

@@ -404,6 +404,21 @@ export function updateCheckConfig(
       }
     });
   }
+  selectedPolicies.forEach((policy) => {
+    policy.items.filter((item) => item.enabled && (policy.category === 'BASIC' || (roleChecks[policy.category]?.includes(item.id) ?? false))).forEach((item) => {
+      const inputValues = rolePolicySettings[item.id as ScriptPart]?.inputs ?? {};
+      item.inputs.filter((input) => input.scope === 'SERVER').forEach((input) => {
+        const value = inputValues[input.key];
+        if (input.required && (value === undefined || value === null || String(value).trim() === '')) {
+          errors.push({ field: `rolePolicySettings.${item.id}.inputs.${input.key}`, message: `${item.name} 항목의 '${input.label}' 값을 입력하세요.` });
+        } else if (value !== undefined && input.type === 'NUMBER' && (typeof value !== 'number' || !Number.isFinite(value))) {
+          errors.push({ field: `rolePolicySettings.${item.id}.inputs.${input.key}`, message: `${item.name} 항목의 '${input.label}'은 숫자로 입력하세요.` });
+        } else if (value !== undefined && input.type === 'PORT' && (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 65535)) {
+          errors.push({ field: `rolePolicySettings.${item.id}.inputs.${input.key}`, message: `${item.name} 항목의 '${input.label}'은 1~65535 사이의 포트 번호로 입력하세요.` });
+        }
+      });
+    });
+  });
   const assignedBasicPolicy = policyByCategory.get('BASIC');
   for (const item of assignedBasicPolicy?.items.filter((entry) => entry.enabled) ?? []) {
     if (COMMON_CODES.scriptItems.some((entry) => entry.value === item.id)) continue;

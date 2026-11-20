@@ -1706,6 +1706,10 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .policy-check-selected-row > span { overflow-wrap: anywhere; }
 .policy-script-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
 .policy-script-controls label { font-weight: 600; }
+.policy-source-controls { flex-wrap: nowrap; }
+.policy-source-controls label { flex: 0 0 auto; white-space: nowrap; }
+.policy-source-controls select { flex: 1 1 12rem; width: auto; min-width: 0; }
+.policy-source-controls button { flex: 0 0 auto; white-space: nowrap; }
 .template-enabled { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 38px; }
 .template-enabled input[type="checkbox"] { appearance: checkbox; width: 16px; min-width: 16px; height: 16px; min-height: 16px; margin: 0; padding: 0; box-shadow: none; }
 :root[data-theme="dark"] .section-header h2,

@@ -1,3 +1,5 @@
+import type { CommonCodeValue } from './commonCode';
+
 export interface ProcessCheckResult {
   name: string;
   running: boolean;
@@ -35,7 +37,7 @@ export interface DiskCheckResult {
 
 export interface PortCheckResult {
   port: number;
-  protocol: 'TCP' | 'UDP';
+  protocol: CommonCodeValue;
   listening: boolean;
   processName?: string;
   description?: string;
