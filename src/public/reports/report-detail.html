@@ -133,6 +133,11 @@
           </div>
           <div id="report-result"></div>
         </section>
+        <section id="basic-policy-item-section" class="card" hidden>
+          <h2>기본 정책 사용자 항목</h2>
+          <div id="basic-policy-item-results"></div>
+          <section class="report-subsection" hidden><h3>로그 분석 상세</h3><div id="basic-log-results"></div></section>
+        </section>
 
         <section id="process-report-details" class="card">
           <h2>프로세스 점검 결과</h2>
@@ -212,6 +217,8 @@
       <p class="policy-help">공통 결과의 프로세스·포트·HTTP·경로 점검은 제외하고 WebtoB 및 WEB 정책 점검만 표시합니다.</p>
       <h3>WEB 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <div id="policy-item-output-results"></div>
+      <section class="report-subsection"><h3>로그 분석 상세</h3><div id="log-analysis-results"></div></section>
       <section id="webtob-report-details" class="report-subsection" hidden>
         <h3>WebtoB wsadmin 점검 결과</h3>
         <pre id="webtob-check-output" class="webtob-console-output"></pre>
@@ -226,6 +233,8 @@
       <p class="policy-help">공통 결과의 자원·프로세스·포트·HTTP·경로 점검은 제외하고 JVM 및 WAS 정책 점검만 표시합니다.</p>
       <h3>WAS 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <div id="policy-item-output-results"></div>
+      <section class="report-subsection"><h3>로그 분석 상세</h3><div id="log-analysis-results"></div></section>
       <h3>JVM Heap 상세</h3>
       <table class="server-table type-check-table"><thead><tr><th>프로세스</th><th>PID</th><th>사용량</th><th>상태</th><th>비고</th></tr></thead><tbody id="was-heap-list"></tbody></table>
       <h3>현재 자동 수집되지 않는 항목</h3>
@@ -238,6 +247,7 @@
       <p class="policy-help">공통 결과의 자원·프로세스·포트·경로 점검은 제외하고 DB 엔진 및 DB 정책 점검만 표시합니다.</p>
       <h3>DB 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <div id="policy-item-output-results"></div>
       <h3>DB 엔진 및 데이터베이스 상세</h3>
       <p id="database-check-summary" class="policy-help"></p>
       <table class="server-table type-check-table"><thead><tr><th>인스턴스</th><th>데이터베이스</th><th>상태</th><th>복구 모델</th><th>데이터 파일 (MB)</th></tr></thead><tbody id="database-check-list"></tbody></table>
@@ -253,6 +263,7 @@
       <p class="policy-help">공통 결과에 표시되지 않는 기타 역할 정책 항목을 표시합니다.</p>
       <h3>기타 역할 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
+      <div id="policy-item-output-results"></div>
     </section>
   </template>
 

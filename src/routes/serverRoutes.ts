@@ -51,7 +51,7 @@ export async function serverRoutes(app: FastifyInstance) {
       id: string;
     };
 
-    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, rolePolicySettings, queryTemplateId, customQueryTemplateIds } = req.body as {
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, rolePolicySettings, queryTemplateId, customQueryTemplateIds, policyIds } = req.body as {
       processes?: any[];
       directories?: any[];
       fileChecks?: any[];
@@ -62,6 +62,7 @@ export async function serverRoutes(app: FastifyInstance) {
       rolePolicySettings?: Server['rolePolicySettings'];
       queryTemplateId?: string;
       customQueryTemplateIds?: string[];
+      policyIds?: Server['policyIds'];
     };
 
     return updateCheckConfig(id, {
@@ -75,6 +76,7 @@ export async function serverRoutes(app: FastifyInstance) {
       rolePolicySettings,
       queryTemplateId,
       customQueryTemplateIds,
+      policyIds,
     });
   });
 }

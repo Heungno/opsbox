@@ -1,4 +1,6 @@
 import type { ScriptPart } from './template';
+import type { PolicyCategory, PolicyRoleCategory } from './policy';
+export type { PolicyCategory } from './policy';
 
 export interface ProcessCheck {
   name: string;
@@ -29,7 +31,7 @@ export interface PortCheck {
 export interface HttpCheck { name: string; url: string; expectedStatus?: number; }
 
 export type ServerRole = 'WEB' | 'WAS' | 'DB' | 'OTHER';
-export type RolePolicyType = 'WEB' | 'WAS' | 'DB';
+export type RolePolicyType = PolicyRoleCategory;
 export type ServerProduct = 'WebtoB' | 'Apache HTTP Server' | 'IIS' | 'Nginx' | 'JEUS' | 'Apache Tomcat' | 'JBoss' | 'Node.js' | 'MSSQL' | 'MariaDB' | 'CUBRID' | 'PostgreSQL';
 
 export interface RolePolicySetting {
@@ -50,6 +52,7 @@ export interface Server {
   scriptParts?: Partial<Record<ScriptPart, string>>;
   roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
   rolePolicySettings?: Partial<Record<ScriptPart, RolePolicySetting>>;
+  policyIds?: Partial<Record<PolicyCategory, string>>;
   queryTemplateId?: string;
   customQueryTemplateIds?: string[];
   os: 'Windows' | 'Linux';

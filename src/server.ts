@@ -52,6 +52,8 @@ app.get('/reports', async (request, reply) => reply.sendFile('reports/report-lis
 app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/report-detail.html'));
 app.get('/settings/templates', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
 app.get('/settings/script-management', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
+app.get('/settings/policy-management', async (request, reply) => reply.sendFile('settings/policy-management/policy-management.html'));
+app.get('/settings/common-code-management', async (request, reply) => reply.sendFile('settings/common-code-management/common-code-management.html'));
 
 // Keep previous page URLs working for existing bookmarks.
 app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));

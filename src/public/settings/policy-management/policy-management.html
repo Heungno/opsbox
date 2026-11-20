@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpsBox | 점검 정책 관리</title><link rel="stylesheet" href="/shared/css/app.css?v=20261120-policy-layout" />
+</head>
+<body class="template-management-page"><div id="shared-layout-root"></div>
+<template id="page-content-template">
+  <header class="header"><h1>점검 정책 관리</h1><p>Windows와 Linux의 기본·WEB·WAS·DB 점검 정책을 만들고 관리합니다.</p></header>
+  <div class="template-workspace">
+    <section class="card template-list-panel">
+      <div class="section-header"><h2>저장된 정책</h2><button id="policy-new" class="btn btn-primary" type="button">+ 정책 추가</button></div>
+      <div class="template-filters">
+        <div class="form-group"><label for="policy-os-filter">운영체제</label><select id="policy-os-filter"><option value="">전체 OS</option><option>Windows</option><option>Linux</option></select></div>
+        <div class="form-group"><label for="policy-category-filter">유형</label><select id="policy-category-filter"><option value="">전체 유형</option><option value="BASIC">기본</option><option value="WEB">WEB</option><option value="WAS">WAS</option><option value="DB">DB</option></select></div>
+        <div class="form-group"><label for="policy-search">검색</label><input id="policy-search" type="search" placeholder="정책명 검색" /></div>
+      </div>
+      <div id="policy-list" class="template-list"></div>
+      <p id="policy-empty" class="policy-help" hidden>조건에 맞는 정책이 없습니다. 새 정책을 만들어 보세요.</p>
+      <p id="policy-error" class="policy-help" role="alert" hidden>정책을 불러오지 못했습니다.</p>
+    </section>
+    <section class="card template-editor-panel">
+      <div class="section-header"><h2 id="policy-form-title">새 정책</h2></div>
+      <form id="policy-form">
+        <div class="form-grid">
+          <div class="form-group"><label for="policy-name">정책명</label><input id="policy-name" maxlength="80" required placeholder="예: Linux WEB 표준 점검" /></div>
+          <div class="form-group"><label for="policy-os">운영체제</label><select id="policy-os" required><option value="Windows">Windows</option><option value="Linux">Linux</option></select></div>
+          <div class="form-group"><label for="policy-category">정책 유형</label><select id="policy-category" required><option value="BASIC">기본</option><option value="WEB">WEB</option><option value="WAS">WAS</option><option value="DB">DB</option></select></div>
+        </div>
+        <div class="section-header"><h3>점검 항목</h3><span id="policy-check-count" class="policy-help">0개</span><button id="policy-item-add" type="button" class="btn btn-small btn-primary">+ 항목 추가</button></div>
+        <p class="policy-help">정책 항목은 실행방식·입력값·결과 표시 설정을 포함합니다. 항목 추가/수정 버튼에서 구성하세요.</p>
+        <div id="policy-checks" class="policy-check-list"></div>
+        <div class="button-area"><button id="policy-save" type="submit" class="btn btn-primary">정책 저장</button></div>
+      </form>
+    </section>
+    <dialog id="policy-item-dialog" class="modal-dialog policy-item-dialog">
+      <section class="card modal-card">
+        <div class="section-header"><h2 id="policy-item-dialog-title">점검 항목 구성</h2><button id="policy-item-close" type="button" class="btn">닫기</button></div>
+        <div class="form-grid">
+          <div class="form-group"><label for="policy-item-name">항목 이름</label><input id="policy-item-name" required placeholder="예: 관리자 계정 잠금 상태" /></div>
+          <div class="form-group"><label for="policy-item-executor">실행 방식</label><select id="policy-item-executor"><option value="SCRIPT">스크립트</option><option value="SQL_QUERY">DB 쿼리</option><option value="LOG_ANALYSIS">로그 분석</option><option value="CONSOLE_COMMAND">콘솔 명령</option><option value="HTTP_CHECK">HTTP 확인</option><option value="TCP_CHECK">TCP 포트 확인</option><option value="PROCESS_CHECK">프로세스 확인</option><option value="FILESYSTEM_CHECK">파일·디렉터리 확인</option></select></div>
+          <div class="form-group"><label for="policy-item-dbms">DBMS</label><select id="policy-item-dbms"></select></div>
+        </div>
+        <div class="form-group"><label>실행 템플릿</label><div class="policy-template-link"><input id="policy-item-template-id" readonly placeholder="연결된 템플릿 없음" /><button id="policy-item-select-template" type="button" class="btn">템플릿 선택</button></div></div>
+        <fieldset class="policy-item-views"><legend>결과 구성</legend><div id="policy-item-result-components"></div></fieldset>
+        <div class="form-grid">
+          <div class="form-group"><label for="policy-item-status-field">상태 판정 필드</label><input id="policy-item-status-field" placeholder="예: status 또는 __OPSBOX_STATUS" /></div>
+        </div>
+        <label id="policy-item-columns-group" class="form-group policy-json-field"><span>표 컬럼 <small>한 줄에 key=표시명</small></span><textarea id="policy-item-columns" rows="3" placeholder="timestamp=시각&#10;message=내용"></textarea></label>
+        <details class="policy-advanced-settings"><summary>고급 설정 <span>서버별 입력값과 세부 판정 기준</span></summary>
+          <label class="form-group policy-json-field"><span>실행 옵션 (JSON)</span><textarea id="policy-item-options" rows="3" spellcheck="false">{}</textarea></label>
+          <label class="form-group policy-json-field"><span>입력 정의 (JSON) <small>서버별 입력은 scope=SERVER</small></span><textarea id="policy-item-inputs" rows="3" spellcheck="false">[]</textarea></label>
+          <label class="form-group policy-json-field"><span>상태 판정 기준 (JSON)</span><textarea id="policy-item-status-rules" rows="3" spellcheck="false">{}</textarea></label>
+        </details>
+        <div class="button-area"><button id="policy-item-save" type="button" class="btn btn-primary">항목 저장</button></div>
+      </section>
+    </dialog>
+    <div id="script-template-picker-container"></div>
+  </div>
+</template>
+<script type="module" src="/shared/js/common.js"></script>
+<script type="module" src="/settings/policy-management/policy-management.js"></script>
+</body></html>

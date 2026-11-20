@@ -148,13 +148,14 @@ function activateCurrentMenu() {
     activeMenu = 'reports';
   }
   if (path.includes('/settings/script-management') || path.includes('/settings/templates')) activeMenu = 'settings-scripts';
+  if (path.includes('/settings/policy-management')) activeMenu = 'policy-management';
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {
     if (link.dataset.menu === activeMenu) {
       link.classList.add('active');
     }
   });
-  const settingsActive = ['servers', 'settings-scripts'].includes(activeMenu);
+  const settingsActive = ['servers', 'policy-management', 'settings-scripts'].includes(activeMenu);
   const settingsButton = document.getElementById('settings-menu-toggle');
   const settingsSubmenu = document.getElementById('settings-submenu');
   if (settingsButton && settingsSubmenu) {

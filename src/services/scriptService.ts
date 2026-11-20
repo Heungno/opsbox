@@ -16,14 +16,14 @@ export function generateScript(serverId: string): string {
       const selectedId = server.rolePolicySettings?.[item]?.queryTemplateId
         || `WINDOWS-QUERY-${item}`;
       const template = getTemplate(selectedId);
-      if (!template?.enabled || template.kind !== 'QUERY' || (template.item && template.item !== item)) {
+      if (!template?.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(server, 'DB')) {
         throw new Error(`${item} 점검에 사용할 DB 쿼리 템플릿을 선택하세요.`);
       }
-      return template;
+      return { ...template, item };
     }) : [];
   const customQueryTemplates = (server.customQueryTemplateIds ?? []).map((id) => {
     const template = getTemplate(id);
-    if (!template?.enabled || template.kind !== 'QUERY' || (template.item && template.item !== 'DB_CUSTOM_QUERY')) throw new Error(`DB 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
+    if (!template?.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(server, 'DB')) throw new Error(`DBMS에 맞는 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
     return template;
   });
   return server.os === 'Windows'

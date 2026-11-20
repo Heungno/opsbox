@@ -20,7 +20,12 @@ document.getElementById('template-filter').addEventListener('change', applyTempl
 document.getElementById('template-os-filter').addEventListener('change', applyTemplateFilters);
 document.getElementById('template-group-filter').addEventListener('change', () => { updateTemplateItemFilter(); applyTemplateFilters(); });
 document.getElementById('template-item-filter').addEventListener('change', applyTemplateFilters);
-document.getElementById('btn-template-reset').addEventListener('click', resetForm);
+document.getElementById('btn-template-history').addEventListener('click', showTemplateHistory);
+document.getElementById('template-history-close').addEventListener('click', () => document.getElementById('template-history-dialog').close());
+document.getElementById('btn-template-reset').addEventListener('click', () => {
+  if (hasUnsavedChanges && !confirm('현재 템플릿에 저장하지 않은 변경사항이 있습니다. 저장하지 않고 새 템플릿을 작성할까요?')) return;
+  resetForm();
+});
 form.addEventListener('submit', saveTemplate);
 form.addEventListener('input', () => { hasUnsavedChanges = true; });
 form.addEventListener('change', () => { hasUnsavedChanges = true; });
@@ -103,7 +108,7 @@ function updateFormMode() {
   }
   document.querySelectorAll('.template-script-option').forEach((node) => node.hidden = !script);
   document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part);
-  document.querySelectorAll('.template-query-item-option').forEach((node) => node.hidden = kind.value !== 'QUERY');
+  document.querySelectorAll('.template-query-dbms-option').forEach((node) => node.hidden = kind.value !== 'QUERY');
   document.querySelectorAll('.template-target-option').forEach((node) => node.hidden = kind.value !== 'SCRIPT');
   const linuxOption = document.querySelector('#template-os option[value="Linux"]');
   if (linuxOption) linuxOption.disabled = part;
@@ -115,7 +120,7 @@ function updateFormMode() {
     : kind.value === 'SCRIPT'
       ? '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.'
       : kind.value === 'QUERY'
-        ? '선택한 DB 점검 항목에서 실행할 SQL입니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
+        ? '선택한 DBMS에서 실행할 SQL입니다. 점검 항목과 분리해 여러 항목에서 재사용할 수 있습니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
         : '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.';
   renderHighlightedTemplate();
   renderOutputExample();
@@ -160,10 +165,20 @@ async function loadTemplates() {
     const codeResponse = await fetch('/api/common-codes');
     if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
     commonCodes = await codeResponse.json();
+    const policyResponse = await fetch('/api/policies');
+    if (policyResponse.ok) {
+      const policies = await policyResponse.json();
+      const custom = new Map();
+      policies.forEach((policy) => (policy.items || []).filter((item) => item.id.startsWith('CUSTOM_')).forEach((item) => {
+        if (!custom.has(item.id)) custom.set(item.id, { value: item.id, label: `${item.name} · ${policy.category}`, group: policy.category, role: ['WEB', 'WAS', 'DB'].includes(policy.category) ? policy.category : undefined, description: `${policy.os} 정책 항목` });
+      }));
+      commonCodes.scriptItems.push(...custom.values());
+    }
     populateCodeSelect(document.getElementById('template-kind'), commonCodes.templateKinds);
     populateCodeSelect(document.getElementById('template-os'), commonCodes.operatingSystems);
     populateCodeSelect(document.getElementById('template-item'), commonCodes.scriptItems);
     populateCodeSelect(document.getElementById('template-role'), commonCodes.serverRoles, '모든 역할');
+    populateCodeSelect(document.getElementById('template-dbms'), commonCodes.productsByRole.DB);
     populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...commonCodes.templateKinds]);
     populateCodeSelect(document.getElementById('template-os-filter'), [{ value: '', label: '전체 OS' }, ...commonCodes.operatingSystems]);
     populateCodeSelect(document.getElementById('template-group-filter'), [{ value: '', label: '전체 영역' }, { value: 'COMMON', label: '공통 기본' }, { value: 'WEB', label: 'WEB' }, { value: 'WAS', label: 'WAS' }, { value: 'DB', label: 'DB' }, { value: 'SYSTEM', label: '시스템·전체 스크립트' }]);
@@ -226,7 +241,7 @@ function applyTemplateFilters() {
     return (!kindFilter || template.kind === kindFilter)
       && (!osFilter || templateOs === osFilter)
       && (!groupFilter || getTemplateGroup(template) === groupFilter)
-      && (!itemFilter || template.item === itemFilter || (template.kind === 'QUERY' && itemFilter === 'DB_CUSTOM_QUERY'));
+      && (!itemFilter || template.kind === 'QUERY' || template.item === itemFilter);
   });
   renderList();
 }
@@ -249,8 +264,9 @@ function renderList() {
     const info = document.createElement('div');
     const title = document.createElement('strong'); title.textContent = item.name;
     const typeLabel = item.kind === 'SCRIPT_PART' ? `점검 항목 · ${item.item || '미지정'}` : item.kind === 'SCRIPT' ? '전체 스크립트' : 'DB 쿼리';
-    const osLabel = item.os || (item.kind === 'QUERY' ? 'Windows' : '');
-    const meta = document.createElement('small'); meta.textContent = `${typeLabel}${osLabel ? ` · ${osLabel}` : ''}${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''} · ${item.enabled ? '사용' : '중지'}`;
+    const osLabel = item.os || '';
+    const targetLabel = item.kind === 'QUERY' ? `DBMS · ${item.dbms || 'MSSQL'}` : `${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''}`;
+    const meta = document.createElement('small'); meta.textContent = `${typeLabel}${osLabel ? ` · ${osLabel}` : ''}${targetLabel} · ${item.enabled ? '사용' : '중지'}`;
     info.append(title, meta);
     const actions = document.createElement('div'); actions.className = 'button-area';
     const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.setAttribute('aria-label', `${item.name} 삭제`);
@@ -272,11 +288,13 @@ function openTemplate(item) {
   editingId = item.id;
   hasUnsavedChanges = false;
   document.getElementById('template-form-title').textContent = '템플릿 수정';
+  document.getElementById('btn-template-history').hidden = false;
   document.getElementById('btn-template-save').textContent = '변경 저장';
   document.getElementById('template-name').value = item.name;
   kind.value = item.kind;
   document.getElementById('template-os').value = item.os || 'Windows';
   document.getElementById('template-item').value = item.item || 'START';
+  document.getElementById('template-dbms').value = item.dbms || 'MSSQL';
   document.getElementById('template-uses-query').checked = item.usesQueryTemplate === true;
   document.getElementById('template-role').value = item.role || '';
   document.getElementById('template-product').value = item.product || '';
@@ -297,8 +315,9 @@ async function persistTemplate() {
   const data = {
     name: document.getElementById('template-name').value.trim(), kind: kind.value,
     os: ['SCRIPT', 'SCRIPT_PART'].includes(kind.value) ? document.getElementById('template-os').value : undefined,
-    item: ['SCRIPT_PART', 'QUERY'].includes(kind.value) ? document.getElementById('template-item').value : undefined,
-    usesQueryTemplate: kind.value === 'SCRIPT_PART' && document.getElementById('template-item').value === 'DB_QUERY_RUNNER' && document.getElementById('template-uses-query').checked,
+    item: undefined,
+    dbms: kind.value === 'QUERY' ? document.getElementById('template-dbms').value : undefined,
+    usesQueryTemplate: false,
     role: kind.value === 'SCRIPT' ? document.getElementById('template-role').value || undefined : undefined,
     product: kind.value === 'SCRIPT' ? document.getElementById('template-product').value.trim() || undefined : undefined,
     enabled: document.getElementById('template-enabled').checked,
@@ -313,8 +332,50 @@ async function persistTemplate() {
   allTemplates = allTemplates.some((item) => item.id === saved.id) ? allTemplates.map((item) => item.id === saved.id ? saved : item) : [...allTemplates, saved];
   editingId = saved.id;
   hasUnsavedChanges = false;
+  document.getElementById('btn-template-history').hidden = false;
   applyTemplateFilters();
   return true;
+}
+
+async function showTemplateHistory() {
+  if (!editingId) return;
+  if (hasUnsavedChanges && !confirm('현재 저장하지 않은 변경사항은 이력에서 복원할 때 사라집니다. 이력을 계속 볼까요?')) return;
+  const response = await fetch(`/api/templates/${encodeURIComponent(editingId)}/history`);
+  if (!response.ok) { alert('변경 이력을 불러오지 못했습니다.'); return; }
+  const versions = await response.json();
+  const historyList = document.getElementById('template-history-list');
+  historyList.replaceChildren();
+  if (!versions.length) {
+    const empty = document.createElement('p');
+    empty.textContent = '아직 저장된 이전 버전이 없습니다. 스크립트 내용을 변경해 저장하면 이전 버전이 여기에 보관됩니다.';
+    historyList.append(empty);
+  }
+  versions.forEach((version, index) => {
+    const row = document.createElement('article');
+    row.className = 'template-list-item';
+    const info = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = `${index === 0 ? '직전 버전' : `이전 버전 ${index + 1}`} · ${new Date(version.savedAt).toLocaleString()}`;
+    const detail = document.createElement('small');
+    detail.textContent = `${version.template.name} · ${version.template.content.length.toLocaleString()}자`;
+    info.append(title, detail);
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.className = 'btn btn-small';
+    restore.textContent = '이 버전 복원';
+    restore.addEventListener('click', async () => {
+      if (!confirm(`'${version.template.name}'의 이 버전을 복원할까요? 현재 내용도 변경 이력에 저장됩니다.`)) return;
+      const restoredResponse = await fetch(`/api/templates/${encodeURIComponent(editingId)}/history/${encodeURIComponent(version.versionId)}/restore`, { method: 'POST' });
+      const result = await restoredResponse.json().catch(() => ({}));
+      if (!restoredResponse.ok) { alert(result.message || '버전을 복원하지 못했습니다.'); return; }
+      document.getElementById('template-history-dialog').close();
+      await loadTemplates();
+      openTemplate(result.data);
+    });
+    row.append(info, restore);
+    historyList.append(row);
+  });
+  document.getElementById('template-history-dialog').showModal();
 }
 
 async function removeTemplate(item) {
@@ -324,7 +385,7 @@ async function removeTemplate(item) {
   await loadTemplates();
 }
 
-function resetForm() { editingId = ''; hasUnsavedChanges = false; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; updateFormMode(); renderList(); }
+function resetForm() { editingId = ''; hasUnsavedChanges = false; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; document.getElementById('btn-template-history').hidden = true; updateFormMode(); renderList(); }
 
 renderHighlightedTemplate();
 loadTemplates().catch((error) => { console.error(error); alert(error.message || '공통코드 또는 템플릿을 불러오지 못했습니다.'); });

@@ -1,0 +1,2110 @@
+{
+  "schemaVersion": 1,
+  "policies": [
+    {
+      "id": "windows-basic-default",
+      "name": "Windows 기본 점검",
+      "os": "Windows",
+      "category": "BASIC",
+      "enabled": true,
+      "items": [
+        {
+          "id": "HOST_INFO",
+          "name": "서버 기본정보",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-HOST_INFO",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "hostname",
+                    "label": "호스트명"
+                  },
+                  {
+                    "key": "osName",
+                    "label": "운영체제"
+                  },
+                  {
+                    "key": "osVersion",
+                    "label": "OS 버전"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "CPU",
+          "name": "CPU 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-CPU",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "MEMORY",
+          "name": "메모리 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-MEMORY",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "UPTIME",
+          "name": "가동시간",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-UPTIME",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DISK",
+          "name": "디스크 사용량",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            },
+            "templateId": "WINDOWS-PART-DISK"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "device",
+                    "label": "드라이브"
+                  },
+                  {
+                    "key": "volumeName",
+                    "label": "볼륨명"
+                  },
+                  {
+                    "key": "totalGB",
+                    "label": "전체(GB)"
+                  },
+                  {
+                    "key": "usedGB",
+                    "label": "사용(GB)"
+                  },
+                  {
+                    "key": "freeGB",
+                    "label": "여유(GB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "PROCESS",
+          "name": "프로세스",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "templateId": "WINDOWS-PART-PROCESS",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "name",
+                    "label": "프로세스"
+                  },
+                  {
+                    "key": "processId",
+                    "label": "PID"
+                  },
+                  {
+                    "key": "running",
+                    "label": "실행 중"
+                  },
+                  {
+                    "key": "cpuSeconds",
+                    "label": "CPU(초)"
+                  },
+                  {
+                    "key": "memoryMB",
+                    "label": "메모리(MB)"
+                  },
+                  {
+                    "key": "uptimeMinutes",
+                    "label": "가동(분)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DIRECTORY",
+          "name": "디렉터리 사용량",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "templateId": "WINDOWS-PART-DIRECTORY",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "path",
+                    "label": "경로"
+                  },
+                  {
+                    "key": "exists",
+                    "label": "존재"
+                  },
+                  {
+                    "key": "sizeGB",
+                    "label": "크기(GB)"
+                  },
+                  {
+                    "key": "usedGB",
+                    "label": "사용(GB)"
+                  },
+                  {
+                    "key": "freeGB",
+                    "label": "여유(GB)"
+                  },
+                  {
+                    "key": "totalGB",
+                    "label": "전체(GB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "message",
+                    "label": "메시지"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "FILE_SIZE",
+          "name": "파일 크기",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "templateId": "WINDOWS-PART-FILE_SIZE",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "path",
+                    "label": "파일 경로"
+                  },
+                  {
+                    "key": "exists",
+                    "label": "존재"
+                  },
+                  {
+                    "key": "sizeMB",
+                    "label": "크기(MB)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "message",
+                    "label": "메시지"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "PORT",
+          "name": "포트 리스닝",
+          "enabled": true,
+          "executor": {
+            "type": "TCP_CHECK",
+            "templateId": "WINDOWS-PART-PORT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "port",
+                    "label": "포트"
+                  },
+                  {
+                    "key": "protocol",
+                    "label": "프로토콜"
+                  },
+                  {
+                    "key": "description",
+                    "label": "설명"
+                  },
+                  {
+                    "key": "listening",
+                    "label": "수신 중"
+                  },
+                  {
+                    "key": "processName",
+                    "label": "프로세스"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "HTTP",
+          "name": "HTTP 응답",
+          "enabled": true,
+          "executor": {
+            "type": "HTTP_CHECK",
+            "templateId": "WINDOWS-PART-HTTP",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "name",
+                    "label": "점검명"
+                  },
+                  {
+                    "key": "url",
+                    "label": "URL"
+                  },
+                  {
+                    "key": "expectedStatus",
+                    "label": "기대 코드"
+                  },
+                  {
+                    "key": "statusCode",
+                    "label": "응답 코드"
+                  },
+                  {
+                    "key": "responseTimeMs",
+                    "label": "응답 시간(ms)"
+                  },
+                  {
+                    "key": "success",
+                    "label": "성공"
+                  },
+                  {
+                    "key": "error",
+                    "label": "오류"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "CUSTOM_174E91FC0CF84E2A",
+          "name": "정책테스트",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "s",
+                    "label": "에스"
+                  },
+                  {
+                    "key": "b",
+                    "label": "비"
+                  }
+                ]
+              }
+            ],
+            "statusField": "ststs",
+            "statusRules": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "windows-web-default",
+      "name": "Windows WEB 기본 정책",
+      "os": "Windows",
+      "category": "WEB",
+      "enabled": true,
+      "items": [
+        {
+          "id": "WEB_ENGINE_STATUS",
+          "name": "WEB 엔진 상태",
+          "enabled": true,
+          "executor": {
+            "type": "CONSOLE_COMMAND",
+            "templateId": "WINDOWS-PART-WEB_ENGINE_STATUS",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "CONSOLE"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WEB_WAS_CONNECTION",
+          "name": "WEB-WAS 연동 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WEB_WAS_CONNECTION",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WEB_REQUEST_VOLUME",
+          "name": "사용자 요청 처리량",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WEB_REQUEST_VOLUME",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WEB_LOG",
+          "name": "WEB 로그 상태",
+          "enabled": true,
+          "executor": {
+            "type": "LOG_ANALYSIS",
+            "templateId": "WINDOWS-PART-WEB_LOG",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "LOG_TABLE",
+                "columns": [
+                  {
+                    "key": "timestamp",
+                    "label": "시각"
+                  },
+                  {
+                    "key": "path",
+                    "label": "파일 경로"
+                  },
+                  {
+                    "key": "text",
+                    "label": "로그 내용"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "windows-was-default",
+      "name": "Windows WAS 기본 정책",
+      "os": "Windows",
+      "category": "WAS",
+      "enabled": true,
+      "items": [
+        {
+          "id": "WAS_JVM_HEAP",
+          "name": "JVM Heap 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_JVM_HEAP",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "processName",
+                    "label": "프로세스"
+                  },
+                  {
+                    "key": "processId",
+                    "label": "PID"
+                  },
+                  {
+                    "key": "heapUsedMB",
+                    "label": "사용 Heap(MB)"
+                  },
+                  {
+                    "key": "heapCapacityMB",
+                    "label": "전체 Heap(MB)"
+                  },
+                  {
+                    "key": "heapUsagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "message",
+                    "label": "수집 메시지"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "WAS_THREAD_POOL",
+          "name": "Thread Pool 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_THREAD_POOL",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "poolName",
+                    "label": "Pool"
+                  },
+                  {
+                    "key": "activeCount",
+                    "label": "사용 중"
+                  },
+                  {
+                    "key": "maxCount",
+                    "label": "최대"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_LONG_RUNNING_THREAD",
+          "name": "장기 수행 Thread",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_LONG_RUNNING_THREAD",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "processId",
+                    "label": "PID"
+                  },
+                  {
+                    "key": "threadName",
+                    "label": "Thread"
+                  },
+                  {
+                    "key": "elapsedSeconds",
+                    "label": "수행 시간(초)"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_DB_CONNECTION_POOL",
+          "name": "DB Connection Pool 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_DB_CONNECTION_POOL",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "poolName",
+                    "label": "Pool"
+                  },
+                  {
+                    "key": "activeCount",
+                    "label": "사용 중"
+                  },
+                  {
+                    "key": "maxCount",
+                    "label": "최대"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_DEPLOYMENT",
+          "name": "애플리케이션 배포 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_DEPLOYMENT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "processCount",
+                    "label": "프로세스 수"
+                  },
+                  {
+                    "key": "processes",
+                    "label": "프로세스"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_HEAP_DUMP",
+          "name": "Heap Dump 파일 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_HEAP_DUMP",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "javaProcessCount",
+                    "label": "Java 프로세스 수"
+                  },
+                  {
+                    "key": "existingFileCount",
+                    "label": "파일 수"
+                  },
+                  {
+                    "key": "files",
+                    "label": "Heap Dump 파일"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_STARTUP_SCRIPT",
+          "name": "기동 스크립트 변경 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "WINDOWS-PART-WAS_STARTUP_SCRIPT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "processCount",
+                    "label": "프로세스 수"
+                  },
+                  {
+                    "key": "processes",
+                    "label": "프로세스·경로"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_LOG",
+          "name": "WAS 로그 상태",
+          "enabled": true,
+          "executor": {
+            "type": "LOG_ANALYSIS",
+            "templateId": "WINDOWS-PART-WAS_LOG",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "LOG_TABLE",
+                "columns": [
+                  {
+                    "key": "timestamp",
+                    "label": "시각"
+                  },
+                  {
+                    "key": "path",
+                    "label": "파일 경로"
+                  },
+                  {
+                    "key": "text",
+                    "label": "로그 내용"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "windows-db-default",
+      "name": "Windows DB 기본 정책",
+      "os": "Windows",
+      "category": "DB",
+      "enabled": true,
+      "items": [
+        {
+          "id": "DB_INSTANCE_STATUS",
+          "name": "DB 인스턴스·접속 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "dbms": "MSSQL",
+            "templateId": "WINDOWS-QUERY-DB_INSTANCE_STATUS",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "statusField": "__OPSBOX_STATUS",
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "serverName",
+                    "label": "서버명"
+                  },
+                  {
+                    "key": "version",
+                    "label": "버전"
+                  },
+                  {
+                    "key": "edition",
+                    "label": "에디션"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "state",
+                    "label": "DB 상태"
+                  },
+                  {
+                    "key": "recoveryModel",
+                    "label": "복구 모델"
+                  },
+                  {
+                    "key": "dataSizeMB",
+                    "label": "데이터 크기(MB)"
+                  }
+                ]
+              }
+            ],
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "source": "__OPSBOX_STATUS 컬럼을 쿼리 결과 첫 번째 컬럼으로 반환합니다."
+            }
+          }
+        },
+        {
+          "id": "DB_PROCESS_LIMIT",
+          "name": "세션·프로세스 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_PROCESS_LIMIT",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "current_user_sessions",
+                    "label": "현재 세션"
+                  },
+                  {
+                    "key": "configured_max_connections",
+                    "label": "최대 연결"
+                  },
+                  {
+                    "key": "usage_percent",
+                    "label": "사용률(%)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_TABLESPACE",
+          "name": "데이터 영역 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_TABLESPACE",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "allocatedMB",
+                    "label": "할당(MB)"
+                  },
+                  {
+                    "key": "usedMB",
+                    "label": "사용(MB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_BACKUP",
+          "name": "백업 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_BACKUP",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "lastFullBackup",
+                    "label": "최근 전체 백업"
+                  },
+                  {
+                    "key": "backupAgeHours",
+                    "label": "경과 시간(시)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_ARCHIVE_MODE",
+          "name": "아카이브 모드 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_ARCHIVE_MODE",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "recoveryModel",
+                    "label": "복구 모델"
+                  },
+                  {
+                    "key": "lastLogBackupAgeHours",
+                    "label": "로그 백업 경과(시)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_TRANSACTION_LOG",
+          "name": "트랜잭션 로그 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_TRANSACTION_LOG",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "LOG_TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "logSizeMB",
+                    "label": "로그 크기(MB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_REPLICATION",
+          "name": "복제·이중화 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_REPLICATION",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "JSON"
+              }
+            ],
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "linux-basic-default",
+      "name": "Linux 기본 점검",
+      "os": "Linux",
+      "category": "BASIC",
+      "enabled": true,
+      "items": [
+        {
+          "id": "HOST_INFO",
+          "name": "서버 기본정보",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "hostname",
+                    "label": "호스트명"
+                  },
+                  {
+                    "key": "osName",
+                    "label": "운영체제"
+                  },
+                  {
+                    "key": "osVersion",
+                    "label": "OS 버전"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "CPU",
+          "name": "CPU 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "MEMORY",
+          "name": "메모리 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "UPTIME",
+          "name": "가동시간",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DISK",
+          "name": "디스크 사용량",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "device",
+                    "label": "드라이브"
+                  },
+                  {
+                    "key": "volumeName",
+                    "label": "볼륨명"
+                  },
+                  {
+                    "key": "totalGB",
+                    "label": "전체(GB)"
+                  },
+                  {
+                    "key": "usedGB",
+                    "label": "사용(GB)"
+                  },
+                  {
+                    "key": "freeGB",
+                    "label": "여유(GB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "linux-web-default",
+      "name": "Linux WEB 기본 정책",
+      "os": "Linux",
+      "category": "WEB",
+      "enabled": true,
+      "items": [
+        {
+          "id": "WEB_ENGINE_STATUS",
+          "name": "WEB 엔진 상태",
+          "enabled": true,
+          "executor": {
+            "type": "CONSOLE_COMMAND",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "CONSOLE"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "linux-was-default",
+      "name": "Linux WAS 기본 정책",
+      "os": "Linux",
+      "category": "WAS",
+      "enabled": true,
+      "items": [
+        {
+          "id": "WAS_JVM_HEAP",
+          "name": "JVM Heap 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "options": {
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "processName",
+                    "label": "프로세스"
+                  },
+                  {
+                    "key": "processId",
+                    "label": "PID"
+                  },
+                  {
+                    "key": "heapUsedMB",
+                    "label": "사용 Heap(MB)"
+                  },
+                  {
+                    "key": "heapCapacityMB",
+                    "label": "전체 Heap(MB)"
+                  },
+                  {
+                    "key": "heapUsagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "message",
+                    "label": "수집 메시지"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "warningPercent": 70,
+              "criticalPercent": 90
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "linux-db-default",
+      "name": "Linux DB 기본 정책",
+      "os": "Linux",
+      "category": "DB",
+      "enabled": true,
+      "items": [
+        {
+          "id": "DB_INSTANCE_STATUS",
+          "name": "DB 인스턴스·접속 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "dbms": "MSSQL",
+            "templateId": "WINDOWS-QUERY-DB_INSTANCE_STATUS",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "statusField": "__OPSBOX_STATUS",
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "serverName",
+                    "label": "서버명"
+                  },
+                  {
+                    "key": "version",
+                    "label": "버전"
+                  },
+                  {
+                    "key": "edition",
+                    "label": "에디션"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "state",
+                    "label": "DB 상태"
+                  },
+                  {
+                    "key": "recoveryModel",
+                    "label": "복구 모델"
+                  },
+                  {
+                    "key": "dataSizeMB",
+                    "label": "데이터 크기(MB)"
+                  }
+                ]
+              }
+            ],
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected",
+              "source": "__OPSBOX_STATUS 컬럼을 쿼리 결과 첫 번째 컬럼으로 반환합니다."
+            }
+          }
+        },
+        {
+          "id": "DB_PROCESS_LIMIT",
+          "name": "세션·프로세스 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_PROCESS_LIMIT",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "current_user_sessions",
+                    "label": "현재 세션"
+                  },
+                  {
+                    "key": "configured_max_connections",
+                    "label": "최대 연결"
+                  },
+                  {
+                    "key": "usage_percent",
+                    "label": "사용률(%)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_TABLESPACE",
+          "name": "데이터 영역 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_TABLESPACE",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "allocatedMB",
+                    "label": "할당(MB)"
+                  },
+                  {
+                    "key": "usedMB",
+                    "label": "사용(MB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_BACKUP",
+          "name": "백업 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_BACKUP",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "lastFullBackup",
+                    "label": "최근 전체 백업"
+                  },
+                  {
+                    "key": "backupAgeHours",
+                    "label": "경과 시간(시)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_ARCHIVE_MODE",
+          "name": "아카이브 모드 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_ARCHIVE_MODE",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "recoveryModel",
+                    "label": "복구 모델"
+                  },
+                  {
+                    "key": "lastLogBackupAgeHours",
+                    "label": "로그 백업 경과(시)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_TRANSACTION_LOG",
+          "name": "트랜잭션 로그 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_TRANSACTION_LOG",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "LOG_TABLE",
+                "columns": [
+                  {
+                    "key": "__OPSBOX_STATUS",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "databaseName",
+                    "label": "데이터베이스"
+                  },
+                  {
+                    "key": "logSizeMB",
+                    "label": "로그 크기(MB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  }
+                ]
+              }
+            ],
+            "statusField": "__OPSBOX_STATUS",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DB_REPLICATION",
+          "name": "복제·이중화 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SQL_QUERY",
+            "templateId": "WINDOWS-QUERY-DB_REPLICATION",
+            "options": {},
+            "dbms": "MSSQL"
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "JSON"
+              }
+            ],
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

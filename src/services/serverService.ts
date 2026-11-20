@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { Server, ServerRole, ServerProduct, RolePolicyType, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
+import { Server, ServerRole, ServerProduct, RolePolicyType, RolePolicySetting, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
 import type { ScriptPart } from '../types/template';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
@@ -8,6 +8,7 @@ import { validateProcesses, validateDirectories, validateFileChecks, validatePor
 import { NotFoundError, ValidationError } from '../types/error';
 import { getTemplate } from './templateService';
 import { getCommonCodes } from './commonCodeService';
+import { getPolicies } from './policyService';
 
 const FILE = 'data/servers.json';
 
@@ -30,19 +31,65 @@ export function getServerProduct(server: Pick<Server, 'type' | 'product' | 'prod
   return server.products?.[role] ?? (server.type === role ? server.product : undefined);
 }
 
-function normalizeServer(server: Server): Server {
+type StoredServer = {
+  basicInfo: Pick<Server, 'id' | 'name' | 'os' | 'ip' | 'sharedPath'>;
+  roles: { selected: ServerRole[]; products: Server['products'] };
+  policy: {
+    basic: Pick<Server, 'processes' | 'directories' | 'fileChecks' | 'ports' | 'httpChecks' | 'policy' | 'queryTemplateId' | 'policyIds'> & { scriptParts: Partial<Record<ScriptPart, string>> };
+    web: { checks: ScriptPart[]; settings: Partial<Record<ScriptPart, RolePolicySetting>>; scriptParts: Partial<Record<ScriptPart, string>> };
+    was: { checks: ScriptPart[]; settings: Partial<Record<ScriptPart, RolePolicySetting>>; scriptParts: Partial<Record<ScriptPart, string>> };
+    db: { checks: ScriptPart[]; settings: Partial<Record<ScriptPart, RolePolicySetting>>; scriptParts: Partial<Record<ScriptPart, string>>; customQueryTemplateIds: string[] };
+  };
+};
+
+function normalizeServer(input: Server | StoredServer): Server {
+  const nested = input as StoredServer;
+  const server = nested.basicInfo ? {
+    ...nested.basicInfo,
+    type: nested.roles.selected[0],
+    roles: nested.roles.selected,
+    products: nested.roles.products,
+    processes: nested.policy.basic.processes,
+    directories: nested.policy.basic.directories,
+    fileChecks: nested.policy.basic.fileChecks,
+    ports: nested.policy.basic.ports,
+    httpChecks: nested.policy.basic.httpChecks,
+    policy: nested.policy.basic.policy,
+    queryTemplateId: nested.policy.basic.queryTemplateId,
+    policyIds: nested.policy.basic.policyIds,
+    scriptParts: { ...nested.policy.basic.scriptParts, ...nested.policy.web.scriptParts, ...nested.policy.was.scriptParts, ...nested.policy.db.scriptParts },
+    roleChecks: { WEB: nested.policy.web.checks, WAS: nested.policy.was.checks, DB: nested.policy.db.checks },
+    rolePolicySettings: { ...nested.policy.web.settings, ...nested.policy.was.settings, ...nested.policy.db.settings },
+    customQueryTemplateIds: nested.policy.db.customQueryTemplateIds,
+  } as Server : input as Server;
   const roles = getServerRoles(server);
   const products = { ...(server.products ?? {}) };
   if (server.product && !products[server.type]) products[server.type] = server.product;
   const type = roles.includes(server.type) ? server.type : roles[0];
   const roleChecks = { ...(server.roleChecks ?? {}) } as Partial<Record<RolePolicyType, ScriptPart[]>>;
+  const policyIds = server.policyIds ?? {};
+  const policiesById = new Map(getPolicies().filter((policy) => policy.os === server.os).map((policy) => [policy.id, policy]));
+  const rolePolicySettings = { ...(server.rolePolicySettings ?? {}) };
   ROLE_POLICY_TYPES.forEach((role) => {
     if (!roles.includes(role)) { delete roleChecks[role]; return; }
-    if (!Array.isArray(roleChecks[role])) roleChecks[role] = server.os === 'Windows' ? (DEFAULT_ROLE_CHECKS[role] ?? []) : [];
+    const assigned = policiesById.get(policyIds[role]);
+    if (assigned?.category === role && assigned.enabled) {
+      roleChecks[role] = assigned.items.filter((item) => item.enabled).map((item) => item.id as ScriptPart);
+      assigned.items.filter((item) => item.enabled && item.executor.type === 'SQL_QUERY').forEach((item) => {
+        rolePolicySettings[item.id] = { ...(rolePolicySettings[item.id] ?? {}), queryTemplateId: item.executor.templateId || '', dbms: item.executor.dbms } as any;
+      });
+    } else if (!Array.isArray(roleChecks[role])) roleChecks[role] = server.os === 'Windows' ? (DEFAULT_ROLE_CHECKS[role] ?? []) : [];
     roleChecks[role] = [...new Set(roleChecks[role])];
   });
   const customQueryTemplateIds = Array.isArray(server.customQueryTemplateIds) ? [...new Set(server.customQueryTemplateIds)] : [];
   const scriptParts = { ...(server.scriptParts ?? {}) } as Partial<Record<ScriptPart, string>> & { OS_DISK?: string; WEBTOB?: string };
+  const assignedBasic = policiesById.get(policyIds.BASIC);
+  if (assignedBasic?.category === 'BASIC' && assignedBasic.enabled) {
+    assignedBasic.items.filter((item) => item.enabled && ['SCRIPT', 'CONSOLE_COMMAND', 'LOG_ANALYSIS'].includes(item.executor.type) && item.executor.templateId)
+      .forEach((item) => { scriptParts[item.id as ScriptPart] = item.executor.templateId; });
+  }
+  ROLE_POLICY_TYPES.forEach((role) => policiesById.get(policyIds[role])?.items.filter((item) => item.enabled && item.executor.templateId && item.executor.type !== 'SQL_QUERY')
+    .forEach((item) => { scriptParts[item.id as ScriptPart] = item.executor.templateId; }));
   if (scriptParts.WEBTOB && !scriptParts.WEB) scriptParts.WEB = scriptParts.WEBTOB === 'WINDOWS-PART-WEBTOB' ? 'WINDOWS-PART-WEB_ENGINE_STATUS' : scriptParts.WEBTOB;
   delete scriptParts.WEBTOB;
   delete scriptParts.OS_DISK;
@@ -57,15 +104,52 @@ function normalizeServer(server: Server): Server {
     delete scriptParts[legacy];
   });
   const { scriptTemplateId: _legacyScriptTemplateId, ...withoutLegacyOverride } = server as Server & { scriptTemplateId?: string };
-  return { ...withoutLegacyOverride, roles, products, type, product: products[type], scriptParts, roleChecks, customQueryTemplateIds };
+  return { ...withoutLegacyOverride, roles, products, type, product: products[type], scriptParts, roleChecks, rolePolicySettings, customQueryTemplateIds, policyIds };
+}
+
+function toStoredServer(server: Server): StoredServer {
+  const assignedPolicies = getPolicies().filter((policy) => Object.values(server.policyIds ?? {}).includes(policy.id));
+  const customRoleByItem = new Map(assignedPolicies.flatMap((policy) => policy.items.map((item) => [item.id, policy.category] as const)));
+  const partRole = (part: string): 'web' | 'was' | 'db' | undefined => {
+    if (COMMON_CODES.rolePolicies.WEB.includes(part as ScriptPart)) return 'web';
+    if (COMMON_CODES.rolePolicies.WAS.includes(part as ScriptPart)) return 'was';
+    if (COMMON_CODES.rolePolicies.DB.includes(part as ScriptPart)) return 'db';
+    const category = customRoleByItem.get(part);
+    if (category === 'WEB') return 'web';
+    if (category === 'WAS') return 'was';
+    if (category === 'DB') return 'db';
+    return undefined;
+  };
+  const roleChecks = server.roleChecks ?? {};
+  const settings = server.rolePolicySettings ?? {};
+  const basicParts: Partial<Record<ScriptPart, string>> = {};
+  const roleParts: Record<'web' | 'was' | 'db', Partial<Record<ScriptPart, string>>> = { web: {}, was: {}, db: {} };
+  Object.entries(server.scriptParts ?? {}).forEach(([part, id]) => {
+    const role = partRole(part);
+    if (role) roleParts[role][part as ScriptPart] = id;
+    else basicParts[part as ScriptPart] = id;
+  });
+  const roleSettings = (role: 'WEB' | 'WAS' | 'DB') => Object.fromEntries(
+    [...new Set([...(COMMON_CODES.rolePolicies[role] ?? []), ...(roleChecks[role] ?? [])])].filter((part) => settings[part]).map((part) => [part, settings[part]]),
+  );
+  return {
+    basicInfo: { id: server.id, name: server.name, os: server.os, ip: server.ip, sharedPath: server.sharedPath },
+    roles: { selected: server.roles ?? [server.type], products: server.products },
+    policy: {
+      basic: { processes: server.processes, directories: server.directories, fileChecks: server.fileChecks, ports: server.ports, httpChecks: server.httpChecks, policy: server.policy, queryTemplateId: server.queryTemplateId, policyIds: server.policyIds, scriptParts: basicParts },
+      web: { checks: roleChecks.WEB ?? [], settings: roleSettings('WEB'), scriptParts: roleParts.web },
+      was: { checks: roleChecks.WAS ?? [], settings: roleSettings('WAS'), scriptParts: roleParts.was },
+      db: { checks: roleChecks.DB ?? [], settings: roleSettings('DB'), scriptParts: roleParts.db, customQueryTemplateIds: server.customQueryTemplateIds ?? [] },
+    },
+  };
 }
 
 function read(): Server[] {
-  return (JSON.parse(fs.readFileSync(FILE, 'utf8')) as Server[]).map(normalizeServer);
+  return (JSON.parse(fs.readFileSync(FILE, 'utf8')) as Array<Server | StoredServer>).map(normalizeServer);
 }
 
 function write(data: Server[]) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(FILE, JSON.stringify(data.map(toStoredServer), null, 2));
 }
 
 function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {
@@ -199,6 +283,7 @@ export function getCheckConfig(id: string) {
     rolePolicySettings: server.rolePolicySettings ?? {},
     queryTemplateId: server.queryTemplateId ?? '',
     customQueryTemplateIds: server.customQueryTemplateIds ?? [],
+    policyIds: server.policyIds ?? {},
   };
 }
 
@@ -217,6 +302,7 @@ export function updateCheckConfig(
     rolePolicySettings?: Server['rolePolicySettings'];
     queryTemplateId?: string;
     customQueryTemplateIds?: string[];
+    policyIds?: Server['policyIds'];
   },
 ) {
   const servers = read();
@@ -227,6 +313,11 @@ export function updateCheckConfig(
     throw new NotFoundError(`Server not found: ${id}`);
   }
 
+  const policyIds = config.policyIds ?? servers[index].policyIds ?? {};
+  const selectedPolicies = getPolicies().filter((policy) => Object.values(policyIds).includes(policy.id) && policy.os === servers[index].os);
+  const policyByCategory = new Map(selectedPolicies.map((policy) => [policy.category, policy]));
+  const policyItemById = new Map(selectedPolicies.flatMap((policy) => policy.items.map((item) => [item.id, item] as const)));
+
   const processValidation = validateProcesses(config.processes ?? []);
 
   const directoryValidation = validateDirectories(config.directories ?? []);
@@ -235,7 +326,7 @@ export function updateCheckConfig(
   const httpValidation = validateHttpChecks(config.httpChecks ?? []);
 
   const errors = [...processValidation.errors, ...directoryValidation.errors, ...fileCheckValidation.errors, ...portValidation.errors, ...httpValidation.errors];
-  const validParts = new Set<ScriptPart>(['START', 'SAVE', ...COMMON_CODES.scriptItems.map(({ value }) => value as ScriptPart)]);
+  const validParts = new Set<string>(['START', 'SAVE', ...COMMON_CODES.scriptItems.map(({ value }) => value), ...policyItemById.keys()]);
   const roleChecks = config.roleChecks ?? servers[index].roleChecks ?? {};
   const rolePolicySettings = { ...(servers[index].rolePolicySettings ?? {}), ...(config.rolePolicySettings ?? {}) };
   const logPolicies = [
@@ -293,19 +384,39 @@ export function updateCheckConfig(
     if (!getServerRoles(servers[index]).includes(role) && items.length) errors.push({ field: `roleChecks.${role}`, message: `${role} 역할이 있는 서버에서만 항목을 설정할 수 있습니다.` });
     if (new Set(items).size !== items.length) errors.push({ field: `roleChecks.${role}`, message: `${role} 점검 항목을 중복 등록할 수 없습니다.` });
     items.forEach((item) => {
-      if (!COMMON_CODES.rolePolicies[role]?.includes(item)) errors.push({ field: `roleChecks.${role}`, message: `${role} 점검 항목이 올바르지 않습니다.` });
+      const policyItem = policyItemById.get(item);
+      const isBuiltInItem = COMMON_CODES.rolePolicies[role]?.includes(item) === true;
+      const isAssignedCustomItem = policyItem && policyByCategory.get(role)?.items.some((entry) => entry.id === item);
+      if (!isBuiltInItem && !isAssignedCustomItem) errors.push({ field: `roleChecks.${role}`, message: `${role} 점검 항목이 선택된 정책에 없습니다.` });
       const selectedId = config.scriptParts?.[item] ?? servers[index].scriptParts?.[item];
       const defaultTemplate = getTemplate(`WINDOWS-PART-${item}`);
-      if (role === 'DB' && item !== 'DB_CUSTOM_QUERY') {
-        const queryId = rolePolicySettings[item]?.queryTemplateId || `WINDOWS-QUERY-${item}`;
+      const sqlQuery = role === 'DB' && item !== 'DB_CUSTOM_QUERY' && (policyItem?.executor.type === 'SQL_QUERY' || isBuiltInItem);
+      if (sqlQuery) {
+        const queryId = rolePolicySettings[item]?.queryTemplateId || policyItem?.executor.templateId || `WINDOWS-QUERY-${item}`;
         const query = getTemplate(queryId);
-        if (servers[index].os === 'Windows' && getServerProduct(servers[index], 'DB') === 'MSSQL' && (!query?.enabled || query.kind !== 'QUERY' || (query.item && query.item !== item))) {
-          errors.push({ field: `rolePolicySettings.${item}.queryTemplateId`, message: `${item} 점검 쿼리 템플릿을 선택하세요.` });
+        const serverDbms = getServerProduct(servers[index], 'DB');
+        const requiredDbms = policyItem?.executor.dbms || serverDbms;
+        if (servers[index].os === 'Windows' && (!query?.enabled || query.kind !== 'QUERY' || (query.dbms ?? 'MSSQL') !== requiredDbms || requiredDbms !== serverDbms)) {
+          errors.push({ field: `rolePolicySettings.${item}.queryTemplateId`, message: `${policyItem?.name || item} 항목에 서버 DBMS와 맞는 쿼리 템플릿을 선택하세요.` });
         } else if (query) rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: query.id };
-      } else if (role !== 'DB' && !selectedId && !defaultTemplate) {
+      } else if (role !== 'DB' && servers[index].os === 'Windows' && !selectedId && !defaultTemplate) {
         errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
       }
     });
+  }
+  const assignedBasicPolicy = policyByCategory.get('BASIC');
+  for (const item of assignedBasicPolicy?.items.filter((entry) => entry.enabled) ?? []) {
+    if (COMMON_CODES.scriptItems.some((entry) => entry.value === item.id)) continue;
+    if (item.executor.type === 'SQL_QUERY') {
+      errors.push({ field: 'policyIds.BASIC', message: 'DB 쿼리 실행 항목은 DB 정책에 추가하세요.' });
+      continue;
+    }
+    if (servers[index].os !== 'Windows') continue;
+    const templateId = config.scriptParts?.[item.id as ScriptPart] ?? servers[index].scriptParts?.[item.id as ScriptPart] ?? item.executor.templateId;
+    const template = templateId ? getTemplate(templateId) : undefined;
+    if (!template?.enabled || template.kind !== 'SCRIPT_PART' || template.os !== 'Windows') {
+      errors.push({ field: `policyIds.BASIC.${item.id}`, message: `${item.name} 항목의 Windows 스크립트 템플릿을 연결하세요.` });
+    }
   }
   const dbCustomQueryEnabled = (roleChecks.DB ?? []).includes('DB_CUSTOM_QUERY');
   if (new Set(customQueryTemplateIds).size !== customQueryTemplateIds.length) errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 템플릿을 중복 등록할 수 없습니다.' });
@@ -317,23 +428,23 @@ export function updateCheckConfig(
   }
   customQueryTemplateIds.forEach((templateId) => {
     const template = getTemplate(templateId);
-    if (!template || !template.enabled || template.kind !== 'QUERY' || (template.item && template.item !== 'DB_CUSTOM_QUERY')) errors.push({ field: 'customQueryTemplateIds', message: '사용할 수 없는 DB 기타 쿼리 템플릿이 포함되어 있습니다.' });
+    if (!template || !template.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(servers[index], 'DB')) errors.push({ field: 'customQueryTemplateIds', message: '사용할 수 없는 DBMS용 쿼리 템플릿이 포함되어 있습니다.' });
   });
-  const requestedScriptParts = Object.fromEntries(Object.entries(config.scriptParts ?? servers[index].scriptParts ?? {}).filter(([part]) => !COMMON_CODES.rolePolicies.DB.includes(part as ScriptPart)));
+  const requestedScriptParts = Object.fromEntries(Object.entries(config.scriptParts ?? servers[index].scriptParts ?? {}).filter(([part]) => !COMMON_CODES.rolePolicies.DB.includes(part as ScriptPart) && policyItemById.get(part)?.executor.type !== 'SQL_QUERY'));
   for (const [part, templateId] of Object.entries(requestedScriptParts)) {
-    if (!validParts.has(part as ScriptPart)) {
+    if (!validParts.has(part)) {
       errors.push({ field: `scriptParts.${part}`, message: '스크립트 점검 항목이 올바르지 않습니다.' });
       continue;
     }
     if (!templateId) continue;
     const template = getTemplate(templateId);
-    if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== 'Windows' || template.item !== part) {
+    if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== 'Windows') {
       errors.push({ field: `scriptParts.${part}`, message: `${part} 점검에 사용할 Windows 템플릿을 선택하세요.` });
     }
   }
   if (config.queryTemplateId) {
     const template = getTemplate(config.queryTemplateId);
-    if (!template || !template.enabled || template.kind !== 'QUERY') errors.push({ field: 'queryTemplateId', message: '사용 중인 DB 쿼리 템플릿을 선택하세요.' });
+    if (!template || !template.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(servers[index], 'DB')) errors.push({ field: 'queryTemplateId', message: '사용 중인 DBMS용 쿼리 템플릿을 선택하세요.' });
     else if (servers[index].os !== 'Windows' || !getServerRoles(servers[index]).includes('DB') || getServerProduct(servers[index], 'DB') !== 'MSSQL') errors.push({ field: 'queryTemplateId', message: 'DB 쿼리 템플릿은 Windows MSSQL 점검에만 지정할 수 있습니다.' });
   }
   if (!getServerRoles(servers[index]).some((role) => role === 'WEB' || role === 'WAS') && (config.httpChecks?.length ?? 0) > 0) errors.push({ field: 'httpChecks', message: 'HTTP 점검은 WEB/WAS 역할이 있는 서버에만 설정할 수 있습니다.' });
@@ -353,6 +464,7 @@ export function updateCheckConfig(
   servers[index].roleChecks = roleChecks;
   servers[index].rolePolicySettings = rolePolicySettings;
   servers[index].customQueryTemplateIds = customQueryTemplateIds;
+    servers[index].policyIds = policyIds;
   servers[index].queryTemplateId = config.queryTemplateId ?? '';
 
   write(servers);
@@ -371,5 +483,6 @@ export function updateCheckConfig(
     rolePolicySettings: servers[index].rolePolicySettings,
     queryTemplateId: servers[index].queryTemplateId,
     customQueryTemplateIds: servers[index].customQueryTemplateIds,
+    policyIds: servers[index].policyIds,
   };
 }

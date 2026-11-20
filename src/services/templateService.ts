@@ -1,9 +1,12 @@
 import fs from 'fs';
-import { ManagedTemplate, ScriptPart } from '../types/template';
+import { ManagedTemplate, ScriptPart, TemplateVersion } from '../types/template';
 import { ValidationError } from '../types/error';
 import { getCommonCodes } from './commonCodeService';
+import { getPolicies } from './policyService';
 
 const FILE = 'data/templates.json';
+const HISTORY_FILE = 'data/template-history.json';
+const MAX_HISTORY_PER_TEMPLATE = 50;
 function read(): ManagedTemplate[] {
   if (!fs.existsSync(FILE)) throw new Error(`기본 템플릿 데이터 파일이 없습니다: ${FILE}`);
   const items = JSON.parse(fs.readFileSync(FILE, 'utf8')) as ManagedTemplate[];
@@ -43,6 +46,39 @@ function write(templates: ManagedTemplate[]) {
   fs.writeFileSync(FILE, JSON.stringify(templates, null, 2));
 }
 
+function readHistory(): Record<string, TemplateVersion[]> {
+  if (!fs.existsSync(HISTORY_FILE)) return {};
+  return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')) as Record<string, TemplateVersion[]>;
+}
+
+function writeHistory(history: Record<string, TemplateVersion[]>) {
+  fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+}
+
+function addHistoryVersion(history: Record<string, TemplateVersion[]>, template: ManagedTemplate) {
+  const versions = history[template.id] ?? [];
+  if (versions[0]?.template.content === template.content) return;
+  versions.unshift({ versionId: `VER-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, savedAt: new Date().toISOString(), template: structuredClone(template) });
+  history[template.id] = versions.slice(0, MAX_HISTORY_PER_TEMPLATE);
+}
+
+export function getTemplateHistory(id: string) {
+  return readHistory()[id] ?? [];
+}
+
+export function restoreTemplateVersion(id: string, versionId: string) {
+  const items = read();
+  const index = items.findIndex((item) => item.id === id);
+  if (index < 0) throw new Error(`Template not found: ${id}`);
+  const history = readHistory();
+  const version = (history[id] ?? []).find((item) => item.versionId === versionId);
+  if (!version) throw new Error(`Template version not found: ${versionId}`);
+  const restored = { ...version.template, id, updatedAt: new Date().toISOString() };
+  items[index] = restored;
+  write(items);
+  return restored;
+}
+
 function validate(input: Partial<ManagedTemplate>) {
   const errors: Array<{ field: string; message: string }> = [];
   if (!input.name?.trim()) errors.push({ field: 'name', message: '템플릿 이름은 필수입니다.' });
@@ -50,10 +86,9 @@ function validate(input: Partial<ManagedTemplate>) {
   if (!input.content?.trim()) errors.push({ field: 'content', message: '템플릿 내용을 입력하세요.' });
   if (['SCRIPT', 'SCRIPT_PART'].includes(input.kind ?? '') && !['Windows', 'Linux'].includes(input.os ?? '')) errors.push({ field: 'os', message: '스크립트 템플릿은 운영체제를 지정해야 합니다.' });
   if (input.kind === 'SCRIPT_PART' && input.os !== 'Windows') errors.push({ field: 'os', message: '점검 항목 스크립트는 현재 Windows 템플릿만 지원합니다.' });
-  if (input.kind === 'SCRIPT_PART' && !input.item) errors.push({ field: 'item', message: '스크립트 점검 항목을 지정해야 합니다.' });
-  if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'SAVE', ...getCommonCodes().scriptItems.map(({ value }) => value)].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
-  if (input.kind === 'QUERY' && input.item && !getCommonCodes().rolePolicies.DB.includes(input.item)) errors.push({ field: 'item', message: 'DB 쿼리의 점검 항목이 올바르지 않습니다.' });
-  if (input.kind === 'QUERY' && !input.item) errors.push({ field: 'item', message: 'DB 쿼리의 점검 항목을 선택하세요.' });
+  const customPolicyItems = getPolicies().flatMap((policy) => policy.items.map((item) => item.id));
+  if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'SAVE', ...getCommonCodes().scriptItems.map(({ value }) => value), ...customPolicyItems].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
+  if (input.kind === 'QUERY' && !getCommonCodes().productsByRole.DB.includes(input.dbms ?? '')) errors.push({ field: 'dbms', message: 'DBMS 종류를 선택하세요.' });
   if (input.usesQueryTemplate && input.item !== 'DB_QUERY_RUNNER') errors.push({ field: 'usesQueryTemplate', message: 'DB 공통 쿼리 실행기에서만 쿼리 템플릿을 사용할 수 있습니다.' });
   if (input.role && !['WEB', 'WAS', 'DB', 'OTHER'].includes(input.role)) errors.push({ field: 'role', message: '대상 역할이 올바르지 않습니다.' });
   if (errors.length) throw new ValidationError(errors);
@@ -74,9 +109,14 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
   if (id && index < 0) throw new Error(`Template not found: ${id}`);
   const item: ManagedTemplate = {
     id: id ?? `TPL-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: input.name!.trim(), kind: input.kind!, os: input.os, role: input.role, product: input.product, item: input.item, usesQueryTemplate: input.usesQueryTemplate === true,
+    name: input.name!.trim(), kind: input.kind!, os: input.os, role: input.role, product: input.product, dbms: input.dbms, item: input.kind === 'SCRIPT_PART' ? input.item : undefined, usesQueryTemplate: input.usesQueryTemplate === true,
     enabled: input.enabled !== false, content: input.content!, updatedAt: new Date().toISOString(),
   };
+  if (index >= 0 && items[index].content !== item.content) {
+    const history = readHistory();
+    addHistoryVersion(history, items[index]);
+    writeHistory(history);
+  }
   if (index >= 0) items[index] = item; else items.push(item);
   write(items);
   return item;

@@ -130,6 +130,11 @@ function renderReport() {
 
   renderHealth(health);
   renderMetrics(data, compareData);
+  const basicPolicyItems = data.checks?.policyItems || [];
+  const basicPolicySection = document.getElementById('basic-policy-item-section');
+  basicPolicySection.hidden = basicPolicyItems.length === 0;
+  renderPolicyItemOutputs(basicPolicyItems, 'basic-policy-item-results');
+  renderLogAnalysisTables(basicPolicyItems, 'basic-log-results');
   renderTypeReportForm(serverTypes, data, data.products || currentServerProduct);
   renderDisks(data.disks);
   renderProcesses(data.processes, compareData?.processes);
@@ -184,6 +189,8 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     OTHER: [],
   };
   renderChecklist('type-check-list', checkRows[type]);
+  renderPolicyItemOutputs(rolePolicyItems);
+  if (type === 'WEB' || type === 'WAS') renderLogAnalysisTables(rolePolicyItems);
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
   if (type === 'DB') {
     renderDatabaseChecks(data.databaseChecks, product);
@@ -224,6 +231,81 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
   }
   reportRoleSuffix = '';
+}
+
+function renderLogAnalysisTables(items, targetId = 'log-analysis-results' + reportRoleSuffix) {
+  const container = document.getElementById(targetId);
+  if (!container) return;
+  container.replaceChildren();
+  const logItems = (items || []).filter((item) => (['WEB_LOG', 'WAS_LOG'].includes(item.item) || item.executorType === 'LOG_ANALYSIS') && (item.result?.components?.some((component) => component.type === 'LOG_TABLE') ?? ['WEB_LOG', 'WAS_LOG'].includes(item.item)));
+  container.closest('.report-subsection').hidden = logItems.length === 0;
+  logItems.forEach((item) => {
+    const detail = item.detail || {};
+    const summary = document.createElement('p'); summary.className = 'policy-help';
+    const categories = detail.categories || {};
+    summary.textContent = `최근 ${detail.periodDays ?? 7}일 · 검색 ${detail.checkedFileCount ?? 0}개 파일 · 발견 ${detail.matchedLineCount ?? 0}건 · Fatal ${categories.fatal ?? 0} · Error ${categories.errorException ?? 0} · Warning ${categories.warning ?? 0} · HTTP 5xx ${categories.http5xx ?? 0} · HTTP 4xx ${categories.http4xx ?? 0}`;
+    container.append(summary);
+    if (detail.message) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = detail.message; container.append(message); }
+    const scroll = document.createElement('div'); scroll.className = 'table-scroll';
+    const table = document.createElement('table'); table.className = 'server-table';
+    const configuredColumns = item.result?.components?.find((component) => component.type === 'LOG_TABLE')?.columns;
+    const columns = configuredColumns?.length ? configuredColumns : [{ key: 'timestamp', label: '시각' }, { key: 'severity', label: '심각도' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
+    const head = document.createElement('thead'); const headRow = document.createElement('tr');
+    columns.forEach((column) => { const th = document.createElement('th'); th.textContent = column.label; headRow.append(th); });
+    head.append(headRow); table.append(head);
+    const body = document.createElement('tbody');
+    const samples = Array.isArray(detail.samples) ? detail.samples : [];
+    samples.forEach((sample) => {
+      const text = String(sample.text || '');
+      const severity = /\b(FATAL|CRITICAL|EMERGENCY)\b/i.test(text) ? '치명' : /\b(ERROR|ERR|EXCEPTION|SEVERE)\b/i.test(text) ? '오류' : /\b(WARN|WARNING)\b/i.test(text) ? '경고' : /\b5\d\d\b/.test(text) ? 'HTTP 5xx' : /\b4\d\d\b/.test(text) ? 'HTTP 4xx' : '확인';
+      const row = document.createElement('tr');
+      const values = { timestamp: sample.timestamp || '-', severity, path: sample.path || '-', message: text, text };
+      columns.forEach((column) => { const td = document.createElement('td'); td.textContent = String(values[column.key] ?? sample[column.key] ?? ''); row.append(td); });
+      body.append(row);
+    });
+    if (!samples.length) { const row = document.createElement('tr'); const cell = document.createElement('td'); cell.colSpan = columns.length; cell.textContent = detail.status === 'NotCollected' ? (detail.message || '로그를 수집하지 못했습니다.') : '표시할 로그가 없습니다.'; row.append(cell); body.append(row); }
+    table.append(body); scroll.append(table); container.append(scroll);
+  });
+}
+
+function renderPolicyItemOutputs(items, targetId = 'policy-item-output-results' + reportRoleSuffix) {
+  const container = document.getElementById(targetId);
+  if (!container) return;
+  container.replaceChildren();
+  (items || []).forEach((item) => {
+    const components = item.result?.components || [];
+    const views = components.map((component) => component.type);
+    const detail = item.detail || {};
+    views.filter((view) => !['SUMMARY', 'LOG_TABLE'].includes(view)).forEach((view) => {
+      const section = document.createElement('section'); section.className = 'report-subsection';
+      const heading = document.createElement('h3'); heading.textContent = `${item.name || item.item} · ${view === 'METRIC' ? '측정값' : view === 'CONSOLE' ? '콘솔 결과' : 'JSON 상세'}`; section.append(heading);
+      if (view === 'TABLE') {
+        const configuredColumns = components.find((component) => component.type === 'TABLE')?.columns || [];
+        const columns = Array.isArray(detail.columns) && detail.columns.length ? detail.columns : configuredColumns.map((column) => column.key);
+        const rows = Array.isArray(detail.rows) ? detail.rows : [];
+        if (!columns.length || !rows.length) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = '표시할 행 데이터가 없습니다.'; section.append(message); }
+        else {
+          const scroll = document.createElement('div'); scroll.className = 'table-scroll'; const table = document.createElement('table'); table.className = 'server-table';
+          const head = document.createElement('thead'); const headRow = document.createElement('tr');
+          columns.forEach((column, index) => { const th = document.createElement('th'); th.textContent = configuredColumns[index]?.label || String(column); headRow.append(th); }); head.append(headRow);
+          const body = document.createElement('tbody'); rows.forEach((values) => { const row = document.createElement('tr'); columns.forEach((column, index) => { const cell = document.createElement('td'); const value = Array.isArray(values) ? values[index] : values?.[column]; cell.textContent = value == null ? '' : String(value); row.append(cell); }); body.append(row); });
+          table.append(head, body); scroll.append(table); section.append(scroll);
+        }
+      } else if (view === 'CONSOLE') {
+        const output = detail.output || detail.console?.stdout || detail.command || detail.message || '콘솔 출력이 없습니다.';
+        const pre = document.createElement('pre'); pre.className = 'webtob-console-output'; pre.textContent = String(output); section.append(pre);
+      } else if (view === 'METRIC') {
+        const values = detail.metrics || Object.fromEntries(Object.entries(detail).filter(([key, value]) => key !== 'status' && ['number', 'string'].includes(typeof value)));
+        const table = document.createElement('table'); table.className = 'server-table';
+        const body = document.createElement('tbody');
+        Object.entries(values).forEach(([key, value]) => { const row = document.createElement('tr'); const name = document.createElement('th'); name.textContent = key; const cell = document.createElement('td'); cell.textContent = String(value); row.append(name, cell); body.append(row); });
+        table.append(body); section.append(table);
+      } else {
+        const pre = document.createElement('pre'); pre.className = 'webtob-console-output'; pre.textContent = JSON.stringify(detail, null, 2); section.append(pre);
+      }
+      container.append(section);
+    });
+  });
 }
 
 function summarizeRolePolicyDetail(item) {

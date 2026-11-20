@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>OpsBox | 공통코드 관리</title><link rel="stylesheet" href="/shared/css/app.css?v=20261120-common-codes-v2" /></head>
+<body><div id="shared-layout-root"></div><template id="page-content-template">
+  <header class="header"><h1>공통코드 관리</h1><p>코드 분류와 분류별 코드를 관리합니다.</p></header>
+  <section class="card">
+    <div class="section-header"><h2>코드 분류</h2><button id="category-add" class="btn btn-primary" type="button">+ 분류 추가</button></div>
+    <div class="form-group"><label for="category-select">분류 선택</label><select id="category-select"></select></div>
+    <div class="section-header"><h2 id="entry-heading">코드 목록</h2><div><button id="entry-add" class="btn btn-primary" type="button">+ 코드 추가</button> <button id="category-remove" class="btn btn-danger" type="button">분류 삭제</button></div></div>
+    <div class="table-wrap"><table><thead><tr><th>코드</th><th>표시명</th><th>사용 여부</th><th>정렬 순서</th><th>관리</th></tr></thead><tbody id="codes-table"></tbody></table></div>
+    <p id="codes-empty" class="policy-help" hidden>등록된 코드가 없습니다.</p><p id="codes-message" class="policy-help" role="status"></p>
+  </section>
+  <dialog id="code-dialog"><form id="code-form" method="dialog"><h2 id="dialog-title">코드 추가</h2><div class="form-group"><label for="code-value">코드 값</label><input id="code-value" required maxlength="120" /></div><div class="form-group"><label for="code-label">표시명</label><input id="code-label" required maxlength="120" /></div><div class="form-group"><label for="code-enabled">사용 여부</label><select id="code-enabled"><option value="true">사용</option><option value="false">미사용</option></select></div><div class="form-group"><label for="code-order">정렬 순서</label><input id="code-order" type="number" value="0" /></div><div class="button-area"><button id="dialog-cancel" class="btn" type="button">취소</button><button class="btn btn-primary" type="submit">확인</button></div></form></dialog>
+</template><script type="module" src="/shared/js/common.js"></script><script type="module" src="/settings/common-code-management/common-code-management.js"></script></body></html>

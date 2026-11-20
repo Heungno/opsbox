@@ -6,6 +6,7 @@ import { dashboardRoutes } from './dashboardRoutes';
 import { reportRoutes } from './reportRoutes';
 import { templateRoutes } from './templateRoutes';
 import { commonCodeRoutes } from './commonCodeRoutes';
+import { policyRoutes } from './policyRoutes';
 
 export async function routes(app: FastifyInstance) {
   await app.register(serverRoutes);
@@ -15,4 +16,5 @@ export async function routes(app: FastifyInstance) {
   await app.register(reportRoutes);
   await app.register(templateRoutes);
   await app.register(commonCodeRoutes);
+  await app.register(policyRoutes);
 }

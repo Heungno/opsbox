@@ -10,9 +10,16 @@ export interface ManagedTemplate {
   os?: 'Windows' | 'Linux';
   role?: ServerRole;
   product?: string;
+  dbms?: string;
   item?: ScriptPart;
   usesQueryTemplate?: boolean;
   enabled: boolean;
   content: string;
   updatedAt: string;
+}
+
+export interface TemplateVersion {
+  versionId: string;
+  savedAt: string;
+  template: ManagedTemplate;
 }

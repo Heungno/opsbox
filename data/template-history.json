@@ -1,0 +1,19 @@
+{
+  "WINDOWS-QUERY-DB_BACKUP": [
+    {
+      "versionId": "VER-1795151602323-iv4zg",
+      "savedAt": "2026-11-20T05:13:22.323Z",
+      "template": {
+        "id": "WINDOWS-QUERY-DB_BACKUP",
+        "name": "MSSQL 쿼리 · 백업 상태",
+        "kind": "QUERY",
+        "os": "Windows",
+        "role": "DB",
+        "item": "DB_BACKUP",
+        "enabled": true,
+        "content": "SET NOCOUNT ON;\nSELECT CASE WHEN MAX(b.backup_finish_date) IS NULL OR DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 336 THEN 'Critical' WHEN DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 168 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  d.name AS databaseName, ISNULL(CONVERT(varchar(19), MAX(b.backup_finish_date), 120), 'NONE') AS lastFullBackup, ISNULL(DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()), -1) AS backupAgeHours\nFROM sys.databases d LEFT JOIN msdb.dbo.backupset b ON b.database_name = d.name AND b.type = 'D'\nWHERE d.state_desc = 'ONLINE' GROUP BY d.name ORDER BY d.name;",
+        "updatedAt": "2026-11-20T05:09:24.161Z"
+      }
+    }
+  ]
+}

@@ -2,17 +2,22 @@ import { Server } from '../types/server';
 import { ManagedTemplate, ScriptPart } from '../types/template';
 import { getServerProduct, getServerRoles } from './serverService';
 import { getCommonCodes } from './commonCodeService';
+import { getPolicies } from './policyService';
 
 const CONFIG_TOKEN = '@@CONFIG_BASE64@@';
 
 function getParts(server: Server, templates: ManagedTemplate[]): string[] {
   const roles = getServerRoles(server);
-  const selected: ScriptPart[] = ['START', 'HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'];
-  if (server.processes?.length) selected.push('PROCESS');
-  if (server.directories?.length) selected.push('DIRECTORY');
-  if (server.fileChecks?.length) selected.push('FILE_SIZE');
-  if (server.ports?.length) selected.push('PORT');
-  if (server.httpChecks?.length) selected.push('HTTP');
+  const catalog = getPolicies().filter((policy) => policy.os === server.os);
+  const basicPolicy = catalog.find((policy) => policy.id === server.policyIds?.BASIC && policy.category === 'BASIC');
+  const basicItems = basicPolicy?.items.filter((item) => item.enabled) ?? [];
+  const selected: ScriptPart[] = ['START', ...(basicPolicy ? basicItems.map((item) => item.id as ScriptPart) : ['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME', 'DISK'] as ScriptPart[])];
+  const hasBasicItem = (item: string) => !basicPolicy || basicItems.some((entry) => entry.id === item);
+  if (server.processes?.length && hasBasicItem('PROCESS') && !selected.includes('PROCESS')) selected.push('PROCESS');
+  if (server.directories?.length && hasBasicItem('DIRECTORY') && !selected.includes('DIRECTORY')) selected.push('DIRECTORY');
+  if (server.fileChecks?.length && hasBasicItem('FILE_SIZE') && !selected.includes('FILE_SIZE')) selected.push('FILE_SIZE');
+  if (server.ports?.length && hasBasicItem('PORT') && !selected.includes('PORT')) selected.push('PORT');
+  if (server.httpChecks?.length && hasBasicItem('HTTP') && !selected.includes('HTTP')) selected.push('HTTP');
   for (const role of ['WEB', 'WAS', 'DB'] as const) {
     if (!roles.includes(role)) continue;
     const items = server.roleChecks?.[role] ?? [];
@@ -24,7 +29,7 @@ function getParts(server: Server, templates: ManagedTemplate[]): string[] {
 
   return selected.map((item) => {
     const selectedId = server.scriptParts?.[item];
-    const selectedTemplate = selectedId ? templates.find((template) => template.id === selectedId && template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item) : undefined;
+    const selectedTemplate = selectedId ? templates.find((template) => template.id === selectedId && template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows') : undefined;
     if (selectedId && !selectedTemplate) throw new Error(`Windows 점검 항목 '${item}'에 지정한 스크립트 템플릿을 사용할 수 없습니다. 서버 정책에서 템플릿을 다시 선택하세요.`);
     const defaults = templates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Windows' && template.item === item);
     const chosen = selectedTemplate ?? defaults.find((template) => template.id === `WINDOWS-PART-${item}`) ?? (defaults.length === 1 ? defaults[0] : undefined);
@@ -50,9 +55,17 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
     content: content.replace(/\{\{SERVER_IP\}\}/g, server.ip).replace(/\{\{SERVER_NAME\}\}/g, server.name),
   }));
   const labels = new Map(getCommonCodes().scriptItems.map(({ value, label }) => [value, label]));
+  const assignedPolicies = getPolicies().filter((policy) => Object.values(server.policyIds ?? {}).includes(policy.id));
+  const itemDefinitions = new Map(assignedPolicies.flatMap((policy) => policy.items.map((item) => [item.id, item] as const)));
   const rolePolicies = Object.fromEntries(
-    (['WEB', 'WAS', 'DB'] as const).map((role) => [role, (server.roleChecks?.[role] ?? []).map((item) => ({ item, name: labels.get(item) ?? item }))]),
+    (['WEB', 'WAS', 'DB'] as const).map((role) => [role, (server.roleChecks?.[role] ?? []).map((item) => {
+      const definition = itemDefinitions.get(item);
+      return { item, name: definition?.name ?? labels.get(item) ?? item, result: definition?.result, executorType: definition?.executor.type };
+    })]),
   );
+  const basicPolicy = assignedPolicies.find((policy) => policy.category === 'BASIC');
+  const basicPolicyItems = (basicPolicy?.items ?? []).filter((item) => item.enabled && !getCommonCodes().scriptItems.some((code) => code.value === item.id))
+    .map((item) => ({ item: item.id, name: item.name, result: item.result, executorType: item.executor.type }));
   const config = {
     server: {
       id: server.id,
@@ -71,6 +84,8 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
       ports: server.ports ?? [],
       httpChecks: (server.httpChecks ?? []).map((item) => ({ ...item, expectedStatus: item.expectedStatus ?? 200 })),
       rolePolicies,
+      basicPolicyItems,
+      policyItems: Object.fromEntries(assignedPolicies.flatMap((policy) => policy.items.map((item) => [item.id, item]))),
       rolePolicySettings: server.rolePolicySettings ?? {},
     },
     database: { policyQueries, customQueries },
