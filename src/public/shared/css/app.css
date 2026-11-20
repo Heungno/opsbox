@@ -1639,6 +1639,8 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .template-editor pre::-webkit-scrollbar { display: none; }
 .template-editor pre { scrollbar-width: none; }
 .template-editor textarea { resize: none; background: transparent; color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--text); box-shadow: none; }
+.template-editor:focus-within pre { visibility: hidden; }
+.template-editor textarea:focus { background: var(--control-bg); color: var(--text); -webkit-text-fill-color: var(--text); border: 0; box-shadow: none; }
 @media (max-width: 760px) {
   .role-policy-group-header, .role-policy-add-controls { align-items: stretch; flex-direction: column; }
   .role-policy-add-controls select { min-width: 0; width: 100%; }

@@ -20,7 +20,6 @@
   ],
   "templateKinds": [
     { "value": "SCRIPT_PART", "label": "점검 항목 스크립트" },
-    { "value": "SCRIPT", "label": "전체 스크립트(고급)" },
     { "value": "QUERY", "label": "DB 쿼리" }
   ],
   "scriptItems": [

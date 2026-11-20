@@ -63,7 +63,7 @@ npm run build
 npm start
 ```
 
-`npm run build`는 TypeScript 서버 코드, 화면, `dist/script-parts`, 템플릿 샘플과 공통코드를 `dist/`에 모읍니다. 실행 환경은 Node.js 22 이상이어야 합니다. 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요. `dist/data`의 운영 서버·정책·템플릿 데이터는 배포 갱신 때 보존해야 합니다.
+`npm run build`는 TypeScript 서버 코드, 화면, 공통코드와 `data/templates.json`을 `dist/`에 모읍니다. 실행 환경은 Node.js 22 이상이어야 합니다. 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요. 개인별 서버 설정인 `data/servers.json`은 Git에서 제외하고, 공통 템플릿과 코드는 `data/templates.json`에 저장합니다.
 
 빌드 없이 개발할 때는 `npm run dev`를 사용합니다.
 
@@ -97,7 +97,7 @@ src/public/
 
 서버 상세에서 스크립트를 수정하면 스크립트 관리 전체 화면을 열고, 목록 전체를 보여주면서 해당 스크립트를 선택합니다. 기존 `/servers` 및 `/settings/templates` 경로도 호환용으로 유지합니다.
 
-Windows 스크립트 원본은 `src/script-parts/windows` 아래의 `common`, `web`, `was`, `db`, `system` 폴더에 점검 항목별 파일로 둡니다. 기본 템플릿은 이 원본 파일에서 생성되며, 현재 등록된 Windows 스크립트 원본은 모두 기본 템플릿에서 사용합니다. 빌드 산출물에서는 기본 원본이 `dist/script-parts`에 포함됩니다.
+Windows 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/templates.json`에서 관리합니다. 스크립트 관리 화면에서 저장한 변경 내용도 같은 파일에 기록되어 GitHub에 공유됩니다.
 
 ---
 
@@ -153,7 +153,7 @@ Windows 스크립트 원본은 `src/script-parts/windows` 아래의 `common`, `w
 - 스크립트 템플릿은 서버별로 지정해 사용자 변수로 서버 설정을 삽입할 수 있습니다.
 - Windows MSSQL은 하나의 DB 공통 PowerShell 실행기를 사용하며, 각 DB 정책에서 해당 점검 쿼리 템플릿을 선택합니다.
 - 각 DB 정책 항목에서 해당 쿼리를 실행할 MSSQL 인스턴스 목록을 지정하며, 결과의 컬럼·행은 보고서 표로 표시됩니다.
-- `src/script-parts`는 기본 스크립트 원본, `data/templates.json`은 관리 화면에서 수정하는 운영 템플릿 저장소입니다. 새 설치와 누락 기본값 복구 때 원본을 운영 저장소에 복사합니다.
+- `data/templates.json`은 기본 점검 스크립트와 DB 쿼리를 포함한 공통 템플릿 데이터입니다. 관리 화면에서 변경하면 이 파일에 저장됩니다.
 - 스크립트 관리는 `/settings/script-management`에서 수행합니다.
 
 ---
