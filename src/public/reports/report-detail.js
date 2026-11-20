@@ -144,6 +144,7 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   container.replaceChildren();
   for (const serverType of serverTypes) {
   const type = ['WEB', 'WAS', 'DB', 'OTHER'].includes(serverType) ? serverType : 'OTHER';
+  if (type === 'OTHER' && !data.rolePolicies?.[type]?.items?.length) continue;
   const product = typeof productMap === 'string' ? productMap : productMap?.[type] || currentServerProducts[type] || (currentServerType === type ? (data.product || currentServerProduct) : '');
   reportRoleSuffix = `-${type}`;
   const template = document.getElementById(`report-form-${type}`);
@@ -158,13 +159,6 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     }
   }
 
-  const processCheck = summarizeProcesses(data.processes);
-  const portCheck = summarizePorts(data.ports);
-  const httpCheck = summarizeHttp(data.httpChecks);
-  const diskCheck = summarizeDisks(data.disks, data.disk);
-  const pathCheck = summarizePaths(data.directories, data.fileChecks);
-  const cpuCheck = summarizeMetric(data.cpu);
-  const memoryCheck = summarizeMetric(data.memory);
   const wasRuntimeCheck = summarizeWasRuntime(data.wasChecks, product);
   const databaseCheck = summarizeDatabaseCheck(data.databaseChecks, product);
   const rolePolicyItems = data.rolePolicies?.[type]?.items ?? [];
@@ -176,30 +170,18 @@ function renderTypeReportForm(serverTypes, data, productMap) {
 
   const checkRows = {
     WEB: [
-      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
-      ['WEB 프로세스', processCheck, '등록된 웹 엔진 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
       ...(product === 'WebtoB' ? [['WebtoB wsadmin', summarizeWebtoB(data.webtobCheck), 'WebtoB 정보·접속 수·서버/서비스 상태']] : []),
-      ['HTTP 응답', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['엔진·로그 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
       ...rolePolicyRows,
     ],
     WAS: [
-      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
-      ['WAS 프로세스', processCheck, '등록된 WAS 프로세스 실행 상태'], ['서비스 포트', portCheck, '등록한 TCP/UDP 포트의 로컬 리스닝 상태'],
-      ['JVM Heap', wasRuntimeCheck, 'Windows JDK jstat로 수집한 JVM Heap 사용률'], ['애플리케이션 HTTP', httpCheck, '등록 URL의 기대 HTTP 상태 코드 및 응답 시간'], ['로그·배포 경로', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
+      ['JVM Heap', wasRuntimeCheck, 'Windows JDK jstat로 수집한 JVM Heap 사용률'],
       ...rolePolicyRows,
     ],
     DB: [
-      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
-      ['DB 프로세스', processCheck, '등록한 DB 엔진 프로세스 실행 상태'], ['리스너 포트', portCheck, '등록한 DB 접속 포트의 로컬 리스닝 상태'],
       ['DB 엔진 접속·상태', databaseCheck, '제품별 읽기 전용 CLI를 통한 연결 및 데이터베이스 상태'],
-      ['DB 로그·엔진 경로', pathCheck, '등록 로그/엔진 경로의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'],
       ...rolePolicyRows,
     ],
-    OTHER: [
-      ['CPU 자원', cpuCheck, '서버 CPU 사용률'], ['메모리 자원', memoryCheck, '서버 메모리 사용률'],
-      ['프로세스', processCheck, '등록한 프로세스 실행 상태'], ['포트', portCheck, '등록한 포트의 로컬 리스닝 상태'],
-      ['경로·파일', pathCheck, '등록 디렉토리·파일의 존재 및 크기'], ['파일시스템', diskCheck, '디스크별 사용률'], ['HTTP 응답', httpCheck, 'Windows에 등록된 HTTP URL 점검 결과'],
-    ],
+    OTHER: [],
   };
   renderChecklist('type-check-list', checkRows[type]);
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
@@ -345,8 +327,22 @@ function renderDatabaseQueryTables(items) {
       message.textContent = query.message;
       section.appendChild(message);
     }
-    const columns = query.columns || [];
-    const rows = query.rows || [];
+    let columns = Array.isArray(query.columns) ? query.columns : query.columns ? [query.columns] : [];
+    let rows = Array.isArray(query.rows) ? query.rows : query.rows ? [query.rows] : [];
+    if (!columns.length && typeof query.output === 'string' && query.output.trim()) {
+      const lines = query.output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      const parsed = lines.map((line) => line.split('|').map((cell) => cell.trim()));
+      if (parsed.length === 1 && parsed[0].length > 1) {
+        columns = ['항목', '값'];
+        rows = [parsed[0]];
+      } else if (parsed.length > 1) {
+        columns = parsed[0];
+        rows = parsed.slice(1).filter((row) => row.length === columns.length && !row.every((cell) => /^-+$/.test(cell)));
+      } else {
+        columns = ['결과'];
+        rows = [[lines[0]]];
+      }
+    }
     if (columns.length) {
       const scroll = document.createElement('div'); scroll.className = 'table-scroll';
       const table = document.createElement('table'); table.className = 'server-table db-query-result-table';
@@ -361,6 +357,16 @@ function renderDatabaseQueryTables(items) {
       });
       if (!rows.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = columns.length; td.textContent = query.status === 'NotCollected' ? '쿼리 결과를 수집하지 못했습니다.' : '조회 결과가 없습니다.'; tr.appendChild(td); tbody.appendChild(tr); }
       table.append(thead, tbody); scroll.appendChild(table); section.appendChild(scroll);
+    } else if (query.message || query.output) {
+      const message = document.createElement('p');
+      message.className = 'db-query-result-message';
+      message.textContent = query.message || query.output;
+      section.appendChild(message);
+    } else {
+      const message = document.createElement('p');
+      message.className = 'db-query-result-message';
+      message.textContent = '표시할 컬럼 데이터가 없습니다.';
+      section.appendChild(message);
     }
     container.appendChild(section);
   });

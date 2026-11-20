@@ -22,20 +22,54 @@
       }
       .header h1 { margin: 0 0 4px !important; font-size: 20px !important; }
       .header p { margin: 0 !important; font-size: 10px !important; }
-      .report-group-title { break-after: avoid-page; page-break-after: avoid; }
+      .report-group-title {
+        margin: 0 0 8px !important; padding-bottom: 6px !important; font-size: 15px !important;
+        color: #172033 !important; border-color: #64748b !important;
+        break-after: avoid-page; page-break-after: avoid;
+      }
+      .role-report-group { break-before: page; page-break-before: always; }
+      #type-report-form > .type-report-card + .type-report-card {
+        break-before: page; page-break-before: always;
+      }
+      .section-header { margin-bottom: 7px !important; }
+      .section-header h2, .card > h2 { margin: 0 0 7px !important; font-size: 13px !important; }
+      .card > h3 { margin: 12px 0 6px !important; font-size: 11px !important; }
       .card {
-        margin: 0 0 10px !important; padding: 10px !important; border: 1px solid #cbd5e1 !important;
+        margin: 0 0 8px !important; padding: 9px !important; border: 1px solid #cbd5e1 !important;
         border-radius: 6px !important; background: #fff !important;
         box-shadow: none !important;
         break-inside: avoid-page; page-break-inside: avoid;
       }
       .type-report-card { break-inside: auto; page-break-inside: auto; }
+      .type-report-card > h2 {
+        margin: 0 0 8px !important; padding: 0 0 8px !important;
+        border-bottom: 2px solid #334155 !important; font-size: 18px !important;
+      }
+      .type-report-card > .policy-help {
+        margin: 0 0 14px !important; padding: 7px 9px !important;
+        border-left: 3px solid #64748b !important; background: #f1f5f9 !important;
+        color: #334155 !important; font-size: 9px !important;
+      }
+      .type-report-card .report-subsection { margin-top: 10px !important; }
       h2, h3 { break-after: avoid-page; page-break-after: avoid; }
-      table { width: 100% !important; border-collapse: collapse !important; font-size: 9px !important; }
+      table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; font-size: 9px !important; }
       thead { display: table-header-group; } tfoot { display: table-footer-group; }
-      tr, img, pre { break-inside: avoid-page; page-break-inside: avoid; }
-      th, td { padding: 5px 6px !important; border-color: #cbd5e1 !important; }
+      tr, img { break-inside: avoid-page; page-break-inside: avoid; }
+      th, td { padding: 4px 5px !important; border: 1px solid #cbd5e1 !important; overflow-wrap: anywhere; }
       th { background: #e9eef5 !important; color: #172033 !important; }
+      .result-grid { gap: 6px !important; }
+      .result-item { padding: 8px !important; border: 1px solid #cbd5e1 !important; }
+      .server-badge, .summary-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .webtob-console-output, pre {
+        max-height: none !important; height: auto !important; overflow: visible !important;
+        position: static !important; white-space: pre-wrap !important; overflow-wrap: anywhere;
+        font-size: 8px !important; line-height: 1.35 !important;
+        color: #172033 !important; background: #f8fafc !important; border-color: #cbd5e1 !important;
+        box-sizing: border-box !important;
+      }
+      #webtob-report-details { height: auto !important; overflow: visible !important; }
+      .db-query-results { overflow: visible !important; }
+      .db-query-results .table-scroll { max-width: none !important; overflow: visible !important; }
       .server-badge, .history-status, .diff-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
       a { color: inherit !important; text-decoration: none !important; }
     }
@@ -174,9 +208,9 @@
 
   <template id="report-form-WEB">
     <section class="card type-report-card">
-      <h2>WEB 점검보고서 양식</h2>
-      <p class="policy-help">웹 서비스 프로세스, HTTP 응답, 서비스 포트와 웹 엔진·로그 저장 공간을 중심으로 확인합니다.</p>
-      <h3>WEB 서비스 점검표</h3>
+      <h2>WEB 역할 점검 결과</h2>
+      <p class="policy-help">공통 결과의 프로세스·포트·HTTP·경로 점검은 제외하고 WebtoB 및 WEB 정책 점검만 표시합니다.</p>
+      <h3>WEB 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
       <section id="webtob-report-details" class="report-subsection" hidden>
         <h3>WebtoB wsadmin 점검 결과</h3>
@@ -188,9 +222,9 @@
   </template>
   <template id="report-form-WAS">
     <section class="card type-report-card">
-      <h2>WAS 점검보고서 양식</h2>
-      <p class="policy-help">WAS 프로세스와 애플리케이션 HTTP 응답, 서비스 포트 및 로그·배포 경로를 확인합니다.</p>
-      <h3>WAS 서비스 점검표</h3>
+      <h2>WAS 역할 점검 결과</h2>
+      <p class="policy-help">공통 결과의 자원·프로세스·포트·HTTP·경로 점검은 제외하고 JVM 및 WAS 정책 점검만 표시합니다.</p>
+      <h3>WAS 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
       <h3>JVM Heap 상세</h3>
       <table class="server-table type-check-table"><thead><tr><th>프로세스</th><th>PID</th><th>사용량</th><th>상태</th><th>비고</th></tr></thead><tbody id="was-heap-list"></tbody></table>
@@ -200,9 +234,9 @@
   </template>
   <template id="report-form-DB">
     <section class="card type-report-card">
-      <h2>DB 점검보고서 양식</h2>
-      <p class="policy-help">DB 프로세스·리스너, DB 엔진 연결 및 데이터베이스 상태, 로그 경로·파일시스템을 확인합니다.</p>
-      <h3>DB 서버 점검표</h3>
+      <h2>DB 역할 점검 결과</h2>
+      <p class="policy-help">공통 결과의 자원·프로세스·포트·경로 점검은 제외하고 DB 엔진 및 DB 정책 점검만 표시합니다.</p>
+      <h3>DB 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
       <h3>DB 엔진 및 데이터베이스 상세</h3>
       <p id="database-check-summary" class="policy-help"></p>
@@ -215,9 +249,9 @@
   </template>
   <template id="report-form-OTHER">
     <section class="card type-report-card">
-      <h2>기타 서버 점검보고서 양식</h2>
-      <p class="policy-help">공통 시스템 자원과 등록된 프로세스·포트·경로 점검 결과를 표시합니다.</p>
-      <h3>공통 점검표</h3>
+      <h2>기타 역할 점검 결과</h2>
+      <p class="policy-help">공통 결과에 표시되지 않는 기타 역할 정책 항목을 표시합니다.</p>
+      <h3>기타 역할 고유 점검</h3>
       <table class="server-table type-check-table"><thead><tr><th>점검 영역</th><th>결과</th><th>확인 내용</th></tr></thead><tbody id="type-check-list"></tbody></table>
     </section>
   </template>

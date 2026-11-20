@@ -710,7 +710,10 @@ textarea:focus {
 .report-group-title { margin: 22px 0 12px; padding: 0 0 8px; border-bottom: 2px solid var(--border); color: var(--text); font-size: 18px; }
 .common-report-group > .card { margin-bottom: 14px; }
 .role-report-group > #type-report-form { display: grid; gap: 14px; }
-.role-report-group .type-report-card { margin: 0; border-top: 3px solid var(--primary); }
+.role-report-group .type-report-card { margin: 0; padding: 24px; border: 1px solid var(--border); border-top: 4px solid var(--primary); background: #fff; box-shadow: 0 2px 8px rgba(27, 31, 36, .08); }
+.role-report-group .type-report-card > h2 { margin: 0 0 12px; padding-bottom: 12px; border-bottom: 2px solid var(--border); color: var(--text); font-size: 22px; }
+.role-report-group .type-report-card > .policy-help { margin: 0 0 20px; padding: 10px 12px; border-left: 3px solid var(--primary); background: var(--bg); color: var(--text-light); }
+.role-report-group .type-report-card > h3 { margin: 20px 0 10px; color: var(--text); font-size: 15px; }
 .report-subsection { margin: 16px 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); }
 .report-subsection h3 { margin-top: 0; }
 
@@ -2007,7 +2010,7 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .db-query-result-heading span, .db-query-result-message { color: var(--text-light); font-size: 12px; overflow-wrap: anywhere; }
 .db-query-result-message { margin: 0 0 8px; }
 .db-query-result-table { min-width: 0; }
-.db-query-result-table th, .db-query-result-table td { white-space: nowrap; }
+.db-query-result-table th, .db-query-result-table td { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
 
 @media (max-width: 900px) {
   .sidebar { width: 220px; }
