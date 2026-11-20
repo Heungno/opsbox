@@ -1,0 +1,16 @@
+<dialog id="category-dialog" class="modal-dialog common-code-entry-dialog">
+  <section class="card modal-card">
+    <div class="section-header">
+      <h2>코드 분류 추가</h2>
+      <button id="category-dialog-close" class="btn" type="button" aria-label="닫기">닫기</button>
+    </div>
+    <form id="category-form">
+      <div class="form-group"><label for="category-name">분류명</label><input id="category-name" required maxlength="120" /></div>
+      <div class="form-group"><label for="category-mapping">목록 구조</label><select id="category-mapping"><option value="false">일반 목록</option><option value="true">그룹형 목록</option></select></div>
+      <div class="button-area">
+        <button id="category-dialog-cancel" class="btn" type="button">취소</button>
+        <button class="btn btn-primary" type="submit">추가</button>
+      </div>
+    </form>
+  </section>
+</dialog>

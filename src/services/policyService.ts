@@ -2,12 +2,12 @@ import fs from 'fs';
 import { randomUUID } from 'crypto';
 import { NotFoundError, ValidationError } from '../types/error';
 import type { ExecutorType, Policy, PolicyCategory, PolicyDraft, PolicyFile, PolicyItem, ResultView } from '../types/policy';
-import { getCommonCodes } from './commonCodeService';
+import { getCommonCodes, getCommonCodeValues } from './commonCodeService';
 
 const FILE = 'data/policy.json';
 export type { PolicyCategory } from '../types/policy';
-const executorTypes: ExecutorType[] = ['SCRIPT', 'SQL_QUERY', 'LOG_ANALYSIS', 'CONSOLE_COMMAND', 'HTTP_CHECK', 'TCP_CHECK', 'PROCESS_CHECK', 'FILESYSTEM_CHECK'];
-const resultViews: ResultView[] = ['SUMMARY', 'METRIC', 'TABLE', 'LOG_TABLE', 'CONSOLE', 'JSON'];
+const executorTypes = () => getCommonCodeValues('policyExecutors');
+const resultViews = () => getCommonCodeValues('resultViews');
 
 function inferItem(id: string, category: PolicyCategory, os: 'Windows' | 'Linux'): PolicyItem {
   const code = getCommonCodes().scriptItems.find((entry) => entry.value === id);
@@ -69,14 +69,14 @@ export function savePolicy(input: Partial<PolicyDraft>, id?: string) {
   const errors: { field: string; message: string }[] = [];
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (!name || name.length > 80) errors.push({ field: 'name', message: '정책명은 1~80자로 입력하세요.' });
-  if (!['Windows', 'Linux'].includes(input.os || '')) errors.push({ field: 'os', message: '운영체제를 선택하세요.' });
-  if (!['BASIC', 'WEB', 'WAS', 'DB'].includes(input.category || '')) errors.push({ field: 'category', message: '정책 유형을 선택하세요.' });
+  if (!getCommonCodeValues('operatingSystems').includes(input.os || '')) errors.push({ field: 'os', message: '운영체제를 선택하세요.' });
+  if (!getCommonCodeValues('policyCategories').includes(input.category || '')) errors.push({ field: 'category', message: '정책 유형을 선택하세요.' });
   if (!Array.isArray(input.items)) errors.push({ field: 'items', message: '점검 항목 구성이 올바르지 않습니다.' });
   const items = Array.isArray(input.items) ? input.items : [];
   if (new Set(items.map((item) => item.id)).size !== items.length) errors.push({ field: 'items', message: '점검 항목 ID가 중복되었습니다.' });
   items.forEach((item, index) => {
     if (!item.id?.trim() || !item.name?.trim()) errors.push({ field: `items.${index}`, message: '점검 항목 ID와 이름을 입력하세요.' });
-    if (!executorTypes.includes(item.executor?.type)) errors.push({ field: `items.${index}.executor.type`, message: '실행 방식을 선택하세요.' });
+    if (!executorTypes().includes(item.executor?.type)) errors.push({ field: `items.${index}.executor.type`, message: '실행 방식을 선택하세요.' });
     if (input.category === 'DB' && item.executor?.type !== 'SQL_QUERY') errors.push({ field: `items.${index}.executor.type`, message: 'DB 정책은 DB 쿼리 실행 방식을 사용하세요.' });
     if (input.category !== 'DB' && item.executor?.type === 'SQL_QUERY') errors.push({ field: `items.${index}.executor.type`, message: 'DB 쿼리는 DB 정책에 추가하세요.' });
     const warningPercent = item.executor?.options?.warningPercent;
@@ -87,7 +87,7 @@ export function savePolicy(input: Partial<PolicyDraft>, id?: string) {
       }
     }
     if (item.executor?.templateId !== undefined && typeof item.executor.templateId !== 'string') errors.push({ field: `items.${index}.executor.templateId`, message: '실행 템플릿 ID 형식이 올바르지 않습니다.' });
-    if (!Array.isArray(item.result?.components) || !item.result.components.length || item.result.components.some((component) => !resultViews.includes(component.type))) errors.push({ field: `items.${index}.result.components`, message: '결과 표시 컴포넌트를 하나 이상 선택하세요.' });
+    if (!Array.isArray(item.result?.components) || !item.result.components.length || item.result.components.some((component) => !resultViews().includes(component.type))) errors.push({ field: `items.${index}.result.components`, message: '결과 표시 컴포넌트를 하나 이상 선택하세요.' });
   });
   if (errors.length) throw new ValidationError(errors);
   const index = id ? policies.findIndex((policy) => policy.id === id) : -1;

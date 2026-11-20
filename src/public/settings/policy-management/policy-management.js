@@ -1,11 +1,10 @@
 await window.opsboxLayoutReady;
 
-const categoryNames = { BASIC: '기본', WEB: 'WEB', WAS: 'WAS', DB: 'DB' };
-const executorNames = { SCRIPT: '스크립트', SQL_QUERY: 'DB 쿼리', LOG_ANALYSIS: '로그 분석', CONSOLE_COMMAND: '콘솔 명령', HTTP_CHECK: 'HTTP 확인', TCP_CHECK: 'TCP 포트 확인', PROCESS_CHECK: '프로세스 확인', FILESYSTEM_CHECK: '파일·디렉터리 확인' };
-const viewNames = { SUMMARY: '상태 요약', METRIC: '측정값', TABLE: '표', LOG_TABLE: '로그 표', CONSOLE: '콘솔', JSON: 'JSON 상세' };
+let categoryNames = {}; let executorNames = {}; let viewNames = {};
 const list = document.getElementById('policy-list');
 const form = document.getElementById('policy-form');
 let policies = []; let codes; let templates = []; let editingId = ''; let editingItems = []; let draft = null; let editingItemId = '';
+let activeCategory = 'BASIC';
 let hasUnsavedChanges = false;
 function confirmDiscard() { if (!hasUnsavedChanges) return true; if (!confirm('현재 저장하지 않은 변경사항이 있습니다. 저장하지 않고 이동할까요?')) return false; hasUnsavedChanges = false; return true; }
 
@@ -25,8 +24,10 @@ function renderItems() {
   document.getElementById('policy-check-count').textContent = `${editingItems.length}개`;
 }
 function renderList() {
-  const os = document.getElementById('policy-os-filter').value; const category = document.getElementById('policy-category-filter').value; const keyword = document.getElementById('policy-search').value.trim().toLocaleLowerCase();
-  const visible = policies.filter((policy) => (!os || policy.os === os) && (!category || policy.category === category) && policy.name.toLocaleLowerCase().includes(keyword)); list.replaceChildren();
+  const os = document.getElementById('policy-os-filter').value; const keyword = document.getElementById('policy-search').value.trim().toLocaleLowerCase();
+  const matching = policies.filter((policy) => (!os || policy.os === os) && policy.name.toLocaleLowerCase().includes(keyword));
+  renderCategoryTabs(matching);
+  const visible = matching.filter((policy) => policy.category === activeCategory); list.replaceChildren();
   visible.forEach((policy) => {
     const card = document.createElement('article'); card.className = `template-list-item${policy.id === editingId ? ' is-selected' : ''}`; card.tabIndex = 0; card.setAttribute('role', 'button'); card.setAttribute('aria-label', `${policy.name} 편집`);
     const info = document.createElement('div'); const title = document.createElement('strong'); title.textContent = policy.name; const detail = document.createElement('small'); detail.textContent = `${policy.os} · ${categoryNames[policy.category]} · ${(policy.items || []).length}개 항목`; info.append(title, detail);
@@ -35,9 +36,20 @@ function renderList() {
     actions.append(remove); card.append(info, actions); card.addEventListener('click', () => { if (policy.id === editingId) return; if (confirmDiscard()) openPolicy(policy); }); card.addEventListener('keydown', (event) => { if ((event.key === 'Enter' || event.key === ' ') && event.target === card) { event.preventDefault(); if (policy.id === editingId) return; if (confirmDiscard()) openPolicy(policy); } }); list.append(card);
   });
   document.getElementById('policy-empty').hidden = visible.length > 0;
+  document.getElementById('policy-empty').textContent = `${categoryNames[activeCategory]} 정책이 없습니다. 새 정책을 만들어 보세요.`;
 }
-function resetForm() { editingId = ''; editingItems = []; hasUnsavedChanges = false; form.reset(); document.getElementById('policy-form-title').textContent = '새 정책'; renderItems(); renderList(); }
-function openPolicy(policy) { editingId = policy.id; hasUnsavedChanges = false; document.getElementById('policy-name').value = policy.name; document.getElementById('policy-os').value = policy.os; document.getElementById('policy-category').value = policy.category; document.getElementById('policy-form-title').textContent = '정책 수정'; editingItems = structuredClone(policy.items || []); renderItems(); renderList(); }
+function renderCategoryTabs(matching = policies) {
+  const counts = Object.fromEntries(Object.keys(categoryNames).map((category) => [category, matching.filter((policy) => policy.category === category).length]));
+  document.querySelectorAll('#policy-category-tabs [role="tab"]').forEach((tab) => {
+    const selected = tab.dataset.category === activeCategory;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    tab.querySelector('span').textContent = counts[tab.dataset.category] ?? 0;
+  });
+}
+function setActiveCategory(category) { if (categoryNames[category]) { activeCategory = category; renderList(); } }
+function resetForm() { editingId = ''; editingItems = []; hasUnsavedChanges = false; form.reset(); document.getElementById('policy-category').value = activeCategory; document.getElementById('policy-form-title').textContent = '새 정책'; renderItems(); renderList(); }
+function openPolicy(policy) { editingId = policy.id; activeCategory = policy.category; hasUnsavedChanges = false; document.getElementById('policy-name').value = policy.name; document.getElementById('policy-os').value = policy.os; document.getElementById('policy-category').value = policy.category; document.getElementById('policy-form-title').textContent = '정책 수정'; editingItems = structuredClone(policy.items || []); renderItems(); renderList(); }
 async function deletePolicy(policy) { if (!confirm(`'${policy.name}' 정책을 삭제할까요?`)) return; try { const response = await fetch(`/api/policies/${encodeURIComponent(policy.id)}`, { method: 'DELETE' }); if (!response.ok) throw new Error('정책 삭제에 실패했습니다.'); if (editingId === policy.id) resetForm(); await loadPolicies(); } catch (error) { alert(error.message || '정책 삭제에 실패했습니다.'); } }
 function parseJson(id, fallback) { const input = document.getElementById(id); try { input.setCustomValidity(''); return JSON.parse(input.value || fallback); } catch { input.setCustomValidity('올바른 JSON 형식으로 입력하세요.'); input.reportValidity(); throw new Error(`${input.previousElementSibling?.textContent || 'JSON'} 형식을 확인하세요.`); } }
 function populateItemDialog(item) {
@@ -93,7 +105,15 @@ function bindTemplatePicker() {
   document.getElementById('policy-item-select-template').addEventListener('click', () => { populate(); dialog.showModal(); });
 }
 
-['policy-os-filter', 'policy-category-filter', 'policy-search'].forEach((id) => document.getElementById(id).addEventListener('input', renderList));
+['policy-os-filter', 'policy-search'].forEach((id) => document.getElementById(id).addEventListener('input', renderList));
+document.getElementById('policy-category-tabs').addEventListener('click', (event) => { const tab = event.target.closest('[role="tab"]'); if (tab) setActiveCategory(tab.dataset.category); });
+document.getElementById('policy-category-tabs').addEventListener('keydown', (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = [...document.querySelectorAll('#policy-category-tabs [role="tab"]')];
+  const current = tabs.findIndex((tab) => tab.dataset.category === activeCategory);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault(); tabs[next].focus(); setActiveCategory(tabs[next].dataset.category);
+});
 document.getElementById('policy-new').addEventListener('click', () => { if (confirmDiscard()) resetForm(); });
 document.getElementById('policy-item-add').addEventListener('click', openNewItem);
 form.addEventListener('input', () => { hasUnsavedChanges = true; });
@@ -124,6 +144,14 @@ async function loadPolicies() { const response = await fetch('/api/policies'); i
 async function init() {
   const fragment = await fetch('/shared/fragments/script-template-picker-modal.html'); if (!fragment.ok) throw new Error('공용 템플릿 선택 모달을 불러오지 못했습니다.'); document.getElementById('script-template-picker-container').innerHTML = await fragment.text();
   const codeResponse = await fetch('/api/common-codes'); if (!codeResponse.ok) throw new Error('공통 코드를 불러오지 못했습니다.'); codes = await codeResponse.json();
+  const fill = (id, entries, placeholder = '') => { const select = document.getElementById(id); select.replaceChildren(); if (placeholder) select.add(new Option(placeholder, '')); entries.forEach((entry) => select.add(new Option(entry.label || entry.value, entry.value))); };
+  categoryNames = Object.fromEntries(codes.policyCategories.map((entry) => [entry.value, entry.label]));
+  executorNames = Object.fromEntries(codes.policyExecutors.map((entry) => [entry.value, entry.label]));
+  viewNames = Object.fromEntries(codes.resultViews.map((entry) => [entry.value, entry.label]));
+  fill('policy-os-filter', codes.operatingSystems, '전체 OS'); fill('policy-os', codes.operatingSystems);
+  fill('policy-category', codes.policyCategories); fill('policy-item-executor', codes.policyExecutors);
+  const views = document.getElementById('policy-item-result-components'); views.replaceChildren();
+  codes.resultViews.forEach((entry) => { const label = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = entry.value; input.addEventListener('change', updateItemFields); label.append(input, document.createTextNode(entry.label)); views.append(label); });
   const templateResponse = await fetch('/api/templates'); templates = templateResponse.ok ? await templateResponse.json() : [];
   bindTemplatePicker(); renderItems(); await loadPolicies();
 }

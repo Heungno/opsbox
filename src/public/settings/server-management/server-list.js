@@ -3,6 +3,7 @@ await window.opsboxLayoutReady;
 let serverCache = [];
 let serverDialog, serverForm, searchBox, serverList, newButton, roleProductFields;
 let commonCodes;
+let activeRole = 'ALL';
 
 async function initializeServerList() {
   const response = await fetch('/shared/fragments/server-modal.html');
@@ -24,7 +25,29 @@ async function initializeServerList() {
   document.getElementById('server-modal-cancel').addEventListener('click', closeServerDialog);
   newButton.addEventListener('click', showNewForm);
   searchBox?.addEventListener('input', renderServers);
+  const roleTabs = document.getElementById('server-role-tabs');
+  roleTabs.addEventListener('click', (event) => { const tab = event.target.closest('[role="tab"]'); if (tab) setActiveRole(tab.dataset.role); });
+  roleTabs.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...roleTabs.querySelectorAll('[role="tab"]')];
+    const current = tabs.findIndex((tab) => tab.dataset.role === activeRole);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    event.preventDefault(); tabs[next].focus(); setActiveRole(tabs[next].dataset.role);
+  });
   await loadServers();
+}
+
+function setActiveRole(role) { activeRole = role; renderServers(); }
+
+function renderServerRoleTabs(matching) {
+  const counts = { ALL: matching.length, WEB: 0, WAS: 0, DB: 0, OTHER: 0 };
+  matching.forEach((server) => getRoles(server).forEach((role) => { if (Object.hasOwn(counts, role) && role !== 'ALL') counts[role] += 1; }));
+  document.querySelectorAll('#server-role-tabs [role="tab"]').forEach((tab) => {
+    const role = tab.dataset.role;
+    tab.setAttribute('aria-selected', String(role === activeRole));
+    tab.tabIndex = role === activeRole ? 0 : -1;
+    tab.querySelector('span').textContent = counts[role] ?? 0;
+  });
 }
 
 function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}) {
@@ -124,7 +147,7 @@ function renderServers() {
 
   const keyword = searchBox?.value?.trim()?.toLowerCase() || "";
 
-  const servers = serverCache.filter((server) => {
+  const matching = serverCache.filter((server) => {
     return (
       server.id.toLowerCase().includes(keyword) ||
       server.name.toLowerCase().includes(keyword) ||
@@ -133,8 +156,16 @@ function renderServers() {
       || Object.values(server.products || {}).join(' ').toLowerCase().includes(keyword)
     );
   });
+  renderServerRoleTabs(matching);
+  const servers = matching.filter((server) => activeRole === 'ALL' || getRoles(server).includes(activeRole));
 
   serverList.replaceChildren();
+
+  if (!servers.length) {
+    const emptyRow = document.createElement('tr'); const emptyCell = document.createElement('td');
+    emptyCell.colSpan = 6; emptyCell.className = 'server-list-empty'; emptyCell.textContent = '조건에 맞는 서버가 없습니다.';
+    emptyRow.appendChild(emptyCell); serverList.appendChild(emptyRow); return;
+  }
 
   servers.forEach((server) => {
     const tr = document.createElement("tr");

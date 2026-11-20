@@ -38,8 +38,8 @@ export function authenticate(username: string, password: string) {
   return { username: user.username, displayName: user.displayName || user.username };
 }
 
-export function createSession(username: string): string {
-  const payload = Buffer.from(JSON.stringify({ username, expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000 })).toString('base64url');
+export function createSession(username: string, displayName: string): string {
+  const payload = Buffer.from(JSON.stringify({ username, displayName, expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000 })).toString('base64url');
   return `${payload}.${signature(payload)}`;
 }
 
@@ -51,9 +51,9 @@ export function getSession(token?: string) {
   const actualSignature = Buffer.from(providedSignature);
   if (actualSignature.length !== expectedSignature.length || !timingSafeEqual(actualSignature, expectedSignature)) return undefined;
   try {
-    const session = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { username: string; expiresAt: number };
+    const session = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { username: string; displayName?: string; expiresAt: number };
     if (!session.username || session.expiresAt <= Date.now()) return undefined;
-    return { username: session.username };
+    return { username: session.username, displayName: session.displayName || session.username };
   } catch {
     return undefined;
   }

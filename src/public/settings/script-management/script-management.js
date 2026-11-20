@@ -6,6 +6,7 @@ let editingId = '';
 let hasUnsavedChanges = false;
 let pendingTemplate = null;
 let commonCodes = null;
+let activeGroup = 'ALL';
 
 const form = document.getElementById('template-form');
 const kind = document.getElementById('template-kind');
@@ -18,8 +19,18 @@ kind.addEventListener('change', updateFormMode);
 document.getElementById('template-item').addEventListener('change', () => { updateFormMode(); renderOutputExample(); });
 document.getElementById('template-filter').addEventListener('change', applyTemplateFilters);
 document.getElementById('template-os-filter').addEventListener('change', applyTemplateFilters);
-document.getElementById('template-group-filter').addEventListener('change', () => { updateTemplateItemFilter(); applyTemplateFilters(); });
 document.getElementById('template-item-filter').addEventListener('change', applyTemplateFilters);
+document.getElementById('template-group-tabs').addEventListener('click', (event) => {
+  const tab = event.target.closest('[role="tab"]');
+  if (tab) setActiveGroup(tab.dataset.group);
+});
+document.getElementById('template-group-tabs').addEventListener('keydown', (event) => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = [...document.querySelectorAll('#template-group-tabs [role="tab"]')];
+  const current = tabs.findIndex((tab) => tab.dataset.group === activeGroup);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault(); tabs[next].focus(); setActiveGroup(tabs[next].dataset.group);
+});
 document.getElementById('btn-template-history').addEventListener('click', showTemplateHistory);
 document.getElementById('template-history-close').addEventListener('click', () => document.getElementById('template-history-dialog').close());
 document.getElementById('btn-template-reset').addEventListener('click', () => {
@@ -181,7 +192,6 @@ async function loadTemplates() {
     populateCodeSelect(document.getElementById('template-dbms'), commonCodes.productsByRole.DB);
     populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...commonCodes.templateKinds]);
     populateCodeSelect(document.getElementById('template-os-filter'), [{ value: '', label: '전체 OS' }, ...commonCodes.operatingSystems]);
-    populateCodeSelect(document.getElementById('template-group-filter'), [{ value: '', label: '전체 영역' }, { value: 'COMMON', label: '공통 기본' }, { value: 'WEB', label: 'WEB' }, { value: 'WAS', label: 'WAS' }, { value: 'DB', label: 'DB' }, { value: 'SYSTEM', label: '시스템·전체 스크립트' }]);
     updateTemplateItemFilter();
     updateFormMode();
   }
@@ -200,7 +210,7 @@ async function loadTemplates() {
     kind.value = 'SCRIPT_PART';
     document.getElementById('template-item').value = requestedItem;
     const definition = commonCodes.scriptItems.find((entry) => entry.value === requestedItem);
-    document.getElementById('template-group-filter').value = definition?.role || (['START', 'SAVE'].includes(requestedItem) ? 'SYSTEM' : 'COMMON');
+    activeGroup = definition?.role || (['START', 'SAVE'].includes(requestedItem) ? 'SYSTEM' : 'COMMON');
     updateTemplateItemFilter();
     document.getElementById('template-item-filter').value = requestedItem;
     updateFormMode();
@@ -225,22 +235,43 @@ function getTemplateGroup(template) {
 
 function updateTemplateItemFilter() {
   if (!commonCodes) return;
-  const group = document.getElementById('template-group-filter').value;
-  const items = commonCodes.scriptItems.filter((entry) => !group || getTemplateGroup({ kind: 'SCRIPT_PART', item: entry.value, role: entry.role }) === group);
+  const items = commonCodes.scriptItems.filter((entry) => activeGroup === 'ALL' || getTemplateGroup({ kind: 'SCRIPT_PART', item: entry.value, role: entry.role }) === activeGroup);
   populateCodeSelect(document.getElementById('template-item-filter'), [{ value: '', label: '전체 항목' }, ...items]);
+}
+
+function setActiveGroup(group) {
+  activeGroup = group;
+  updateTemplateItemFilter();
+  applyTemplateFilters();
+}
+
+function renderGroupTabs() {
+  const kindFilter = document.getElementById('template-filter').value;
+  const osFilter = document.getElementById('template-os-filter').value;
+  const candidates = allTemplates.filter((template) => {
+    const templateOs = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
+    return (!kindFilter || template.kind === kindFilter) && (!osFilter || templateOs === osFilter);
+  });
+  document.querySelectorAll('#template-group-tabs [role="tab"]').forEach((tab) => {
+    const group = tab.dataset.group;
+    const count = group === 'ALL' ? candidates.length : candidates.filter((template) => getTemplateGroup(template) === group).length;
+    tab.setAttribute('aria-selected', String(group === activeGroup));
+    tab.tabIndex = group === activeGroup ? 0 : -1;
+    tab.querySelector('span').textContent = count;
+  });
 }
 
 function applyTemplateFilters() {
   if (!commonCodes) return;
   const kindFilter = document.getElementById('template-filter').value;
   const osFilter = document.getElementById('template-os-filter').value;
-  const groupFilter = document.getElementById('template-group-filter').value;
   const itemFilter = document.getElementById('template-item-filter').value;
+  renderGroupTabs();
   templates = allTemplates.filter((template) => {
     const templateOs = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
     return (!kindFilter || template.kind === kindFilter)
       && (!osFilter || templateOs === osFilter)
-      && (!groupFilter || getTemplateGroup(template) === groupFilter)
+      && (activeGroup === 'ALL' || getTemplateGroup(template) === activeGroup)
       && (!itemFilter || template.kind === 'QUERY' || template.item === itemFilter);
   });
   renderList();

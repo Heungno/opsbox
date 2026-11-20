@@ -1,35 +1,43 @@
 <aside id="sidebar" class="sidebar">
   <div class="sidebar-header">
     <span class="logo">OpsBox</span>
-    <button id="sidebar-toggle" class="sidebar-toggle" title="사이드바 토글">☰</button>
+    <button id="sidebar-toggle" class="sidebar-toggle" title="사이드바 토글" aria-label="사이드바 토글">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
   </div>
   <nav class="sidebar-menu">
     <a href="/dashboard" data-menu="dashboard">
-      <span class="menu-icon">▦</span>
+      <span class="menu-icon icon-dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></span>
       <span class="menu-text">대시보드</span>
     </a>
     <a href="/reports" data-menu="reports">
-      <span class="menu-icon">▤</span>
+      <span class="menu-icon icon-reports"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.75h7l4 4v12.5H7z"/><path d="M14 3.75v4h4M10 12h5M10 15.5h5"/></svg></span>
       <span class="menu-text">점검 보고서</span>
     </a>
     <div class="sidebar-group settings-menu-group">
       <button id="settings-menu-toggle" class="settings-menu-toggle" type="button" aria-expanded="false" aria-controls="settings-submenu">
-        <span class="menu-icon">⚙</span>
+        <span class="menu-icon icon-settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg></span>
         <span class="menu-text">설정</span>
         <span class="settings-menu-chevron" aria-hidden="true">⌄</span>
       </button>
       <div id="settings-submenu" class="sidebar-submenu" hidden>
-        <a href="/settings/server-management" data-menu="servers"><span class="menu-text">서버 관리</span></a>
-        <a href="/settings/policy-management" data-menu="policy-management"><span class="menu-text">점검 정책 관리</span></a>
-        <a href="/settings/script-management" data-menu="settings-scripts"><span class="menu-text">스크립트 관리</span></a>
-        <a href="/settings/common-code-management" data-menu="common-code-management"><span class="menu-text">공통코드 관리</span></a>
+        <a href="/settings/server-management" data-menu="servers"><span class="menu-icon icon-servers"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01M12 7h5M12 17h5"/></svg></span><span class="menu-text">서버 관리</span></a>
+        <a href="/settings/policy-management" data-menu="policy-management"><span class="menu-icon icon-policy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 6v5.5c0 4.3-2.8 7.3-7 9-4.2-1.7-7-4.7-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="menu-text">점검 정책 관리</span></a>
+        <a href="/settings/script-management" data-menu="settings-scripts"><span class="menu-icon icon-script"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="m8 10 2.5 2-2.5 2M13 14h3"/></svg></span><span class="menu-text">스크립트 관리</span></a>
+        <a href="/settings/common-code-management" data-menu="common-code-management"><span class="menu-icon icon-codes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14M5 12h14M5 18.5h14"/><circle cx="8" cy="5.5" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="10" cy="18.5" r="1.5"/></svg></span><span class="menu-text">공통코드 관리</span></a>
       </div>
     </div>
   </nav>
   <div class="sidebar-footer">
-    <button id="logout-button" class="theme-toggle" type="button">로그아웃</button>
+    <div class="sidebar-user-card" title="로그인 사용자">
+      <span id="current-user-avatar" aria-hidden="true">?</span>
+      <strong id="current-user-name">확인 중…</strong>
+    </div>
+    <button id="logout-button" class="theme-toggle" type="button" title="로그아웃">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10M14 8l4 4-4 4M18 12H9"/></svg><span>로그아웃</span>
+    </button>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="어두운 테마로 전환">
-      <span id="theme-toggle-icon" aria-hidden="true">☾</span>
+      <svg id="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 15.2A8 8 0 0 1 8.8 4.5 8.5 8.5 0 1 0 19.5 15.2Z"/></svg>
       <span id="theme-toggle-label">어두운 테마</span>
     </button>
   </div>

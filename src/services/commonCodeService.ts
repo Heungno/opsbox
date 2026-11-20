@@ -2,6 +2,7 @@ import fs from 'fs';
 import type { CommonCode } from '../types/commonCode';
 
 const FILE = 'data/common-codes.json';
+const REQUIRED_SYSTEM_SCRIPT_CODES = ['START', 'SAVE'];
 
 export type { CommonCode } from '../types/commonCode';
 export interface CommonCodes {
@@ -12,6 +13,16 @@ export interface CommonCodes {
   templateKinds: CommonCode[];
   scriptItems: CommonCode[];
   rolePolicies: Record<string, string[]>;
+  healthStatuses: CommonCode[];
+  policyCategories: CommonCode[];
+  policyExecutors: CommonCode[];
+  resultViews: CommonCode[];
+}
+
+export function getCommonCodeValues(category: keyof CommonCodes): string[] {
+  const value = getCommonCodes()[category];
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => typeof entry === 'string' ? entry : entry.value);
 }
 
 export function getRawCommonCodes(): CommonCodes {
@@ -36,6 +47,11 @@ export function getCommonCodes(): CommonCodes {
 export function saveCommonCodes(codes: CommonCodes): CommonCodes {
   if (!codes || typeof codes !== 'object' || Array.isArray(codes)) {
     throw new Error('공통코드 JSON 구조가 올바르지 않습니다.');
+  }
+  const scriptItems = Array.isArray((codes as any).scriptItems) ? (codes as any).scriptItems : [];
+  const submittedScriptValues = new Set(scriptItems.map((item: unknown) => typeof item === 'object' && item !== null ? String((item as any).value) : String(item)));
+  if (REQUIRED_SYSTEM_SCRIPT_CODES.some((value) => !submittedScriptValues.has(value))) {
+    throw new Error('시스템 코드는 삭제할 수 없습니다.');
   }
   for (const value of Object.values(codes)) {
     if (Array.isArray(value) && value.some((item) => typeof item !== 'string' && (!item || typeof item.value !== 'string' || typeof item.label !== 'string'))) {

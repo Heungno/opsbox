@@ -63,9 +63,9 @@ app.get('/login', async (_request, reply) => reply.sendFile('login.html'));
 
 app.get('/dashboard', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
 app.get('/servers', async (request, reply) => reply.sendFile('settings/server-management/server-list.html'));
-app.get('/settings/server-management', async (request, reply) => reply.sendFile('settings/server-management/server-list.html'));
+app.get('/settings/server-management', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
 app.get('/servers/detail', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
-app.get('/settings/server-management/detail', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
+app.get('/settings/server-management/detail', async (request, reply) => reply.redirect(`/settings/server-management${request.url.includes('?') ? request.url.slice(request.url.indexOf('?')) : ''}`));
 app.get('/reports', async (request, reply) => reply.sendFile('reports/report-list.html'));
 app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/report-detail.html'));
 app.get('/settings/templates', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));

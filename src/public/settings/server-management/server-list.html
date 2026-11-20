@@ -8,7 +8,7 @@
 
   <title>OpsBox | 서버 관리</title>
 
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261119-db-query-runner" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261120-tabs-fit" />
 </head>
 
 <body>
@@ -53,6 +53,13 @@
               <input id="search" type="text" placeholder="검색..." />
             </div>
           </div>
+          <div id="server-role-tabs" class="management-category-tabs server-role-tabs" role="tablist" aria-label="서버 역할">
+            <button type="button" role="tab" data-role="ALL" aria-selected="true">전체 <span>0</span></button>
+            <button type="button" role="tab" data-role="WEB" aria-selected="false">WEB <span>0</span></button>
+            <button type="button" role="tab" data-role="WAS" aria-selected="false">WAS <span>0</span></button>
+            <button type="button" role="tab" data-role="DB" aria-selected="false">DB <span>0</span></button>
+            <button type="button" role="tab" data-role="OTHER" aria-selected="false">기타 <span>0</span></button>
+          </div>
           <table class="server-table">
             <thead>
               <tr>
@@ -73,7 +80,7 @@
     </main>
   </div>
   <script type="module" src="/shared/js/common.js"></script>
-  <script type="module" src="/settings/server-management/server-list.js"></script>
+  <script type="module" src="/settings/server-management/server-list.js?v=20261120-category-tabs"></script>
 </body>
 
 </html>

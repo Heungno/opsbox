@@ -1,7 +1,21 @@
+await window.opsboxLayoutReady;
+
+const modalResponse = await fetch('/shared/fragments/common-code-entry-modal.html');
+if (!modalResponse.ok) throw new Error('공통코드 편집 모달을 불러오지 못했습니다.');
+document.getElementById('code-dialog-container').innerHTML = await modalResponse.text();
+const categoryModalResponse = await fetch('/shared/fragments/common-code-category-modal.html');
+if (!categoryModalResponse.ok) throw new Error('공통코드 분류 모달을 불러오지 못했습니다.');
+document.getElementById('category-dialog-container').innerHTML = await categoryModalResponse.text();
+const groupModalResponse = await fetch('/shared/fragments/common-code-group-modal.html');
+if (!groupModalResponse.ok) throw new Error('공통코드 그룹 모달을 불러오지 못했습니다.');
+document.getElementById('group-dialog-container').innerHTML = await groupModalResponse.text();
+
 const select = document.getElementById('category-select');
 const table = document.getElementById('codes-table');
 const message = document.getElementById('codes-message');
 const dialog = document.getElementById('code-dialog');
+const categoryDialog = document.getElementById('category-dialog');
+const groupDialog = document.getElementById('group-dialog');
 let codes = {};
 let editing = null;
 
@@ -17,6 +31,11 @@ function setMeta(category, group, value, meta) {
 function current() { return select.value; }
 function grouped() { const value = codes[current()]; return value && !Array.isArray(value) && typeof value === 'object'; }
 function groups() { return grouped() ? Object.keys(codes[current()]) : ['']; }
+function isSystemCode(category, item) {
+  if (category !== 'scriptItems') return false;
+  const value = item && typeof item === 'object' ? String(item.value) : String(item);
+  return value === 'START' || value === 'SAVE' || item?.group === '시스템';
+}
 function rows(group) {
   const list = grouped() ? codes[current()][group] : codes[current()];
   return (Array.isArray(list) ? list : []).map((item, index) => {
@@ -24,13 +43,22 @@ function rows(group) {
     const value = object ? item.value : item;
     const extra = object ? item : {};
     const meta = getMeta(current(), group, String(value));
-    return { group, index, value: String(value), label: meta.label ?? extra.label ?? String(value), enabled: meta.enabled ?? extra.enabled ?? true, sortOrder: Number(meta.sortOrder ?? extra.sortOrder ?? index), object, extra };
+    return { group, index, value: String(value), label: meta.label ?? extra.label ?? String(value), enabled: meta.enabled ?? extra.enabled ?? true, sortOrder: Number(meta.sortOrder ?? extra.sortOrder ?? index), object, extra, protected: isSystemCode(current(), item) };
   }).sort((a,b) => a.sortOrder - b.sortOrder || a.index - b.index);
 }
 function render() {
   const category = current();
+  document.getElementById('group-add').hidden = !grouped();
+  document.getElementById('entry-add').disabled = grouped() && groups().length === 0;
+  document.getElementById('code-group-field').hidden = !grouped();
+  const groupSelect = document.getElementById('code-group');
+  const selectedGroup = groupSelect.value;
+  groupSelect.replaceChildren();
+  for (const group of groups()) {
+    const option = document.createElement('option'); option.value = group; option.textContent = group; groupSelect.append(option);
+  }
+  if (groups().includes(selectedGroup)) groupSelect.value = selectedGroup;
   document.getElementById('entry-heading').textContent = `${category || '코드'} 목록`;
-  document.getElementById('category-remove').disabled = !category;
   table.replaceChildren();
   let count = 0;
   for (const group of groups()) for (const row of rows(group)) {
@@ -40,8 +68,15 @@ function render() {
     for (const value of values) { const td = document.createElement('td'); td.textContent = value; tr.append(td); }
     const actions = document.createElement('td');
     const edit = document.createElement('button'); edit.className = 'btn btn-small'; edit.textContent = '수정'; edit.addEventListener('click', () => openEditor(row));
-    const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => deleteRow(row));
-    actions.append(edit, document.createTextNode(' '), remove); tr.append(actions); table.append(tr);
+    actions.append(edit);
+    if (!row.protected) {
+      const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => deleteRow(row));
+      actions.append(document.createTextNode(' '), remove);
+    } else {
+      const protectedLabel = document.createElement('small'); protectedLabel.className = 'policy-help'; protectedLabel.textContent = '시스템';
+      actions.append(document.createTextNode(' '), protectedLabel);
+    }
+    tr.append(actions); table.append(tr);
   }
   document.getElementById('codes-empty').hidden = count > 0;
 }
@@ -49,7 +84,41 @@ function renderCategories() {
   const previous = current(); select.replaceChildren();
   for (const name of Object.keys(codes).filter((key) => key !== reservedMeta)) { const option = document.createElement('option'); option.value = name; option.textContent = name; select.append(option); }
   if (Object.hasOwn(codes, previous)) select.value = previous;
+  renderCategoryList();
   render();
+}
+function renderCategoryList() {
+  const list = document.getElementById('category-list');
+  list.replaceChildren();
+  for (const name of Object.keys(codes).filter((key) => key !== reservedMeta)) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = `template-list-item${name === current() ? ' is-selected' : ''}`;
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', String(name === current()));
+    const title = document.createElement('strong');
+    title.textContent = name;
+    const count = document.createElement('small');
+    count.textContent = `${Object.values(groupedFor(name) ? codes[name] : { '': codes[name] }).reduce((total, entries) => total + (Array.isArray(entries) ? entries.length : 0), 0)}개 코드`;
+    const info = document.createElement('div');
+    info.append(title, count);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'btn btn-small btn-danger';
+    remove.textContent = '삭제';
+    remove.setAttribute('aria-label', `${name} 분류 삭제`);
+    remove.addEventListener('click', (event) => { event.stopPropagation(); deleteCategory(name); });
+    item.append(info, remove);
+    item.addEventListener('click', () => { select.value = name; renderCategoryList(); render(); });
+    list.append(item);
+  }
+}
+function groupedFor(category) { const value = codes[category]; return value && !Array.isArray(value) && typeof value === 'object'; }
+async function deleteCategory(category) {
+  if (!confirm(`'${category}' 분류와 포함된 코드를 모두 삭제할까요?`)) return;
+  delete codes[category];
+  if (codes[reservedMeta]) for (const key of Object.keys(codes[reservedMeta])) if (key.startsWith(`${category}::`)) delete codes[reservedMeta][key];
+  try { await persist(); message.textContent = '분류를 삭제했습니다.'; } catch (error) { message.textContent = error.message; }
 }
 async function persist() {
   const response = await fetch('/api/common-codes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(codes) });
@@ -63,13 +132,14 @@ function openEditor(row) {
   document.getElementById('code-label').value = row?.label ?? '';
   document.getElementById('code-enabled').value = String(row?.enabled ?? true);
   document.getElementById('code-order').value = String(row?.sortOrder ?? (rows(row?.group || '').length));
+  if (grouped()) document.getElementById('code-group').value = row?.group ?? groups()[0] ?? '';
   dialog.showModal();
 }
 async function saveRow(event) {
   event.preventDefault();
   const value = document.getElementById('code-value').value.trim();
   const label = document.getElementById('code-label').value.trim();
-  const group = editing?.group ?? (grouped() ? groups()[0] || '' : '');
+  const group = editing?.group ?? (grouped() ? document.getElementById('code-group').value : '');
   const list = grouped() ? codes[current()][group] : codes[current()];
   const oldValue = editing?.value;
   if (list.some((item, i) => String(typeof item === 'object' ? item.value : item) === value && (!editing || i !== editing.index))) { message.textContent = '같은 코드 값이 이미 있습니다.'; return; }
@@ -89,32 +159,48 @@ async function saveRow(event) {
   try { await persist(); message.textContent = '저장했습니다.'; } catch (error) { message.textContent = error.message; }
 }
 async function deleteRow(row) {
+  if (row.protected) { message.textContent = '시스템 코드는 삭제할 수 없습니다.'; return; }
   const list = grouped() ? codes[current()][row.group] : codes[current()];
   list.splice(row.index, 1); setMeta(current(), row.group, row.value, { enabled: true, sortOrder: 0, label: '' });
   try { await persist(); message.textContent = '코드를 삭제했습니다.'; } catch (error) { message.textContent = error.message; }
 }
-select.addEventListener('change', render);
+select.addEventListener('change', () => { renderCategoryList(); render(); });
 document.getElementById('entry-add').addEventListener('click', () => {
-  if (grouped() && !groups().length) {
-    const group = prompt('코드를 추가할 그룹명을 입력하세요.'); if (!group) return;
-    codes[current()][group.trim()] = [];
-    render();
-  }
   openEditor();
 });
 document.getElementById('code-form').addEventListener('submit', saveRow);
 document.getElementById('dialog-cancel').addEventListener('click', () => dialog.close());
-document.getElementById('category-add').addEventListener('click', async () => {
-  const name = prompt('새 코드 분류명을 입력하세요.'); if (!name) return;
-  const key = name.trim(); if (!key || Object.hasOwn(codes, key)) { message.textContent = '분류명이 비어 있거나 이미 존재합니다.'; return; }
-  const mapping = confirm('역할·그룹별 코드 목록으로 만들까요?\n확인: 그룹형 / 취소: 일반 목록');
-  codes[key] = mapping ? {} : [];
-  try { await persist(); select.value = key; render(); message.textContent = '분류를 추가했습니다.'; } catch (error) { message.textContent = error.message; }
+document.getElementById('dialog-close').addEventListener('click', () => dialog.close());
+async function saveCategory(event) {
+  event.preventDefault();
+  const key = document.getElementById('category-name').value.trim();
+  if (!key || Object.hasOwn(codes, key)) { message.textContent = '분류명이 비어 있거나 이미 존재합니다.'; return; }
+  codes[key] = document.getElementById('category-mapping').value === 'true' ? {} : [];
+  categoryDialog.close();
+  try { await persist(); select.value = key; renderCategoryList(); render(); message.textContent = '분류를 추가했습니다.'; } catch (error) { message.textContent = error.message; }
+}
+document.getElementById('category-add').addEventListener('click', () => {
+  document.getElementById('category-name').value = '';
+  document.getElementById('category-mapping').value = 'false';
+  categoryDialog.showModal();
 });
-document.getElementById('category-remove').addEventListener('click', async () => {
-  const category = current(); if (!category || !confirm(`'${category}' 분류와 포함된 코드를 모두 삭제할까요?`)) return;
-  delete codes[category];
-  if (codes[reservedMeta]) for (const key of Object.keys(codes[reservedMeta])) if (key.startsWith(`${category}::`)) delete codes[reservedMeta][key];
-  try { await persist(); message.textContent = '분류를 삭제했습니다.'; } catch (error) { message.textContent = error.message; }
+document.getElementById('category-form').addEventListener('submit', saveCategory);
+document.getElementById('category-dialog-cancel').addEventListener('click', () => categoryDialog.close());
+document.getElementById('category-dialog-close').addEventListener('click', () => categoryDialog.close());
+document.getElementById('group-add').addEventListener('click', () => {
+  document.getElementById('group-name').value = '';
+  groupDialog.showModal();
 });
+document.getElementById('group-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const name = document.getElementById('group-name').value.trim();
+  if (!name) { message.textContent = '그룹명을 입력하세요.'; return; }
+  if (Object.hasOwn(codes[current()], name)) { message.textContent = '같은 그룹명이 이미 있습니다.'; return; }
+  codes[current()][name] = [];
+  groupDialog.close();
+  try { await persist(); document.getElementById('code-group').value = name; message.textContent = '그룹을 추가했습니다.'; }
+  catch (error) { message.textContent = error.message; }
+});
+document.getElementById('group-dialog-cancel').addEventListener('click', () => groupDialog.close());
+document.getElementById('group-dialog-close').addEventListener('click', () => groupDialog.close());
 load();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OpsBox | 스크립트 관리</title>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261120-editor-caret" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261120-tabs-fit" />
 </head>
 <body class="template-management-page">
   <div id="shared-layout-root"></div>
@@ -17,7 +17,14 @@
           <select id="template-item-filter" hidden></select>
           <div class="form-group"><label for="template-filter">종류</label><select id="template-filter" aria-label="템플릿 종류 필터"></select></div>
           <div class="form-group"><label for="template-os-filter">운영체제</label><select id="template-os-filter" aria-label="운영체제 필터"></select></div>
-          <div class="form-group"><label for="template-group-filter">점검 영역</label><select id="template-group-filter" aria-label="점검 영역 필터"></select></div>
+        </div>
+        <div id="template-group-tabs" class="management-category-tabs" role="tablist" aria-label="스크립트 영역">
+          <button type="button" role="tab" data-group="ALL" aria-selected="true">전체 <span>0</span></button>
+          <button type="button" role="tab" data-group="COMMON" aria-selected="false">공통 <span>0</span></button>
+          <button type="button" role="tab" data-group="WEB" aria-selected="false">WEB <span>0</span></button>
+          <button type="button" role="tab" data-group="WAS" aria-selected="false">WAS <span>0</span></button>
+          <button type="button" role="tab" data-group="DB" aria-selected="false">DB <span>0</span></button>
+          <button type="button" role="tab" data-group="SYSTEM" aria-selected="false">시스템 <span>0</span></button>
         </div>
         <div id="template-list" class="template-list"></div>
       </section>
@@ -61,6 +68,6 @@
     </section>
   </dialog>
   <script type="module" src="/shared/js/common.js"></script>
-  <script type="module" src="/settings/script-management/script-management.js?v=20261119-syntax-highlight"></script>
+  <script type="module" src="/settings/script-management/script-management.js?v=20261120-category-tabs"></script>
 </body>
 </html>

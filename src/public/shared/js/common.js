@@ -41,12 +41,32 @@ async function loadSidebar() {
 
   bindSidebarToggle();
   bindSettingsMenu();
+  loadCurrentUser();
   document.getElementById('logout-button')?.addEventListener('click', async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     location.replace('/login');
   });
 
   activateCurrentMenu();
+}
+
+async function loadCurrentUser() {
+  const label = document.getElementById('current-user-name');
+  if (!label) return;
+  try {
+    const response = await fetch('/api/auth/me');
+    const { user } = await response.json();
+    const displayName = user?.displayName || user?.username || '알 수 없음';
+    label.textContent = displayName;
+    label.title = displayName;
+    const avatar = document.getElementById('current-user-avatar');
+    if (avatar) {
+      avatar.textContent = [...displayName][0]?.toUpperCase() || '?';
+      avatar.title = displayName;
+    }
+  } catch {
+    label.textContent = '알 수 없음';
+  }
 }
 
 function initializeSidebarTheme() {
@@ -72,7 +92,9 @@ function applyTheme(theme, sidebar) {
   const label = document.getElementById('theme-toggle-label');
   if (button && icon && label) {
     const nextLabel = theme === 'dark' ? '밝은 테마' : '어두운 테마';
-    icon.textContent = theme === 'dark' ? '☀' : '☾';
+    icon.innerHTML = theme === 'dark'
+      ? '<circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v2M12 19.5v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2.5 12h2m15 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+      : '<path d="M19.5 15.2A8 8 0 0 1 8.8 4.5 8.5 8.5 0 1 0 19.5 15.2Z"/>';
     label.textContent = nextLabel;
     button.setAttribute('aria-label', `${nextLabel}로 전환`);
   }
@@ -153,13 +175,14 @@ function activateCurrentMenu() {
   }
   if (path.includes('/settings/script-management') || path.includes('/settings/templates')) activeMenu = 'settings-scripts';
   if (path.includes('/settings/policy-management')) activeMenu = 'policy-management';
+  if (path.includes('/settings/common-code-management')) activeMenu = 'common-code-management';
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {
     if (link.dataset.menu === activeMenu) {
       link.classList.add('active');
     }
   });
-  const settingsActive = ['servers', 'policy-management', 'settings-scripts'].includes(activeMenu);
+  const settingsActive = ['servers', 'policy-management', 'settings-scripts', 'common-code-management'].includes(activeMenu);
   const settingsButton = document.getElementById('settings-menu-toggle');
   const settingsSubmenu = document.getElementById('settings-submenu');
   if (settingsButton && settingsSubmenu) {

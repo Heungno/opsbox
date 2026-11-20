@@ -12,7 +12,7 @@ export async function authRoutes(app: FastifyInstance) {
     const user = authenticate(body.username, body.password);
     if (!user) return reply.code(401).send({ success: false, message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
 
-    const token = createSession(user.username);
+    const token = createSession(user.username, user.displayName);
     const secure = process.env.NODE_ENV === 'production';
     reply.header('Set-Cookie', sessionCookie(token, secure));
     return { success: true, user };

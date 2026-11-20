@@ -3,7 +3,8 @@ import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
 await window.opsboxLayoutReady;
 
 const params = new URLSearchParams(window.location.search);
-const serverId = params.get('id');
+let serverId = params.get('id');
+let serverCache = [];
 
 let currentServer = null;
 let managedTemplates = [];
@@ -17,6 +18,18 @@ let policies = [];
 let selectedBasicPolicyChecks = [];
 let selectedCatalogPolicyIds = {};
 let basicDetailSections;
+let activePolicyRole = 'BASIC';
+let serverInfoDirty = false;
+let policyDirty = false;
+let activeServerPickerRole = 'ALL';
+
+function hasUnsavedChanges() { return serverInfoDirty || policyDirty; }
+function confirmDiscardChanges(clear = false) {
+  if (!hasUnsavedChanges()) return true;
+  if (!confirm('현재 저장하지 않은 변경사항이 있습니다. 저장하지 않고 이동할까요?')) return false;
+  if (clear) { serverInfoDirty = false; policyDirty = false; }
+  return true;
+}
 
 function getPolicyItemDefinition(itemId) {
   return policies.flatMap((policy) => policy.items || []).find((item) => item.id === itemId);
@@ -27,11 +40,6 @@ function isDbQueryItem(itemId) {
 }
 
 async function init() {
-  if (!serverId) {
-    location.href = '/settings/server-management';
-    return;
-  }
-
   const modalResponse = await fetch('/shared/fragments/server-modal.html');
   if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
   document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
@@ -46,7 +54,109 @@ async function init() {
   populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
   bindScriptTemplatePicker();
   await loadManagedTemplates();
+  bindServerEdit();
+  document.querySelectorAll('[data-server-tab]').forEach((button) => button.addEventListener('click', async () => {
+    if (button.getAttribute('aria-selected') === 'true' || !confirmDiscardChanges()) return;
+    if (hasUnsavedChanges()) {
+      serverInfoDirty = false;
+      policyDirty = false;
+      await loadServer();
+    }
+    const tab = button.dataset.serverTab;
+    document.querySelectorAll('[data-server-tab]').forEach((item) => item.setAttribute('aria-selected', String(item === button)));
+    document.querySelectorAll('[data-server-panel]').forEach((panel) => { panel.hidden = panel.dataset.serverPanel !== tab; });
+  }));
+  document.getElementById('policy-role-tabs').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-policy-role-tab]');
+    if (!button) return;
+    activePolicyRole = button.dataset.policyRoleTab;
+    updatePolicyRoleTabVisibility();
+  });
+  document.getElementById('server-search')?.addEventListener('input', renderServerPicker);
+  const pickerRoleTabs = document.getElementById('server-picker-role-tabs');
+  pickerRoleTabs.addEventListener('click', (event) => {
+    const tab = event.target.closest('[role="tab"]');
+    if (!tab) return;
+    activeServerPickerRole = tab.dataset.role;
+    renderServerPicker();
+  });
+  pickerRoleTabs.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = [...pickerRoleTabs.querySelectorAll('[role="tab"]')];
+    const current = tabs.findIndex((tab) => tab.dataset.role === activeServerPickerRole);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    event.preventDefault(); tabs[next].focus(); activeServerPickerRole = tabs[next].dataset.role; renderServerPicker();
+  });
+  document.getElementById('server-list-refresh')?.addEventListener('click', loadServerPicker);
+  document.getElementById('policy-section').addEventListener('input', () => { policyDirty = true; });
+  document.getElementById('policy-section').addEventListener('change', () => { policyDirty = true; });
+  document.getElementById('policy-section').addEventListener('click', (event) => {
+    if (event.target.closest('#btn-save-policy, [data-policy-role-tab]')) return;
+    if (event.target.closest('button')) policyDirty = true;
+  });
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href]');
+    if (!link || link.target === '_blank' || link.hasAttribute('download') || !hasUnsavedChanges()) return;
+    const destination = new URL(link.href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+    if (!confirmDiscardChanges(true)) event.preventDefault();
+  }, true);
+  window.addEventListener('beforeunload', (event) => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  await loadServerPicker();
+}
 
+async function loadServerPicker() {
+  const response = await fetch('/api/servers');
+  if (!response.ok) throw new Error('서버 목록을 불러오지 못했습니다.');
+  serverCache = await response.json();
+  renderServerPicker();
+  if (!serverCache.length) {
+    document.getElementById('server-title').textContent = '등록된 서버가 없습니다.';
+    document.getElementById('policy-section').hidden = true;
+    document.getElementById('script-list').textContent = '서버를 먼저 등록하세요.';
+    return;
+  }
+  const selected = serverCache.find((server) => server.id === serverId) || serverCache[0];
+  await selectServer(selected.id);
+}
+
+function renderServerPicker() {
+  const list = document.getElementById('server-picker-list');
+  if (!list) return;
+  const keyword = document.getElementById('server-search').value.trim().toLowerCase();
+  const matching = serverCache.filter((server) => `${server.id} ${server.name} ${server.ip}`.toLowerCase().includes(keyword));
+  const counts = { ALL: matching.length, WEB: 0, WAS: 0, DB: 0, OTHER: 0 };
+  matching.forEach((server) => getServerRoles(server).forEach((role) => { if (Object.hasOwn(counts, role) && role !== 'ALL') counts[role] += 1; }));
+  document.querySelectorAll('#server-picker-role-tabs [role="tab"]').forEach((tab) => {
+    const role = tab.dataset.role;
+    tab.setAttribute('aria-selected', String(role === activeServerPickerRole));
+    tab.tabIndex = role === activeServerPickerRole ? 0 : -1;
+    tab.querySelector('span').textContent = counts[role] ?? 0;
+  });
+  const filtered = matching.filter((server) => activeServerPickerRole === 'ALL' || getServerRoles(server).includes(activeServerPickerRole));
+  list.replaceChildren();
+  for (const server of filtered) {
+    const item = document.createElement('div'); item.className = `template-list-item${server.id === serverId ? ' is-selected' : ''}`; item.setAttribute('role', 'button'); item.tabIndex = 0;
+    const info = document.createElement('div'); const name = document.createElement('strong'); name.textContent = server.name; const meta = document.createElement('small'); meta.textContent = `${server.id} · ${server.ip} · ${server.os}`; info.append(name, meta); item.append(info);
+    item.addEventListener('click', () => selectServer(server.id)); item.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectServer(server.id); }); list.append(item);
+  }
+  const empty = document.getElementById('server-picker-empty');
+  empty.hidden = filtered.length > 0;
+  empty.textContent = serverCache.length ? '조건에 맞는 서버가 없습니다.' : '등록된 서버가 없습니다.';
+}
+
+function getServerRoles(server) { return server.roles?.length ? server.roles : [server.type]; }
+
+async function selectServer(id) {
+  if (id === serverId && currentServer) return;
+  if (!confirmDiscardChanges(true)) return;
+  serverId = id;
+  history.replaceState(null, '', `/settings/server-management?id=${encodeURIComponent(id)}`);
+  renderServerPicker();
   await loadServer();
 }
 
@@ -83,6 +193,7 @@ function renderServerInfo(server) {
   document.getElementById('server-id').textContent = server.id;
   document.getElementById('server-name').textContent = server.name;
   const roles = server.roles?.length ? server.roles : [server.type];
+  renderPolicyRoleTabs(roles);
   document.getElementById('server-product').textContent = roles.map((role) => `${role}: ${server.products?.[role] || (server.type === role ? server.product : '') || '미지정'}`).join(' · ');
   const httpPolicy = document.getElementById('http-check-policy');
   if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows' || !roles.some((role) => role === 'WEB' || role === 'WAS');
@@ -121,6 +232,26 @@ function renderServerInfo(server) {
   osCell.appendChild(osBadge);
 }
 
+function renderPolicyRoleTabs(roles) {
+  const nav = document.getElementById('policy-role-tabs');
+  const categories = ['BASIC', ...['WEB', 'WAS', 'DB'].filter((role) => roles.includes(role))];
+  if (!categories.includes(activePolicyRole)) activePolicyRole = 'BASIC';
+  nav.replaceChildren();
+  for (const role of categories) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.setAttribute('role', 'tab'); button.dataset.policyRoleTab = role;
+    button.setAttribute('aria-selected', String(role === activePolicyRole));
+    button.textContent = role === 'BASIC' ? '기본' : role;
+    nav.append(button);
+  }
+  updatePolicyRoleTabVisibility();
+}
+
+function updatePolicyRoleTabVisibility() {
+  document.querySelectorAll('[data-policy-role-tab]').forEach((button) => button.setAttribute('aria-selected', String(button.dataset.policyRoleTab === activePolicyRole)));
+  document.querySelectorAll('[data-policy-role-panel]').forEach((panel) => panel.classList.toggle('is-inactive', panel.dataset.policyRolePanel !== activePolicyRole));
+}
+
 function bindServerEdit() {
   const dialog = document.getElementById('server-modal');
   const form = document.getElementById('server-modal-form');
@@ -138,7 +269,28 @@ function bindServerEdit() {
   };
   if (form.dataset.bound === 'true') return;
   form.dataset.bound = 'true';
+  let creating = false;
+  form.addEventListener('input', () => { serverInfoDirty = true; });
+  form.addEventListener('change', () => { serverInfoDirty = true; });
+  const closeDialog = () => {
+    if (serverInfoDirty && !confirm('서버 정보에 저장하지 않은 변경사항이 있습니다. 저장하지 않고 닫을까요?')) return;
+    serverInfoDirty = false;
+    dialog.close();
+  };
+  document.getElementById('server-add').addEventListener('click', () => {
+    creating = true;
+    serverInfoDirty = false;
+    document.getElementById('server-modal-title').textContent = '신규 서버 등록';
+    document.getElementById('server-modal-save').textContent = '등록';
+    document.getElementById('server-id-group').hidden = false;
+    document.getElementById('server-form-id').required = true;
+    form.reset();
+    roleContainer.replaceChildren(); renderRoleProducts();
+    dialog.showModal();
+  });
   document.getElementById('btn-edit-server').addEventListener('click', () => {
+    creating = false;
+    serverInfoDirty = false;
     document.getElementById('server-modal-title').textContent = '서버 정보 수정';
     document.getElementById('server-modal-save').textContent = '변경 저장';
     document.getElementById('server-id-group').hidden = true;
@@ -150,29 +302,36 @@ function bindServerEdit() {
     document.getElementById('server-form-shared-path').value = currentServer.sharedPath || '';
     dialog.showModal();
   });
-  document.getElementById('server-modal-close').addEventListener('click', () => dialog.close());
-  document.getElementById('server-modal-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('server-modal-close').addEventListener('click', closeDialog);
+  document.getElementById('server-modal-cancel').addEventListener('click', closeDialog);
+  dialog.addEventListener('cancel', (event) => {
+    if (serverInfoDirty && !confirm('서버 정보에 저장하지 않은 변경사항이 있습니다. 저장하지 않고 닫을까요?')) event.preventDefault();
+    else serverInfoDirty = false;
+  });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const roles = [...roleContainer.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
     const products = Object.fromEntries([...roleContainer.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
-    const data = {
-      name: document.getElementById('server-form-name').value.trim(),
-      roles, products, type: roles[0], product: products[roles[0]],
-      os: document.getElementById('server-form-os').value,
-      ip: document.getElementById('server-form-ip').value.trim(),
-      sharedPath: document.getElementById('server-form-shared-path').value.trim(),
-    };
     try {
-      const response = await fetch(`/api/servers/${encodeURIComponent(currentServer.id)}`, {
-        method: 'PUT',
+      const data = {
+        id: document.getElementById('server-form-id').value.trim(),
+        name: document.getElementById('server-form-name').value.trim(),
+        roles, products, type: roles[0], product: products[roles[0]],
+        os: document.getElementById('server-form-os').value,
+        ip: document.getElementById('server-form-ip').value.trim(),
+        sharedPath: document.getElementById('server-form-shared-path').value.trim(),
+      };
+      const response = await fetch(creating ? '/api/servers' : `/api/servers/${encodeURIComponent(currentServer.id)}`, {
+        method: creating ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.message || '서버 정보 수정에 실패했습니다.');
+      serverInfoDirty = false;
       dialog.close();
-      await loadServer();
+      if (creating) { await loadServerPicker(); await selectServer(data.id); }
+      else await loadServer();
     } catch (error) {
       console.error(error);
       alert(error.message || '서버 정보 수정 중 오류가 발생했습니다.');
@@ -763,6 +922,7 @@ async function savePolicy() {
       return;
     }
 
+    policyDirty = false;
     alert('정책이 저장되었습니다.');
     currentServer.processes = processes;
     currentServer.directories = directories;
@@ -1061,6 +1221,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
     });
     container.appendChild(list);
   });
+  updatePolicyRoleTabVisibility();
 }
 
 function getScriptItemLabel(item) {
@@ -1119,6 +1280,7 @@ function bindScriptTemplatePicker() {
   });
   document.getElementById('db-query-template-select').addEventListener('change', updateSelectedTemplateEditButton);
   document.getElementById('script-template-picker-save').addEventListener('click', () => {
+    policyDirty = true;
     const item = dialog.dataset.item;
     const templateId = document.getElementById('script-template-picker-select').value;
     if (isDbQueryItem(item)) {
