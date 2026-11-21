@@ -28,6 +28,8 @@ const ROLE_RUNTIME = [
   '# ---- 역할별 점검 결과 기록 (OpsBox가 자동으로 넣음) ----',
   'declare -A OPSBOX_ROLE_STATUS=() OPSBOX_ROLE_DETAIL=()',
   'opsbox_role_record() { OPSBOX_ROLE_STATUS["$1:$2"]=$3; OPSBOX_ROLE_DETAIL["$1:$2"]=${4:-null}; }',
+  '# 정책 항목의 서버별 입력 값 (없으면 빈 문자열, 목록은 줄바꿈 구분): opsbox_item_input 항목ID 키',
+  'opsbox_item_input() { printf \'%s\' "${OPSBOX_ITEM_INPUT["$1:$2"]-}"; }',
   "web_status=NotCollected; web_check_json=null; was_items_json=''; was_statuses=''; database_status=NotCollected; database_check_json=null",
   'opsbox_was_item() { [ -n "$was_items_json" ] && was_items_json+=\',\'; was_items_json+=$1; was_statuses+=" $2"; }',
   '# 이름이 정확히 같은 프로세스의 PID 목록 (pgrep이 없거나 못 찾으면 /proc/*/comm 에서 찾음)',
@@ -79,6 +81,22 @@ opsbox_finalize_role_policies() {
     OPSBOX_ROLE_POLICY_STATUSES+=" $s"
   done
   OPSBOX_ROLE_POLICIES_JSON="{$out}"
+  # 기본(BASIC) 사용자 항목: 조각이 opsbox_role_record BASIC … 으로 남긴 결과를 모으고 종합 상태에 넣음
+  local basic_out=''
+  for i in "\${!OPSBOX_BASIC_ITEM_IDS[@]}"; do
+    item=\${OPSBOX_BASIC_ITEM_IDS[$i]}; key="BASIC:$item"
+    if [ -n "\${OPSBOX_ROLE_STATUS[$key]+x}" ]; then
+      status=\${OPSBOX_ROLE_STATUS[$key]}
+      entry="{\\"role\\":\\"BASIC\\",\\"item\\":$(opsbox_json_string "$item"),\${OPSBOX_BASIC_ITEM_META[$i]},\\"status\\":\\"$status\\",\\"detail\\":\${OPSBOX_ROLE_DETAIL[$key]}}"
+    else
+      status=NotCollected
+      entry="{\\"role\\":\\"BASIC\\",\\"item\\":$(opsbox_json_string "$item"),\${OPSBOX_BASIC_ITEM_META[$i]},\\"status\\":\\"NotCollected\\",\\"message\\":$(opsbox_json_string "$OPSBOX_BASIC_NOT_COLLECTED_MESSAGE")}"
+    fi
+    [ -n "$basic_out" ] && basic_out+=','
+    basic_out+=$entry
+    OPSBOX_ROLE_POLICY_STATUSES+=" $status"
+  done
+  OPSBOX_BASIC_POLICY_ITEMS_JSON="[$basic_out]"
 }
 opsbox_finalize_role_policies
 case " $was_statuses " in
@@ -110,6 +128,30 @@ function threshold(config: ScriptConfig, item: string, key: 'warningPercent' | '
 /** JSON 객체의 { } 안쪽 (역할별 항목 결과에 이어 붙일 name·result·executorType) */
 function jsonFields(value: Record<string, unknown>): string {
   return JSON.stringify(value).slice(1, -1);
+}
+
+/** 목록형 입력(경로·대상 목록)은 줄바꿈 구분으로 통일합니다. (예전 저장값의 ; 구분 포함) */
+const LIST_INPUT_TYPES = new Set(['PATH_LIST', 'TARGET_LIST']);
+
+/**
+ * 정책 항목의 서버별 입력(scope: SERVER) 값을 연관 배열로 넘깁니다. 키는 '항목ID:입력키'.
+ * 값은 모두 작은따옴표로 인용해 코드로 해석되지 않습니다. 조각에서는 opsbox_item_input 으로 읽습니다.
+ */
+function itemInputs(config: ScriptConfig): string {
+  const settings = config.checks.rolePolicySettings as Record<string, { inputs?: Record<string, unknown> } | undefined>;
+  const entries: string[] = [];
+  for (const [itemId, definition] of Object.entries(config.checks.policyItems as Record<string, { inputs?: { key: string; type: string; scope: string }[] }>)) {
+    for (const input of definition.inputs ?? []) {
+      if (input.scope !== 'SERVER') continue;
+      const raw = settings[itemId]?.inputs?.[input.key];
+      if (raw === undefined || raw === null) continue;
+      const value = LIST_INPUT_TYPES.has(input.type)
+        ? String(raw).split(/[;\r\n]+/).map((part) => part.trim()).filter(Boolean).join('\n')
+        : String(raw);
+      entries.push(`[${quote(`${itemId}:${input.key}`)}]=${quote(value)}`);
+    }
+  }
+  return `declare -A OPSBOX_ITEM_INPUT=(${entries.join(' ')})`;
 }
 
 function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): string {
@@ -188,6 +230,10 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
     scalar('OPSBOX_ROLE_POLICIES_JSON', '{}'),
     scalar('OPSBOX_ROLE_POLICY_STATUSES', ''),
     scalar('OPSBOX_BASIC_POLICY_ITEMS_JSON', JSON.stringify(basicPolicyItems)),
+    array('OPSBOX_BASIC_ITEM_IDS', checks.basicPolicyItems.map((item) => item.item)),
+    array('OPSBOX_BASIC_ITEM_META', checks.basicPolicyItems.map(({ name, result, executorType }) => jsonFields({ name, result, executorType }))),
+    scalar('OPSBOX_BASIC_NOT_COLLECTED_MESSAGE', BASIC_NOT_COLLECTED_MESSAGE),
+    itemInputs(config),
     '# ---- OpsBox 설정 끝 ----',
     ROLE_RUNTIME,
   ].join('\n');

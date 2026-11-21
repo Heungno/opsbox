@@ -47,7 +47,7 @@ function normalizeServer(input: Server | StoredServer): Server {
     policyIds: nested.policy.basic.policyIds,
     scriptParts: { ...nested.policy.basic.scriptParts, ...nested.policy.web.scriptParts, ...nested.policy.was.scriptParts, ...nested.policy.db.scriptParts },
     roleChecks: { WEB: nested.policy.web.checks, WAS: nested.policy.was.checks, DB: nested.policy.db.checks },
-    rolePolicySettings: { ...nested.policy.web.settings, ...nested.policy.was.settings, ...nested.policy.db.settings },
+    rolePolicySettings: { ...(nested.policy.basic.settings ?? {}), ...nested.policy.web.settings, ...nested.policy.was.settings, ...nested.policy.db.settings },
     customQueryTemplateIds: nested.policy.db.customQueryTemplateIds,
   } as Server : input as Server;
   const roles = getServerRoles(server);
@@ -120,11 +120,13 @@ function toStoredServer(server: Server): StoredServer {
   const roleSettings = (role: 'WEB' | 'WAS' | 'DB') => Object.fromEntries(
     [...new Set([...(COMMON_CODES.rolePolicies[role] ?? []), ...(roleChecks[role] ?? [])])].filter((part) => settings[part]).map((part) => [part, settings[part]]),
   );
+  // 기본 정책 사용자 항목의 서버별 입력(어느 역할에도 속하지 않는 항목 설정)도 함께 저장합니다.
+  const basicSettings = Object.fromEntries(Object.entries(settings).filter(([part]) => !partRole(part) && customRoleByItem.get(part) === 'BASIC'));
   return {
     basicInfo: { id: server.id, name: server.name, os: server.os, ip: server.ip, sharedPath: server.sharedPath },
     roles: { selected: server.roles ?? [server.type], products: server.products },
     policy: {
-      basic: { processes: server.processes, directories: server.directories, fileChecks: server.fileChecks, ports: server.ports, httpChecks: server.httpChecks, policy: server.policy, queryTemplateId: server.queryTemplateId, policyIds: server.policyIds, scriptParts: basicParts },
+      basic: { processes: server.processes, directories: server.directories, fileChecks: server.fileChecks, ports: server.ports, httpChecks: server.httpChecks, policy: server.policy, queryTemplateId: server.queryTemplateId, policyIds: server.policyIds, scriptParts: basicParts, settings: basicSettings },
       web: { checks: roleChecks.WEB ?? [], settings: roleSettings('WEB'), scriptParts: roleParts.web },
       was: { checks: roleChecks.WAS ?? [], settings: roleSettings('WAS'), scriptParts: roleParts.was },
       db: { checks: roleChecks.DB ?? [], settings: roleSettings('DB'), scriptParts: roleParts.db, customQueryTemplateIds: server.customQueryTemplateIds ?? [] },

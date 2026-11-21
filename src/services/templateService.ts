@@ -86,7 +86,6 @@ function validate(input: Partial<ManagedTemplate>) {
   if (!['SCRIPT', 'SCRIPT_PART', 'QUERY'].includes(input.kind ?? '')) errors.push({ field: 'kind', message: '템플릿 종류를 선택하세요.' });
   if (!input.content?.trim()) errors.push({ field: 'content', message: '템플릿 내용을 입력하세요.' });
   if (['SCRIPT', 'SCRIPT_PART'].includes(input.kind ?? '') && !['Windows', 'Linux'].includes(input.os ?? '')) errors.push({ field: 'os', message: '스크립트 템플릿은 운영체제를 지정해야 합니다.' });
-  if (input.kind === 'SCRIPT_PART' && input.os !== 'Windows') errors.push({ field: 'os', message: '점검 항목 스크립트는 현재 Windows 템플릿만 지원합니다.' });
   const customPolicyItems = getPolicies().flatMap((policy) => policy.items.map((item) => item.id));
   if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'SAVE', ...getCommonCodes().scriptItems.map(({ value }) => value), ...customPolicyItems].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
   if (input.kind === 'QUERY' && !getCommonCodes().productsByRole.DB.includes(input.dbms ?? '')) errors.push({ field: 'dbms', message: 'DBMS 종류를 선택하세요.' });

@@ -94,7 +94,7 @@ export interface StoredServer {
   basicInfo: Pick<Server, 'id' | 'name' | 'os' | 'ip' | 'sharedPath'>;
   roles: { selected: ServerRole[]; products: Server['products'] };
   policy: {
-    basic: Pick<Server, 'processes' | 'directories' | 'fileChecks' | 'ports' | 'httpChecks' | 'policy' | 'queryTemplateId' | 'policyIds'> & { scriptParts: ScriptPartMap };
+    basic: Pick<Server, 'processes' | 'directories' | 'fileChecks' | 'ports' | 'httpChecks' | 'policy' | 'queryTemplateId' | 'policyIds'> & { scriptParts: ScriptPartMap; settings?: RoleSettings };
     web: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap };
     was: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap };
     db: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap; customQueryTemplateIds: string[] };
