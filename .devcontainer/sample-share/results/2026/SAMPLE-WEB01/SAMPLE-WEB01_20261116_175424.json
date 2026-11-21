@@ -1,0 +1,43 @@
+{
+  "server": "SAMPLE-WEB01",
+  "serverType": "WEB",
+  "hostname": "SAMPLE-WEB01",
+  "checkDate": "2026-11-16 17:54:24",
+  "cpu": 10,
+  "memory": 40,
+  "disk": 50,
+  "network": "NotChecked",
+  "logError": false,
+  "disks": [
+    {
+      "device": "/dev/sda1",
+      "mountPoint": "/",
+      "totalGB": 100,
+      "usedGB": 50,
+      "freeGB": 50,
+      "usagePercent": 50,
+      "status": "Healthy"
+    }
+  ],
+  "processes": [
+    {
+      "name": "nginx",
+      "running": true
+    }
+  ],
+  "directories": [
+    {
+      "path": "/logs",
+      "sizeGB": 25,
+      "usagePercent": 50
+    }
+  ],
+  "ports": [
+    {
+      "port": 443,
+      "protocol": "TCP",
+      "description": "HTTPS",
+      "listening": true
+    }
+  ]
+}
