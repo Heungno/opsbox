@@ -2283,8 +2283,9 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
   .sidebar.collapsed .logo { display: inline-flex; }
   .sidebar-toggle { min-width: 40px; min-height: 36px; }
 
-  .sidebar:not(.mobile-open) .sidebar-menu,
-  .sidebar:not(.mobile-open) .sidebar-footer { display: none; }
+  /* id 선택자로 우선순위를 높여 데스크톱 접힘(.collapsed) 상태 규칙보다 항상 이기게 함 */
+  #sidebar:not(.mobile-open) .sidebar-menu,
+  #sidebar:not(.mobile-open) .sidebar-footer { display: none; }
 
   .sidebar-menu,
   .sidebar.collapsed .sidebar-menu {
