@@ -1,7 +1,6 @@
-import fs from 'fs';
+import { readSetting, writeSetting } from '../db/database';
 import type { CommonCode } from '../types/commonCode';
 
-const FILE = 'data/common-codes.json';
 const REQUIRED_SYSTEM_SCRIPT_CODES = ['START', 'SAVE'];
 
 export type { CommonCode } from '../types/commonCode';
@@ -26,7 +25,9 @@ export function getCommonCodeValues(category: keyof CommonCodes): string[] {
 }
 
 export function getRawCommonCodes(): CommonCodes {
-  return JSON.parse(fs.readFileSync(FILE, 'utf8')) as CommonCodes;
+  const codes = readSetting<CommonCodes>('common_codes');
+  if (!codes) throw new Error('공통코드 데이터가 없습니다. data/common-codes.json 초기 파일을 확인하세요.');
+  return codes;
 }
 
 export function getCommonCodes(): CommonCodes {
@@ -63,6 +64,6 @@ export function saveCommonCodes(codes: CommonCodes): CommonCodes {
       }
     }
   }
-  fs.writeFileSync(FILE, `${JSON.stringify(codes, null, 2)}\n`, 'utf8');
+  writeSetting('common_codes', codes);
   return codes;
 }

@@ -1,10 +1,9 @@
-import fs from 'fs';
+import { readCollection, writeCollection } from '../db/database';
 import { randomUUID } from 'crypto';
 import { NotFoundError, ValidationError } from '../types/error';
-import type { ExecutorType, Policy, PolicyCategory, PolicyDraft, PolicyFile, PolicyItem, ResultView } from '../types/policy';
+import type { ExecutorType, Policy, PolicyCategory, PolicyDraft, PolicyItem, ResultView } from '../types/policy';
 import { getCommonCodes, getCommonCodeValues } from './commonCodeService';
 
-const FILE = 'data/policy.json';
 export type { PolicyCategory } from '../types/policy';
 const executorTypes = () => getCommonCodeValues('policyExecutors');
 const resultViews = () => getCommonCodeValues('resultViews');
@@ -49,16 +48,14 @@ function normalizePolicy(raw: any): Policy {
 }
 
 function write(policies: Policy[]) {
-  const file: PolicyFile = { schemaVersion: 1, policies: policies.map(({ checks: _checks, ...policy }) => policy as Policy) };
-  fs.writeFileSync(FILE, `${JSON.stringify(file, null, 2)}\n`);
+  const stored = policies.map(({ checks: _checks, ...policy }) => policy as Policy);
+  writeCollection('policies', stored, (policy) => policy.id);
 }
 
 function read(): Policy[] {
-  if (!fs.existsSync(FILE)) fs.writeFileSync(FILE, '{"schemaVersion":1,"policies":[]}\n');
-  const parsed = JSON.parse(fs.readFileSync(FILE, 'utf8'));
-  const rawPolicies = Array.isArray(parsed) ? parsed : parsed.policies;
-  const policies = (rawPolicies as unknown[]).map(normalizePolicy);
-  if (Array.isArray(parsed) || parsed.schemaVersion !== 1 || policies.some((policy, index) => JSON.stringify(policy.items) !== JSON.stringify(rawPolicies[index]?.items))) write(policies);
+  const rawPolicies = readCollection<any>('policies');
+  const policies = rawPolicies.map(normalizePolicy);
+  if (policies.some((policy, index) => JSON.stringify(policy.items) !== JSON.stringify(rawPolicies[index]?.items))) write(policies);
   return policies;
 }
 

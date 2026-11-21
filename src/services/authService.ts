@@ -1,8 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { db } from '../db/database';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
-const USER_FILE = path.join(process.cwd(), 'data', 'user.json');
 const SESSION_COOKIE = 'opsbox_session';
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
 const SESSION_KEY = randomBytes(32);
@@ -14,15 +12,15 @@ interface UserRecord {
   passwordHash: string;
 }
 
-interface UserFile {
-  users: UserRecord[];
-}
 
 function readUsers(): UserRecord[] {
-  if (!fs.existsSync(USER_FILE)) return [];
-  const parsed = JSON.parse(fs.readFileSync(USER_FILE, 'utf8')) as UserFile;
-  if (!parsed || !Array.isArray(parsed.users)) throw new Error('data/user.json 형식이 올바르지 않습니다.');
-  return parsed.users;
+  const rows = db.prepare('SELECT username, display_name, password_salt, password_hash FROM users').all() as Array<Record<string, string | null>>;
+  return rows.map((row) => ({
+    username: String(row.username),
+    displayName: row.display_name ?? undefined,
+    passwordSalt: String(row.password_salt),
+    passwordHash: String(row.password_hash),
+  }));
 }
 
 function signature(payload: string): string {

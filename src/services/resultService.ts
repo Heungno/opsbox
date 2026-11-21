@@ -1,7 +1,4 @@
-import fs from 'fs';
-import path from 'path';
-
-import { getServer } from './serverService';
+import { db } from '../db/database';
 
 export interface CheckResult {
   fileName?: string;
@@ -28,9 +25,11 @@ export interface CheckResult {
   summary?: { status?: string };
 }
 
-function readJsonFile(filePath: string) {
-  const content = fs.readFileSync(filePath, 'utf8');
-
+/*
+ * 점검 결과 원본 JSON 문자열을 화면에서 쓰는 형태로 정규화합니다.
+ * (스키마 v2 → 기존 필드 이름으로 펼치기, 디스크 최대 사용률 계산)
+ */
+export function parseResultJson(content: string) {
   const json = content.replace(/^\uFEFF/, '');
 
   const result = JSON.parse(json);
@@ -66,109 +65,35 @@ function readJsonFile(filePath: string) {
       .filter((usage: number) => Number.isFinite(usage));
     if (usages.length > 0) result.disk = Math.max(...usages);
   }
-  return result;
+  return result as CheckResult;
 }
 
-function getResultsDirectory(serverId: string, year: string): string {
-  const server = getServer(serverId);
+type ResultRow = { file_name: string; raw_json: string };
 
-  if (!server) {
-    throw new Error(`Server not found: ${serverId}`);
-  }
-
-  return path.join(server.sharedPath, 'results', year, serverId);
+function toResult(row: ResultRow): CheckResult {
+  return { fileName: row.file_name, ...parseResultJson(row.raw_json) };
 }
 
-function getYearFolders(serverId: string): string[] {
-  const server = getServer(serverId);
-
-  if (!server) {
-    return [];
-  }
-
-  const resultsRoot = path.join(server.sharedPath, 'results');
-
-  if (!fs.existsSync(resultsRoot)) {
-    return [];
-  }
-
-  return fs
-    .readdirSync(resultsRoot, {
-      withFileTypes: true,
-    })
-    .filter((item) => item.isDirectory())
-    .map((item) => item.name)
-    .sort()
-    .reverse();
-}
+const ORDER = 'ORDER BY check_date DESC, file_name DESC, id DESC';
 
 export function getResultFiles(serverId: string): string[] {
-  const years = getYearFolders(serverId);
-
-  const files: string[] = [];
-
-  years.forEach((year) => {
-    const folder = getResultsDirectory(serverId, year);
-
-    if (!fs.existsSync(folder)) {
-      return;
-    }
-
-    const resultFiles = fs
-      .readdirSync(folder)
-      .filter((file) => file.endsWith('.json'))
-      .map((file) => `${year}/${file}`);
-
-    files.push(...resultFiles);
-  });
-
-  return files.sort().reverse();
+  const rows = db.prepare(`SELECT file_name FROM check_results WHERE server_id = ? ${ORDER}`).all(serverId) as Array<{ file_name: string }>;
+  return rows.map((row) => row.file_name);
 }
 
 export function getResults(serverId: string): CheckResult[] {
-  const files = getResultFiles(serverId);
-
-  return files.map((file) => {
-    const [year, fileName] = file.split('/');
-
-    const fullPath = path.join(getResultsDirectory(serverId, year), fileName);
-
-    return {
-      fileName,
-      ...readJsonFile(fullPath),
-    };
-  });
+  const rows = db.prepare(`SELECT file_name, raw_json FROM check_results WHERE server_id = ? ${ORDER}`).all(serverId) as ResultRow[];
+  return rows.map(toResult);
 }
 
 export function getLatestResult(serverId: string): CheckResult | null {
-  const files = getResultFiles(serverId);
-
-  if (files.length === 0) {
-    return null;
-  }
-
-  const [year, fileName] = files[0].split('/');
-
-  const fullPath = path.join(getResultsDirectory(serverId, year), fileName);
-
-  return {
-    fileName,
-    ...readJsonFile(fullPath),
-  };
+  const row = db.prepare(`SELECT file_name, raw_json FROM check_results WHERE server_id = ? ${ORDER} LIMIT 1`).get(serverId) as ResultRow | undefined;
+  return row ? toResult(row) : null;
 }
 
 export function getResultByFile(serverId: string, fileName: string): CheckResult | null {
-  const years = getYearFolders(serverId);
-
-  for (const year of years) {
-    const fullPath = path.join(getResultsDirectory(serverId, year), fileName);
-
-    if (fs.existsSync(fullPath)) {
-      return readJsonFile(fullPath) as CheckResult;
-    }
-  }
-
-  return null;
+  const row = db.prepare(`SELECT file_name, raw_json FROM check_results WHERE server_id = ? AND file_name = ? ORDER BY id DESC LIMIT 1`).get(serverId, fileName) as ResultRow | undefined;
+  return row ? parseResultJson(row.raw_json) : null;
 }
 
 export function getHealthStatus(result: CheckResult): string {

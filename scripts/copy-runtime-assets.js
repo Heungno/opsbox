@@ -21,4 +21,4 @@ for (const fileName of ['common-codes.json', 'templates.json', 'policy.json']) {
 }
 
 console.log('빌드 산출물: dist');
-console.log('포함 항목: 서버 코드, 화면 파일, 공통 코드·템플릿·점검 정책 JSON 초기 데이터');
+console.log('포함 항목: 서버 코드, 화면 파일, 공통 코드·템플릿·점검 정책 JSON 초기 데이터 (첫 실행 시 SQLite로 이관)');

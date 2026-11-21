@@ -63,9 +63,64 @@ npm run build
 npm start
 ```
 
-`npm run build`는 TypeScript 서버 코드, 화면, 공통코드와 `data/templates.json`을 `dist/`에 모읍니다. 실행 환경은 Node.js 22 이상이어야 합니다. 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요. 개인별 서버 설정인 `data/servers.json`은 Git에서 제외하고, 공통 템플릿과 코드는 `data/templates.json`에 저장합니다.
+`npm run build`는 TypeScript 서버 코드, 화면, 공통코드와 `data/templates.json`을 `dist/`에 모읍니다. 실행 환경은 **Node.js 22.13 이상(권장 24)** 이어야 합니다(내장 `node:sqlite` 사용, 별도 DB 설치 불필요). 빌드 산출물만 별도 위치에서 실행하려면 Node.js 런타임과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)도 준비해야 합니다. `dist/` 폴더로 이동한 뒤 의존성을 사용할 수 있게 하고 `node server.js`로 실행하세요.
 
 빌드 없이 개발할 때는 `npm run dev`를 사용합니다.
+
+## 데이터 저장 (SQLite)
+
+모든 데이터는 SQLite 파일 하나(`data/opsbox.db`)에 저장합니다.
+
+| 데이터 | 테이블 | 최초 이관 원본 |
+| --- | --- | --- |
+| 서버 | `servers` | `data/servers.json` |
+| 점검 정책 | `policies` | `data/policy.json` |
+| 스크립트 템플릿 / 이력 | `templates`, `template_history` | `data/templates.json`, `data/template-history.json` |
+| 공통코드 | `settings` (`common_codes`) | `data/common-codes.json` |
+| 사용자 | `users` | `data/user.json` |
+| 점검 결과 | `check_results` | 공유 폴더의 결과 JSON (아래 참고) |
+
+- 서버를 처음 실행할 때 테이블이 비어 있으면 위 JSON 파일을 DB로 옮깁니다. **이후에는 DB가 원본**이며 JSON 파일을 고쳐도 반영되지 않습니다.
+- 백업은 서버를 멈춘 뒤 `data/opsbox.db`를 복사하거나, 실행 중에는 `sqlite3 data/opsbox.db ".backup backup.db"`를 사용합니다.
+- 계정 추가: `node scripts/create-user.cjs <아이디>` (DB의 `users` 테이블에 저장)
+
+## 점검 결과 가져오기와 암호화 백업
+
+점검 스크립트는 지금처럼 `<공유폴더>/results/<연도>/<서버ID>/*.json`에 결과를 만듭니다. OpsBox는 이 파일을
+
+1. 읽어서 DB(`check_results`)에 저장하고 (원본 JSON 전체 + 점검일시·상태·CPU·메모리·디스크)
+2. 원본을 **AES-256-GCM으로 암호화**해 `data/backup/results/<연도>/<서버ID>/<파일>.json.enc`에 보관한 뒤
+3. 공유 폴더의 원본을 삭제합니다.
+
+- 실행 시점: 서버 시작 직후 1회 + `OPSBOX_IMPORT_INTERVAL_MINUTES`(기본 5분)마다. 수동 실행은 `POST /api/results/import`, 상태 확인은 `GET /api/results/import/status`.
+- 같은 내용의 파일은 다시 저장하지 않습니다(SHA-256 비교).
+- 수정된 지 10초가 안 된 파일은 쓰는 중일 수 있어 다음 주기로 미룹니다.
+- JSON 형식 오류 등으로 실패한 파일은 지우지 않고 그대로 두며, 오류는 상태 API에서 확인할 수 있습니다.
+
+**암호화 키**
+
+- `OPSBOX_BACKUP_KEY`(base64, 32바이트) 환경변수가 있으면 그 값을, 없으면 `data/backup.key` 파일을 사용합니다. 파일이 없으면 처음 실행할 때 자동으로 만듭니다.
+- **키를 잃어버리면 백업을 복구할 수 없습니다.** 키는 백업 폴더와 다른 곳(별도 매체, 금고 등)에 따로 보관하세요.
+- 키 직접 만들기: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+
+**복원**
+
+```powershell
+node scripts/decrypt-backup.cjs data/backup/results/2026/WEB01/WEB01_20261116_175424.json.enc         # 화면 출력
+node scripts/decrypt-backup.cjs data/backup/results/2026/WEB01/WEB01_20261116_175424.json.enc out.json  # 파일 저장
+node scripts/decrypt-backup.cjs data/backup/results restored                                           # 폴더 전체
+```
+
+**환경변수**
+
+| 이름 | 기본값 | 설명 |
+| --- | --- | --- |
+| `OPSBOX_DB_PATH` | `data/opsbox.db` | SQLite DB 파일 |
+| `OPSBOX_BACKUP_DIR` | `data/backup/results` | 암호화 백업 폴더 |
+| `OPSBOX_BACKUP_KEY` | (없음) | 백업 키 (base64 32바이트) |
+| `OPSBOX_BACKUP_KEY_FILE` | `data/backup.key` | 백업 키 파일 (`OPSBOX_BACKUP_KEY`가 없을 때) |
+| `OPSBOX_IMPORT_INTERVAL_MINUTES` | `5` | 자동 가져오기 주기(분), 0이면 자동 실행 안 함 |
+| `OPSBOX_IMPORT_MIN_AGE_SECONDS` | `10` | 이 시간 안에 수정된 파일은 다음 주기로 미룸 |
 
 ---
 

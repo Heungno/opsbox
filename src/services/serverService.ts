@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { readCollection, writeCollection } from '../db/database';
 
 import { Server, ServerRole, ServerProduct, RolePolicyType, RolePolicySetting, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
 import type { ScriptPart } from '../types/template';
@@ -9,8 +9,6 @@ import { NotFoundError, ValidationError } from '../types/error';
 import { getTemplate } from './templateService';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
-
-const FILE = 'data/servers.json';
 
 const COMMON_CODES = getCommonCodes();
 const ROLES: ServerRole[] = COMMON_CODES.serverRoles.map(({ value }) => value as ServerRole);
@@ -145,11 +143,11 @@ function toStoredServer(server: Server): StoredServer {
 }
 
 function read(): Server[] {
-  return (JSON.parse(fs.readFileSync(FILE, 'utf8')) as Array<Server | StoredServer>).map(normalizeServer);
+  return readCollection<Server | StoredServer>('servers').map(normalizeServer);
 }
 
 function write(data: Server[]) {
-  fs.writeFileSync(FILE, JSON.stringify(data.map(toStoredServer), null, 2));
+  writeCollection('servers', data.map(toStoredServer), (server) => server.basicInfo.id);
 }
 
 function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {

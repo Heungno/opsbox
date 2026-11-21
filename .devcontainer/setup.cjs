@@ -8,6 +8,8 @@ const dataDir = path.join(root, 'data');
 const userFile = path.join(dataDir, 'user.json');
 const serverFile = path.join(dataDir, 'servers.json');
 const sharePath = path.join(__dirname, 'sample-share');
+const sampleResults = path.join(__dirname, 'sample-results');
+const seededMarker = path.join(sharePath, '.seeded');
 
 const TEST_USER = 'admin';
 const TEST_PASSWORD = 'opsbox1234';
@@ -37,4 +39,12 @@ if (!fs.existsSync(serverFile)) {
   ];
   fs.writeFileSync(serverFile, `${JSON.stringify(servers, null, 2)}\n`, 'utf8');
   console.log('샘플 서버 생성: SAMPLE-WEB01');
+}
+
+// 샘플 점검 결과를 공유 폴더 자리에 한 번만 복사합니다.
+// OpsBox가 가져가면(DB 저장 + 암호화 백업) 원본은 지워지므로 Git 추적 폴더와 분리합니다.
+if (!fs.existsSync(seededMarker) && fs.existsSync(sampleResults)) {
+  fs.cpSync(sampleResults, path.join(sharePath, 'results'), { recursive: true, preserveTimestamps: true });
+  fs.writeFileSync(seededMarker, new Date().toISOString());
+  console.log('샘플 점검 결과 복사: .devcontainer/sample-share/results');
 }

@@ -5,3 +5,12 @@ data/servers.json
 data/user.json
 .prettierrc
 .env
+
+# SQLite DB, 암호화 백업, 백업 키 (서버별 데이터 · 비밀값)
+data/opsbox.db
+data/opsbox.db-*
+data/backup/
+data/backup.key
+
+# Codespaces 테스트용 공유 폴더 (점검 결과를 가져가면 지워짐)
+.devcontainer/sample-share/

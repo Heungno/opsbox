@@ -1,15 +1,12 @@
-import fs from 'fs';
+import { db, readCollection, transaction, writeCollection } from '../db/database';
 import { ManagedTemplate, ScriptPart, TemplateVersion } from '../types/template';
 import { ValidationError } from '../types/error';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
 
-const FILE = 'data/templates.json';
-const HISTORY_FILE = 'data/template-history.json';
 const MAX_HISTORY_PER_TEMPLATE = 50;
 function read(): ManagedTemplate[] {
-  if (!fs.existsSync(FILE)) throw new Error(`기본 템플릿 데이터 파일이 없습니다: ${FILE}`);
-  const items = JSON.parse(fs.readFileSync(FILE, 'utf8')) as ManagedTemplate[];
+  const items = readCollection<ManagedTemplate>('templates');
   let changed = false;
   const roleItemRenames: Record<string, ScriptPart> = { WEB: 'WEB_ENGINE_STATUS', WAS: 'WAS_JVM_HEAP', DATABASE: 'DB_INSTANCE_STATUS' };
   for (let index = items.length - 1; index >= 0; index--) {
@@ -43,16 +40,20 @@ function read(): ManagedTemplate[] {
 }
 
 function write(templates: ManagedTemplate[]) {
-  fs.writeFileSync(FILE, JSON.stringify(templates, null, 2));
+  writeCollection('templates', templates, (template) => template.id);
 }
 
 function readHistory(): Record<string, TemplateVersion[]> {
-  if (!fs.existsSync(HISTORY_FILE)) return {};
-  return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')) as Record<string, TemplateVersion[]>;
+  const rows = db.prepare('SELECT template_id, data FROM template_history').all() as Array<{ template_id: string; data: string }>;
+  return Object.fromEntries(rows.map((row) => [row.template_id, JSON.parse(row.data) as TemplateVersion[]]));
 }
 
 function writeHistory(history: Record<string, TemplateVersion[]>) {
-  fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
+  transaction(() => {
+    db.prepare('DELETE FROM template_history').run();
+    const insert = db.prepare('INSERT INTO template_history (template_id, data) VALUES (?, ?)');
+    Object.entries(history).forEach(([id, versions]) => insert.run(id, JSON.stringify(versions)));
+  });
 }
 
 function addHistoryVersion(history: Record<string, TemplateVersion[]>, template: ManagedTemplate) {

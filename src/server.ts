@@ -6,6 +6,7 @@ import path from 'path';
 import { routes } from './routes';
 import { handleError } from './utils/errorHandler';
 import { readSessionCookie } from './services/authService';
+import { startResultImportScheduler } from './services/resultImportService';
 
 const app = Fastify({
   logger: {
@@ -116,6 +117,11 @@ async function start() {
     app.log.info('======================================');
 
     console.log(app.printRoutes());
+
+    startResultImportScheduler({
+      info: (message) => app.log.info(message),
+      error: (message) => app.log.error(message),
+    });
   } catch (error) {
     app.log.error(error);
 

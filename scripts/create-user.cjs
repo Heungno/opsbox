@@ -1,9 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomBytes, scryptSync } = require('node:crypto');
+const { DatabaseSync } = require('node:sqlite');
 
-const dataDirectory = path.join(process.cwd(), 'data');
-const userFile = path.join(dataDirectory, 'user.json');
+// 서버와 같은 DB 파일을 사용합니다 (OPSBOX_DB_PATH 또는 data/opsbox.db).
+const dbPath = process.env.OPSBOX_DB_PATH || path.join(process.cwd(), 'data', 'opsbox.db');
 
 function askHidden(prompt) {
   return new Promise((resolve, reject) => {
@@ -53,15 +54,16 @@ async function main() {
   if (password.length < 4) throw new Error('비밀번호는 12자 이상이어야 합니다.');
   if (password !== confirmation) throw new Error('비밀번호가 일치하지 않습니다.');
 
-  fs.mkdirSync(dataDirectory, { recursive: true });
-  const database = fs.existsSync(userFile) ? JSON.parse(fs.readFileSync(userFile, 'utf8')) : { users: [] };
-  if (!database || !Array.isArray(database.users)) throw new Error('data/user.json 형식이 올바르지 않습니다.');
-  if (database.users.some((user) => user.username.toLowerCase() === username.toLowerCase())) throw new Error('이미 등록된 아이디입니다.');
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA busy_timeout = 5000');
+  db.exec('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY COLLATE NOCASE, display_name TEXT, password_salt TEXT NOT NULL, password_hash TEXT NOT NULL)');
+  if (db.prepare('SELECT 1 FROM users WHERE username = ?').get(username)) throw new Error('이미 등록된 아이디입니다.');
 
   const salt = randomBytes(32);
   const passwordHash = scryptSync(password, salt, 64).toString('hex');
-  database.users.push({ username, displayName: username, passwordSalt: salt.toString('hex'), passwordHash });
-  fs.writeFileSync(userFile, `${JSON.stringify(database, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+  db.prepare('INSERT INTO users (username, display_name, password_salt, password_hash) VALUES (?, ?, ?, ?)').run(username, username, salt.toString('hex'), passwordHash);
+  db.close();
   process.stdout.write(`회원 계정을 추가했습니다: ${username}\n`);
 }
 

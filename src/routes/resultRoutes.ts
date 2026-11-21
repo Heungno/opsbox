@@ -1,7 +1,19 @@
 import { FastifyInstance } from 'fastify';
 import { getResults, getLatestResult, getResultByFile, getHealthStatus } from '../services/resultService';
+import { getImportStatus, importResults } from '../services/resultImportService';
 
 export async function resultRoutes(app: FastifyInstance) {
+  // 공유 폴더의 점검 결과 JSON을 지금 바로 가져오기 (DB 저장 → 암호화 백업 → 원본 삭제)
+  app.post('/results/import', async (_request, reply) => {
+    try {
+      return { success: true, data: importResults() };
+    } catch (error) {
+      return reply.code(409).send({ success: false, message: (error as Error).message });
+    }
+  });
+
+  app.get('/results/import/status', async () => ({ success: true, data: getImportStatus() }));
+
   app.get('/results/:serverId', async (request) => {
     const { serverId } = request.params as {
       serverId: string;
