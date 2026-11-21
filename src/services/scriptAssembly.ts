@@ -37,7 +37,10 @@ export function selectScriptParts(server: Server, templates: ManagedTemplate[], 
     if (!roles.includes(role)) continue;
     const items = server.roleChecks?.[role] ?? [];
     if (role === 'DB') {
-      if (items.length) selected.push('DB_QUERY_RUNNER');
+      // DB: SQL 항목은 공통 쿼리 실행기 하나로, 점검 만들기 항목은 각자의 조각으로 실행합니다.
+      const builderItems = new Set(isBuilderItemIn(catalog, server.policyIds?.DB, items));
+      if (items.some((item) => !builderItems.has(item))) selected.push('DB_QUERY_RUNNER');
+      selected.push(...items.filter((item) => builderItems.has(item)));
     } else selected.push(...items);
   }
   selected.push('SAVE');
@@ -49,7 +52,10 @@ export function selectScriptParts(server: Server, templates: ManagedTemplate[], 
     const selectedTemplate = selectedId ? templates.find((template) => template.id === selectedId && usable(template)) : undefined;
     if (selectedId && !selectedTemplate) throw new BadRequestError(`${os} 점검 항목 '${item}'에 지정한 스크립트 템플릿을 사용할 수 없습니다. 서버 정책에서 템플릿을 다시 선택하세요.`);
     const defaults = templates.filter((template) => usable(template) && template.item === item);
-    const chosen = selectedTemplate ?? defaults.find((template) => template.id === `${PART_PREFIX[os]}-${item}`) ?? (defaults.length === 1 ? defaults[0] : undefined);
+    const chosen = selectedTemplate
+      ?? defaults.find((template) => template.id === `${PART_PREFIX[os]}-${item}`)
+      ?? defaults.find((template) => template.generated?.itemId === item)
+      ?? (defaults.length === 1 ? defaults[0] : undefined);
     if (!chosen) {
       // Linux는 아직 조각이 없는 항목(DB 쿼리 실행기 등)이 있어, 필수 조각이 아니면 건너뜁니다.
       if (os === 'Linux' && !defaults.length && !REQUIRED_PARTS.has(item)) continue;
@@ -60,6 +66,12 @@ export function selectScriptParts(server: Server, templates: ManagedTemplate[], 
     parts.push(chosen.content);
   }
   return parts;
+}
+
+/** 지정한 정책에서 점검 만들기(CHECK_BUILDER) 항목인 것만 */
+export function isBuilderItemIn(policies: { id: string; items: { id: string; executor: { type: string } }[] }[], policyId: string | undefined, items: string[]): string[] {
+  const policy = policies.find((entry) => entry.id === policyId);
+  return items.filter((item) => policy?.items.find((entry) => entry.id === item)?.executor.type === 'CHECK_BUILDER');
 }
 
 export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedTemplate[] = [], customQueryTemplates: ManagedTemplate[] = []) {

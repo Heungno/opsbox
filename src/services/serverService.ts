@@ -347,6 +347,8 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
     }
   }
   for (const item of roleChecks.DB ?? []) {
+    // 점검 만들기 항목은 쿼리가 아니므로 접속 대상이 필요 없습니다(서버별 입력은 아래에서 검증).
+    if (policyItemById.get(item)?.executor.type === 'CHECK_BUILDER') continue;
     const dbms = getServerProduct(servers[index], 'DB');
     const isWindowsMssql = servers[index].os === 'Windows' && dbms === 'MSSQL';
     const isLinuxDb = servers[index].os === 'Linux' && LINUX_DB_PRODUCTS.includes(dbms ?? '');
@@ -401,7 +403,7 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
         } else if (!query?.enabled || query.kind !== 'QUERY' || (query.dbms ?? 'MSSQL') !== requiredDbms || requiredDbms !== serverDbms) {
           errors.push({ field: `rolePolicySettings.${item}.queryTemplateId`, message: `${policyItem?.name || item} 항목에 서버 DBMS와 맞는 쿼리 템플릿을 선택하세요.` });
         } else rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: query.id };
-      } else if (role !== 'DB' && servers[index].os === 'Windows' && !selectedId && !defaultTemplate) {
+      } else if (role !== 'DB' && servers[index].os === 'Windows' && !selectedId && !defaultTemplate && policyItem?.executor.type !== 'CHECK_BUILDER') {
         errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
       }
     });
@@ -457,8 +459,8 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
     }
     if (!templateId) continue;
     const template = getTemplate(templateId);
-    if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== 'Windows') {
-      errors.push({ field: `scriptParts.${part}`, message: `${part} 점검에 사용할 Windows 템플릿을 선택하세요.` });
+    if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== servers[index].os) {
+      errors.push({ field: `scriptParts.${part}`, message: `${part} 점검에 사용할 ${servers[index].os} 템플릿을 선택하세요.` });
     }
   }
   if (config.queryTemplateId) {

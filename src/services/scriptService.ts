@@ -4,6 +4,8 @@ import { getTemplate, getTemplates } from './templateService';
 import { assembleWindowsScript } from './windowsScriptService';
 import { assembleLinuxScript } from './linuxScriptService';
 import { resolveQueryTemplate } from './dbQueryDefaults';
+import { getPolicies } from './policyService';
+import { isBuilderItemIn } from './scriptAssembly';
 
 export function generateScript(serverId: string): string {
   const server = getServer(serverId);
@@ -12,8 +14,10 @@ export function generateScript(serverId: string): string {
     throw new NotFoundError(`서버를 찾을 수 없습니다: ${serverId}`);
   }
 
-  const policyQueryTemplates = server.os === 'Windows' && getServerProduct(server, 'DB') === 'MSSQL' ? (server.roleChecks?.DB ?? [])
-    .filter((item) => item !== 'DB_CUSTOM_QUERY')
+  // 쿼리 실행기에는 SQL 항목만 넘깁니다(점검 만들기 항목은 각자의 스크립트 조각으로 실행).
+  const builderItems = new Set(isBuilderItemIn(getPolicies(), server.policyIds?.DB, server.roleChecks?.DB ?? []));
+  const queryItems = (server.roleChecks?.DB ?? []).filter((item) => item !== 'DB_CUSTOM_QUERY' && !builderItems.has(item));
+  const policyQueryTemplates = server.os === 'Windows' && getServerProduct(server, 'DB') === 'MSSQL' ? queryItems
     .map((item) => {
       const selectedId = server.rolePolicySettings?.[item]?.queryTemplateId
         || `WINDOWS-QUERY-${item}`;
@@ -32,8 +36,7 @@ export function generateScript(serverId: string): string {
 
   // Linux: 항목마다 서버 DB 제품용 쿼리를 고릅니다. 쿼리가 없는 항목은 스크립트를 막지 않고 결과에 미수집으로 남깁니다.
   const dbms = getServerProduct(server, 'DB');
-  const linuxQueryTemplates = (server.roleChecks?.DB ?? [])
-    .filter((item) => item !== 'DB_CUSTOM_QUERY')
+  const linuxQueryTemplates = queryItems
     .flatMap((item) => {
       const template = resolveQueryTemplate(getTemplate, dbms, item, server.rolePolicySettings?.[item]?.queryTemplateId);
       return template ? [{ ...template, item }] : [];

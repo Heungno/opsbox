@@ -169,7 +169,7 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
   const roleItems = Object.entries(checks.rolePolicies).flatMap(([role, items]) => items.map((item) => ({ role, ...item })));
   const notCollectedMessage = ({ role, item }: { role: string; item: string }) => {
     if (role === 'DB' && item === 'DB_CUSTOM_QUERY') return database.customQueries.length ? BASIC_NOT_COLLECTED_MESSAGE : '실행할 사용자 쿼리를 서버 정책에서 선택하세요.';
-    if (role === 'DB') return queryItems.has(item) ? BASIC_NOT_COLLECTED_MESSAGE : dbQueryMissingMessage(dbms);
+    if (role === 'DB' && !hasLinuxPart(item)) return queryItems.has(item) ? BASIC_NOT_COLLECTED_MESSAGE : dbQueryMissingMessage(dbms);
     return hasLinuxPart(item) ? BASIC_NOT_COLLECTED_MESSAGE : ROLE_NOT_SUPPORTED_MESSAGE;
   };
   const basicPolicyItems = checks.basicPolicyItems.map(({ item, name, result, executorType }) => ({
