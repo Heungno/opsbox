@@ -52,8 +52,8 @@ OpsBox는 서버 운영 담당자가 WEB, WAS, DB 서버를 등록하고
 - 서버·프로세스 가동 시간을 년·월·일·시·분 형식으로 표시
 - 브라우저에 저장되는 전체 화면 테마 설정
 - 외부 CSS와 웹폰트 없이 동작하는 오프라인 UI
-- 서버 역할, 운영체제, 제품, 포트 프로토콜, 스크립트 항목 등 선택값을 `data/common-codes.json`에서 관리
-- `/api/common-codes`를 통해 화면 선택 목록을 공통코드 JSON과 동기화
+- 서버 역할, 운영체제, 제품, 포트 프로토콜, 스크립트 항목 등 선택값을 **공통코드 관리** 화면에서 관리 (DB 저장, 초기값은 `data/common-codes.json`)
+- `/api/common-codes`를 통해 화면 선택 목록을 공통코드와 동기화
 
 ## 실행 및 빌드
 
@@ -156,9 +156,9 @@ src/public/
 
 서버 상세에서 스크립트를 수정하면 스크립트 관리 전체 화면을 열고, 목록 전체를 보여주면서 해당 스크립트를 선택합니다. 기존 `/servers` 및 `/settings/templates` 경로도 호환용으로 유지합니다.
 
-Windows 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/templates.json`에서 관리합니다. 스크립트 관리 화면에서 저장한 변경 내용도 같은 파일에 기록되어 GitHub에 공유됩니다.
+Windows·Linux 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/templates.json`에 들어 있고, 처음 실행할 때 DB로 옮겨집니다. 이후 스크립트 관리 화면에서 저장한 변경 내용은 **DB에만 저장**되며 `data/templates.json`이나 GitHub에는 반영되지 않습니다. 다른 환경과 공유하려면 DB를 백업·복사하세요([doc/DATABASE.md](doc/DATABASE.md)).
 
-스크립트 템플릿의 내용을 수정해 저장하면 이전 내용은 `data/template-history.json`에 최대 50개 버전까지 보관됩니다. 스크립트 관리 화면의 변경 이력에서 이전 버전을 복원할 수 있으며, 복원 직전 내용도 이력에 추가됩니다.
+스크립트 템플릿의 내용을 수정해 저장하면 이전 내용은 DB의 `template_history` 테이블에 템플릿마다 최대 50개 버전까지 보관됩니다. 스크립트 관리 화면의 변경 이력에서 이전 버전을 복원할 수 있으며, 복원 직전 내용도 이력에 추가됩니다.
 
 ---
 
@@ -214,7 +214,7 @@ Windows 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/
 - 스크립트 템플릿은 서버별로 지정해 사용자 변수로 서버 설정을 삽입할 수 있습니다.
 - Windows MSSQL은 하나의 DB 공통 PowerShell 실행기를 사용하며, 각 DB 정책에서 해당 점검 쿼리 템플릿을 선택합니다.
 - 각 DB 정책 항목에서 해당 쿼리를 실행할 MSSQL 인스턴스 목록을 지정하며, 결과의 컬럼·행은 보고서 표로 표시됩니다.
-- `data/templates.json`은 기본 점검 스크립트와 DB 쿼리를 포함한 공통 템플릿 데이터입니다. 관리 화면에서 변경하면 이 파일에 저장됩니다.
+- `data/templates.json`은 기본 점검 스크립트와 DB 쿼리를 포함한 초기 템플릿 데이터입니다. 관리 화면에서 변경한 내용은 DB에 저장되고 이 파일은 바뀌지 않습니다.
 - 스크립트 관리는 `/settings/script-management`에서 수행합니다.
 
 ---
@@ -463,67 +463,43 @@ TypeScript는 `strict` 모드로 검사합니다.
 ## 프로젝트 구조
 
 ```text
-src
+src/
+├─ server.ts            # Fastify 서버 시작점
+├─ db/database.ts       # SQLite 연결, 테이블 생성, JSON 초기값 이관
+├─ routes/              # API 라우트 (서버·정책·템플릿·스크립트·결과·보고서·공통코드·감사 로그·인증)
+├─ services/            # 업무 로직 (스크립트 조립, 결과 가져오기, 보고서 판정, 암호화 백업 등)
+├─ types/               # 공용 타입
+├─ utils/               # HTTP·에러 처리 도우미
+└─ public/              # 화면 (구조는 위 '화면 파일 구조' 참고)
 
-├ routes
-│ ├ dashboardRoutes.ts
-│ ├ resultRoutes.ts
-│ ├ scriptRoutes.ts
-│ └ serverRoutes.ts
+data/
+├─ opsbox.db            # 실제 데이터 (Git 제외)
+├─ templates.json       # 기본 템플릿 초기값
+├─ template-history.json # 템플릿 이력 초기값
+├─ policy.json          # 기본 점검 정책 초기값
+├─ common-codes.json    # 공통코드 초기값
+├─ servers.json.example # 서버 정보 예시
+└─ user.json.example    # 사용자 계정 예시
 
-├ services
-│ ├ dashboardService.ts
-│ ├ resultService.ts
-│ ├ scriptService.ts
-│ ├ serverService.ts
-│ └ serverValidation.ts
-
-├ types
-│ ├ server.ts
-│ └ error.ts
-
-public
-├ css
-│ └ app.css
-├ fragments
-│ └ sidebar.html
-├ dashboard
-│ ├ index.html
-│ └ index.js
-├ servers
-│ ├ index.html
-│ ├ index.js
-│ ├ detail.html
-│ └ detail.js
-└ reports
-  ├ index.html
-  ├ index.js
-  ├ detail.html
-  └ detail.js
-
-doc
-└ USER_GUIDE.md
-
-data
-├ servers.json
-└ scripts.json
+doc/                    # 사용자 가이드, DB 문서, 예방점검 매뉴얼
+scripts/                # 계정 생성, 백업 복호화, 빌드 보조 스크립트
+test/                   # 결과 가져오기·Linux 스크립트 테스트
 ```
 
 ---
 
 ## 향후 계획
 
-- PDF Export
-- 점검 결과 차트
-- 템플릿 기반 점검 항목 관리
-- 사용자 인증
-- 권한 관리
+- Linux WEB·WAS·DB 역할별 점검
+- 권한 관리 (사용자별 메뉴·기능 제한)
 - 스케줄 점검
 - 알림 기능
 
 ## 화면 테마
 
-모든 화면의 사이드바 하단에서 블루 슬레이트, 밝은 회색, 포레스트 테마를 선택할 수 있습니다. 선택한 테마는 사이드바뿐 아니라 페이지 배경, 카드, 표, 입력창과 강조색에 적용되며 현재 브라우저에 저장됩니다. CSS와 글꼴은 로컬 리소스만 사용합니다.
+모든 화면의 사이드바 하단 버튼으로 밝은 테마와 어두운 테마를 바꿀 수 있습니다. 선택한 테마는 페이지 배경, 카드, 표, 입력창과 강조색에 적용되며 현재 브라우저에 저장됩니다. 인쇄할 때는 테마와 관계없이 밝은 양식으로 나옵니다. CSS와 글꼴은 로컬 리소스만 사용합니다.
+
+삼성 인터넷 등에서 브라우저 자체의 '웹 페이지 어둡게' 기능이 켜져 있으면 배경이 계속 어둡게 보여 테마 전환이 안 되는 것처럼 보입니다. 이때는 브라우저 설정에서 해당 기능을 끄세요.
 
 ## 사용자 가이드
 
