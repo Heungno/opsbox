@@ -3,6 +3,9 @@ import { api, apiRequest, notifyError } from '/shared/js/api.js';
 
 await window.opsboxLayoutReady;
 
+// CSP에서 인라인 이벤트(onclick)를 막으므로 여기서 연결합니다.
+document.getElementById('print-report-button')?.addEventListener('click', () => window.print());
+
 let currentReportData = null;
 let historyResults = [];
 let selectedCurrentFile = null;

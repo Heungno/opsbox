@@ -15,6 +15,7 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'PAYLOAD_TOO_LARGE'
   | 'UNSUPPORTED_MEDIA_TYPE'
+  | 'TOO_MANY_REQUESTS'
   | 'INTERNAL_ERROR';
 
 /** 입력값 검증 오류 한 건 (화면에서 필드 옆에 표시) */

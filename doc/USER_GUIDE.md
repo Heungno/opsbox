@@ -17,6 +17,12 @@ npm run dev
 
 브라우저에서 `http://localhost:3000`을 엽니다. 운영 서버에 배포할 때는 사내 네트워크 정책에 맞게 접근 주소와 포트를 구성하세요.
 
+보안 관련 동작:
+
+- 같은 아이디로 15분 안에 5번, 같은 IP에서 15분 안에 20번 로그인에 실패하면 15분 동안 로그인이 잠깁니다. 잠금 기록은 메모리에만 있어 OpsBox를 다시 시작하면 풀립니다.
+- 모든 응답에 보안 헤더(CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`)를 붙입니다. 다른 사이트의 iframe 안에서는 열리지 않으며, 화면 HTML에 인라인 스크립트를 넣으면 동작하지 않으니 별도 `.js` 파일로 작성하세요.
+- OpsBox는 HTTP로 동작합니다. 사내망 밖에서 접근하거나 계정 정보 보호가 필요하면 앞단에 HTTPS 프록시를 두고 `NODE_ENV=production`으로 실행해 세션 쿠키에 `Secure`를 붙이세요.
+
 배포용 파일은 `npm run build`로 `dist/`에 생성합니다. 산출물에는 컴파일된 서버 코드, 화면, 공통코드와 `data/templates.json`이 포함됩니다. 실행 서버에는 Node.js 22.13 이상(권장 24, 내장 `node:sqlite` 사용)과 운영 의존성(`fastify`, `@fastify/static`, `pino-pretty`)이 필요하므로, 실행 서버에 설치하거나 오프라인 배포본에 함께 준비하세요. `dist/`만 이동한 경우 해당 폴더에서 `node server.js`로 실행할 수 있습니다. 서버 정보, 정책, 템플릿, 점검 결과 등 모든 데이터는 `data/opsbox.db`(SQLite)에 저장되며 Git에서 제외됩니다. 자세한 내용은 [DB 문서](DATABASE.md)를 참고하세요.
 
 ## 2. 화면과 탐색

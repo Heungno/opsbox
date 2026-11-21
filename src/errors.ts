@@ -52,3 +52,10 @@ export class ConflictError extends AppError {
     super(409, 'CONFLICT', message);
   }
 }
+
+/** 429: 짧은 시간에 너무 많이 시도함 (로그인 실패 반복 등) */
+export class TooManyRequestsError extends AppError {
+  constructor(message: string, public readonly retryAfterSeconds: number) {
+    super(429, 'TOO_MANY_REQUESTS', message);
+  }
+}

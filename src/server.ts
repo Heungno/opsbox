@@ -22,6 +22,28 @@ const app = Fastify({
 
 registerErrorHandlers(app);
 
+// 보안 헤더: 다른 사이트의 iframe에 넣기(클릭재킹) 금지, MIME 추측 금지, 외부 스크립트·인라인 스크립트 금지.
+// 화면이 style 속성을 쓰므로 style-src만 'unsafe-inline'을 허용합니다.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+app.addHook('onSend', async (_request, reply, payload) => {
+  reply.header('Content-Security-Policy', CONTENT_SECURITY_POLICY);
+  reply.header('X-Frame-Options', 'DENY');
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('Referrer-Policy', 'same-origin');
+  return payload;
+});
+
 // 인증: 라우트가 없는 경로(404)보다 먼저 검사하도록 onRequest에서 처리합니다.
 app.addHook('onRequest', async (request, reply) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
@@ -104,26 +126,32 @@ async function start() {
   }
 }
 
-// 종료 신호: 처리 중인 요청을 마치고 로그를 남긴 뒤 종료
-let shuttingDown = false;
-for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.on(signal, async () => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    app.log.info({ signal }, 'OpsBox 종료');
-    try {
-      await app.close();
-    } finally {
-      logger.flush();
-      setTimeout(() => process.exit(0), 200);
-    }
+// 테스트에서 불러올 때는 서버를 띄우지 않고 app만 씁니다.
+export { app };
+if (require.main === module) runMain();
+
+function runMain() {
+  // 종료 신호: 처리 중인 요청을 마치고 로그를 남긴 뒤 종료
+  let shuttingDown = false;
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.on(signal, async () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      app.log.info({ signal }, 'OpsBox 종료');
+      try {
+        await app.close();
+      } finally {
+        logger.flush();
+        setTimeout(() => process.exit(0), 200);
+      }
+    });
+  }
+
+  process.on('unhandledRejection', (reason) => app.log.error({ err: reason }, '처리되지 않은 Promise 오류'));
+  process.on('uncaughtException', (error) => {
+    app.log.fatal({ err: error }, '처리되지 않은 예외로 종료합니다');
+    setTimeout(() => process.exit(1), 200);
   });
+
+  start();
 }
-
-process.on('unhandledRejection', (reason) => app.log.error({ err: reason }, '처리되지 않은 Promise 오류'));
-process.on('uncaughtException', (error) => {
-  app.log.fatal({ err: error }, '처리되지 않은 예외로 종료합니다');
-  setTimeout(() => process.exit(1), 200);
-});
-
-start();

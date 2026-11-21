@@ -72,6 +72,11 @@ export function decryptBackup(data: Buffer, key = getBackupKey()): Buffer {
  * 같은 이름이 이미 있으면 덮어쓰지 않고 해시를 붙입니다. 저장한 경로를 돌려줍니다.
  */
 export function writeEncryptedBackup(relativePath: string, plain: Buffer, hash: string): string {
+  // 경로에 '..' 등이 섞여 백업 폴더 밖으로 나가지 않도록 확인 (예전에 등록된 서버 ID 대비)
+  const root = path.resolve(BACKUP_DIR);
+  if (!path.resolve(root, relativePath).startsWith(root + path.sep)) {
+    throw new Error(`백업 경로가 백업 폴더 밖을 가리킵니다: ${relativePath}`);
+  }
   let target = path.join(BACKUP_DIR, `${relativePath}.enc`);
   if (fs.existsSync(target)) {
     const parsed = path.parse(relativePath);

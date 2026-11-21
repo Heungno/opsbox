@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark" />
   <title>OpsBox | 로그인</title>
-  <script>
-    try { if (localStorage.getItem('opsbox-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch {}
-  </script>
+  <script src="/shared/js/theme-init.js?v=20261121-csp"></script>
   <link rel="stylesheet" href="/shared/css/app.css?v=20261121-scheme">
 </head>
 <body>
@@ -38,36 +36,6 @@
       </div>
     </main>
   </div>
-  <script type="module">
-    import { api, apiRequest, errorMessage } from '/shared/js/api.js';
-
-    const params = new URLSearchParams(location.search);
-    const requestedNext = params.get('next') || '/';
-    const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
-    const message = document.getElementById('message');
-    const form = document.getElementById('login-form');
-    const submit = form.querySelector('button[type="submit"]');
-
-    // 이미 로그인되어 있으면 이동 (확인 실패는 무시하고 로그인 화면 유지)
-    api('/api/auth/me', { redirectOnUnauthorized: false }).then((user) => { if (user) location.replace(next); }).catch(() => {});
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      message.textContent = '';
-      submit.disabled = true;
-      try {
-        await apiRequest('/api/auth/login', {
-          method: 'POST',
-          body: { username: String(data.get('username') || ''), password: String(data.get('password') || '') },
-          redirectOnUnauthorized: false,
-        });
-        location.replace(next);
-      } catch (error) {
-        message.textContent = errorMessage(error, '로그인할 수 없습니다.');
-        submit.disabled = false;
-      }
-    });
-  </script>
+  <script type="module" src="/login.js?v=20261121-csp"></script>
 </body>
 </html>

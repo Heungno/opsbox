@@ -140,6 +140,8 @@ function write(data: Server[]) {
   writeCollection('servers', data.map(toStoredServer), (server) => server.basicInfo.id);
 }
 
+export const SERVER_ID_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,63}$/u;
+
 function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {
   const errors = [];
   const roles = Array.isArray(server.roles) && server.roles.length ? [...new Set(server.roles)] : server.type ? [server.type] : [];
@@ -156,6 +158,15 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
     errors.push({
       field: 'name',
       message: '서버명은 필수입니다.',
+    });
+  }
+
+  // 서버 ID는 스크립트 파일 이름·실행 명령·백업 경로에 들어가므로 글자·숫자·._- 만 허용합니다.
+  // (이미 등록된 서버는 ID를 바꿀 수 없어, 새로 만들 때만 검사)
+  if (currentId === undefined && server.id?.trim() && !SERVER_ID_PATTERN.test(server.id)) {
+    errors.push({
+      field: 'id',
+      message: '서버 ID는 글자·숫자로 시작하고 글자·숫자·마침표(.)·밑줄(_)·하이픈(-)만 쓸 수 있습니다. (최대 64자)',
     });
   }
 

@@ -352,12 +352,15 @@ function loadScripts(server) {
   commandTitle.textContent = server.os === 'Windows' ? '실행 명령어 (로그는 콘솔, 결과는 JSON 저장)' : '실행 명령어 (JSON 결과 저장)';
 
   const scriptFileName = server.os.toLowerCase() === 'windows' ? `${server.id}.ps1` : `${server.id}.sh`;
+  // 서버 ID를 셸 인자로 쓰므로 작은따옴표로 감쌉니다 (예전에 등록된 ID에 특수문자가 있어도 명령으로 실행되지 않게)
+  const quoteShell = (value) => `'${String(value).replace(/'/g, `'\\''`)}'`;
+  const linuxScriptPath = quoteShell(`./${scriptFileName}`);
   
   const quotePowerShell = (value) => `'${String(value).replace(/'/g, "''")}'`;
   const scriptFilter = quotePowerShell(`${server.id}*.ps1`);
   const command = server.os.toLowerCase() === 'windows'
     ? `$resultDirectory = ''; $script = Get-ChildItem -File -Filter ${scriptFilter} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; $scriptArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script); if (-not [string]::IsNullOrWhiteSpace($resultDirectory)) { $scriptArgs += @('-ResultDirectory', $resultDirectory) }; powershell.exe @scriptArgs`
-    : `# 결과를 스크립트 폴더에 저장\nbash ./${scriptFileName}\n\n# 공유 폴더가 마운트되어 있으면 그 안의 results 폴더를 지정 (예: /mnt/opsbox/results)\nbash ./${scriptFileName} /mnt/opsbox/results`;
+    : `# 결과를 스크립트 폴더에 저장\nbash ${linuxScriptPath}\n\n# 공유 폴더가 마운트되어 있으면 그 안의 results 폴더를 지정 (예: /mnt/opsbox/results)\nbash ${linuxScriptPath} /mnt/opsbox/results`;
 
   const commandBox = document.createElement('pre');
   commandBox.className = 'command-box';

@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 
-import { BadRequestError, UnauthorizedError } from '../errors';
+import { BadRequestError, TooManyRequestsError, UnauthorizedError } from '../errors';
 import { recordAudit } from '../services/auditService';
+import { assertLoginAllowed, recordLoginFailure, recordLoginSuccess } from '../services/loginThrottle';
 import { authenticate, clearSessionCookie, createSession, readSessionCookie, sessionCookie } from '../services/authService';
 import type { LoginRequest } from '../types/auth';
 import { ok, requireObject } from '../utils/http';
@@ -18,11 +19,20 @@ export async function authRoutes(app: FastifyInstance) {
       throw new BadRequestError('아이디와 비밀번호를 입력하세요.');
     }
     const username = body.username.trim();
+    // 잠긴 동안의 시도는 감사 로그에 남기지 않습니다 (대량 시도로 감사 로그가 넘치지 않게)
+    try {
+      assertLoginAllowed(username, request.ip);
+    } catch (error) {
+      if (error instanceof TooManyRequestsError) reply.header('Retry-After', String(error.retryAfterSeconds));
+      throw error;
+    }
     const user = authenticate(username, body.password);
     if (!user) {
+      recordLoginFailure(username, request.ip);
       recordAudit(request, { action: 'LOGIN_FAILURE', targetId: username.slice(0, 64), username: username.slice(0, 64), summary: `로그인 실패: ${username.slice(0, 64)}` });
       throw new UnauthorizedError('아이디 또는 비밀번호가 올바르지 않습니다.');
     }
+    recordLoginSuccess(username);
     recordAudit(request, { action: 'LOGIN_SUCCESS', targetId: user.username, username: user.username, summary: `로그인: ${user.displayName}` });
 
     reply.header('Set-Cookie', sessionCookie(createSession(user.username, user.displayName), isSecure()));
