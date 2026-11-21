@@ -67,9 +67,11 @@ npm start
 
 빌드 없이 개발할 때는 `npm run dev`를 사용합니다.
 
+`npm test`는 결과 가져오기·올리기와 Linux 점검 스크립트를 임시 DB에서 실제로 실행해 확인합니다(Linux 스크립트 실행 테스트는 Linux에서만 동작하고, 다른 OS에서는 건너뜀).
+
 ## 데이터 저장 (SQLite)
 
-모든 데이터는 SQLite 파일 하나(`data/opsbox.db`)에 저장합니다.
+모든 데이터는 SQLite 파일 하나(`data/opsbox.db`)에 저장합니다. 테이블 구조, 결과 가져오기 과정, 백업·복구 절차는 [doc/DATABASE.md](doc/DATABASE.md)에 자세히 정리했습니다.
 
 | 데이터 | 테이블 | 최초 이관 원본 |
 | --- | --- | --- |
@@ -81,16 +83,18 @@ npm start
 | 점검 결과 | `check_results` | 공유 폴더의 결과 JSON (아래 참고) |
 
 - 서버를 처음 실행할 때 테이블이 비어 있으면 위 JSON 파일을 DB로 옮깁니다. **이후에는 DB가 원본**이며 JSON 파일을 고쳐도 반영되지 않습니다.
-- 백업은 서버를 멈춘 뒤 `data/opsbox.db`를 복사하거나, 실행 중에는 `sqlite3 data/opsbox.db ".backup backup.db"`를 사용합니다.
+- 백업은 서버를 멈춘 뒤 `data/opsbox.db`(남아 있으면 `-wal` 파일도)를 복사하거나, 실행 중에는 `VACUUM INTO`로 사본을 만듭니다 (명령은 [doc/DATABASE.md](doc/DATABASE.md#71-db-백업)).
+- 새 버전에서 추가된 기본 템플릿(예: Linux 점검 조각)은 기존 DB에도 시작할 때 자동으로 추가됩니다. 사용자가 고치거나 지운 템플릿은 건드리지 않습니다.
 - 계정 추가: `node scripts/create-user.cjs <아이디>` (DB의 `users` 테이블에 저장)
 
 ## 점검 결과 가져오기와 암호화 백업
 
-점검 스크립트는 지금처럼 `<공유폴더>/results/<연도>/<서버ID>/*.json`에 결과를 만듭니다. OpsBox는 이 파일을
+각 서버 공유 폴더의 `results/` 폴더가 **수신함**입니다. 점검 스크립트가 결과 JSON을 이곳에 저장하거나, 점검자가 내려받은 결과 파일을 이곳에 넣으면 됩니다(폴더를 나눌 필요 없음, 이전 방식인 `results/<연도>/<서버ID>/`도 그대로 읽음). 공유 폴더를 쓸 수 없으면 서버 상세 화면의 **[결과 파일 올리기]**로 올립니다. OpsBox는 결과 파일을
 
-1. 읽어서 DB(`check_results`)에 저장하고 (원본 JSON 전체 + 점검일시·상태·CPU·메모리·디스크)
-2. 원본을 **AES-256-GCM으로 암호화**해 `data/backup/results/<연도>/<서버ID>/<파일>.json.enc`에 보관한 뒤
-3. 공유 폴더의 원본을 삭제합니다.
+1. 파일 **안의 서버 ID**로 어느 서버 결과인지 정하고 (등록되지 않은 서버이거나 이전 방식 폴더 이름과 다르면 가져오지 않음)
+2. DB(`check_results`)에 저장한 뒤 (원본 JSON 전체 + 점검일시·상태·CPU·메모리·디스크)
+3. 원본을 **AES-256-GCM으로 암호화**해 `data/backup/results/<점검 연도>/<서버ID>/<파일>.json.enc`에 보관하고 (연도는 파일 안의 점검 일시 기준)
+4. 수신함의 원본을 삭제합니다.
 
 - 실행 시점: 서버 시작 직후 1회 + `OPSBOX_IMPORT_INTERVAL_MINUTES`(기본 5분)마다. 수동 실행은 `POST /api/results/import`, 상태 확인은 `GET /api/results/import/status`.
 - 같은 내용의 파일은 다시 저장하지 않습니다(SHA-256 비교).
@@ -421,6 +425,7 @@ TypeScript는 `strict` 모드로 검사합니다.
 | Method | URL                                   |
 | ------ | ------------------------------------- |
 | POST   | /api/results/import                   |
+| POST   | /api/results/upload                   |
 | GET    | /api/results/import/status            |
 | GET    | /api/results/:serverId                |
 | GET    | /api/results/:serverId/latest         |
