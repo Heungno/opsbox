@@ -69,6 +69,12 @@ npm start
 
 `npm test`는 결과 가져오기·올리기와 Linux 점검 스크립트(기본·WEB·WAS·DB 역할별, DB는 가짜 클라이언트)를 임시 DB에서 실제로 실행해 확인하고, 이전 버전 DB의 기본 템플릿·정책 업그레이드도 확인합니다(bash 실행 테스트는 Linux에서만 동작하고, 다른 OS에서는 건너뜀).
 
+### 점검 대상 서버 지원 범위
+
+- Windows: Windows Server 2012 이상, Windows PowerShell 3.0 이상(5.1 권장). 3.0 미만이면 스크립트가 안내 후 종료합니다.
+- Linux: bash 4.2 이상. 배포판·버전별 템플릿을 따로 두지 않고 실행 중에 사용 가능한 명령을 감지합니다.
+- OS 버전은 등록 정보로 관리하지 않고, 점검 결과의 `host.osVersion`으로 수집합니다.
+
 ## 데이터 저장 (SQLite)
 
 모든 데이터는 SQLite 파일 하나(`data/opsbox.db`)에 저장합니다. 테이블 구조, 결과 가져오기 과정, 백업·복구 절차는 [doc/DATABASE.md](doc/DATABASE.md)에 자세히 정리했습니다.

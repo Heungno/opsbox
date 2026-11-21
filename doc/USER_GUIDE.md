@@ -164,13 +164,20 @@ SHOW VOLUME HEADER OF 0;
 - 결과 행이 없음: 미수집
 - `__OPSBOX_STATUS` 값 또는 상태 규칙 결과: Critical > Warning > Healthy 순으로 종합. 값이 모두 `NotCollected`면 미수집
 
-기본 쿼리는 실제 PostgreSQL·MariaDB·CUBRID에서 확인하지 않았습니다. 운영 DB에 쓰기 전에 버전과 권한에 맞는지 먼저 시험해 보세요. CUBRID 쿼리는 CUBRID 11.2 매뉴얼의 `SHOW` 문 설명(열 이름)을 기준으로 만들었고, `csql --plain-output`이 머리글과 탭 구분 행을 출력한다고 가정합니다.
+PostgreSQL·MariaDB 기본 쿼리 7종은 PostgreSQL 18.7, MariaDB 13.0.2에서 실제 클라이언트(`psql`, `mariadb`)로 실행해 결과 표와 상태 판정을 확인했습니다(MariaDB는 TCP·소켓 대상 모두). CUBRID와 Linux용 MSSQL(`sqlcmd`)은 실제 DB에서 확인하지 않았습니다. 운영 DB에 쓰기 전에 버전과 권한에 맞는지 먼저 시험해 보세요. CUBRID 쿼리는 CUBRID 11.2 매뉴얼의 `SHOW` 문 설명(열 이름)을 기준으로 만들었고, `csql --plain-output`이 머리글과 탭 구분 행을 출력한다고 가정합니다.
 
 ### 디스크 점검
 
 별도 정책 입력 없이 실행 스크립트가 로컬 디스크 또는 로컬 마운트 지점을 모두 수집합니다. 디스크 사용률이 70% 이상이면 경고, 90% 이상이면 위험입니다. 종합 DISK 값은 가장 사용률이 높은 디스크의 값입니다.
 
 ## 5. 스크립트 실행과 결과 저장
+
+지원하는 점검 대상 OS는 다음과 같습니다. OS 버전은 따로 입력하지 않으며, 스크립트가 실행할 때 수집해 보고서에 표시합니다.
+
+| OS | 최소 버전 | 비고 |
+| --- | --- | --- |
+| Windows | Windows Server 2012 이상, Windows PowerShell 3.0 이상(5.1 권장) | PowerShell 3.0 미만에서는 안내 문구를 출력하고 결과 파일 없이 종료합니다. Windows Server 2008 R2(기본 PowerShell 2.0)는 지원하지 않습니다. |
+| Linux | bash 4.2 이상 | 배포판 구분 없이 실행 중에 `ss`/`netstat` 등 사용 가능한 명령을 골라 씁니다. |
 
 1. 서버 상세 화면의 **점검 스크립트**에서 스크립트를 다운로드합니다.
    - Windows `.ps1` 스크립트는 Windows PowerShell 5에서 한글이 깨지지 않도록 UTF-8 BOM을 포함합니다. 이 수정 이전에 내려받은 파일이 있다면 새로 다운로드하세요.

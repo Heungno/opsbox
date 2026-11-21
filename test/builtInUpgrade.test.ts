@@ -36,6 +36,23 @@ test('이전 버전 Linux DB 실행기는 상태 규칙을 지원하는 새 기�
   assert.match(template('LINUX-PART-DB_QUERY_RUNNER').content, /@opsbox-status/);
 });
 
+test('이전 버전 Windows 조각은 PowerShell 3.0 호환 새 기본값으로 바뀐다', () => {
+  const old: Record<string, string> = JSON.parse(fs.readFileSync(path.join(__dirname, 'helpers', 'windows-parts-ps5-v1.json'), 'utf8'));
+  for (const [id, content] of Object.entries(old)) setContent(id, content);
+  applyBuiltInUpdates();
+  assert.match(template('WINDOWS-PART-START').content, /PSVersion\.Major -lt 3/);
+  for (const id of Object.keys(old)) {
+    assert.doesNotMatch(template(id).content, /::new\(|\s-in\s/, `${id}: PS 3.0 호환이 아닌 문법이 남아 있음`);
+  }
+});
+
+test('기본 Windows 조각은 PS 5 전용 ::new()와, PS 2.0에서 버전 안내 전에 문법 오류를 내는 -in 등을 쓰지 않는다', () => {
+  const seeds = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'templates.json'), 'utf8'));
+  for (const seed of seeds.filter((t: any) => t.os === 'Windows')) {
+    assert.doesNotMatch(seed.content, /::new\(|\s-(not)?in\s|^\s*class\s|^\s*using\s/m, `${seed.id}`);
+  }
+});
+
 test('사용자가 고친 SAVE 조각은 그대로 둔다', () => {
   const edited = `${OLD_SAVE}\n# 사용자 수정`;
   setContent('LINUX-PART-SAVE', edited);

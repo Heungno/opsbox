@@ -312,6 +312,12 @@ const BUILTIN_TEMPLATE_UPGRADES: Array<{ id: string; fromSha256: string[] }> = [
   { id: 'LINUX-PART-SAVE', fromSha256: ['4e2dd4c0445999585e6c9acff1cd2841ad78b4fb4fbbee5d7f3c54b294af0d10', '61c46b940ae80ef992865d07a171369f97e26a89e2625a6cb347da4c63378042'] },
   // Linux DB 실행기: v1 → 쿼리 주석의 상태 규칙(-- @opsbox-status) 지원
   { id: 'LINUX-PART-DB_QUERY_RUNNER', fromSha256: ['aa9aee18bd039cbdbcafebe80db3c93a2ca20116fbb43d9328aee34ab1e3b1b3'] },
+  // Windows: v1 → PowerShell 3.0 미만 실행 차단 안내, PowerShell 5 전용 ::new()와 -in 연산자 제거(Windows Server 2012 지원)
+  { id: 'WINDOWS-PART-START', fromSha256: ['832f25bdd88dc47239e3be3677b85a1e187a542aa2f5dad2a94b817c0c3a9556'] },
+  { id: 'WINDOWS-PART-WEB_LOG', fromSha256: ['433fe3d3a6939b3413df41e3c5c3211a74b9e9167f3647ac62261e86df308e26'] },
+  { id: 'WINDOWS-PART-WAS_LOG', fromSha256: ['76ec02b0aca7e041c5255b187f229b4dd21ffebc7a4e8d5e9ed9a2d990e1cd43'] },
+  { id: 'WINDOWS-PART-WAS_JVM_HEAP', fromSha256: ['c9de1826f920159a5f0c89ded897e17b2affadc4f00cb44771d7d68b31e12c88'] },
+  { id: 'WINDOWS-PART-DB_QUERY_RUNNER', fromSha256: ['1ee21066af52357ba401fc4b8414835cf781eea081f8291acc36b4b463a117bc'] },
 ];
 
 function upgradeBuiltInTemplates(): string[] {
