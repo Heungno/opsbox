@@ -101,7 +101,7 @@ function applyTheme(theme, sidebar) {
 }
 
 function isMobileLayout() {
-  return window.matchMedia('(max-width: 640px)').matches;
+  return window.matchMedia('(max-width: 900px)').matches;
 }
 
 function bindSidebarToggle() {

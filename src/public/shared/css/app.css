@@ -2256,11 +2256,11 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 }
 
 /* =========================================================
-   Mobile navigation (<= 640px)
+   Mobile navigation (<= 900px: 핸드폰·가로모드·폴더블·태블릿)
    상단 바 + 햄버거로 여닫는 메뉴. 데스크톱 접힘(collapsed) 상태와 무관하게 동작.
    다른 미디어쿼리(.sidebar 220px 등)보다 뒤에 있어야 합니다.
 ========================================================= */
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .layout { display: block; }
 
   .sidebar,
