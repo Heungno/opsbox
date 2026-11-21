@@ -76,13 +76,26 @@ function initializeSidebarTheme() {
   const button = document.getElementById('theme-toggle');
   if (!sidebar || !button) return;
 
-  const savedTheme = localStorage.getItem('opsbox-theme');
-  const theme = savedTheme === 'dark' ? 'dark' : 'light';
-  applyTheme(theme, sidebar);
+  // 직접 고른 테마가 없으면 기기 다크 모드 설정을 따르고, 기기 설정이 바뀌면 바로 반영합니다.
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+  const savedTheme = () => {
+    try {
+      const value = localStorage.getItem('opsbox-theme');
+      return value === 'dark' || value === 'light' ? value : null;
+    } catch {
+      return null;
+    }
+  };
+  const currentTheme = () => savedTheme() ?? (systemDark.matches ? 'dark' : 'light');
+
+  applyTheme(currentTheme(), sidebar);
+  systemDark.addEventListener('change', () => {
+    if (!savedTheme()) applyTheme(currentTheme(), sidebar);
+  });
   button.addEventListener('click', () => {
     const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     applyTheme(nextTheme, sidebar);
-    localStorage.setItem('opsbox-theme', nextTheme);
+    try { localStorage.setItem('opsbox-theme', nextTheme); } catch { /* 저장 불가(사생활 보호 모드 등)면 이번 화면에만 적용 */ }
   });
 }
 
