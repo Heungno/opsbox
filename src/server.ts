@@ -1,7 +1,11 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyBaseLogger } from 'fastify';
 import fastifyStatic from '@fastify/static';
 
 import path from 'path';
+import { randomUUID } from 'node:crypto';
+
+import { logger } from './logger';
+import { purgeOldAuditLogs } from './services/auditService';
 
 import { routes } from './routes';
 import { registerErrorHandlers } from './utils/errorHandler';
@@ -11,19 +15,9 @@ import { readSessionCookie } from './services/authService';
 import { startResultImportScheduler } from './services/resultImportService';
 
 const app = Fastify({
-  logger: {
-    level: 'info',
-
-    transport: {
-      target: 'pino-pretty',
-
-      options: {
-        colorize: true,
-        translateTime: 'yyyy-mm-dd HH:MM:ss',
-        ignore: 'pid,hostname',
-      },
-    },
-  },
+  loggerInstance: logger as FastifyBaseLogger,
+  // 재시작해도 겹치지 않는 요청 ID (오류 알림·로그 파일·감사 로그에서 같은 값으로 추적)
+  genReqId: () => randomUUID().replace(/-/g, '').slice(0, 12),
 });
 
 registerErrorHandlers(app);
@@ -31,16 +25,17 @@ registerErrorHandlers(app);
 // 인증: 라우트가 없는 경로(404)보다 먼저 검사하도록 onRequest에서 처리합니다.
 app.addHook('onRequest', async (request, reply) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  request.user = readSessionCookie(request.headers.cookie);
   const publicPaths = new Set(['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/me', '/api/health']);
   if (publicPaths.has(pathname)) return;
   if (pathname.startsWith('/api/')) {
-    if (!readSessionCookie(request.headers.cookie)) throw new UnauthorizedError('로그인이 필요합니다. 다시 로그인해 주세요.');
+    if (!request.user) throw new UnauthorizedError('로그인이 필요합니다. 다시 로그인해 주세요.');
     return;
   }
-  const protectedPage = ['/', '/dashboard', '/servers', '/settings/server-management', '/servers/detail', '/settings/server-management/detail', '/reports', '/reports/detail', '/settings/templates', '/settings/script-management', '/settings/policy-management', '/settings/common-code-management'].includes(pathname)
+  const protectedPage = ['/', '/dashboard', '/servers', '/settings/server-management', '/servers/detail', '/settings/server-management/detail', '/reports', '/reports/detail', '/settings/templates', '/settings/script-management', '/settings/policy-management', '/settings/common-code-management', '/settings/audit-logs'].includes(pathname)
     || (/\.(html)$/.test(pathname) && /^\/(dashboard|reports|settings)\//.test(pathname));
   if (protectedPage) {
-    if (!readSessionCookie(request.headers.cookie)) return reply.redirect(`/login?next=${encodeURIComponent(request.url)}`);
+    if (!request.user) return reply.redirect(`/login?next=${encodeURIComponent(request.url)}`);
   }
 });
 
@@ -72,6 +67,7 @@ app.get('/settings/templates', async (request, reply) => reply.sendFile('setting
 app.get('/settings/script-management', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
 app.get('/settings/policy-management', async (request, reply) => reply.sendFile('settings/policy-management/policy-management.html'));
 app.get('/settings/common-code-management', async (request, reply) => reply.sendFile('settings/common-code-management/common-code-management.html'));
+app.get('/settings/audit-logs', async (_request, reply) => reply.sendFile('settings/audit-logs/audit-logs.html'));
 
 // Keep previous page URLs working for existing bookmarks.
 app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
@@ -103,22 +99,41 @@ async function start() {
       port: 3000,
     });
 
-    app.log.info('======================================');
-    app.log.info('OpsBox Started');
-    app.log.info('URL : http://localhost:3000');
-    app.log.info('======================================');
+    app.log.info({ url: 'http://localhost:3000' }, 'OpsBox 시작');
+    app.log.debug(`\n${app.printRoutes()}`);
 
-    console.log(app.printRoutes());
+    startResultImportScheduler();
 
-    startResultImportScheduler({
-      info: (message) => app.log.info(message),
-      error: (message) => app.log.error(message),
-    });
+    // 감사 로그 보관 기간 정리: 시작 시 1회 + 하루마다
+    purgeOldAuditLogs();
+    setInterval(purgeOldAuditLogs, 24 * 60 * 60 * 1000).unref();
   } catch (error) {
-    app.log.error(error);
-
+    app.log.fatal({ err: error }, 'OpsBox 시작 실패');
+    await new Promise((resolve) => setTimeout(resolve, 200)); // 로그 파일에 쓸 시간
     process.exit(1);
   }
 }
+
+// 종료 신호: 처리 중인 요청을 마치고 로그를 남긴 뒤 종료
+let shuttingDown = false;
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    app.log.info({ signal }, 'OpsBox 종료');
+    try {
+      await app.close();
+    } finally {
+      logger.flush();
+      setTimeout(() => process.exit(0), 200);
+    }
+  });
+}
+
+process.on('unhandledRejection', (reason) => app.log.error({ err: reason }, '처리되지 않은 Promise 오류'));
+process.on('uncaughtException', (error) => {
+  app.log.fatal({ err: error }, '처리되지 않은 예외로 종료합니다');
+  setTimeout(() => process.exit(1), 200);
+});
 
 start();

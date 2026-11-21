@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
+import { logger } from '../logger';
+
 /*
  * OpsBox SQLite 저장소
  *
@@ -73,6 +75,23 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_check_results_server_date ON check_results (server_id, check_date DESC);
   CREATE INDEX IF NOT EXISTS idx_check_results_server_file ON check_results (server_id, file_name);
+
+  CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    at TEXT NOT NULL,
+    username TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id TEXT,
+    summary TEXT NOT NULL,
+    changes TEXT,
+    detail TEXT,
+    ip TEXT,
+    request_id TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_at ON audit_logs (at DESC);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs (action, at DESC);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs (username COLLATE NOCASE, at DESC);
 
   CREATE TABLE IF NOT EXISTS result_import_errors (
     source_path TEXT PRIMARY KEY,
@@ -194,7 +213,7 @@ function seedFromJsonFiles() {
     }
   }
 
-  if (seeded.length) console.log(`[db] JSON 데이터를 SQLite로 옮겼습니다 (${DB_PATH}): ${seeded.join(', ')}`);
+  if (seeded.length) logger.info({ dbPath: DB_PATH, seeded }, 'JSON 데이터를 SQLite로 옮겼습니다');
 }
 
 seedFromJsonFiles();

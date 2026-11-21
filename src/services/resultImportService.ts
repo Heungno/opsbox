@@ -7,6 +7,8 @@ import { getAllServers } from './serverService';
 import { getHealthStatus, parseResultJson } from './resultService';
 import { writeEncryptedBackup } from './backupCrypto';
 import { ConflictError } from '../errors';
+import { logger } from '../logger';
+import { recordAudit } from './auditService';
 import type { ImportStatus, ImportSummary } from '../types/result';
 
 /*
@@ -139,8 +141,9 @@ export function importResults(): ImportSummary {
           else summary.duplicates++;
         } catch (error) {
           const message = (error as Error).message;
+          const repeated = Boolean(db.prepare('SELECT 1 FROM result_import_errors WHERE source_path = ? AND message = ?').get(file.fullPath, message));
           summary.failed++;
-          summary.errors.push({ file: file.fullPath, message });
+          summary.errors.push({ file: file.fullPath, message, repeated });
           recordError(file.fullPath, server.id, message);
         }
       }
@@ -159,21 +162,37 @@ export function getImportStatus(): ImportStatus {
   return { running, lastRun: lastSummary ?? null, totalResults: total, pendingErrors: errors };
 }
 
+/** 가져오기 결과를 애플리케이션 로그와 감사 로그에 남깁니다. */
+export function logImportSummary(summary: ImportSummary, trigger: 'manual' | 'schedule') {
+  const newErrors = summary.errors.filter((error) => !error.repeated);
+  if (summary.imported || summary.duplicates || summary.failed) {
+    logger.info({ trigger, imported: summary.imported, duplicates: summary.duplicates, failed: summary.failed, waiting: summary.skippedRecent }, '점검 결과 가져오기');
+  }
+  newErrors.forEach((error) => logger.error({ file: error.file, reason: error.message }, '점검 결과 가져오기 실패'));
+  summary.errors.filter((error) => error.repeated).forEach((error) => logger.debug({ file: error.file, reason: error.message }, '점검 결과 가져오기 실패 (이전과 같은 오류)'));
+  return newErrors.length;
+}
+
 /*
  * 주기 실행: 서버 시작 직후 1회, 이후 OPSBOX_IMPORT_INTERVAL_MINUTES(기본 5분)마다.
  * 0 이하로 설정하면 자동 실행을 끕니다 (API로 수동 실행만).
+ * 새로 가져왔거나 새 오류가 있을 때만 감사 로그(system)에 남깁니다.
  */
-export function startResultImportScheduler(log: { info: (msg: string) => void; error: (msg: string) => void }) {
+export function startResultImportScheduler() {
   const minutes = Number(process.env.OPSBOX_IMPORT_INTERVAL_MINUTES ?? 5);
   const run = () => {
     try {
       const summary = importResults();
-      if (summary.imported || summary.duplicates || summary.failed) {
-        log.info(`점검 결과 가져오기: 신규 ${summary.imported}건, 중복 ${summary.duplicates}건, 실패 ${summary.failed}건, 대기 ${summary.skippedRecent}건`);
+      const newErrors = logImportSummary(summary, 'schedule');
+      if (summary.imported || newErrors) {
+        recordAudit(null, {
+          action: 'RESULT_IMPORT',
+          summary: `자동 가져오기: 신규 ${summary.imported}건, 실패 ${summary.failed}건`,
+          detail: { trigger: 'schedule', imported: summary.imported, duplicates: summary.duplicates, failed: summary.failed, errors: summary.errors.filter((error) => !error.repeated) },
+        });
       }
-      summary.errors.forEach((error) => log.error(`점검 결과 가져오기 실패: ${error.file} - ${error.message}`));
     } catch (error) {
-      log.error(`점검 결과 가져오기 오류: ${(error as Error).message}`);
+      if (!(error instanceof ConflictError)) logger.error({ err: error }, '점검 결과 가져오기 오류');
     }
   };
   run();

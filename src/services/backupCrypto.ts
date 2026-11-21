@@ -3,6 +3,8 @@ import path from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { gunzipSync, gzipSync } from 'node:zlib';
 
+import { logger } from '../logger';
+
 /*
  * 점검 결과 원본 JSON 백업 암호화
  *
@@ -39,7 +41,7 @@ export function getBackupKey(): Buffer {
   if (!fs.existsSync(KEY_FILE)) {
     fs.mkdirSync(path.dirname(KEY_FILE), { recursive: true });
     fs.writeFileSync(KEY_FILE, `${randomBytes(32).toString('base64')}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
-    console.warn(`[backup] 새 백업 암호화 키를 만들었습니다: ${KEY_FILE}\n[backup] 이 키가 없으면 백업을 복구할 수 없습니다. 안전한 다른 위치에 따로 보관하세요.`);
+    logger.warn({ keyFile: KEY_FILE }, '새 백업 암호화 키를 만들었습니다. 이 키가 없으면 백업을 복구할 수 없으니 안전한 다른 위치에 따로 보관하세요.');
   }
   cachedKey = decodeKey(fs.readFileSync(KEY_FILE, 'utf8'), KEY_FILE);
   return cachedKey;

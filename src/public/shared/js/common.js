@@ -197,13 +197,14 @@ function activateCurrentMenu() {
   if (path.includes('/settings/script-management') || path.includes('/settings/templates')) activeMenu = 'settings-scripts';
   if (path.includes('/settings/policy-management')) activeMenu = 'policy-management';
   if (path.includes('/settings/common-code-management')) activeMenu = 'common-code-management';
+  if (path.includes('/settings/audit-logs')) activeMenu = 'audit-logs';
 
   document.querySelectorAll('.sidebar-menu a').forEach((link) => {
     if (link.dataset.menu === activeMenu) {
       link.classList.add('active');
     }
   });
-  const settingsActive = ['servers', 'policy-management', 'settings-scripts', 'common-code-management'].includes(activeMenu);
+  const settingsActive = ['servers', 'policy-management', 'settings-scripts', 'common-code-management', 'audit-logs'].includes(activeMenu);
   const settingsButton = document.getElementById('settings-menu-toggle');
   const settingsSubmenu = document.getElementById('settings-submenu');
   if (settingsButton && settingsSubmenu) {

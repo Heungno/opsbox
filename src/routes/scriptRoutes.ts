@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
+import { recordAudit } from '../services/auditService';
 import { generateScript } from '../services/scriptService';
 import { getServer } from '../services/serverService';
 import type { ServerIdParams } from '../types/api';
@@ -10,6 +11,8 @@ export async function scriptRoutes(app: FastifyInstance) {
     const { serverId } = request.params;
     const script = generateScript(serverId);
     const extension = getServer(serverId)?.os === 'Linux' ? 'sh' : 'ps1';
+
+    recordAudit(request, { action: 'SCRIPT_DOWNLOAD', targetId: serverId, summary: `점검 스크립트 다운로드: ${serverId}.${extension}` });
 
     reply.header('Content-Disposition', `attachment; filename="${encodeURIComponent(serverId)}.${extension}"`);
     reply.type('text/plain; charset=utf-8');

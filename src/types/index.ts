@@ -9,6 +9,7 @@
  * template.ts   스크립트·쿼리 템플릿
  * result.ts     점검 결과, 가져오기
  * report.ts     대시보드·보고서
+ * audit.ts      감사 로그(변경 이력)
  * validation.ts 입력값 검증 결과
  */
 export * from './api';
@@ -19,4 +20,5 @@ export * from './policy';
 export * from './template';
 export * from './result';
 export * from './report';
+export * from './audit';
 export type { ValidationResult } from './validation';

@@ -140,6 +140,8 @@ export interface CheckResult {
 export interface ImportFileError {
   file: string;
   message: string;
+  /** 이전 실행에서도 같은 오류였는지 (로그를 반복해서 남기지 않기 위해) */
+  repeated?: boolean;
 }
 
 export interface ImportSummary {

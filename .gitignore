@@ -14,3 +14,6 @@ data/backup.key
 
 # Codespaces 테스트용 공유 폴더 (점검 결과를 가져가면 지워짐)
 .devcontainer/sample-share/
+
+# 애플리케이션 로그 파일
+logs/

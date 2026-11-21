@@ -308,6 +308,36 @@ Windows 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/
 
 ---
 
+## 로그
+
+### 애플리케이션 로그 (파일)
+
+- 위치: `logs/opsbox.<날짜>.<번호>.log` (JSON 한 줄씩). 터미널에는 읽기 쉬운 형태로 함께 출력됩니다.
+- 하루마다 새 파일, 한 파일이 100MB를 넘으면 번호를 올려 새 파일을 만들고, 최근 30개 파일만 남깁니다.
+- 요청마다 `reqId`가 붙습니다. 화면 오류 알림의 **요청 ID**로 원인을 찾을 수 있습니다.
+  ```powershell
+  Select-String -Path logs\*.log -Pattern '"reqId":"4046307c16ae"'      # Windows
+  grep '"reqId":"4046307c16ae"' logs/*.log                               # Linux
+  ```
+- 쿠키·비밀번호 같은 값은 `[숨김]`으로 가려서 기록합니다.
+
+| 환경변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `OPSBOX_LOG_LEVEL` | `info` | `debug`, `warn`, `error` 등 |
+| `OPSBOX_LOG_DIR` | `logs` | 로그 폴더 |
+| `OPSBOX_LOG_FILE` | (켜짐) | `false`면 파일 기록 끄기 |
+| `OPSBOX_LOG_RETENTION_FILES` | `30` | 남길 로그 파일 수 |
+| `OPSBOX_LOG_MAX_SIZE` | `100m` | 파일 하나의 최대 크기 |
+
+### 감사 로그 (변경 이력)
+
+누가, 언제, 무엇을 바꿨는지 DB(`audit_logs`)에 남기고 **설정 → 변경 이력** 화면에서 조회합니다.
+
+- 기록 대상: 로그인·로그인 실패·로그아웃, 서버 등록/수정/삭제·점검 정책 저장, 점검 정책·템플릿 추가/수정/삭제/복원, 공통코드 변경, 점검 결과 가져오기(수동, 자동은 새 결과·새 오류가 있을 때), 점검 스크립트 다운로드
+- 수정은 바뀐 항목만 변경 전/후로 남깁니다. 긴 값(스크립트 내용 등)은 길이만 요약합니다.
+- 보관 기간: `OPSBOX_AUDIT_RETENTION_DAYS`(기본 365일, 0이면 계속 보관). 하루에 한 번 지난 기록을 지웁니다.
+- API: `GET /api/audit-logs?from=&to=&action=&username=&q=&page=&pageSize=`, `GET /api/audit-logs/actions`
+
 ## API
 
 ### 응답 형식
@@ -359,6 +389,8 @@ src/types/
 ├─ template.ts    스크립트·쿼리 템플릿
 ├─ result.ts      점검 결과, 가져오기 요약
 ├─ report.ts      대시보드·보고서
+├─ audit.ts       감사 로그
+├─ fastify.d.ts   request.user (로그인 사용자) 타입
 └─ validation.ts  입력값 검증 결과
 ```
 

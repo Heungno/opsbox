@@ -1,14 +1,24 @@
 import type { FastifyInstance } from 'fastify';
 
 import { NotFoundError } from '../errors';
-import { getImportStatus, importResults } from '../services/resultImportService';
+import { recordAudit } from '../services/auditService';
+import { getImportStatus, importResults, logImportSummary } from '../services/resultImportService';
 import { getHealthStatus, getLatestResult, getResultByFile, getResults } from '../services/resultService';
 import type { ResultFileParams, ServerIdParams } from '../types/api';
 import { ok } from '../utils/http';
 
 export async function resultRoutes(app: FastifyInstance) {
   // 공유 폴더의 점검 결과 JSON을 지금 바로 가져오기 (DB 저장 → 암호화 백업 → 원본 삭제)
-  app.post('/results/import', async () => ok(importResults()));
+  app.post('/results/import', async (request) => {
+    const summary = importResults();
+    logImportSummary(summary, 'manual');
+    recordAudit(request, {
+      action: 'RESULT_IMPORT',
+      summary: `수동 가져오기: 신규 ${summary.imported}건, 중복 ${summary.duplicates}건, 실패 ${summary.failed}건`,
+      detail: { trigger: 'manual', imported: summary.imported, duplicates: summary.duplicates, failed: summary.failed, errors: summary.errors },
+    });
+    return ok(summary);
+  });
 
   app.get('/results/import/status', async () => ok(getImportStatus()));
 
