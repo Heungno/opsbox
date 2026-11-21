@@ -53,6 +53,14 @@ test('기본 Windows 조각은 PS 5 전용 ::new()와, PS 2.0에서 버전 안�
   }
 });
 
+test('이전 버전 Windows SAVE 조각은 기본 사용자 항목 상태를 종합에 넣는 새 기본값으로 바뀐다', () => {
+  setContent('WINDOWS-PART-SAVE', fs.readFileSync(path.join(__dirname, 'helpers', 'windows-save-v1.ps1'), 'utf8'));
+  applyBuiltInUpdates();
+  const content = template('WINDOWS-PART-SAVE').content;
+  assert.match(content, /\$basicPolicyStatuses = @\(\$basicPolicyOutput \| ForEach-Object \{ \$_\.status \}\)/);
+  assert.match(content, /\+ \$rolePolicyStatuses \+ \$basicPolicyStatuses/);
+});
+
 test('사용자가 고친 SAVE 조각은 그대로 둔다', () => {
   const edited = `${OLD_SAVE}\n# 사용자 수정`;
   setContent('LINUX-PART-SAVE', edited);

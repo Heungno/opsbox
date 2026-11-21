@@ -318,6 +318,8 @@ const BUILTIN_TEMPLATE_UPGRADES: Array<{ id: string; fromSha256: string[] }> = [
   { id: 'WINDOWS-PART-WAS_LOG', fromSha256: ['76ec02b0aca7e041c5255b187f229b4dd21ffebc7a4e8d5e9ed9a2d990e1cd43'] },
   { id: 'WINDOWS-PART-WAS_JVM_HEAP', fromSha256: ['c9de1826f920159a5f0c89ded897e17b2affadc4f00cb44771d7d68b31e12c88'] },
   { id: 'WINDOWS-PART-DB_QUERY_RUNNER', fromSha256: ['1ee21066af52357ba401fc4b8414835cf781eea081f8291acc36b4b463a117bc'] },
+  // Windows SAVE: v1 → 기본 정책 사용자 항목 상태를 종합 상태에 포함
+  { id: 'WINDOWS-PART-SAVE', fromSha256: ['dbf116bf6886239f3a06a11cc2cbe89a1f05a695fb9caca0407e31c50e4e9c82'] },
 ];
 
 function upgradeBuiltInTemplates(): string[] {
