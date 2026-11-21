@@ -2381,6 +2381,17 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
   width: min(420px, calc(100vw - 32px));
   pointer-events: none;
 }
+/* popover 기본 스타일(가운데 정렬·테두리·배경)을 지우고 오른쪽 아래 위치를 유지합니다. */
+.toast-container[popover] {
+  inset: auto 16px 16px auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+.toast-container[popover]:not(:popover-open) { display: none; }
 .toast {
   display: flex;
   align-items: flex-start;
@@ -2418,6 +2429,7 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
 @media (max-width: 640px) {
   .toast-container { right: 12px; left: 12px; bottom: 12px; width: auto; }
+  .toast-container[popover] { inset: auto 12px 12px 12px; }
 }
 
 /* =========================================================
