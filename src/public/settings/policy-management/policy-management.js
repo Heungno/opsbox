@@ -151,7 +151,7 @@ async function init() {
   fill('policy-os-filter', codes.operatingSystems, '전체 OS'); fill('policy-os', codes.operatingSystems);
   fill('policy-category', codes.policyCategories); fill('policy-item-executor', codes.policyExecutors);
   const views = document.getElementById('policy-item-result-components'); views.replaceChildren();
-  codes.resultViews.forEach((entry) => { const label = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = entry.value; input.addEventListener('change', updateItemFields); label.append(input, document.createTextNode(entry.label)); views.append(label); });
+  codes.resultViews.forEach((entry) => { const label = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = entry.value; input.addEventListener('change', updateColumnVisibility); label.append(input, document.createTextNode(entry.label)); views.append(label); });
   const templateResponse = await fetch('/api/templates'); templates = templateResponse.ok ? await templateResponse.json() : [];
   bindTemplatePicker(); renderItems(); await loadPolicies();
 }

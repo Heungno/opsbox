@@ -100,6 +100,10 @@ function applyTheme(theme, sidebar) {
   }
 }
 
+function isMobileLayout() {
+  return window.matchMedia('(max-width: 640px)').matches;
+}
+
 function bindSidebarToggle() {
   const button = document.getElementById('sidebar-toggle');
 
@@ -111,7 +115,17 @@ function bindSidebarToggle() {
     return;
   }
 
+  button.setAttribute('aria-controls', 'sidebar');
+  button.setAttribute('aria-expanded', 'false');
+
   button.addEventListener('click', () => {
+    // 모바일에서는 메뉴를 여닫고, 데스크톱 접힘 상태는 건드리지 않습니다.
+    if (isMobileLayout()) {
+      const open = sidebar.classList.toggle('mobile-open');
+      button.setAttribute('aria-expanded', String(open));
+      return;
+    }
+
     sidebar.classList.toggle('collapsed');
 
     layout.classList.toggle('sidebar-collapsed');
@@ -129,7 +143,7 @@ function bindSettingsMenu() {
   button.addEventListener('click', () => {
     const sidebar = document.getElementById('sidebar');
     const layout = document.querySelector('.layout');
-    if (sidebar?.classList.contains('collapsed')) {
+    if (sidebar?.classList.contains('collapsed') && !isMobileLayout()) {
       sidebar.classList.remove('collapsed');
       layout?.classList.remove('sidebar-collapsed');
       localStorage.setItem('sidebar-collapsed', 'false');
