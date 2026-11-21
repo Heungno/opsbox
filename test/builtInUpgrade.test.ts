@@ -30,6 +30,12 @@ test('이전 버전(v2) SAVE 조각도 새 기본값으로 바뀐다', () => {
   assert.match(template('LINUX-PART-SAVE').content, /\$\{database_check_json:-null\}/);
 });
 
+test('이전 버전 Linux DB 실행기는 상태 규칙을 지원하는 새 기본값으로 바뀐다', () => {
+  setContent('LINUX-PART-DB_QUERY_RUNNER', fs.readFileSync(path.join(__dirname, 'helpers', 'linux-db-runner-v1.sh'), 'utf8'));
+  applyBuiltInUpdates();
+  assert.match(template('LINUX-PART-DB_QUERY_RUNNER').content, /@opsbox-status/);
+});
+
 test('사용자가 고친 SAVE 조각은 그대로 둔다', () => {
   const edited = `${OLD_SAVE}\n# 사용자 수정`;
   setContent('LINUX-PART-SAVE', edited);

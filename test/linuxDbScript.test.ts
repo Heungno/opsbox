@@ -59,6 +59,16 @@ ${tsv(['__OPSBOX_STATUS', 'serverName', 'version', 'edition', 'databaseName', 's
 printf '%s\\n' '-------- ---------- -------'
 ${tsv(['Healthy', 'MSSQL01', '16.0', 'Developer', 'master', 'ONLINE', 'SIMPLE', '6.00'], ['Critical', 'MSSQL01', '16.0', 'Developer', 'old', 'OFFLINE', 'FULL', '0'])}`);
 
+// CUBRID SHOW 문은 상태 열을 만들 수 없어, 쿼리의 '-- @opsbox-status' 규칙으로 판정합니다.
+fake('csql', `
+sql=''; while [ $# -gt 0 ]; do case "$1" in -c) sql=$2; shift ;; esac; shift; done
+case "$sql" in
+  *'JOB QUEUES'*) ${tsv(['Jobq_index', 'Num_total_workers', 'Num_busy_workers', 'Num_connection_workers'], ['0', '10', '8', '2'], ['1', '10', '1', '0'])} ;;
+  *'VOLUME HEADER'*) ${tsv(['Volume_id', 'Purpose', 'Num_total_sectors', 'Num_free_sectors', 'Full_name'], ['0', 'Permanent data purpose', '512', '459', '/db/demodb'])} ;;
+  *'LOG HEADER'*) printf '%s\\n' "Backup_info_level0\tHa_server_state\tNum_active_log_pages\tNext_archive_num" "'time: N/A'\t'na'\t1000\t12" ;;
+  *db_root*) ${tsv(['__OPSBOX_STATUS', 'version', 'edition', 'databaseName', 'state'], ['Healthy', '11.2.0', 'CUBRID', 'demodb', 'ONLINE'])} ;;
+esac`);
+
 const linuxServer = (id: string, product: string, roleChecks: string[], extra: Record<string, unknown> = {}) => createServer({
   id, name: id, type: 'DB', roles: ['DB'], products: { DB: product }, os: 'Linux', ip: '10.0.0.20', sharedPath: '',
   policyIds: { BASIC: 'linux-basic-default' }, roleChecks: { DB: roleChecks }, processes: [], directories: [], ...extra,
@@ -79,6 +89,9 @@ linuxServer('LNX-PG', 'PostgreSQL', ['DB_INSTANCE_STATUS', 'DB_PROCESS_LIMIT', '
 linuxServer('LNX-MARIA', 'MariaDB', ['DB_INSTANCE_STATUS', 'DB_ARCHIVE_MODE'], { rolePolicySettings: { DB_INSTANCE_STATUS: { instanceTargets: ['/run/mysqld/test.sock'] } } });
 linuxServer('LNX-MSSQL', 'MSSQL', ['DB_INSTANCE_STATUS']);
 linuxServer('LNX-CUB', 'CUBRID', ['DB_INSTANCE_STATUS', 'DB_PROCESS_LIMIT']);
+linuxServer('LNX-CUB2', 'CUBRID', ['DB_INSTANCE_STATUS', 'DB_PROCESS_LIMIT', 'DB_TABLESPACE', 'DB_BACKUP', 'DB_ARCHIVE_MODE', 'DB_TRANSACTION_LOG', 'DB_REPLICATION'], {
+  rolePolicySettings: { DB_INSTANCE_STATUS: { instanceTargets: ['demodb@localhost'] } },
+});
 
 const results: Record<string, any> = {};
 
@@ -97,7 +110,7 @@ function run(id: string) {
 
 before(() => {
   if (!canRunBash) return;
-  for (const id of ['LNX-PG', 'LNX-MARIA', 'LNX-MSSQL', 'LNX-CUB']) run(id);
+  for (const id of ['LNX-PG', 'LNX-MARIA', 'LNX-MSSQL', 'LNX-CUB', 'LNX-CUB2']) run(id);
 });
 
 const item = (id: string, name: string) => results[id].json.checks.rolePolicies.DB.items.find((entry: any) => entry.item === name);
@@ -157,11 +170,24 @@ test('MSSQL(Linux): sqlcmd 구분선을 빼고 읽으며 Windows용 T-SQL 기본
   assert.match(fs.readFileSync(argsLog, 'utf8'), /sqlcmd -S localhost .* -E -Q/);
 });
 
-test('CUBRID: 대상이 없으면 미수집, 기본 쿼리가 없는 항목은 안내와 함께 미수집', { skip: !canRunBash }, () => {
-  assert.equal(item('LNX-CUB', 'DB_INSTANCE_STATUS').status, 'NotCollected');
-  const missing = item('LNX-CUB', 'DB_PROCESS_LIMIT');
-  assert.equal(missing.status, 'NotCollected');
-  assert.match(missing.message, /CUBRID용 쿼리 템플릿이 없어/);
+test('CUBRID: 대상 DB가 없으면 실행하지 않고 미수집과 안내를 남긴다', { skip: !canRunBash }, () => {
+  for (const name of ['DB_INSTANCE_STATUS', 'DB_PROCESS_LIMIT']) {
+    const entry = item('LNX-CUB', name);
+    assert.equal(entry.status, 'NotCollected');
+    assert.match(entry.detail.queries[0].message, /대상 DB\(DB이름@호스트\)/);
+  }
+});
+
+test('CUBRID: SHOW 문 결과를 쿼리의 상태 규칙(-- @opsbox-status)으로 판정한다', { skip: !canRunBash }, () => {
+  assert.equal(item('LNX-CUB2', 'DB_INSTANCE_STATUS').status, 'Healthy');
+  assert.equal(item('LNX-CUB2', 'DB_PROCESS_LIMIT').status, 'Warning', '작업 스레드 80% 사용');
+  assert.equal(item('LNX-CUB2', 'DB_TABLESPACE').status, 'Healthy', '남은 섹터 약 90%');
+  assert.equal(item('LNX-CUB2', 'DB_BACKUP').status, 'Warning', "백업 정보 'time: N/A'");
+  assert.equal(item('LNX-CUB2', 'DB_ARCHIVE_MODE').status, 'Healthy');
+  assert.equal(item('LNX-CUB2', 'DB_TRANSACTION_LOG').status, 'Healthy');
+  assert.equal(item('LNX-CUB2', 'DB_REPLICATION').status, 'NotCollected', "HA 미사용('na')");
+  assert.equal(item('LNX-CUB2', 'DB_PROCESS_LIMIT').detail.queries[0].rows[0][2], '8');
+  assert.match(fs.readFileSync(argsLog, 'utf8'), /csql -u dba --plain-output -c .* demodb@localhost/);
 });
 
 test('결과 파일은 OpsBox가 읽을 수 있고 종합 상태를 판정한다', { skip: !canRunBash }, () => {

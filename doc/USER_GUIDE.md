@@ -134,25 +134,37 @@ Linux 서버는 DB 제품에 맞는 클라이언트로 정책 항목별 쿼리�
 
 기본 쿼리는 다음과 같습니다. 스크립트 관리에서 `PostgreSQL 쿼리 · …`, `MariaDB 쿼리 · …`처럼 제품별로 보이며, 고치거나 새 쿼리를 만들어 서버 정책에서 선택할 수 있습니다.
 
-| 항목 | PostgreSQL | MariaDB |
-| --- | --- | --- |
-| 인스턴스·접속 상태 | DB 목록·접속 허용 여부·크기, 주/대기 구분 | 스키마 목록·크기, binlog 사용 여부 |
-| 세션·프로세스 사용률 | 접속 수 / (max_connections − 예약분), 70%·90% | Threads_connected / max_connections, 70%·90% |
-| 데이터 영역 사용률 | 테이블스페이스별 사용량 (정해진 용량이 없어 상태는 정상) | DB별 사용량·여유 공간 (상태는 정상) |
-| 백업 상태 | DB 안에 기록이 없어 미수집과 안내 | 같음 |
-| 아카이브 모드 | archive_mode, 마지막 보관 실패 여부 | 바이너리 로그 사용 여부 |
-| 트랜잭션 로그 | WAL 크기 / max_wal_size, 100%·150% | InnoDB 체크포인트 나이 / 최대치, 70%·90% |
-| 복제·이중화 | 대기 서버별 상태·재생 지연(300초 이상 경고), 대기 서버면 수신 상태 | 복제 스레드 실행 수, 연결된 대기 서버 수 |
+| 항목 | PostgreSQL | MariaDB | CUBRID |
+| --- | --- | --- | --- |
+| 인스턴스·접속 상태 | DB 목록·접속 허용 여부·크기, 주/대기 구분 | 스키마 목록·크기, binlog 사용 여부 | 버전, DB 이름 |
+| 세션·프로세스 사용률 | 접속 수 / (max_connections − 예약분), 70%·90% | Threads_connected / max_connections, 70%·90% | 작업 스레드 사용률(`SHOW JOB QUEUES`), 70%·90% |
+| 데이터 영역 사용률 | 테이블스페이스별 사용량 (정해진 용량이 없어 상태는 정상) | DB별 사용량·여유 공간 (상태는 정상) | 0번 볼륨 남은 섹터 비율(`SHOW VOLUME HEADER OF 0`), 15% 이하 경고·5% 이하 위험 |
+| 백업 상태 | DB 안에 기록이 없어 미수집과 안내 | 같음 | 전체 백업 기록(`SHOW LOG HEADER`의 Backup_info_level0), 없으면 경고 |
+| 아카이브 모드 | archive_mode, 마지막 보관 실패 여부 | 바이너리 로그 사용 여부 | 보관 로그 번호 (상태는 정상) |
+| 트랜잭션 로그 | WAL 크기 / max_wal_size, 100%·150% | InnoDB 체크포인트 나이 / 최대치, 70%·90% | 활성 로그 페이지 수·체크포인트 (상태는 정상) |
+| 복제·이중화 | 대기 서버별 상태·재생 지연(300초 이상 경고), 대기 서버면 수신 상태 | 복제 스레드 실행 수, 연결된 대기 서버 수 | HA 서버 상태: active·standby 정상, na 미수집, 전환 중·유지보수 경고, dead 위험 |
 
-MSSQL은 Windows와 같은 T-SQL 기본 쿼리를 쓰고, CUBRID는 인스턴스·접속 상태 쿼리만 기본 제공합니다(나머지 항목은 쿼리를 만들어 선택하기 전까지 미수집). 판정 규칙은 다음과 같습니다.
+MSSQL은 Windows와 같은 T-SQL 기본 쿼리를 씁니다. CUBRID는 최대 접속 수 같은 시스템 설정값을 SQL로 읽을 수 없어, 세션 항목은 서버 작업 스레드 사용률로 대신 판단합니다. 데이터 영역은 0번 볼륨만 보므로, 볼륨이 여럿이면 `OF 1`처럼 번호를 바꾼 쿼리를 만들어 기타 사용자 쿼리로 추가하세요.
+
+CUBRID의 `SHOW` 문처럼 결과에 상태 열(`__OPSBOX_STATUS`)을 만들 수 없는 쿼리는, 쿼리 위에 상태 규칙 주석을 적어 판정합니다(Linux 점검 스크립트에서만 동작). 행마다 맞는 규칙 중 가장 높은 상태를 쓰고, 맞는 규칙이 없으면 정상입니다. 열 이름은 대소문자를 가리지 않고, 값을 감싼 작은따옴표는 무시합니다.
+
+```sql
+-- @opsbox-status <Critical|Warning|NotCollected> <열 또는 열A/열B%> <비교> <값>
+-- 비교: >=  <=  >  <  =  !=  ~(포함)  in(쉼표 목록)
+-- @opsbox-status Warning Num_free_sectors/Num_total_sectors% <= 15
+-- @opsbox-status Critical Ha_server_state in dead
+SHOW VOLUME HEADER OF 0;
+```
+
+판정 규칙은 다음과 같습니다.
 
 - 클라이언트가 없거나 대상이 비어 있는 CUBRID: 미수집과 안내
 - 연결 실패, 쿼리 오류: 위험 (오류 메시지 기록)
 - 권한 부족, 인증 실패: 미수집 (점검 계정 설정 문제)
 - 결과 행이 없음: 미수집
-- `__OPSBOX_STATUS` 값: Critical > Warning > Healthy 순으로 종합. 값이 모두 `NotCollected`면 미수집
+- `__OPSBOX_STATUS` 값 또는 상태 규칙 결과: Critical > Warning > Healthy 순으로 종합. 값이 모두 `NotCollected`면 미수집
 
-기본 쿼리는 실제 PostgreSQL·MariaDB·CUBRID에서 확인하지 않았습니다. 운영 DB에 쓰기 전에 버전과 권한에 맞는지 먼저 시험해 보세요.
+기본 쿼리는 실제 PostgreSQL·MariaDB·CUBRID에서 확인하지 않았습니다. 운영 DB에 쓰기 전에 버전과 권한에 맞는지 먼저 시험해 보세요. CUBRID 쿼리는 CUBRID 11.2 매뉴얼의 `SHOW` 문 설명(열 이름)을 기준으로 만들었고, `csql --plain-output`이 머리글과 탭 구분 행을 출력한다고 가정합니다.
 
 ### 디스크 점검
 

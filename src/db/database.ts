@@ -310,6 +310,8 @@ function addLinuxRolePolicyItems(): string[] {
 const BUILTIN_TEMPLATE_UPGRADES: Array<{ id: string; fromSha256: string[] }> = [
   // Linux SAVE: v1 → 역할별(WEB·WAS) 결과를 web·was 항목에 기록, v2 → DB 인스턴스 요약을 database 항목에 기록
   { id: 'LINUX-PART-SAVE', fromSha256: ['4e2dd4c0445999585e6c9acff1cd2841ad78b4fb4fbbee5d7f3c54b294af0d10', '61c46b940ae80ef992865d07a171369f97e26a89e2625a6cb347da4c63378042'] },
+  // Linux DB 실행기: v1 → 쿼리 주석의 상태 규칙(-- @opsbox-status) 지원
+  { id: 'LINUX-PART-DB_QUERY_RUNNER', fromSha256: ['aa9aee18bd039cbdbcafebe80db3c93a2ca20116fbb43d9328aee34ab1e3b1b3'] },
 ];
 
 function upgradeBuiltInTemplates(): string[] {
