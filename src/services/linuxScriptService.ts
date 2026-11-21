@@ -13,6 +13,9 @@ import { buildScriptConfig, ScriptConfig, selectScriptParts } from './scriptAsse
 const CONFIG_TOKEN = '@@CONFIG_BASH@@';
 const ROLE_NOT_SUPPORTED_MESSAGE = 'Linux용 점검 스크립트가 아직 없어 수집하지 않았습니다.';
 const BASIC_NOT_COLLECTED_MESSAGE = '연결된 점검 스크립트가 결과를 기록하지 않았습니다.';
+const dbQueryMissingMessage = (dbms: string) => (dbms
+  ? `${dbms}용 쿼리 템플릿이 없어 수집하지 않았습니다. 스크립트 관리에서 쿼리를 만들고 서버 정책에서 선택하세요.`
+  : '서버 기본 정보에서 DB 제품을 지정하세요.');
 
 /*
  * 역할별(WEB·WAS) 점검 조각이 결과를 남기는 방법
@@ -25,7 +28,7 @@ const ROLE_RUNTIME = [
   '# ---- 역할별 점검 결과 기록 (OpsBox가 자동으로 넣음) ----',
   'declare -A OPSBOX_ROLE_STATUS=() OPSBOX_ROLE_DETAIL=()',
   'opsbox_role_record() { OPSBOX_ROLE_STATUS["$1:$2"]=$3; OPSBOX_ROLE_DETAIL["$1:$2"]=${4:-null}; }',
-  "web_status=NotCollected; web_check_json=null; was_items_json=''; was_statuses=''",
+  "web_status=NotCollected; web_check_json=null; was_items_json=''; was_statuses=''; database_status=NotCollected; database_check_json=null",
   'opsbox_was_item() { [ -n "$was_items_json" ] && was_items_json+=\',\'; was_items_json+=$1; was_statuses+=" $2"; }',
   '# 이름이 정확히 같은 프로세스의 PID 목록 (pgrep이 없거나 못 찾으면 /proc/*/comm 에서 찾음)',
   'opsbox_pids_by_name() {',
@@ -110,13 +113,23 @@ function jsonFields(value: Record<string, unknown>): string {
 }
 
 function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): string {
-  const { server, checks } = config;
+  const { server, checks, database } = config;
   const products = server.products as Partial<Record<string, string>>;
-  const settings = checks.rolePolicySettings as Partial<Record<string, { logDirectories?: string[]; periodDays?: number }>>;
+  const settings = checks.rolePolicySettings as Partial<Record<string, { logDirectories?: string[]; periodDays?: number; instanceTargets?: string[] }>>;
+  const dbms = products.DB ?? '';
+
+  // DB 쿼리 대상: 항목에 지정한 대상 → 인스턴스 상태 항목의 대상 → 비움(이 서버의 기본 접속)
+  const dbTargets = (item: string) => (settings[item]?.instanceTargets?.length ? settings[item]!.instanceTargets! : settings.DB_INSTANCE_STATUS?.instanceTargets ?? []).join('\n');
+  const queryItems = new Set(database.policyQueries.map((query) => query.item));
 
   // 정책에 있는 역할별 항목 목록. 결과는 각 조각이 실행 중에 기록하고, SAVE 앞의 정리 단계가 모읍니다.
   const hasLinuxPart = (item: string) => templates.some((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Linux' && template.item === item);
   const roleItems = Object.entries(checks.rolePolicies).flatMap(([role, items]) => items.map((item) => ({ role, ...item })));
+  const notCollectedMessage = ({ role, item }: { role: string; item: string }) => {
+    if (role === 'DB' && item === 'DB_CUSTOM_QUERY') return database.customQueries.length ? BASIC_NOT_COLLECTED_MESSAGE : '실행할 사용자 쿼리를 서버 정책에서 선택하세요.';
+    if (role === 'DB') return queryItems.has(item) ? BASIC_NOT_COLLECTED_MESSAGE : dbQueryMissingMessage(dbms);
+    return hasLinuxPart(item) ? BASIC_NOT_COLLECTED_MESSAGE : ROLE_NOT_SUPPORTED_MESSAGE;
+  };
   const basicPolicyItems = checks.basicPolicyItems.map(({ item, name, result, executorType }) => ({
     role: 'BASIC', item, name, result, executorType, status: 'NotCollected', message: BASIC_NOT_COLLECTED_MESSAGE,
   }));
@@ -162,7 +175,15 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
     array('OPSBOX_ROLE_ITEM_ROLES', roleItems.map((item) => item.role)),
     array('OPSBOX_ROLE_ITEM_IDS', roleItems.map((item) => item.item)),
     array('OPSBOX_ROLE_ITEM_META', roleItems.map(({ name, result, executorType }) => jsonFields({ name, result, executorType }))),
-    array('OPSBOX_ROLE_ITEM_MESSAGES', roleItems.map((item) => (hasLinuxPart(item.item) ? BASIC_NOT_COLLECTED_MESSAGE : ROLE_NOT_SUPPORTED_MESSAGE))),
+    array('OPSBOX_ROLE_ITEM_MESSAGES', roleItems.map(notCollectedMessage)),
+    // DB 쿼리 (항목·이름·SQL·대상 목록은 같은 순서, 대상은 줄바꿈으로 구분하며 빈 값은 기본 접속)
+    array('OPSBOX_DB_QUERY_ITEMS', database.policyQueries.map((query) => query.item)),
+    array('OPSBOX_DB_QUERY_NAMES', database.policyQueries.map((query) => query.name)),
+    array('OPSBOX_DB_QUERY_SQL', database.policyQueries.map((query) => query.content.replace(/\r\n/g, '\n'))),
+    array('OPSBOX_DB_QUERY_TARGETS', database.policyQueries.map((query) => dbTargets(query.item))),
+    array('OPSBOX_DB_CUSTOM_NAMES', database.customQueries.map((query) => query.name)),
+    array('OPSBOX_DB_CUSTOM_SQL', database.customQueries.map((query) => query.content.replace(/\r\n/g, '\n'))),
+    scalar('OPSBOX_DB_CUSTOM_TARGETS', dbTargets('DB_CUSTOM_QUERY')),
     // 예전 SAVE 조각이 읽는 변수 (정리 단계에서 실제 결과로 채움)
     scalar('OPSBOX_ROLE_POLICIES_JSON', '{}'),
     scalar('OPSBOX_ROLE_POLICY_STATUSES', ''),
@@ -172,8 +193,8 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
   ].join('\n');
 }
 
-export function assembleLinuxScript(server: Server, templates: ManagedTemplate[]): string {
-  const config = buildScriptConfig(server);
+export function assembleLinuxScript(server: Server, templates: ManagedTemplate[], policyQueryTemplates: ManagedTemplate[] = [], customQueryTemplates: ManagedTemplate[] = []): string {
+  const config = buildScriptConfig(server, policyQueryTemplates, customQueryTemplates);
   const block = renderBashConfig(config, templates);
   const parts = selectScriptParts(server, templates, 'Linux', CONFIG_TOKEN)
     .map((part) => part.replace(/\r\n/g, '\n').replace(CONFIG_TOKEN, () => block).trim());

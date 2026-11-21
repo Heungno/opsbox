@@ -228,8 +228,8 @@ function seedFromJsonFiles() {
  * 사용자가 고친 템플릿·정책은 덮어쓰지 않습니다.
  */
 const BUILTIN_TEMPLATE_IDS_KEY = 'builtin_template_ids';
-/** 이 기록이 생기기 전(이전 버전)에 이미 시드된 것으로 볼 템플릿을 고르는 기준: Linux 조각은 새로 추가된 것 */
-const isTemplateAddedLater = (id: string) => id.startsWith('LINUX-PART-');
+/** 이 기록이 생기기 전(이전 버전)에 이미 시드된 것으로 볼 템플릿을 고르는 기준: Linux 조각과 MSSQL 외 DB 쿼리는 새로 추가된 것 */
+const isTemplateAddedLater = (id: string) => id.startsWith('LINUX-PART-') || /^(POSTGRESQL|MARIADB|CUBRID)-QUERY-/.test(id);
 
 function addNewBuiltInTemplates(): string[] {
   const templates = readJsonFile('templates.json');
@@ -308,8 +308,8 @@ function addLinuxRolePolicyItems(): string[] {
  * 새 기본값으로 바꿉니다. 고친 템플릿은 건드리지 않습니다.
  */
 const BUILTIN_TEMPLATE_UPGRADES: Array<{ id: string; fromSha256: string[] }> = [
-  // Linux SAVE: 역할별(WEB·WAS) 점검 결과를 web·was 항목에도 기록
-  { id: 'LINUX-PART-SAVE', fromSha256: ['4e2dd4c0445999585e6c9acff1cd2841ad78b4fb4fbbee5d7f3c54b294af0d10'] },
+  // Linux SAVE: v1 → 역할별(WEB·WAS) 결과를 web·was 항목에 기록, v2 → DB 인스턴스 요약을 database 항목에 기록
+  { id: 'LINUX-PART-SAVE', fromSha256: ['4e2dd4c0445999585e6c9acff1cd2841ad78b4fb4fbbee5d7f3c54b294af0d10', '61c46b940ae80ef992865d07a171369f97e26a89e2625a6cb347da4c63378042'] },
 ];
 
 function upgradeBuiltInTemplates(): string[] {

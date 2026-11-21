@@ -1207,22 +1207,22 @@ function renderRolePolicyGroups(roles, products, isWindows) {
         periodField.append(periodLabel, periodInput);
         description.appendChild(periodField);
       }
-      if (role === 'DB' && products.DB === 'MSSQL') {
+      const dbTargetHint = role === 'DB' ? getDbTargetHint(products.DB, isWindows) : null;
+      if (dbTargetHint) {
         const setting = selectedRolePolicySettings[item] ?? {};
         const instanceField = document.createElement('label'); instanceField.className = 'role-policy-option';
-        const instanceLabel = document.createElement('span'); instanceLabel.textContent = 'MSSQL 인스턴스 대상 (한 줄에 하나씩)';
+        const instanceLabel = document.createElement('span'); instanceLabel.textContent = dbTargetHint.label;
         const instanceInput = document.createElement('textarea'); instanceInput.rows = 2;
-        instanceInput.placeholder = '예: .\\testdb 또는 localhost,1433';
+        instanceInput.placeholder = dbTargetHint.placeholder;
         const inheritedTargets = selectedRolePolicySettings.DB_INSTANCE_STATUS?.instanceTargets;
+        // Windows MSSQL은 서버 IP의 1433 포트가 기본값, Linux는 비워 두면 이 서버의 기본 접속(로컬)
         const initialTargets = Array.isArray(setting.instanceTargets)
           ? setting.instanceTargets
-          : inheritedTargets?.length ? inheritedTargets : [`${currentServer.ip},1433`];
+          : inheritedTargets?.length ? inheritedTargets : (isWindows ? [`${currentServer.ip},1433`] : []);
         instanceInput.value = initialTargets.join('\n');
         instanceInput.setAttribute('data-db-instance-targets', item);
         const instanceHelp = document.createElement('small');
-        instanceHelp.textContent = item === 'DB_CUSTOM_QUERY'
-          ? '선택한 사용자 쿼리를 입력한 각 인스턴스에서 실행합니다. Windows 통합 인증을 사용합니다.'
-          : '이 항목에서 선택한 SQL 쿼리를 입력한 각 인스턴스에서 실행합니다. Windows 통합 인증을 사용합니다.';
+        instanceHelp.textContent = `${item === 'DB_CUSTOM_QUERY' ? '선택한 사용자 쿼리를' : '이 항목에서 선택한 SQL 쿼리를'} 입력한 각 대상에서 실행합니다. ${dbTargetHint.help}`;
         instanceInput.addEventListener('input', () => {
           selectedRolePolicySettings[item] = {
             ...(selectedRolePolicySettings[item] ?? setting),
@@ -1245,6 +1245,38 @@ function renderRolePolicyGroups(roles, products, isWindows) {
   updatePolicyRoleTabVisibility();
 }
 
+/** DB 쿼리 접속 대상 입력 안내 (없으면 대상 입력칸을 보이지 않음) */
+function getDbTargetHint(product, isWindows) {
+  if (isWindows) {
+    return product === 'MSSQL'
+      ? { label: 'MSSQL 인스턴스 대상 (한 줄에 하나씩)', placeholder: '예: .\\testdb 또는 localhost,1433', help: 'Windows 통합 인증을 사용합니다.' }
+      : null;
+  }
+  const hints = {
+    PostgreSQL: { label: 'PostgreSQL 접속 대상 (한 줄에 하나씩, 비우면 이 서버)', placeholder: '예: localhost:5432/appdb', help: '비워 두면 이 서버의 PostgreSQL에 로컬로 접속합니다(root로 실행하면 postgres 계정). 계정·비밀번호는 실행 계정의 ~/.pgpass 또는 PGUSER·PGPASSWORD 환경 변수를 씁니다.' },
+    MariaDB: { label: 'MariaDB 접속 대상 (한 줄에 하나씩, 비우면 이 서버)', placeholder: '예: 127.0.0.1:3306 또는 /run/mysqld/mysqld.sock', help: '비워 두면 로컬 소켓으로 접속합니다(root는 unix_socket 인증). 계정은 실행 계정의 ~/.my.cnf 또는 OPSBOX_DB_USER·MYSQL_PWD 환경 변수를 씁니다.' },
+    MSSQL: { label: 'MSSQL 접속 대상 (한 줄에 하나씩, 비우면 localhost)', placeholder: '예: localhost,1433', help: 'sqlcmd(mssql-tools)로 실행합니다. SQLCMDUSER·SQLCMDPASSWORD 환경 변수가 있으면 SQL 인증, 없으면 -E(Kerberos)를 씁니다.' },
+    CUBRID: { label: 'CUBRID 대상 DB (한 줄에 하나씩, 필수)', placeholder: '예: demodb@localhost', help: 'csql로 실행합니다. 계정은 OPSBOX_CUBRID_USER(기본 dba)·OPSBOX_CUBRID_PASSWORD 환경 변수를 씁니다.' },
+  };
+  return hints[product] ?? null;
+}
+
+/** DB 제품별 기본 쿼리 템플릿 id (src/services/dbQueryDefaults.ts와 같은 규칙) */
+const DEFAULT_QUERY_PREFIX = { MSSQL: 'WINDOWS-QUERY', POSTGRESQL: 'POSTGRESQL-QUERY', MARIADB: 'MARIADB-QUERY', CUBRID: 'CUBRID-QUERY' };
+
+function getDefaultQueryTemplateId(item) {
+  const prefix = DEFAULT_QUERY_PREFIX[getServerDbms()];
+  return prefix ? `${prefix}-${item}` : '';
+}
+
+/** 실제로 쓸 쿼리 id: 선택한 쿼리가 서버 DB 제품용이면 그것, 아니면 제품 기본 쿼리 */
+function resolveQueryTemplateId(item, selectedId) {
+  const compatible = getCompatibleDbQueries(getServerDbms());
+  if (selectedId && compatible.some((template) => template.id === selectedId)) return selectedId;
+  const fallbackId = getDefaultQueryTemplateId(item);
+  return compatible.some((template) => template.id === fallbackId) ? fallbackId : '';
+}
+
 function getScriptItemLabel(item) {
   return commonCodes.scriptItems.find((entry) => entry.value === item)?.label || item;
 }
@@ -1264,7 +1296,7 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   if (showLabel) { const title = document.createElement('label'); title.textContent = label; wrapper.appendChild(title); }
   if (isDbQueryItem(item)) {
     const setting = selectedRolePolicySettings[item] ?? {};
-    const query = managedTemplates.find((template) => template.id === (setting.queryTemplateId || `WINDOWS-QUERY-${item}`) && template.kind === 'QUERY');
+    const query = managedTemplates.find((template) => template.id === resolveQueryTemplateId(item, setting.queryTemplateId) && template.kind === 'QUERY');
     const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
     choose.textContent = item === 'DB_CUSTOM_QUERY' ? `쿼리 ${selectedCustomQueryTemplateIds.length}개 선택` : (query?.name || `${label} 쿼리 선택`);
     choose.setAttribute('aria-label', `${label} DB 쿼리 선택`);
@@ -1307,7 +1339,7 @@ function bindScriptTemplatePicker() {
     if (isDbQueryItem(item)) {
       const setting = selectedRolePolicySettings[item] ?? {};
       if (item === 'DB_CUSTOM_QUERY') selectedCustomQueryTemplateIds = [...document.getElementById('db-query-template-select').selectedOptions].map((option) => option.value).filter(Boolean);
-      else selectedRolePolicySettings[item] = { ...setting, queryTemplateId: document.getElementById('db-query-template-select').value || `WINDOWS-QUERY-${item}` };
+      else selectedRolePolicySettings[item] = { ...setting, queryTemplateId: document.getElementById('db-query-template-select').value || getDefaultQueryTemplateId(item) };
       dialog.close();
       renderPolicyScriptControls(selectedScriptParts, selectedQueryTemplateId);
       return;
@@ -1390,7 +1422,7 @@ function populateScriptTemplatePicker(item) {
     if (item !== 'DB_CUSTOM_QUERY' && dbms === 'MSSQL' && !compatibleQueries.some((template) => template.id === `WINDOWS-QUERY-${item}`)) querySelect.add(new Option('기본 쿼리 사용', `WINDOWS-QUERY-${item}`));
     compatibleQueries.forEach((template) => querySelect.add(new Option(template.name, template.id)));
     if (item === 'DB_CUSTOM_QUERY') [...querySelect.options].forEach((option) => { option.selected = selectedCustomQueryTemplateIds.includes(option.value); });
-    else querySelect.value = setting.queryTemplateId || `WINDOWS-QUERY-${item}`;
+    else querySelect.value = resolveQueryTemplateId(item, setting.queryTemplateId) || getDefaultQueryTemplateId(item);
   } else if (item === 'DB_INSTANCE_STATUS' || item === 'DB_CUSTOM_QUERY') {
     managedTemplates.filter((template) => template.enabled && template.kind === 'QUERY').forEach((template) => querySelect.add(new Option(template.name, template.id)));
     querySelect.value = selectedQueryTemplateId;

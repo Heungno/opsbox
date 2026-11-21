@@ -9,6 +9,7 @@ import { NotFoundError, ValidationError } from '../errors';
 import { getTemplate } from './templateService';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
+import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from './dbQueryDefaults';
 
 const COMMON_CODES = getCommonCodes();
 const ROLES: ServerRole[] = COMMON_CODES.serverRoles.map(({ value }) => value as ServerRole);
@@ -333,15 +334,26 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
     }
   }
   for (const item of roleChecks.DB ?? []) {
-    if (servers[index].os !== 'Windows' || getServerProduct(servers[index], 'DB') !== 'MSSQL') continue;
+    const dbms = getServerProduct(servers[index], 'DB');
+    const isWindowsMssql = servers[index].os === 'Windows' && dbms === 'MSSQL';
+    const isLinuxDb = servers[index].os === 'Linux' && LINUX_DB_PRODUCTS.includes(dbms ?? '');
+    if (!isWindowsMssql && !isLinuxDb) continue;
     const itemLabel = COMMON_CODES.scriptItems.find(({ value }) => value === item)?.label ?? item;
     const setting = rolePolicySettings[item] ?? {};
-    const rawTargets: unknown = setting.instanceTargets;
+    const rawTargets: unknown = setting.instanceTargets ?? (isLinuxDb ? [] : undefined);
     const targets: unknown = typeof rawTargets === 'string'
       ? rawTargets.split(/\r?\n/).map((target) => target.trim()).filter(Boolean)
       : rawTargets;
     if (!Array.isArray(targets) || targets.some((target: unknown) => typeof target !== 'string' || !target.trim() || target.length > 512)) {
-      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: `${itemLabel} MSSQL 인스턴스 대상을 올바르게 입력하세요.` });
+      errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: `${itemLabel} ${dbms} 접속 대상을 올바르게 입력하세요.` });
+    } else if (isLinuxDb) {
+      // Linux는 대상을 비우면 이 서버의 기본 접속(로컬)으로 실행합니다. CUBRID만 대상 DB 이름이 필요합니다.
+      if (dbms === 'CUBRID' && targets.length === 0 && !(rolePolicySettings.DB_INSTANCE_STATUS?.instanceTargets?.length)) {
+        errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: `${itemLabel} 쿼리를 실행할 CUBRID 대상(DB이름@호스트)을 지정하세요.` });
+      } else {
+        setting.instanceTargets = [...new Set((targets as string[]).map((target) => target.trim()))];
+        rolePolicySettings[item] = setting;
+      }
     } else if (targets.length === 0) {
       errors.push({ field: `rolePolicySettings.${item}.instanceTargets`, message: `${itemLabel} 쿼리를 실행할 MSSQL 인스턴스를 하나 이상 지정하세요.` });
     } else {
@@ -369,9 +381,13 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
         const query = getTemplate(queryId);
         const serverDbms = getServerProduct(servers[index], 'DB');
         const requiredDbms = policyItem?.executor.dbms || serverDbms;
-        if (servers[index].os === 'Windows' && (!query?.enabled || query.kind !== 'QUERY' || (query.dbms ?? 'MSSQL') !== requiredDbms || requiredDbms !== serverDbms)) {
+        if (servers[index].os === 'Linux') {
+          // Linux DB 정책은 제품과 관계없이 공유하므로, 서버 DB 제품용 쿼리로 맞춥니다. 쿼리가 없으면 결과에 미수집으로 남습니다.
+          const resolved = resolveQueryTemplate(getTemplate, serverDbms, item, rolePolicySettings[item]?.queryTemplateId);
+          if (resolved) rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: resolved.id };
+        } else if (!query?.enabled || query.kind !== 'QUERY' || (query.dbms ?? 'MSSQL') !== requiredDbms || requiredDbms !== serverDbms) {
           errors.push({ field: `rolePolicySettings.${item}.queryTemplateId`, message: `${policyItem?.name || item} 항목에 서버 DBMS와 맞는 쿼리 템플릿을 선택하세요.` });
-        } else if (query) rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: query.id };
+        } else rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: query.id };
       } else if (role !== 'DB' && servers[index].os === 'Windows' && !selectedId && !defaultTemplate) {
         errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
       }
@@ -409,7 +425,9 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
   const dbCustomQueryEnabled = (roleChecks.DB ?? []).includes('DB_CUSTOM_QUERY');
   if (new Set(customQueryTemplateIds).size !== customQueryTemplateIds.length) errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 템플릿을 중복 등록할 수 없습니다.' });
   if (dbCustomQueryEnabled) {
-    if (servers[index].os !== 'Windows' || getServerProduct(servers[index], 'DB') !== 'MSSQL') errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 실행은 현재 Windows MSSQL 서버에서만 지원합니다.' });
+    const dbms = getServerProduct(servers[index], 'DB');
+    const supported = servers[index].os === 'Windows' ? dbms === 'MSSQL' : LINUX_DB_PRODUCTS.includes(dbms ?? '');
+    if (!supported) errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 실행은 Windows MSSQL과 Linux(PostgreSQL·MariaDB·MSSQL·CUBRID) 서버에서 지원합니다.' });
     if (customQueryTemplateIds.length === 0) errors.push({ field: 'customQueryTemplateIds', message: '기타 쿼리 항목에 실행할 쿼리를 하나 이상 선택하세요.' });
   } else if (customQueryTemplateIds.length > 0) {
     errors.push({ field: 'customQueryTemplateIds', message: 'DB 기타 쿼리 점검 항목을 추가한 후 쿼리를 선택하세요.' });

@@ -21,6 +21,13 @@ test('고치지 않은 예전 Linux SAVE 조각은 새 기본값으로 바뀐다
   setContent('LINUX-PART-SAVE', OLD_SAVE);
   applyBuiltInUpdates();
   assert.match(template('LINUX-PART-SAVE').content, /\$\{was_items_json:-\}/);
+  assert.match(template('LINUX-PART-SAVE').content, /\$\{database_check_json:-null\}/);
+});
+
+test('이전 버전(v2) SAVE 조각도 새 기본값으로 바뀐다', () => {
+  setContent('LINUX-PART-SAVE', fs.readFileSync(path.join(__dirname, 'helpers', 'linux-save-v2.sh'), 'utf8'));
+  applyBuiltInUpdates();
+  assert.match(template('LINUX-PART-SAVE').content, /\$\{database_check_json:-null\}/);
 });
 
 test('사용자가 고친 SAVE 조각은 그대로 둔다', () => {

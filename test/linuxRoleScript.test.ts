@@ -137,11 +137,11 @@ test('WAS Heap Dump·배포·미지원 항목', { skip: !canRunBash }, () => {
   assert.equal(json.checks.rolePolicies.WAS.status, 'Warning');
 });
 
-test('Linux용 조각이 없는 DB 항목은 미지원 안내와 함께 미수집으로 남는다', { skip: !canRunBash }, () => {
+test('DB 항목은 서버 DB 제품(PostgreSQL)용 기본 쿼리로 DB 쿼리 실행기가 기록한다', { skip: !canRunBash }, () => {
   const db = roleItem('DB', 'DB_INSTANCE_STATUS');
-  assert.equal(db.status, 'NotCollected');
-  assert.match(db.message, /Linux용 점검 스크립트가 아직 없어/);
-  assert.equal(json.checks.rolePolicies.DB.status, 'NotCollected');
+  assert.equal(db.detail.queryName, 'PostgreSQL 쿼리 · DB 인스턴스·접속 상태');
+  assert.equal(db.detail.queries.length, 1, '대상을 비우면 기본 접속 1곳');
+  assert.equal(json.checks.database.product, 'PostgreSQL');
 });
 
 test('OpsBox가 결과를 읽어 종합 상태를 판정한다', { skip: !canRunBash }, () => {
