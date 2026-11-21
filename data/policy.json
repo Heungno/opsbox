@@ -1970,6 +1970,118 @@
               "notCollected": "NotCollected"
             }
           }
+        },
+        {
+          "id": "WEB_WAS_CONNECTION",
+          "name": "WEB-WAS 연동 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WEB_WAS_CONNECTION",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WEB_REQUEST_VOLUME",
+          "name": "사용자 요청 처리량",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WEB_REQUEST_VOLUME",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "METRIC"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WEB_LOG",
+          "name": "WEB 로그 상태",
+          "enabled": true,
+          "executor": {
+            "type": "LOG_ANALYSIS",
+            "templateId": "LINUX-PART-WEB_LOG",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "LOG_TABLE",
+                "columns": [
+                  {
+                    "key": "timestamp",
+                    "label": "시각"
+                  },
+                  {
+                    "key": "path",
+                    "label": "파일 경로"
+                  },
+                  {
+                    "key": "text",
+                    "label": "로그 내용"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
         }
       ]
     },
@@ -2039,6 +2151,364 @@
               "notCollected": "NotCollected",
               "warningPercent": 70,
               "criticalPercent": 90
+            }
+          }
+        },
+        {
+          "id": "WAS_THREAD_POOL",
+          "name": "Thread Pool 사용률",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WAS_THREAD_POOL",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "poolName",
+                    "label": "Pool"
+                  },
+                  {
+                    "key": "activeCount",
+                    "label": "사용 중"
+                  },
+                  {
+                    "key": "maxCount",
+                    "label": "최대"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_LONG_RUNNING_THREAD",
+          "name": "장기 수행 Thread",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WAS_LONG_RUNNING_THREAD",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "processId",
+                    "label": "PID"
+                  },
+                  {
+                    "key": "threadName",
+                    "label": "Thread"
+                  },
+                  {
+                    "key": "elapsedSeconds",
+                    "label": "수행 시간(초)"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_DB_CONNECTION_POOL",
+          "name": "DB Connection Pool 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WAS_DB_CONNECTION_POOL",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "poolName",
+                    "label": "Pool"
+                  },
+                  {
+                    "key": "activeCount",
+                    "label": "사용 중"
+                  },
+                  {
+                    "key": "maxCount",
+                    "label": "최대"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_DEPLOYMENT",
+          "name": "애플리케이션 배포 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WAS_DEPLOYMENT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "processCount",
+                    "label": "프로세스 수"
+                  },
+                  {
+                    "key": "processes",
+                    "label": "프로세스"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_HEAP_DUMP",
+          "name": "Heap Dump 파일 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WAS_HEAP_DUMP",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "javaProcessCount",
+                    "label": "Java 프로세스 수"
+                  },
+                  {
+                    "key": "existingFileCount",
+                    "label": "파일 수"
+                  },
+                  {
+                    "key": "files",
+                    "label": "Heap Dump 파일"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_STARTUP_SCRIPT",
+          "name": "기동 스크립트 변경 상태",
+          "enabled": true,
+          "executor": {
+            "type": "SCRIPT",
+            "templateId": "LINUX-PART-WAS_STARTUP_SCRIPT",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "product",
+                    "label": "제품"
+                  },
+                  {
+                    "key": "processCount",
+                    "label": "프로세스 수"
+                  },
+                  {
+                    "key": "processes",
+                    "label": "프로세스·경로"
+                  },
+                  {
+                    "key": "message",
+                    "label": "결과"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "WAS_LOG",
+          "name": "WAS 로그 상태",
+          "enabled": true,
+          "executor": {
+            "type": "LOG_ANALYSIS",
+            "templateId": "LINUX-PART-WAS_LOG",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "LOG_TABLE",
+                "columns": [
+                  {
+                    "key": "timestamp",
+                    "label": "시각"
+                  },
+                  {
+                    "key": "path",
+                    "label": "파일 경로"
+                  },
+                  {
+                    "key": "text",
+                    "label": "로그 내용"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
             }
           }
         }

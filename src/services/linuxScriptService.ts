@@ -11,8 +11,80 @@ import { buildScriptConfig, ScriptConfig, selectScriptParts } from './scriptAsse
  */
 
 const CONFIG_TOKEN = '@@CONFIG_BASH@@';
-const ROLE_NOT_SUPPORTED_MESSAGE = 'Linux용 역할별 점검 스크립트가 아직 없어 수집하지 않았습니다.';
+const ROLE_NOT_SUPPORTED_MESSAGE = 'Linux용 점검 스크립트가 아직 없어 수집하지 않았습니다.';
 const BASIC_NOT_COLLECTED_MESSAGE = '연결된 점검 스크립트가 결과를 기록하지 않았습니다.';
+
+/*
+ * 역할별(WEB·WAS) 점검 조각이 결과를 남기는 방법
+ * - opsbox_role_record 역할 항목 상태 상세JSON : 정책 항목 결과 (보고서의 역할별 항목)
+ * - opsbox_was_item JSON 상태                 : WAS 점검 목록 (보고서의 WAS 표)
+ * - web_check_json / web_status              : WEB 엔진 상태 상세
+ * 이 함수와 변수는 설정 블록에 넣어, 예전 버전의 START 조각을 쓰는 DB에서도 동작하게 합니다.
+ */
+const ROLE_RUNTIME = [
+  '# ---- 역할별 점검 결과 기록 (OpsBox가 자동으로 넣음) ----',
+  'declare -A OPSBOX_ROLE_STATUS=() OPSBOX_ROLE_DETAIL=()',
+  'opsbox_role_record() { OPSBOX_ROLE_STATUS["$1:$2"]=$3; OPSBOX_ROLE_DETAIL["$1:$2"]=${4:-null}; }',
+  "web_status=NotCollected; web_check_json=null; was_items_json=''; was_statuses=''",
+  'opsbox_was_item() { [ -n "$was_items_json" ] && was_items_json+=\',\'; was_items_json+=$1; was_statuses+=" $2"; }',
+  '# 이름이 정확히 같은 프로세스의 PID 목록 (pgrep이 없거나 못 찾으면 /proc/*/comm 에서 찾음)',
+  'opsbox_pids_by_name() {',
+  '  local found f c pid',
+  '  found=$(pgrep -x -- "$1" 2>/dev/null)',
+  '  if [ -n "$found" ]; then printf \'%s\\n\' "$found"; return; fi',
+  '  for f in /proc/[0-9]*/comm; do',
+  '    read -r c < "$f" 2>/dev/null || continue',
+  '    [ "$c" = "$1" ] || continue',
+  '    pid=${f#/proc/}; printf \'%s\\n\' "${pid%/comm}"',
+  '  done',
+  '}',
+].join('\n');
+
+/*
+ * SAVE 조각 바로 앞에 넣는 정리 단계: 정책에 있는 역할별 항목마다 조각이 남긴 결과를 모아
+ * OPSBOX_ROLE_POLICIES_JSON / OPSBOX_ROLE_POLICY_STATUSES / was_status 를 만듭니다.
+ * (기록하지 않은 항목은 미수집으로 남김. 상태 종합은 Windows 스크립트와 같은 규칙)
+ */
+const ROLE_FINALIZE = `# ---- 역할별 점검 결과 정리 (OpsBox가 자동으로 넣음) ----
+opsbox_finalize_role_policies() {
+  local i role item key status entry s roles_seen='' out=''
+  declare -A role_items=() role_statuses=()
+  for i in "\${!OPSBOX_ROLE_ITEM_IDS[@]}"; do
+    role=\${OPSBOX_ROLE_ITEM_ROLES[$i]}; item=\${OPSBOX_ROLE_ITEM_IDS[$i]}; key="$role:$item"
+    if [ -n "\${OPSBOX_ROLE_STATUS[$key]+x}" ]; then
+      status=\${OPSBOX_ROLE_STATUS[$key]}
+      entry="{\\"role\\":\\"$role\\",\\"item\\":$(opsbox_json_string "$item"),\${OPSBOX_ROLE_ITEM_META[$i]},\\"status\\":\\"$status\\",\\"detail\\":\${OPSBOX_ROLE_DETAIL[$key]}}"
+    else
+      status=NotCollected
+      entry="{\\"role\\":\\"$role\\",\\"item\\":$(opsbox_json_string "$item"),\${OPSBOX_ROLE_ITEM_META[$i]},\\"status\\":\\"NotCollected\\",\\"message\\":$(opsbox_json_string "\${OPSBOX_ROLE_ITEM_MESSAGES[$i]}")}"
+    fi
+    [ -n "\${role_items[$role]:-}" ] && role_items[$role]+=','
+    role_items[$role]+=$entry
+    role_statuses[$role]+=" $status"
+    case " $roles_seen " in *" $role "*) ;; *) roles_seen+=" $role" ;; esac
+  done
+  OPSBOX_ROLE_POLICY_STATUSES=''
+  for role in $roles_seen; do
+    case "\${role_statuses[$role]} " in
+      *' Critical '*) s=Critical ;;
+      *' Warning '*) s=Warning ;;
+      *' Healthy '*) s=Healthy ;;
+      *) s=NotCollected ;;
+    esac
+    [ -n "$out" ] && out+=','
+    out+="\\"$role\\":{\\"status\\":\\"$s\\",\\"items\\":[\${role_items[$role]}]}"
+    OPSBOX_ROLE_POLICY_STATUSES+=" $s"
+  done
+  OPSBOX_ROLE_POLICIES_JSON="{$out}"
+}
+opsbox_finalize_role_policies
+case " $was_statuses " in
+  '  ') was_status=NotCollected ;;
+  *' Critical '*) was_status=Critical ;;
+  *' Warning '*) was_status=Warning ;;
+  *' NotCollected '*) was_status=NotCollected ;;
+  *) was_status=Healthy ;;
+esac`;
 
 /** bash 작은따옴표 문자열 (작은따옴표는 '\'' 로 처리) */
 function quote(value: unknown): string {
@@ -32,21 +104,19 @@ function threshold(config: ScriptConfig, item: string, key: 'warningPercent' | '
   return Number.isFinite(value) ? value : fallback;
 }
 
-function renderBashConfig(config: ScriptConfig): string {
+/** JSON 객체의 { } 안쪽 (역할별 항목 결과에 이어 붙일 name·result·executorType) */
+function jsonFields(value: Record<string, unknown>): string {
+  return JSON.stringify(value).slice(1, -1);
+}
+
+function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): string {
   const { server, checks } = config;
   const products = server.products as Partial<Record<string, string>>;
+  const settings = checks.rolePolicySettings as Partial<Record<string, { logDirectories?: string[]; periodDays?: number }>>;
 
-  // 역할별 점검은 Linux 2단계 작업 전까지 미수집으로 기록합니다.
-  const rolePolicies: Record<string, unknown> = {};
-  const roleStatuses: string[] = [];
-  for (const [role, items] of Object.entries(checks.rolePolicies)) {
-    if (!items.length) continue;
-    rolePolicies[role] = {
-      status: 'NotCollected',
-      items: items.map((item) => ({ role, ...item, status: 'NotCollected', message: ROLE_NOT_SUPPORTED_MESSAGE })),
-    };
-    roleStatuses.push('NotCollected');
-  }
+  // 정책에 있는 역할별 항목 목록. 결과는 각 조각이 실행 중에 기록하고, SAVE 앞의 정리 단계가 모읍니다.
+  const hasLinuxPart = (item: string) => templates.some((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Linux' && template.item === item);
+  const roleItems = Object.entries(checks.rolePolicies).flatMap(([role, items]) => items.map((item) => ({ role, ...item })));
   const basicPolicyItems = checks.basicPolicyItems.map(({ item, name, result, executorType }) => ({
     role: 'BASIC', item, name, result, executorType, status: 'NotCollected', message: BASIC_NOT_COLLECTED_MESSAGE,
   }));
@@ -83,17 +153,31 @@ function renderBashConfig(config: ScriptConfig): string {
     array('OPSBOX_HTTP_EXPECTED', checks.httpChecks.map((item) => item.expectedStatus)),
     scalar('OPSBOX_SERVER_JSON', JSON.stringify({ id: server.id, name: server.name, ip: server.ip, roles: server.roles, products })),
     scalar('OPSBOX_POLICY_DEFINITIONS_JSON', JSON.stringify(checks.policyItems)),
-    scalar('OPSBOX_ROLE_POLICIES_JSON', JSON.stringify(rolePolicies)),
-    scalar('OPSBOX_ROLE_POLICY_STATUSES', roleStatuses.join(' ')),
+    scalar('OPSBOX_WAS_HEAP_WARNING', threshold(config, 'WAS_JVM_HEAP', 'warningPercent', 70)),
+    scalar('OPSBOX_WAS_HEAP_CRITICAL', threshold(config, 'WAS_JVM_HEAP', 'criticalPercent', 90)),
+    array('OPSBOX_WEB_LOG_DIRS', settings.WEB_LOG?.logDirectories ?? []),
+    scalar('OPSBOX_WEB_LOG_DAYS', settings.WEB_LOG?.periodDays ?? 7),
+    array('OPSBOX_WAS_LOG_DIRS', settings.WAS_LOG?.logDirectories ?? []),
+    scalar('OPSBOX_WAS_LOG_DAYS', settings.WAS_LOG?.periodDays ?? 7),
+    array('OPSBOX_ROLE_ITEM_ROLES', roleItems.map((item) => item.role)),
+    array('OPSBOX_ROLE_ITEM_IDS', roleItems.map((item) => item.item)),
+    array('OPSBOX_ROLE_ITEM_META', roleItems.map(({ name, result, executorType }) => jsonFields({ name, result, executorType }))),
+    array('OPSBOX_ROLE_ITEM_MESSAGES', roleItems.map((item) => (hasLinuxPart(item.item) ? BASIC_NOT_COLLECTED_MESSAGE : ROLE_NOT_SUPPORTED_MESSAGE))),
+    // 예전 SAVE 조각이 읽는 변수 (정리 단계에서 실제 결과로 채움)
+    scalar('OPSBOX_ROLE_POLICIES_JSON', '{}'),
+    scalar('OPSBOX_ROLE_POLICY_STATUSES', ''),
     scalar('OPSBOX_BASIC_POLICY_ITEMS_JSON', JSON.stringify(basicPolicyItems)),
     '# ---- OpsBox 설정 끝 ----',
+    ROLE_RUNTIME,
   ].join('\n');
 }
 
 export function assembleLinuxScript(server: Server, templates: ManagedTemplate[]): string {
   const config = buildScriptConfig(server);
-  const block = renderBashConfig(config);
-  return `${selectScriptParts(server, templates, 'Linux', CONFIG_TOKEN)
-    .map((part) => part.replace(/\r\n/g, '\n').replace(CONFIG_TOKEN, () => block).trim())
-    .join('\n\n')}\n`;
+  const block = renderBashConfig(config, templates);
+  const parts = selectScriptParts(server, templates, 'Linux', CONFIG_TOKEN)
+    .map((part) => part.replace(/\r\n/g, '\n').replace(CONFIG_TOKEN, () => block).trim());
+  // 마지막 조각은 항상 SAVE입니다. 그 앞에 역할별 결과 정리 단계를 넣습니다.
+  parts.splice(parts.length - 1, 0, ROLE_FINALIZE);
+  return `${parts.join('\n\n')}\n`;
 }

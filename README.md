@@ -67,7 +67,7 @@ npm start
 
 빌드 없이 개발할 때는 `npm run dev`를 사용합니다.
 
-`npm test`는 결과 가져오기·올리기와 Linux 점검 스크립트를 임시 DB에서 실제로 실행해 확인합니다(Linux 스크립트 실행 테스트는 Linux에서만 동작하고, 다른 OS에서는 건너뜀).
+`npm test`는 결과 가져오기·올리기와 Linux 점검 스크립트(기본·WEB·WAS 역할별)를 임시 DB에서 실제로 실행해 확인하고, 이전 버전 DB의 기본 템플릿·정책 업그레이드도 확인합니다(bash 실행 테스트는 Linux에서만 동작하고, 다른 OS에서는 건너뜀).
 
 ## 데이터 저장 (SQLite)
 
@@ -490,7 +490,7 @@ test/                   # 결과 가져오기·Linux 스크립트 테스트
 
 ## 향후 계획
 
-- Linux WEB·WAS·DB 역할별 점검
+- Linux DB 역할별 점검 (MariaDB·PostgreSQL·CUBRID 쿼리)
 - 권한 관리 (사용자별 메뉴·기능 제한)
 - 스케줄 점검
 - 알림 기능

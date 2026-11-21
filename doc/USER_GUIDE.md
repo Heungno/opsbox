@@ -38,7 +38,20 @@ npm run dev
 사이드바는 **대시보드**, **점검 보고서**, **설정**으로 구성됩니다. 설정을 펼치면 **서버 관리**와 **스크립트 관리**를 선택할 수 있습니다. 사이드바 아래 해/달 토글로 밝은 테마와 어두운 테마를 바꿉니다.
 스크립트 관리 화면은 `/settings/script-management`에서 엽니다. 화면별 HTML과 JavaScript는 `src/public` 안의 메뉴 이름 폴더에 함께 둡니다. Windows·Linux 점검 스크립트와 MSSQL 점검 쿼리의 기본값은 `data/templates.json`에 들어 있고 처음 실행할 때 DB로 옮겨집니다. 각 항목을 선택하면 해당 항목의 JSON 결과 예시를 확인할 수 있습니다. 화면에서 저장한 변경 내용은 DB에 저장되며 `data/templates.json`은 바뀌지 않습니다.
 
-점검 항목 조립은 Windows PowerShell과 Linux bash 모두 같은 방식으로, 정책에 연결된 스크립트 조각(템플릿)을 이어 붙여 만듭니다. 기본 템플릿은 `data/templates.json`에 포함되어 처음 실행할 때 DB로 들어가고, 이후에는 스크립트 관리 화면에서 고칩니다. Linux는 기본 점검(서버 기본정보·CPU·메모리·가동시간·디스크·프로세스·디렉터리·파일 크기·포트·HTTP)을 지원하며, WEB·WAS·DB 역할별 점검은 아직 미수집으로 표시됩니다.
+점검 항목 조립은 Windows PowerShell과 Linux bash 모두 같은 방식으로, 정책에 연결된 스크립트 조각(템플릿)을 이어 붙여 만듭니다. 기본 템플릿은 `data/templates.json`에 포함되어 처음 실행할 때 DB로 들어가고, 이후에는 스크립트 관리 화면에서 고칩니다. Linux는 기본 점검(서버 기본정보·CPU·메모리·가동시간·디스크·프로세스·디렉터리·파일 크기·포트·HTTP)과 WEB·WAS 역할별 점검을 지원합니다. DB 역할별 점검은 아직 Linux용 스크립트가 없어 미수집으로 표시됩니다.
+
+Linux WEB·WAS 역할별 점검이 실제로 수집하는 항목은 Windows와 같습니다.
+
+| 항목 | Linux에서 하는 일 |
+| --- | --- |
+| WEB 엔진 상태 | WebtoB는 `wsadmin`(PATH 또는 `$WEBTOBDIR/bin`)에 `wi`, `ci -s`, `st -v`, `st -s`를 보내 RDY/NRDY를 판정합니다(20초 제한). Apache는 `httpd`/`apache2`, Nginx는 `nginx` 프로세스와 systemd 서비스 상태를 확인합니다. |
+| WEB·WAS 로그 상태 | 서버 정책의 로그 폴더에서 최근 N일 안에 바뀐 `.log` `.txt` `.out` `.err`(확장자 없는 파일 포함) 파일을 폴더마다 최대 500개 읽어 Fatal·Error·Warning·HTTP 5xx/4xx 줄 수를 셉니다. 줄 안의 날짜(`2026-11-21 10:00:00`, `[21/Nov/2026:10:00:00]`)가 기간 밖이면 세지 않습니다. |
+| JVM Heap 사용률 | `java` 프로세스마다 같은 JDK의 `jstat -gc`(없으면 PATH의 `jstat`)로 Heap 사용률을 계산합니다. JVM 실행 계정으로 실행해야 수집됩니다. |
+| 애플리케이션 배포 상태 | `java`(Node.js는 `node`) 프로세스가 떠 있는지와 시작 시각을 기록합니다. |
+| Heap Dump 파일 상태 | JVM 옵션의 `-XX:HeapDumpPath` 위치에 `.hprof` 파일이 있으면 경고로 표시합니다. |
+| WEB-WAS 연동, 요청 처리량, Thread Pool, 장기 수행 Thread, DB Connection Pool, 기동 스크립트 변경 | Windows와 마찬가지로 관리 주소·인증 등 추가 설정이 필요해 미수집과 안내 메시지로 남깁니다. |
+
+이전 버전에서 쓰던 DB는 시작할 때 Linux WEB·WAS 기본 정책에 빠진 항목이 한 번 추가되고, 고치지 않은 Linux 결과 저장(SAVE) 조각은 새 기본값으로 바뀝니다. 고친 조각은 그대로 두며, 그 경우에도 역할별 항목 결과는 보고서에 표시됩니다.
 
 ## 3. 서버 등록
 
@@ -55,7 +68,7 @@ WEB 또는 WAS **로그 상태** 항목을 추가하면 해당 서버의 로그 
 
 WEB 항목은 엔진 상태, WEB-WAS 연동, 요청 처리량, WEB 로그입니다. WAS 항목은 JVM Heap, Thread Pool, 장기 수행 Thread, DB Connection Pool, 배포 상태, Heap Dump, 기동 스크립트, WAS 로그입니다. DB 항목은 인스턴스·접속, 세션 한도, 데이터 영역, 백업, 아카이브 모드, 트랜잭션 로그, 복제 상태, 기타 사용자 쿼리입니다. 각 역할 블록에서 항목을 추가·삭제하고 항목별 스크립트를 연결합니다. 선택 버튼은 공통 모달을 열며, 모달 HTML은 `src/public/shared/fragments/script-template-picker-modal.html`에서 관리합니다.
 
-기본 연결은 WebtoB 엔진 상태, JVM Heap, Windows MSSQL 인스턴스·접속 상태에 제공됩니다. 나머지 제품별 항목은 스크립트 관리에서 해당 점검 항목 템플릿을 먼저 작성한 뒤 서버 정책에서 연결하세요. 사용자 템플릿은 `$opsboxConfig.checks.rolePolicies`의 역할별 항목을 읽고 `$rolePolicyResults`에 `role`, `item`, `status`, `detail`을 기록합니다. 스크립트가 결과를 기록하지 않으면 보고서에 미수집으로 표시됩니다. 선택 변경은 **정책 저장** 후 다음 다운로드부터 적용되며, 점검 정책 아래에서 최종 JSON 구조를 확인할 수 있습니다. Linux는 현재 기존 Linux 스크립트 생성 방식을 사용합니다.
+기본 연결은 WebtoB 엔진 상태, JVM Heap, Windows MSSQL 인스턴스·접속 상태에 제공됩니다. 나머지 제품별 항목은 스크립트 관리에서 해당 점검 항목 템플릿을 먼저 작성한 뒤 서버 정책에서 연결하세요. 사용자 템플릿은 `$opsboxConfig.checks.rolePolicies`의 역할별 항목을 읽고 `$rolePolicyResults`에 `role`, `item`, `status`, `detail`을 기록합니다. 스크립트가 결과를 기록하지 않으면 보고서에 미수집으로 표시됩니다. 선택 변경은 **정책 저장** 후 다음 다운로드부터 적용되며, 점검 정책 아래에서 최종 JSON 구조를 확인할 수 있습니다. Linux 사용자 템플릿은 `opsbox_role_record <역할> <항목> <상태> '<상세 JSON>'`으로 결과를 기록합니다.
 
 DB 인스턴스·접속 상태의 쿼리 선택은 해당 스크립트가 편집기에서 **실행 쿼리 템플릿 사용**으로 설정된 경우에만 선택 모달에 표시됩니다. 이 설정이 꺼진 스크립트에는 쿼리 목록이 나타나지 않습니다. 기본 보고서 데이터 계약인 `SERVER|이름|버전|에디션`과 `DATABASE|이름|상태|복구모델|크기MB` 형식으로 반환해야 합니다. `{{SERVER_IP}}`와 `{{SERVER_NAME}}` 변수를 사용할 수 있습니다. 지정하지 않으면 내장 상태 쿼리를 사용합니다.
 
@@ -98,7 +111,7 @@ WEB/WAS 서버 상세의 HTTP 응답 점검에서 점검명, HTTP/HTTPS URL, 기
 
 WebtoB 4.1을 WEB 제품으로 등록하면 Windows 점검 스크립트가 PATH의 `wsadmin` 명령을 실행하고 `wi`, `ci -s`, `st -v`, `st -s`를 차례로 입력합니다. 실행 래퍼를 우선 사용하며, 실행 파일 위치에서 설치 경로를 판별할 수 있으면 `WEBTOBDIR`도 설정합니다. WebtoB 정보, 클라이언트 접속 수, 서버/서비스 상태 출력과 서버 상태 판정을 보고서에 기록합니다. `WEBTOBDIR` 오류가 계속되면 실행 계정에 환경 변수를 설정하고 새 PowerShell 창에서 다시 실행하세요. `RDY`가 없거나 `NRDY`·`BLK` 상태가 발견되면 각각 미수집 또는 위험으로 표시합니다. Apache, IIS, Nginx는 현재 공통 프로세스·포트·HTTP 점검으로 확인하며 제품별 관리 명령은 별도 연동이 필요합니다.
 
-Windows WAS 스크립트는 JDK의 `jstat.exe`를 찾을 수 있고 실행 계정에 JVM attach 권한이 있으면 Java 프로세스별 Heap 사용률을 결과에 기록합니다. 70% 이상은 경고, 90% 이상은 위험으로 표시합니다. `jstat`가 없거나 권한이 없으면 해당 항목은 미수집으로 남습니다. JEUS 6의 Thread 정보를 확인하는 `ti`는 관리자 인증과 대상 컨테이너 정보가 필요해 아직 자동 수집되지 않습니다. Connection Pool, 배포 상태, 평균 처리시간과 기동 스크립트 변경 여부도 제품별 관리 API·설정 연동이 필요합니다. Node.js 런타임 지표와 Linux의 WEB·WAS·DB 역할별 수집은 후속 단계입니다.
+Windows WAS 스크립트는 JDK의 `jstat.exe`를 찾을 수 있고 실행 계정에 JVM attach 권한이 있으면 Java 프로세스별 Heap 사용률을 결과에 기록합니다. 70% 이상은 경고, 90% 이상은 위험으로 표시합니다. `jstat`가 없거나 권한이 없으면 해당 항목은 미수집으로 남습니다. JEUS 6의 Thread 정보를 확인하는 `ti`는 관리자 인증과 대상 컨테이너 정보가 필요해 아직 자동 수집되지 않습니다. Connection Pool, 배포 상태, 평균 처리시간과 기동 스크립트 변경 여부도 제품별 관리 API·설정 연동이 필요합니다. Node.js 런타임 지표와 Linux DB 수집은 후속 단계입니다. Linux WEB·WAS 수집 범위는 위의 표를 참고하세요.
 
 ### DB 엔진 점검 (Windows MSSQL)
 

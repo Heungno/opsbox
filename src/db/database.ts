@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -277,11 +278,63 @@ function addLinuxBasicPolicyItems(): string[] {
   return added;
 }
 
-function applyBuiltInUpdates() {
+/** Linux WEB·WAS 기본 정책에 역할별 점검 항목 추가 (한 번만 실행, 사용자가 이미 가진 항목은 그대로 둠) */
+const LINUX_ROLE_ITEMS_MIGRATION = 'migration_linux_role_items_v1';
+
+function addLinuxRolePolicyItems(): string[] {
+  if (readSetting(LINUX_ROLE_ITEMS_MIGRATION)) return [];
+  const parsed = readJsonFile('policy.json') as any;
+  const seeds = (Array.isArray(parsed) ? parsed : parsed?.policies) ?? [];
+  const added: string[] = [];
+  for (const policyId of ['linux-web-default', 'linux-was-default']) {
+    const row = db.prepare('SELECT data FROM policies WHERE id = ?').get(policyId) as { data: string } | undefined;
+    const seedPolicy = seeds.find((policy: any) => policy.id === policyId);
+    if (!row || !seedPolicy) continue;
+    const policy = JSON.parse(row.data);
+    const have = new Set((policy.items ?? []).map((item: any) => item.id));
+    const missing = (seedPolicy.items ?? []).filter((item: any) => !have.has(item.id));
+    if (!missing.length) continue;
+    policy.items = [...(policy.items ?? []), ...missing];
+    db.prepare('UPDATE policies SET data = ? WHERE id = ?').run(JSON.stringify(policy), policyId);
+    added.push(...missing.map((item: any) => `${policyId}:${item.id}`));
+  }
+  writeSetting(LINUX_ROLE_ITEMS_MIGRATION, { appliedAt: new Date().toISOString(), added });
+  return added;
+}
+
+/*
+ * 기본 제공 템플릿 내용 갱신: DB의 내용이 예전 기본값과 똑같을 때(사용자가 고치지 않았을 때)만
+ * 새 기본값으로 바꿉니다. 고친 템플릿은 건드리지 않습니다.
+ */
+const BUILTIN_TEMPLATE_UPGRADES: Array<{ id: string; fromSha256: string[] }> = [
+  // Linux SAVE: 역할별(WEB·WAS) 점검 결과를 web·was 항목에도 기록
+  { id: 'LINUX-PART-SAVE', fromSha256: ['4e2dd4c0445999585e6c9acff1cd2841ad78b4fb4fbbee5d7f3c54b294af0d10'] },
+];
+
+function upgradeBuiltInTemplates(): string[] {
+  const seeds = readJsonFile('templates.json');
+  if (!Array.isArray(seeds)) return [];
+  const upgraded: string[] = [];
+  for (const { id, fromSha256 } of BUILTIN_TEMPLATE_UPGRADES) {
+    const seed = seeds.find((template: any) => template.id === id);
+    const row = db.prepare('SELECT data FROM templates WHERE id = ?').get(id) as { data: string } | undefined;
+    if (!seed || !row) continue;
+    const current = JSON.parse(row.data);
+    const hash = createHash('sha256').update(String(current.content ?? '')).digest('hex');
+    if (!fromSha256.includes(hash) || current.content === seed.content) continue;
+    db.prepare('UPDATE templates SET data = ? WHERE id = ?').run(JSON.stringify({ ...current, content: seed.content, updatedAt: seed.updatedAt ?? current.updatedAt }), id);
+    upgraded.push(id);
+  }
+  return upgraded;
+}
+
+export function applyBuiltInUpdates() {
   const templates = addNewBuiltInTemplates();
+  const upgradedTemplates = upgradeBuiltInTemplates();
   const policyItems = addLinuxBasicPolicyItems();
-  if (templates.length || policyItems.length) {
-    logger.info({ templates, linuxBasicPolicyItems: policyItems }, '새 버전의 기본 템플릿·정책 항목을 추가했습니다');
+  const rolePolicyItems = addLinuxRolePolicyItems();
+  if (templates.length || upgradedTemplates.length || policyItems.length || rolePolicyItems.length) {
+    logger.info({ templates, upgradedTemplates, linuxBasicPolicyItems: policyItems, linuxRolePolicyItems: rolePolicyItems }, '새 버전의 기본 템플릿·정책 항목을 반영했습니다');
   }
 }
 

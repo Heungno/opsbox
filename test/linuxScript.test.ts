@@ -41,7 +41,7 @@ function runScript(shell: string, args: string[] = []) {
 
 test('기존 DB가 아니라 새 DB에도 Linux 기본 템플릿과 정책 항목이 들어간다', () => {
   const count = (db.prepare("SELECT COUNT(*) AS c FROM templates WHERE id LIKE 'LINUX-PART-%'").get() as { c: number }).c;
-  assert.equal(count, 12);
+  assert.equal(count, 24);
   const policy = JSON.parse((db.prepare("SELECT data FROM policies WHERE id = 'linux-basic-default'").get() as { data: string }).data);
   assert.deepEqual(policy.items.map((item: { id: string }) => item.id).slice(-5), ['PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP']);
 });
