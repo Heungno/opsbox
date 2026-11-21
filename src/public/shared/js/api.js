@@ -192,9 +192,45 @@ function toastContainer() {
     container.id = 'opsbox-toasts';
     container.className = 'toast-container';
     container.setAttribute('aria-live', 'polite');
+    // showModal()로 연 모달은 브라우저 최상위 레이어(top layer)에 올라가 z-index로는 위에 둘 수 없습니다.
+    // 토스트 컨테이너도 popover로 최상위 레이어에 올려 모달 위에 보이게 합니다.
+    if (typeof container.showPopover === 'function') container.popover = 'manual';
     document.body.append(container);
   }
   return container;
+}
+
+const supportsPopover = (element) => typeof element.showPopover === 'function';
+const isPopoverOpen = (element) => supportsPopover(element) && element.matches(':popover-open');
+
+/**
+ * 토스트 컨테이너를 모달보다 위에 보이고 클릭할 수 있게 합니다.
+ * 모달이 열려 있으면 모달 바깥은 비활성(inert)이 되므로 컨테이너를 모달 안으로 옮기고,
+ * 모달이 닫히면 body로 되돌립니다.
+ */
+function raiseToastContainer(container) {
+  const modals = document.querySelectorAll('dialog[open]');
+  const topModal = [...modals].reverse().find((dialog) => dialog.matches(':modal'));
+  const target = topModal ?? document.body;
+  if (container.parentElement !== target) {
+    if (isPopoverOpen(container)) container.hidePopover();
+    target.append(container);
+    if (topModal) {
+      topModal.addEventListener('close', () => {
+        if (container.parentElement !== topModal) return;
+        if (isPopoverOpen(container)) container.hidePopover();
+        document.body.append(container);
+        if (container.childElementCount) raiseToastContainer(container);
+      }, { once: true });
+    }
+  }
+  if (supportsPopover(container) && !isPopoverOpen(container)) container.showPopover();
+}
+
+function hideToastContainerIfEmpty(container) {
+  if (!container.childElementCount && isPopoverOpen(container)) {
+    container.hidePopover();
+  }
 }
 
 /**
@@ -214,10 +250,15 @@ export function showToast(message, type = 'info', { duration } = {}) {
   close.className = 'toast-close';
   close.setAttribute('aria-label', '닫기');
   close.textContent = '×';
-  const remove = () => toast.remove();
+  const container = toastContainer();
+  const remove = () => {
+    toast.remove();
+    hideToastContainerIfEmpty(container);
+  };
   close.addEventListener('click', remove);
   toast.append(text, close);
-  toastContainer().append(toast);
+  container.append(toast);
+  raiseToastContainer(container);
   setTimeout(remove, duration ?? (type === 'error' ? 8000 : 3500));
 }
 
