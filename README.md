@@ -69,6 +69,20 @@ npm start
 
 `npm test`는 결과 가져오기·올리기와 Linux 점검 스크립트(기본·WEB·WAS·DB 역할별, DB는 가짜 클라이언트)를 임시 DB에서 실제로 실행해 확인하고, 이전 버전 DB의 기본 템플릿·정책 업그레이드도 확인합니다(bash 실행 테스트는 Linux에서만 동작하고, 다른 OS에서는 건너뜀).
 
+### 데모 데이터 (화면 확인용)
+
+```powershell
+npm run demo:seed     # data/demo/ 에 데모 DB 생성 (다시 실행하면 지우고 새로 만듦)
+npm run demo:dev      # 데모 DB로 http://localhost:3001 실행 (아이디 demo / 비밀번호 demo1234)
+npm run demo:remove   # data/demo/ 삭제
+```
+
+- 운영 DB(`data/opsbox.db`)·백업·키는 건드리지 않습니다. 데모는 `data/demo/` 안에 DB·백업·키·로그를 따로 둡니다.
+- Windows·Linux 서버 12대(WEB·WAS·DB·기타, 제품별)와 서버별 최근 14일 점검 결과를 만듭니다. 날짜는 실행일 기준입니다.
+- 서버마다 상황이 하나씩 들어 있습니다: 디스크 사용률 증가(DB-03), MSSQL 백업 실패 후 재점검(DB-01), WebtoB 서비스 중지(WEB-01), JVM Heap 증가(WAS-01), Heap Dump·OutOfMemory(WAS-02), 로그 오류 급증·HTTP 실패(WEB-02), 프로세스·포트 중지(APP-01), CUBRID HA 점검(DB-04), 배치 CPU 급증·파일 크기 증가(BATCH-01), 3일째 결과 미수신(FILE-01).
+- 결과는 화면의 [결과 파일 올리기]와 같은 경로로 저장되어 검증·암호화 백업까지 거칩니다. 생성 규칙은 `scripts/seed-demo.ts`에 있습니다.
+- 포트는 `OPSBOX_PORT` 환경 변수로 바꿀 수 있습니다(기본 3000, 데모 3001).
+
 ### 점검 대상 서버 지원 범위
 
 - Windows: Windows Server 2012 이상, Windows PowerShell 3.0 이상(5.1 권장). 3.0 미만이면 스크립트가 안내 후 종료합니다.

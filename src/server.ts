@@ -106,12 +106,14 @@ app.get('/api/health', async () => ok({ service: 'OpsBox', status: 'UP', timesta
 /* 서버 시작 */
 async function start() {
   try {
+    // 포트: OPSBOX_PORT (기본 3000). 데모 서버(npm run demo:dev)는 3001을 씁니다.
+    const port = Number(process.env.OPSBOX_PORT) || 3000;
     await app.listen({
       host: '0.0.0.0',
-      port: 3000,
+      port,
     });
 
-    app.log.info({ url: 'http://localhost:3000' }, 'OpsBox 시작');
+    app.log.info({ url: `http://localhost:${port}` }, 'OpsBox 시작');
     app.log.debug(`\n${app.printRoutes()}`);
 
     startResultImportScheduler();

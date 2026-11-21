@@ -20,3 +20,6 @@ logs/
 
 # 세션 인수인계 메모
 .claude/handoff/
+
+# 데모 데이터 (npm run demo:seed 로 다시 만들 수 있음)
+data/demo/
