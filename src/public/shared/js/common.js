@@ -166,6 +166,11 @@ function restoreSidebarState() {
     return;
   }
 
+  // 모바일에서는 데스크톱 접힘 상태를 적용하지 않습니다 (메뉴는 햄버거로만 여닫음).
+  if (isMobileLayout()) {
+    return;
+  }
+
   const collapsed = localStorage.getItem('sidebar-collapsed');
 
   if (collapsed === 'true') {
