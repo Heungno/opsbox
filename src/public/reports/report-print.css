@@ -22,6 +22,43 @@
 }
 
 @media print {
+  /* 화면 테마(어두운 테마)와 관계없이 항상 밝은 종이로 인쇄합니다.
+     color-scheme이 dark면 브라우저가 쪽 여백을 어둡게 칠하고 쪽 번호가 보이지 않으므로 light로 고정하고,
+     따로 덮어쓰지 않은 요소도 밝게 나오도록 색 토큰을 밝은 테마 값으로 되돌립니다. */
+  :root,
+  :root[data-theme="dark"] {
+    color-scheme: light !important;
+    --paper: #ffffff;
+    --surface: #ffffff;
+    --surface-sunk: #f5f7f8;
+    --ink: #000000;
+    --slate: #333333;
+    --slate-soft: #666666;
+    --rule: #000000;
+    --rule-soft: #000000;
+    --petrol: #000000;
+    --petrol-strong: #000000;
+    --petrol-wash: #ffffff;
+    --ok: #000000;
+    --warn: #000000;
+    --crit: #000000;
+    --idle: #666666;
+    --primary: #000000;
+    --bg: #ffffff;
+    --card-bg: #ffffff;
+    --text: #000000;
+    --text-light: #333333;
+    --border: #000000;
+    --surface-muted: #f5f7f8;
+    --surface-soft: #ffffff;
+    --table-hover: transparent;
+    --control-bg: #ffffff;
+    --badge-bg: #ffffff;
+    --badge-fg: #000000;
+    --badge-border: #000000;
+    background: #fff !important;
+  }
+
   :root {
     --print-serif: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
     --print-sans: "맑은 고딕", "Malgun Gothic", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
