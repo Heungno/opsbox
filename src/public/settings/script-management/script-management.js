@@ -298,11 +298,40 @@ function renderList() {
     const targetLabel = item.kind === 'QUERY' ? `DBMS · ${item.dbms || 'MSSQL'}` : `${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''}`;
     const meta = document.createElement('small'); meta.textContent = `${typeLabel}${osLabel ? ` · ${osLabel}` : ''}${targetLabel} · ${item.enabled ? '사용' : '중지'}`;
     info.append(title, meta);
+    const badge = generatedBadge(item); if (badge) title.append(' ', badge);
     const actions = document.createElement('div'); actions.className = 'button-area';
-    const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.setAttribute('aria-label', `${item.name} 삭제`);
-    remove.addEventListener('click', (event) => { event.stopPropagation(); removeTemplate(item); });
-    actions.append(remove); card.append(info, actions); list.appendChild(card);
+    if (item.generatedState) {
+      // 점검 만들기 조각은 정책 항목이 관리합니다(여기서 삭제 불가)
+      const link = document.createElement('a'); link.className = 'btn btn-small'; link.href = '/settings/policy-management'; link.textContent = '정책에서 관리';
+      link.addEventListener('click', (event) => event.stopPropagation());
+      actions.append(link);
+    } else {
+      const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.setAttribute('aria-label', `${item.name} 삭제`);
+      remove.addEventListener('click', (event) => { event.stopPropagation(); removeTemplate(item); });
+      actions.append(remove);
+    }
+    card.append(info, actions); list.appendChild(card);
   });
+}
+
+/** 점검 만들기 조각 배지: 자동 생성 / 직접 편집됨 */
+function generatedBadge(item) {
+  if (!item.generatedState) return null;
+  const badge = document.createElement('span');
+  badge.className = `generated-badge${item.generatedState === 'DETACHED' ? ' is-detached' : ''}`;
+  badge.textContent = item.generatedState === 'DETACHED' ? '직접 편집됨' : '자동 생성';
+  return badge;
+}
+
+/** 편집기 머리 안내: 점검 만들기 조각이면 정책 항목에서 관리된다는 것과 직접 편집 시 영향 */
+function renderGeneratedNote(item) {
+  const title = document.getElementById('template-form-title');
+  let note = document.getElementById('template-generated-note');
+  if (!item?.generatedState) { note?.remove(); return; }
+  if (!note) { note = document.createElement('p'); note.id = 'template-generated-note'; note.className = 'check-builder-warning'; title.closest('.section-header').after(note); }
+  note.textContent = item.generatedState === 'DETACHED'
+    ? '점검 만들기에서 만든 스크립트를 직접 편집한 상태입니다. 정책 항목의 폼을 바꿔도 이 스크립트에는 반영되지 않습니다. 폼 기준으로 되돌리려면 점검 정책 관리에서 [폼 기준으로 다시 만들기]를 누르세요.'
+    : '점검 만들기 폼으로 자동 생성된 스크립트입니다. 여기서 고쳐 저장하면 이후 폼 변경이 반영되지 않습니다. 가능하면 점검 정책 관리에서 폼을 고치세요.';
 }
 
 function requestOpenTemplate(item) {
@@ -315,6 +344,7 @@ function requestOpenTemplate(item) {
 
 function openTemplate(item) {
   if (!item) return;
+  renderGeneratedNote(item);
   editingId = item.id;
   hasUnsavedChanges = false;
   document.getElementById('template-form-title').textContent = '템플릿 수정';

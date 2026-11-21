@@ -3727,3 +3727,6 @@ input[type="radio"] {
 .check-builder-warning { margin: 0; padding: 8px 12px; border-left: 3px solid var(--warning, #b7791f); background: var(--surface-muted); color: var(--text); font-size: 13px; }
 .check-builder-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 6px; background: var(--surface-soft); }
 .check-builder-notice p { margin: 0; flex: 1 1 260px; }
+.generated-badge { display: inline-block; margin-left: 4px; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; background: var(--badge-bg); color: var(--badge-fg); vertical-align: middle; }
+.generated-badge.is-detached { background: #fef3c7; color: #92400e; }
+:root[data-theme="dark"] .generated-badge.is-detached { background: #4a3a12; color: #fcd58a; }

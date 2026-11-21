@@ -144,6 +144,15 @@ function write(data: Server[]) {
 
 export const SERVER_ID_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,63}$/u;
 
+/** 호스트:포트 (IPv6는 [주소]:포트) */
+function isHostPort(text: string): boolean {
+  const index = text.lastIndexOf(':');
+  if (index <= 0) return false;
+  const host = text.slice(0, index).replace(/^\[(.*)\]$/, '$1');
+  const port = Number(text.slice(index + 1));
+  return host.length > 0 && host.length <= 253 && !/\s/.test(host) && Number.isInteger(port) && port >= 1 && port <= 65535;
+}
+
 function validateServer(server: Partial<Server>, servers: Server[], currentId?: string) {
   const errors = [];
   const roles = Array.isArray(server.roles) && server.roles.length ? [...new Set(server.roles)] : server.type ? [server.type] : [];
@@ -419,6 +428,9 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
           errors.push({ field: `rolePolicySettings.${item.id}.inputs.${input.key}`, message: `${item.name} 항목의 '${input.label}'은 숫자로 입력하세요.` });
         } else if (value !== undefined && input.type === 'PORT' && (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 65535)) {
           errors.push({ field: `rolePolicySettings.${item.id}.inputs.${input.key}`, message: `${item.name} 항목의 '${input.label}'은 1~65535 사이의 포트 번호로 입력하세요.` });
+        } else if (value !== undefined && input.type === 'TARGET_LIST') {
+          const invalid = String(value).split(/[;\r\n]+/).map((line) => line.trim()).filter(Boolean).filter((line) => !isHostPort(line));
+          if (invalid.length) errors.push({ field: `rolePolicySettings.${item.id}.inputs.${input.key}`, message: `${item.name} 항목의 '${input.label}'은 한 줄에 하나씩 호스트:포트(1~65535) 형식으로 입력하세요: ${invalid.slice(0, 3).join(', ')}` });
         }
       });
     });

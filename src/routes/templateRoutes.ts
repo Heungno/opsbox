@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
+import { isDetached } from '../services/checkBuilder/templates';
+
 import { recordAudit } from '../services/auditService';
 import { deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from '../services/templateService';
 import type { IdParams } from '../types/api';
@@ -10,7 +12,10 @@ import { ok, requireObject } from '../utils/http';
 const snapshot = (id: string) => structuredClone(getTemplate(id));
 
 export async function templateRoutes(app: FastifyInstance) {
-  app.get<{ Querystring: { kind?: string } }>('/templates', async (request) => ok(getTemplates(request.query)));
+  // 점검 만들기 생성 조각은 상태를 함께 알려 줍니다: GENERATED(자동 생성) / DETACHED(직접 편집됨)
+  app.get<{ Querystring: { kind?: string } }>('/templates', async (request) => ok(getTemplates(request.query).map((template) => (
+    template.generated ? { ...template, generatedState: isDetached(template) ? 'DETACHED' : 'GENERATED' } : template
+  ))));
 
   app.post<{ Body: Partial<ManagedTemplate> }>('/templates', async (request) => {
     const saved = saveTemplate(requireObject<Partial<ManagedTemplate>>(request.body));

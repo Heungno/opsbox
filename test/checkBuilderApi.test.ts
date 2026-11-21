@@ -9,6 +9,7 @@ import { app } from '../src/server';
 import { isDetached } from '../src/services/checkBuilder/templates';
 import { getPolicies, savePolicy } from '../src/services/policyService';
 import { getTemplate, saveTemplate } from '../src/services/templateService';
+import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
 
 /*
  * 점검 만들기 API: 준비된 점검 목록, 생성될 스크립트 미리보기, 폼 기준 다시 만들기
@@ -71,4 +72,26 @@ test('다시 만들기는 직접 편집된 생성 조각을 폼 기준으로 되
 test('점검 만들기 항목이 아니면 다시 만들 수 없다', async () => {
   assert.equal((await call('POST', '/api/policies/linux-basic-default/items/CPU/regenerate')).statusCode, 400);
   assert.equal((await call('POST', '/api/policies/no-such/items/CPU/regenerate')).statusCode, 404);
+});
+
+test('템플릿 목록은 생성 조각의 상태(자동 생성·직접 편집됨)를 알려 준다', async () => {
+  const templateId = 'GEN-CUSTOM_API0000000000001-LINUX';
+  const list = async () => (await call('GET', '/api/templates')).json().data as any[];
+  assert.equal((await list()).find((entry) => entry.id === templateId).generatedState, 'GENERATED');
+  assert.equal((await list()).find((entry) => entry.id === 'LINUX-PART-CPU').generatedState, undefined);
+  const current = getTemplate(templateId)!;
+  saveTemplate({ ...current, content: `${current.content}\n# 또 수정` }, templateId);
+  assert.equal((await list()).find((entry) => entry.id === templateId).generatedState, 'DETACHED');
+});
+
+test('원격 포트 대상 목록은 서버 저장 시 호스트:포트 형식을 확인한다', () => {
+  const policy = getPolicies().find((entry) => entry.id === 'linux-basic-default')!;
+  const itemId = 'CUSTOM_API0000000000002';
+  savePolicy({ ...policy, items: [...policy.items, { id: itemId, name: '원격 포트', enabled: true, executor: { type: 'CHECK_BUILDER', options: { builder: { version: 1, type: 'REMOTE_PORT', presetId: null } } }, inputs: [], result: { components: [{ type: 'SUMMARY' }] } }] } as any, policy.id);
+  createServer({ id: 'LNX-TARGET', name: 't', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.60', sharedPath: '', policyIds: { BASIC: 'linux-basic-default' }, processes: [], directories: [] } as any);
+  const save = (targets: string) => updateCheckConfig('LNX-TARGET', { ...getServer('LNX-TARGET'), rolePolicySettings: { [itemId]: { inputs: { targets } } } } as any);
+  assert.throws(() => save('db01:70000'), (error: any) => error.errors?.some((entry: any) => entry.field === `rolePolicySettings.${itemId}.inputs.targets` && /db01:70000/.test(entry.message)));
+  assert.throws(() => save('no-port'), (error: any) => error.status === 400);
+  save('db01:1433\n[fe80::1]:22\n10.0.0.1:443');
+  assert.match(String(getServer('LNX-TARGET')!.rolePolicySettings?.[itemId]?.inputs?.targets), /db01:1433/);
 });

@@ -1102,10 +1102,11 @@ function appendBasicPolicyInputs(item, host) {
     const defaultValue = input.defaultValue ?? '';
     if (input.scope === 'SERVER') {
       let control;
-      if (input.type === 'PATH_LIST') {
+      if (input.type === 'PATH_LIST' || input.type === 'TARGET_LIST') {
         control = document.createElement('textarea');
         control.rows = 2;
         control.value = String(stored ?? defaultValue).replaceAll(';', '\n');
+        control.placeholder = input.type === 'TARGET_LIST' ? '한 줄에 하나씩, 호스트:포트 (예: db01:1433)' : '한 줄에 하나씩 경로';
       } else {
         control = document.createElement('input');
         control.type = input.type === 'NUMBER' || input.type === 'PORT' ? 'number' : 'text';
