@@ -1,0 +1,508 @@
+/* =========================================================
+   점검 보고서 인쇄 양식 (행정 보고서 형식)
+   - A4 세로, 결재란 + 문서 개요 표 + Ⅰ/1/가 번호 체계
+   - 본문은 명조 계열, 제목·표 머리는 고딕 계열
+   - 화면에서는 .print-only 요소를 숨기고, 인쇄할 때만 보입니다.
+========================================================= */
+
+.print-only {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 20mm 18mm 20mm;
+
+  @bottom-center {
+    content: "- " counter(page) " -";
+    font-family: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", serif;
+    font-size: 9pt;
+    color: #000;
+  }
+}
+
+@media print {
+  :root {
+    --print-serif: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
+    --print-sans: "맑은 고딕", "Malgun Gothic", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+    --print-line: #000;
+    --print-head-bg: #e6e6e6;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  html,
+  body,
+  .layout,
+  .content,
+  .container {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  body {
+    color: #000 !important;
+    font-family: var(--print-serif) !important;
+    font-size: 10pt !important;
+    line-height: 1.6 !important;
+    word-break: keep-all;
+  }
+
+  .layout {
+    display: block !important;
+  }
+
+  /* 화면 전용 요소 숨김 */
+  .sidebar,
+  #sidebar-container,
+  .header,
+  .button-area,
+  .compare-container,
+  .toast-container {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* ---------- 문서 머리: 결재란 + 제목 ---------- */
+
+  .print-doc-head {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    margin-bottom: 8mm;
+  }
+
+  .print-doc-org {
+    margin: 0;
+    font-family: var(--print-sans);
+    font-size: 9pt;
+  }
+
+  .print-approval {
+    width: auto !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-family: var(--print-sans);
+    font-size: 9pt !important;
+  }
+
+  .print-approval th,
+  .print-approval td {
+    padding: 2px 4px !important;
+    border: 0.75pt solid var(--print-line) !important;
+    color: #000 !important;
+    text-align: center !important;
+    background: #fff !important;
+  }
+
+  .print-approval .print-approval-label {
+    width: 8mm;
+    line-height: 1.4;
+    background: var(--print-head-bg) !important;
+  }
+
+  .print-approval thead th:not(.print-approval-label) {
+    width: 20mm;
+    background: var(--print-head-bg) !important;
+  }
+
+  .print-approval td {
+    height: 16mm;
+  }
+
+  .print-doc-title {
+    margin: 0 0 6mm !important;
+    padding: 4mm 0 !important;
+    border-top: 2.25pt double var(--print-line);
+    border-bottom: 2.25pt double var(--print-line);
+    color: #000 !important;
+    font-family: var(--print-sans) !important;
+    font-size: 19pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  /* ---------- 문서 개요 표 ---------- */
+
+  .print-doc-info {
+    margin-bottom: 3mm;
+  }
+
+  .print-doc-info th {
+    width: 22mm;
+  }
+
+  .print-doc-legend {
+    margin: 0 0 8mm !important;
+    font-size: 8.5pt !important;
+    text-align: right;
+  }
+
+  /* ---------- 번호 체계: Ⅰ. → 1. → 가. ---------- */
+
+  .container {
+    counter-reset: part;
+  }
+
+  .report-group {
+    counter-increment: part;
+    counter-reset: chapter;
+  }
+
+  .report-group-title {
+    margin: 0 0 4mm !important;
+    padding: 0 0 1.5mm !important;
+    border: 0 !important;
+    border-bottom: 1.5pt solid var(--print-line) !important;
+    color: #000 !important;
+    font-family: var(--print-sans) !important;
+    font-size: 14pt !important;
+    font-weight: 700 !important;
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  .report-group-title::before {
+    content: counter(part, upper-roman) ". ";
+  }
+
+  .report-group .card {
+    counter-increment: chapter;
+    counter-reset: item;
+  }
+
+  .report-group .card > h2,
+  .report-group .card > .section-header h2 {
+    margin: 0 0 2.5mm !important;
+    padding: 0 !important;
+    border: 0 !important;
+    color: #000 !important;
+    font-family: var(--print-sans) !important;
+    font-size: 11.5pt !important;
+    font-weight: 700 !important;
+  }
+
+  .report-group .card > h2::before,
+  .report-group .card > .section-header h2::before {
+    content: counter(chapter) ". ";
+  }
+
+  .report-group .card h3 {
+    counter-increment: item;
+    margin: 4mm 0 2mm !important;
+    color: #000 !important;
+    font-family: var(--print-sans) !important;
+    font-size: 10.5pt !important;
+    font-weight: 700 !important;
+  }
+
+  .report-group .card h3::before {
+    content: counter(item, hangul) ". ";
+  }
+
+  h2,
+  h3 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  /* ---------- 구역: 상자 대신 여백으로 구분 ---------- */
+
+  .card,
+  .role-report-group .type-report-card,
+  .report-subsection {
+    margin: 0 0 6mm !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .card:not(.type-report-card) {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .type-report-card {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .role-report-group {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  #type-report-form > .type-report-card + .type-report-card {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .section-header {
+    display: block !important;
+    margin: 0 !important;
+  }
+
+  .policy-help,
+  .role-report-group .type-report-card > .policy-help {
+    margin: 0 0 3mm !important;
+    padding: 0 0 0 3mm !important;
+    border: 0 !important;
+    border-left: 1.5pt solid var(--print-line) !important;
+    background: transparent !important;
+    color: #000 !important;
+    font-size: 9pt !important;
+  }
+
+  /* ---------- 표: 실선 격자 ---------- */
+
+  .table-scroll {
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    border-top: 1.25pt solid var(--print-line) !important;
+    border-bottom: 1.25pt solid var(--print-line) !important;
+    font-size: 9pt !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    padding: 1.6mm 2mm !important;
+    border: 0.5pt solid var(--print-line) !important;
+    color: #000 !important;
+    background: #fff !important;
+    vertical-align: middle !important;
+    overflow-wrap: anywhere;
+    white-space: normal !important;
+  }
+
+  /* 일반 표는 좌우 바깥선을 비워 둠 (결재란은 사방 테두리 유지) */
+  table:not(.print-approval) tr > :first-child {
+    border-left: 0 !important;
+  }
+
+  table:not(.print-approval) tr > :last-child {
+    border-right: 0 !important;
+  }
+
+  .print-approval {
+    border: 0.75pt solid var(--print-line) !important;
+  }
+
+  th,
+  .detail-table th {
+    background: var(--print-head-bg) !important;
+    font-family: var(--print-sans);
+    font-weight: 700 !important;
+    text-align: center !important;
+  }
+
+  td a,
+  a {
+    color: inherit !important;
+    font-weight: inherit !important;
+    text-decoration: none !important;
+  }
+
+  tbody tr:hover {
+    background: none !important;
+  }
+
+  /* ---------- 판정 표기: ○ △ × － ---------- */
+
+  .history-status,
+  .summary-badge,
+  .server-badge,
+  .badge-success,
+  .badge-warning,
+  .badge-danger,
+  .badge-critical,
+  .badge-muted {
+    display: inline !important;
+    height: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    color: #000 !important;
+    font-size: inherit !important;
+    font-weight: 700 !important;
+    white-space: nowrap;
+  }
+
+  .history-status::before,
+  .summary-badge::before,
+  .server-badge::before {
+    display: inline !important;
+    width: auto !important;
+    height: auto !important;
+    margin-right: 1mm;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    content: "" !important;
+  }
+
+  .history-status.healthy::before,
+  .badge-success::before { content: "○" !important; }
+  .history-status.warning::before,
+  .badge-warning::before { content: "△" !important; }
+  .history-status.critical::before,
+  .badge-danger::before,
+  .badge-critical::before { content: "×" !important; }
+  .badge-muted::before { content: "－" !important; }
+
+  .badge-muted {
+    font-weight: 400 !important;
+  }
+
+  /* 종합 진단 상태는 개요 표에 있으므로 본문에서는 한 줄로 */
+  #health-summary .summary-badge {
+    margin: 0 !important;
+    font-size: 11pt !important;
+  }
+
+  .diff-badge {
+    padding: 0 !important;
+    margin-left: 1mm !important;
+    background: none !important;
+    color: #000 !important;
+    font-size: 8pt !important;
+    font-weight: 400 !important;
+  }
+
+  /* ---------- 자원 사용량: 칸 나눔 표처럼 ---------- */
+
+  .result-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    border-top: 1.25pt solid var(--print-line);
+    border-bottom: 1.25pt solid var(--print-line);
+  }
+
+  .result-item {
+    padding: 2mm 3mm !important;
+    border: 0 !important;
+    border-right: 0.5pt solid var(--print-line) !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+  }
+
+  .result-item:nth-child(4n) {
+    border-right: 0 !important;
+  }
+
+  .result-item span {
+    color: #000 !important;
+    font-family: var(--print-sans);
+    font-size: 8.5pt !important;
+  }
+
+  .result-item strong {
+    color: #000 !important;
+    font-size: 13pt !important;
+  }
+
+  .result-date {
+    color: #000 !important;
+    font-size: 8.5pt !important;
+  }
+
+  /* ---------- 원문 출력 ---------- */
+
+  .webtob-console-output,
+  pre {
+    position: static !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 2mm 3mm !important;
+    border: 0.5pt solid var(--print-line) !important;
+    border-radius: 0 !important;
+    background: #f5f5f5 !important;
+    color: #000 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.4 !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+  }
+
+  .webtob-console-output * {
+    color: #000 !important;
+  }
+
+  #webtob-report-details,
+  .db-query-results,
+  .db-query-results .table-scroll {
+    height: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  .db-query-result {
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+  }
+
+  /* ---------- 맺음말 ---------- */
+
+  .print-closing {
+    margin-top: 12mm;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+
+  .print-closing p {
+    margin: 0 0 6mm !important;
+    font-size: 11pt !important;
+  }
+
+  .print-closing-sign {
+    text-align: right;
+  }
+
+  .print-closing-sign span {
+    display: inline-block;
+    min-width: 30mm;
+    margin: 0 3mm;
+    text-align: center;
+  }
+}

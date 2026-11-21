@@ -12,6 +12,7 @@ let currentServerProduct = '';
 let currentServerProducts = {};
 let currentServerOS = '';
 let reportRoleSuffix = '';
+let currentServer = null;
 
 async function init() {
   const params = new URLSearchParams(location.search);
@@ -39,6 +40,7 @@ async function loadHistoryAndReport(serverId, fileName) {
     // 서버 정보는 보조 정보라 실패해도 보고서는 계속 표시합니다.
     const server = await api(`/api/servers/${encodeURIComponent(serverId)}`).catch(() => null);
     if (server) {
+      currentServer = server;
       currentServerType = server.type || '';
       currentServerTypes = server.roles?.length ? server.roles : [server.type];
       currentServerProduct = server.product || '';
@@ -117,6 +119,7 @@ function renderReport() {
   document.getElementById('http-report-details').hidden = !serverTypes.some((role) => role === 'WEB' || role === 'WAS');
 
   renderHealth(health);
+  renderPrintHeader(data, health, serverTypes);
   renderMetrics(data, compareData);
   const capturedPolicyDefinitions = data.checks?.policyDefinitions || {};
   const collectedBasicItems = data.checks?.policyItems || [];
@@ -606,6 +609,51 @@ function renderPendingChecklist(targetId, rows) {
     row.append(name, state, detail); tbody.appendChild(row);
   });
 }
+
+// 인쇄용 문서 개요 (화면에서는 숨겨지고 인쇄할 때만 보임)
+const PRINT_HEALTH_LABEL = { Healthy: '○ 정상 (Healthy)', Warning: '△ 주의 (Warning)', Critical: '× 위험 (Critical)' };
+
+function setPrintText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value || '-';
+}
+
+function formatPrintDate(date) {
+  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
+}
+
+function renderPrintHeader(data, health, serverTypes) {
+  const server = currentServer || {};
+  const products = server.products || {};
+  const roles = serverTypes
+    .map((role) => {
+      const label = role === 'OTHER' ? '기타' : role;
+      const product = products[role] || (role === server.type ? server.product : '');
+      return product ? `${label} (${product})` : label;
+    })
+    .join(', ');
+
+  setPrintText('print-server-name', server.name || data.server || data.hostname);
+  setPrintText('print-server-id', server.id || new URLSearchParams(location.search).get('serverId'));
+  setPrintText('print-role', roles);
+  setPrintText('print-os-ip', [server.os || currentServerOS, server.ip].filter(Boolean).join(' · '));
+  setPrintText('print-check-date', data.checkDate);
+  setPrintText('print-health', PRINT_HEALTH_LABEL[health] || health);
+  updatePrintSigner();
+}
+
+// 작성자 이름은 사이드바가 불러온 로그인 사용자, 보고 일자는 인쇄하는 날
+function updatePrintSigner() {
+  const userName = document.getElementById('current-user-name')?.textContent?.trim();
+  const author = userName && userName !== '확인 중…' ? userName : '';
+  const today = formatPrintDate(new Date());
+  setPrintText('print-author', author);
+  setPrintText('print-closing-author', author || ' ');
+  setPrintText('print-report-date', today);
+  setPrintText('print-closing-date', today);
+}
+
+window.addEventListener('beforeprint', updatePrintSigner);
 
 function renderHealth(health) {
   const container = document.getElementById('health-summary');

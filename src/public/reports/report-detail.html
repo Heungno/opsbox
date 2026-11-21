@@ -7,72 +7,6 @@
   <title>OpsBox | 점검 보고서 상세</title>
   <link rel="stylesheet" href="/shared/css/app.css?v=20261121-design" />
   <style>
-    @page { size: A4 portrait; margin: 14mm 12mm 16mm; }
-    @media print {
-      html, body, .layout, .content, .container {
-        width: auto !important; min-width: 0 !important; margin: 0 !important; padding: 0 !important;
-        color: #172033 !important; background: #fff !important; box-shadow: none !important;
-      }
-      .sidebar, .button-area, .sidebar-toggle, .compare-container {
-        display: none !important;
-      }
-      .header {
-        display: block !important; margin: 0 0 14px !important; padding: 0 0 10px !important;
-        border-bottom: 2px solid #334155 !important;
-      }
-      .header h1 { margin: 0 0 4px !important; font-size: 20px !important; }
-      .header p { margin: 0 !important; font-size: 10px !important; }
-      .report-group-title {
-        margin: 0 0 8px !important; padding-bottom: 6px !important; font-size: 15px !important;
-        color: #172033 !important; border-color: #64748b !important;
-        break-after: avoid-page; page-break-after: avoid;
-      }
-      .role-report-group { break-before: page; page-break-before: always; }
-      #type-report-form > .type-report-card + .type-report-card {
-        break-before: page; page-break-before: always;
-      }
-      .section-header { margin-bottom: 7px !important; }
-      .section-header h2, .card > h2 { margin: 0 0 7px !important; font-size: 13px !important; }
-      .card > h3 { margin: 12px 0 6px !important; font-size: 11px !important; }
-      .card {
-        margin: 0 0 8px !important; padding: 9px !important; border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important; background: #fff !important;
-        box-shadow: none !important;
-        break-inside: avoid-page; page-break-inside: avoid;
-      }
-      .type-report-card { break-inside: auto; page-break-inside: auto; }
-      .type-report-card > h2 {
-        margin: 0 0 8px !important; padding: 0 0 8px !important;
-        border-bottom: 2px solid #334155 !important; font-size: 18px !important;
-      }
-      .type-report-card > .policy-help {
-        margin: 0 0 14px !important; padding: 7px 9px !important;
-        border-left: 3px solid #64748b !important; background: #f1f5f9 !important;
-        color: #334155 !important; font-size: 9px !important;
-      }
-      .type-report-card .report-subsection { margin-top: 10px !important; }
-      h2, h3 { break-after: avoid-page; page-break-after: avoid; }
-      table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; font-size: 9px !important; }
-      thead { display: table-header-group; } tfoot { display: table-footer-group; }
-      tr, img { break-inside: avoid-page; page-break-inside: avoid; }
-      th, td { padding: 4px 5px !important; border: 1px solid #cbd5e1 !important; overflow-wrap: anywhere; }
-      th { background: #e9eef5 !important; color: #172033 !important; }
-      .result-grid { gap: 6px !important; }
-      .result-item { padding: 8px !important; border: 1px solid #cbd5e1 !important; }
-      .server-badge, .summary-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      .webtob-console-output, pre {
-        max-height: none !important; height: auto !important; overflow: visible !important;
-        position: static !important; white-space: pre-wrap !important; overflow-wrap: anywhere;
-        font-size: 8px !important; line-height: 1.35 !important;
-        color: #172033 !important; background: #f8fafc !important; border-color: #cbd5e1 !important;
-        box-sizing: border-box !important;
-      }
-      #webtob-report-details { height: auto !important; overflow: visible !important; }
-      .db-query-results { overflow: visible !important; }
-      .db-query-results .table-scroll { max-width: none !important; overflow: visible !important; }
-      .server-badge, .history-status, .diff-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      a { color: inherit !important; text-decoration: none !important; }
-    }
     .diff-badge {
       display: inline-block;
       margin-left: 6px;
@@ -94,6 +28,7 @@
       color: var(--text-light);
     }
   </style>
+  <link rel="stylesheet" href="/reports/report-print.css?v=20261121-print" />
 </head>
 
 <body>
@@ -101,13 +36,37 @@
     <div id="sidebar-container"></div>
     <main class="content">
       <div class="container">
+        <section class="print-only print-doc" aria-hidden="true">
+          <div class="print-doc-head">
+            <p class="print-doc-org">정보시스템 정기 예방점검</p>
+            <table class="print-approval">
+              <thead>
+                <tr><th rowspan="2" class="print-approval-label">결<br>재</th><th>담당</th><th>검토</th><th>승인</th></tr>
+              </thead>
+              <tbody>
+                <tr><td></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h1 class="print-doc-title">정기 예방점검 결과 보고</h1>
+          <table class="print-doc-info">
+            <tbody>
+              <tr><th>대상 서버</th><td id="print-server-name">-</td><th>서버 ID</th><td id="print-server-id">-</td></tr>
+              <tr><th>역할 · 제품</th><td id="print-role">-</td><th>운영체제 · IP</th><td id="print-os-ip">-</td></tr>
+              <tr><th>점검 일시</th><td id="print-check-date">-</td><th>종합 판정</th><td id="print-health">-</td></tr>
+              <tr><th>보고 일자</th><td id="print-report-date">-</td><th>작성자</th><td id="print-author">-</td></tr>
+            </tbody>
+          </table>
+          <p class="print-doc-legend">판정 표기: ○ 정상(Healthy) &nbsp; △ 주의(Warning) &nbsp; × 위험(Critical) &nbsp; － 미수집</p>
+        </section>
+
         <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
           <div>
             <h1>점검 보고서</h1>
             <p id="report-title">조회중...</p>
           </div>
           <div class="button-area" style="margin-top: 0;">
-            <button type="button" class="btn btn-secondary" onclick="window.print()">🖨️ 인쇄 / PDF</button>
+            <button type="button" class="btn btn-secondary" onclick="window.print()">보고서 인쇄 / PDF</button>
             <a id="btn-back" href="#" class="btn btn-primary">서버 상세로</a>
           </div>
         </header>
@@ -207,6 +166,12 @@
           <h2 id="role-report-title" class="report-group-title">역할별 점검 결과</h2>
           <div id="type-report-form"></div>
         </section>
+
+        <section class="print-only print-closing" aria-hidden="true">
+          <p>위와 같이 정기 예방점검 결과를 보고합니다.</p>
+          <p id="print-closing-date">-</p>
+          <p class="print-closing-sign">점검자<span id="print-closing-author">-</span>(서명)</p>
+        </section>
       </div>
     </main>
   </div>
@@ -268,7 +233,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261121-api"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261121-print"></script>
 </body>
 
 </html>
