@@ -3711,3 +3711,10 @@ input[type="radio"] {
 .overview-heading h3 {
   margin: 0;
 }
+
+/* 삼성 인터넷·Chrome의 '웹 페이지 어둡게' 강제 다크 모드 방지.
+   사이트가 자체 다크 테마를 지원한다고 알려야 브라우저가 배경을 임의로 어둡게 칠하지 않습니다.
+   (각 HTML의 <meta name="color-scheme">와 함께 동작) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) { color-scheme: dark; }
+}
