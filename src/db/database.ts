@@ -220,11 +220,12 @@ function seedFromJsonFiles() {
 /*
  * 기존 DB 업그레이드 (이미 쓰고 있는 설치본에 새 기본값 추가)
  *
- * 템플릿·정책은 DB가 비어 있을 때만 JSON에서 채우므로, 새 버전에서 추가된 기본 템플릿은
- * 기존 DB에 들어가지 않습니다. 여기서 "한 번도 넣은 적 없는" 기본 템플릿만 추가합니다.
- * - 이미 넣었던 기본 템플릿 id는 settings.builtin_template_ids 에 기록해 두므로,
- *   사용자가 지운 기본 템플릿을 다시 살리지 않습니다.
- * - 사용자가 고친 템플릿·정책은 덮어쓰지 않습니다.
+ * 템플릿·정책은 DB가 비어 있을 때만 JSON에서 채우므로, 새 버전의 기본값은 시작할 때 여기서 반영합니다.
+ * - addNewBuiltInTemplates: "한 번도 넣은 적 없는" 기본 템플릿만 추가합니다. 넣었던 id는
+ *   settings.builtin_template_ids 에 기록해 두어, 사용자가 지운 기본 템플릿을 다시 살리지 않습니다.
+ * - upgradeBuiltInTemplates: 예전 기본값 그대로인(고치지 않은) 템플릿만 새 내용으로 바꿉니다.
+ * - addLinux…PolicyItems: 기본 정책에 빠진 항목을 한 번만 추가합니다.
+ * 사용자가 고친 템플릿·정책은 덮어쓰지 않습니다.
  */
 const BUILTIN_TEMPLATE_IDS_KEY = 'builtin_template_ids';
 /** 이 기록이 생기기 전(이전 버전)에 이미 시드된 것으로 볼 템플릿을 고르는 기준: Linux 조각은 새로 추가된 것 */

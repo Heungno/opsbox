@@ -39,17 +39,13 @@ app.addHook('onRequest', async (request, reply) => {
   }
 });
 
-/*
- * Static Files
- */
+/* 정적 파일 (화면) */
 app.register(fastifyStatic, {
   root: path.join(process.cwd(), 'src', 'public'),
   prefix: '/',
 });
 
-/*
- * Home
- */
+/* 화면 경로 */
 app.get('/', async (request, reply) => {
   return reply.sendFile('dashboard/dashboard.html');
 });
@@ -69,7 +65,7 @@ app.get('/settings/policy-management', async (request, reply) => reply.sendFile(
 app.get('/settings/common-code-management', async (request, reply) => reply.sendFile('settings/common-code-management/common-code-management.html'));
 app.get('/settings/audit-logs', async (_request, reply) => reply.sendFile('settings/audit-logs/audit-logs.html'));
 
-// Keep previous page URLs working for existing bookmarks.
+// 예전 화면 주소(북마크)도 계속 열리도록 연결합니다.
 app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
 app.get('/server', async (request, reply) => reply.redirect('/servers'));
 app.get('/server.html', async (request, reply) => reply.redirect('/servers'));
@@ -77,21 +73,15 @@ app.get('/server-detail.html', async (request, reply) => reply.redirect(`/server
 app.get('/report-list.html', async (request, reply) => reply.redirect('/reports'));
 app.get('/report.html', async (request, reply) => reply.redirect(`/reports/detail${request.url.slice('/report.html'.length)}`));
 
-/*
- * API Routes
- */
+/* API */
 app.register(routes, {
   prefix: '/api',
 });
 
-/*
- * Health Check
- */
+/* 상태 확인 */
 app.get('/api/health', async () => ok({ service: 'OpsBox', status: 'UP', timestamp: new Date().toISOString() }));
 
-/*
- * Start Server
- */
+/* 서버 시작 */
 async function start() {
   try {
     await app.listen({

@@ -46,7 +46,7 @@ export function getAllReports(filter?: ReportListQuery): ReportListItem[] {
         });
       }
     } catch (e) {
-      // Ignore directory or parsing errors for servers with no results
+      // 결과를 읽지 못한 서버는 목록에서 빼고 다른 서버는 계속 표시합니다.
     }
   }
 

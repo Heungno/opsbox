@@ -18,7 +18,7 @@ export type ScriptOs = 'Windows' | 'Linux';
 /** 템플릿 id 접두어: WINDOWS-PART-CPU, LINUX-PART-CPU … */
 const PART_PREFIX: Record<ScriptOs, string> = { Windows: 'WINDOWS-PART', Linux: 'LINUX-PART' };
 
-/** 반드시 있어야 하는 조각. 이 외의 조각은 Linux에서 템플릿이 없으면 건너뜁니다(결과에는 미수집으로 남음). */
+/** 반드시 있어야 하는 조각. 그 밖의 조각은 Linux에서 템플릿이 없으면 건너뜁니다(결과에는 미수집으로 남음). */
 const REQUIRED_PARTS: ReadonlySet<string> = new Set(['START', 'SAVE']);
 
 export function selectScriptParts(server: Server, templates: ManagedTemplate[], os: ScriptOs, configToken: string): string[] {
@@ -51,7 +51,7 @@ export function selectScriptParts(server: Server, templates: ManagedTemplate[], 
     const defaults = templates.filter((template) => usable(template) && template.item === item);
     const chosen = selectedTemplate ?? defaults.find((template) => template.id === `${PART_PREFIX[os]}-${item}`) ?? (defaults.length === 1 ? defaults[0] : undefined);
     if (!chosen) {
-      // Linux는 역할별 점검 등 아직 조각이 없는 항목이 있어, 필수 조각이 아니면 건너뜁니다.
+      // Linux는 아직 조각이 없는 항목(DB 쿼리 실행기 등)이 있어, 필수 조각이 아니면 건너뜁니다.
       if (os === 'Linux' && !defaults.length && !REQUIRED_PARTS.has(item)) continue;
       const reason = defaults.length ? '여러 개 등록되어 있습니다' : '등록되어 있지 않습니다';
       throw new BadRequestError(`${os} 점검 항목 템플릿 '${item}'이 ${reason}. 서버 정책에서 템플릿을 선택하거나 템플릿 설정에서 추가하세요.`);

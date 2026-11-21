@@ -66,7 +66,7 @@ export interface Policy {
   category: PolicyCategory;
   enabled: boolean;
   items: PolicyItem[];
-  /** Derived field retained for the current server-config API. */
+  /** items에서 만든 항목 id 목록 (서버 점검 설정 API 호환용) */
   checks: string[];
 }
 

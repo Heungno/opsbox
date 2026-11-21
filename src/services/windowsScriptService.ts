@@ -11,7 +11,6 @@ export function assembleWindowsScript(server: Server, templates: ManagedTemplate
   return selectScriptParts(server, templates, 'Windows', CONFIG_TOKEN)
     .map((part) => part.replace(CONFIG_TOKEN, encodedConfig))
     .join('\r\n\r\n')
-    // Persist the definitions used for this run so historical reports can
-    // render the saved result using its original component configuration.
+    // 이번 실행에 쓴 정책 정의를 결과에 함께 저장해, 지난 보고서도 그때의 표시 구성으로 그립니다.
     .replace('checks = [ordered]@{', 'checks = [ordered]@{\n    policyDefinitions = $opsboxConfig.checks.policyItems');
 }

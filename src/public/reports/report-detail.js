@@ -47,17 +47,17 @@ async function loadHistoryAndReport(serverId, fileName) {
       currentServerProducts = server.products || { [server.type]: server.product };
       currentServerOS = server.os || '';
     }
-    // 1. Fetch history results for comparison
+    // 1. 비교용 이전 점검 결과 목록
     historyResults = (await api(`/api/results/${encodeURIComponent(serverId)}`)) || [];
 
-    // 2. Populate comparison dropdown
+    // 2. 비교 대상 선택 목록 채우기
     populateCompareSelect(fileName);
 
-    // 3. Load current report data
+    // 3. 이번 보고서 데이터 불러오기
     currentReportData = await apiRequest(`/api/results/${encodeURIComponent(serverId)}/file/${encodeURIComponent(fileName)}`);
     renderReport();
 
-    // 4. Bind compare select change event
+    // 4. 비교 대상을 바꾸면 다시 그리기
     document.getElementById('compare-select').addEventListener('change', () => {
       renderReport();
     });
@@ -78,19 +78,19 @@ function populateCompareSelect(currentFileName) {
   let previousIndex = -1;
   historyResults.forEach((item, index) => {
     if (item.fileName === currentFileName) {
-      previousIndex = index + 1; // direct previous
+      previousIndex = index + 1; // 바로 이전 점검 (목록은 최신순)
     }
   });
 
   historyResults.forEach((item, index) => {
-    if (item.fileName === currentFileName) return; // skip current
+    if (item.fileName === currentFileName) return; // 지금 보는 결과는 제외
 
     const option = document.createElement('option');
     option.value = item.fileName;
     const typeLabel = item.serverType === 'OTHER' ? '기타' : (item.serverType || 'Server');
     option.textContent = `${item.checkDate} (${typeLabel})`;
     
-    // Auto-select the immediate previous check by default
+    // 기본으로 바로 이전 점검을 선택
     if (index === previousIndex) {
       option.selected = true;
     }
@@ -160,8 +160,7 @@ function renderReport() {
   renderFileChecks(data.fileChecks);
   renderPorts(data.ports);
   renderHttpChecks(data.httpChecks);
-  // Only include sections that have data in this saved inspection result.
-  // This keeps older reports faithful to the checks that actually ran.
+  // 이 결과에 데이터가 있는 구역만 보여줍니다. 예전 보고서도 그때 실제로 점검한 항목만 표시됩니다.
   [
     ['process-report-details', data.processes],
     ['disk-report-details', data.disks],

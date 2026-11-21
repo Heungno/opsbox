@@ -46,7 +46,7 @@ export interface RolePolicySetting {
 export interface Server {
   id: string;
   name: string;
-  /** `type` and `product` are kept for compatibility with older single-role records. */
+  /** `type`·`product`는 역할이 하나였던 예전 서버 데이터와의 호환용입니다. 새 코드는 roles·products를 씁니다. */
   type: ServerRole;
   product?: ServerProduct;
   roles?: ServerRole[];

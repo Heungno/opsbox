@@ -77,9 +77,8 @@ export function getResultByFile(serverId: string, fileName: string): CheckResult
 const CHECK_STATUSES: readonly string[] = ['Healthy', 'Warning', 'Critical', 'NotCollected'];
 
 export function getHealthStatus(result: CheckResult): CheckStatus {
-  // Version 2 results store the status calculated with the policy used during
-  // collection. Keep historical reports tied to that snapshot instead of
-  // re-evaluating them against today's policy thresholds.
+  // 스키마 v2 결과에는 수집할 때의 정책으로 계산한 상태가 들어 있습니다.
+  // 지난 보고서를 지금 정책 기준으로 다시 판정하지 않도록 그 값을 그대로 씁니다.
   const snapshot = result.summary?.status;
   if (snapshot && CHECK_STATUSES.includes(snapshot)) return snapshot as CheckStatus;
 
