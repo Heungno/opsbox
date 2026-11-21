@@ -139,6 +139,10 @@
     {
       "value": "FILESYSTEM_CHECK",
       "label": "파일·디렉터리 확인"
+    },
+    {
+      "value": "CHECK_BUILDER",
+      "label": "점검 만들기"
     }
   ],
   "resultViews": [

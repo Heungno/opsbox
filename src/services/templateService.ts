@@ -1,6 +1,6 @@
 import { db, readCollection, transaction, writeCollection } from '../db/database';
 import { ManagedTemplate, ScriptPart, TemplateVersion } from '../types/template';
-import { NotFoundError, ValidationError } from '../errors';
+import { ConflictError, NotFoundError, ValidationError } from '../errors';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
 
@@ -111,6 +111,8 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
     id: id ?? `TPL-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     name: input.name!.trim(), kind: input.kind!, os: input.os, role: input.role, product: input.product, dbms: input.dbms, item: input.kind === 'SCRIPT_PART' ? input.item : undefined, usesQueryTemplate: input.usesQueryTemplate === true,
     enabled: input.enabled !== false, content: input.content!, updatedAt: new Date().toISOString(),
+    // 점검 만들기 정보는 기존 값만 유지(화면에서 보낸 값은 무시) — 고쳐 저장해도 '직접 편집됨'을 판단할 수 있게
+    ...(index >= 0 && items[index].generated ? { generated: items[index].generated } : {}),
   };
   if (index >= 0 && items[index].content !== item.content) {
     const history = readHistory();
@@ -123,8 +125,33 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
 }
 
 export function deleteTemplate(id: string) {
+  const linked = getPolicies().flatMap((policy) => policy.items).find((item) => item.executor.type === 'CHECK_BUILDER' && item.executor.templateId === id);
+  if (linked) throw new ConflictError(`점검 만들기 항목 '${linked.name}'에 연결된 스크립트입니다. 점검 정책 관리에서 항목을 삭제하세요.`);
   const items = read();
   const remaining = items.filter((item) => item.id !== id);
   if (remaining.length === items.length) throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${id}`);
   write(remaining);
+}
+
+/*
+ * 점검 만들기 전용 저장·삭제 (정책 저장 중에 호출, 검증·삭제 차단을 거치지 않음)
+ * 내용이 바뀌면 이전 내용을 이력에 남깁니다.
+ */
+export function saveGeneratedTemplate(template: ManagedTemplate) {
+  const items = read();
+  const index = items.findIndex((item) => item.id === template.id);
+  if (index >= 0 && items[index].content !== template.content) {
+    const history = readHistory();
+    addHistoryVersion(history, items[index]);
+    writeHistory(history);
+  }
+  if (index >= 0) items[index] = template; else items.push(template);
+  write(items);
+  return template;
+}
+
+export function deleteGeneratedTemplate(id: string) {
+  const items = read();
+  const remaining = items.filter((item) => item.id !== id);
+  if (remaining.length !== items.length) write(remaining);
 }

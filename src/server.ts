@@ -13,6 +13,7 @@ import { UnauthorizedError } from './errors';
 import { ok } from './utils/http';
 import { readSessionCookie } from './services/authService';
 import { startResultImportScheduler } from './services/resultImportService';
+import { upgradeGeneratedTemplates } from './services/checkBuilder/templates';
 
 const app = Fastify({
   loggerInstance: logger as FastifyBaseLogger,
@@ -117,6 +118,10 @@ async function start() {
     app.log.debug(`\n${app.printRoutes()}`);
 
     startResultImportScheduler();
+
+    // 생성기 버전이 오른 점검 만들기 조각 다시 만들기 (직접 편집한 조각은 그대로)
+    const upgraded = upgradeGeneratedTemplates();
+    if (upgraded.length) app.log.info({ templates: upgraded }, '점검 만들기 스크립트를 새 생성기로 다시 만들었습니다');
 
     // 감사 로그 보관 기간 정리: 시작 시 1회 + 하루마다
     purgeOldAuditLogs();
