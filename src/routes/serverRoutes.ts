@@ -1,71 +1,37 @@
 import type { FastifyInstance } from 'fastify';
-import {
-  createServer,
-  deleteServer,
-  getAllServers,
-  getServer,
-  updateServer,
-  updateCheckConfig,
-  getCheckConfig,
-} from '../services/serverService';
-import type { ScriptPart } from '../types/template';
-import type { Server } from '../types/server';
+
+import { NotFoundError } from '../errors';
+import { createServer, deleteServer, getAllServers, getCheckConfig, getServer, updateCheckConfig, updateServer } from '../services/serverService';
+import type { IdParams } from '../types/api';
+import type { CheckConfigInput, Server } from '../types/server';
+import { ok, requireObject } from '../utils/http';
 
 export async function serverRoutes(app: FastifyInstance) {
-  app.get('/servers', async () => {
-    return getAllServers();
+  app.get('/servers', async () => ok(getAllServers()));
+
+  app.get<{ Params: IdParams }>('/servers/:id', async (request) => {
+    const server = getServer(request.params.id);
+    if (!server) throw new NotFoundError(`서버를 찾을 수 없습니다: ${request.params.id}`);
+    return ok(server);
   });
 
-  app.get('/servers/:id', async (req) => {
-    const { id } = req.params as any;
+  app.post<{ Body: Server }>('/servers', async (request) => ok(createServer(requireObject<Server>(request.body))));
 
-    return getServer(id);
+  app.put<{ Params: IdParams; Body: Partial<Server> }>('/servers/:id', async (request) =>
+    ok(updateServer(request.params.id, requireObject<Partial<Server>>(request.body))),
+  );
+
+  app.delete<{ Params: IdParams }>('/servers/:id', async (request) => {
+    deleteServer(request.params.id);
+    return ok(null);
   });
 
-  app.post('/servers', async (req) => {
-    const data = createServer(req.body as any);
-    return { success: true, data: data };
-  });
+  app.get<{ Params: IdParams }>('/servers/:id/check-config', async (request) => ok(getCheckConfig(request.params.id)));
 
-  app.put('/servers/:id', async (req) => {
-    const { id } = req.params as { id: string };
-    return updateServer(id, req.body as any);
-  });
-
-  app.delete('/servers/:id', async (req) => {
-    const { id } = req.params as { id: string };
-    deleteServer(id);
-    return { success: true };
-  });
-
-  app.get('/servers/:id/check-config', async (req) => {
-    const { id } = req.params as {
-      id: string;
-    };
-
-    return getCheckConfig(id);
-  });
-
-  app.put('/servers/:id/check-config', async (req) => {
-    const { id } = req.params as {
-      id: string;
-    };
-
-    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, rolePolicySettings, queryTemplateId, customQueryTemplateIds, policyIds } = req.body as {
-      processes?: any[];
-      directories?: any[];
-      fileChecks?: any[];
-      ports?: any[];
-      httpChecks?: any[];
-      scriptParts?: Partial<Record<ScriptPart, string>>;
-      roleChecks?: Partial<Record<'WEB' | 'WAS' | 'DB', ScriptPart[]>>;
-      rolePolicySettings?: Server['rolePolicySettings'];
-      queryTemplateId?: string;
-      customQueryTemplateIds?: string[];
-      policyIds?: Server['policyIds'];
-    };
-
-    return updateCheckConfig(id, {
+  app.put<{ Params: IdParams; Body: CheckConfigInput }>('/servers/:id/check-config', async (request) => {
+    const body = requireObject<CheckConfigInput>(request.body);
+    const { processes, directories, fileChecks, ports, httpChecks, scriptParts, roleChecks, rolePolicySettings, queryTemplateId, customQueryTemplateIds, policyIds } = body;
+    return ok(updateCheckConfig(request.params.id, {
       processes,
       directories,
       fileChecks,
@@ -77,6 +43,6 @@ export async function serverRoutes(app: FastifyInstance) {
       queryTemplateId,
       customQueryTemplateIds,
       policyIds,
-    });
+    }));
   });
 }

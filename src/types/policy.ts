@@ -71,8 +71,3 @@ export interface Policy {
 }
 
 export type PolicyDraft = Omit<Policy, 'id' | 'checks'> & { id?: string };
-
-export interface PolicyFile {
-  schemaVersion: 1;
-  policies: Array<Omit<Policy, 'checks'>>;
-}

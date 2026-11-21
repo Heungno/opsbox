@@ -1,6 +1,6 @@
 import { readCollection, writeCollection } from '../db/database';
 import { randomUUID } from 'crypto';
-import { NotFoundError, ValidationError } from '../types/error';
+import { NotFoundError, ValidationError } from '../errors';
 import type { ExecutorType, Policy, PolicyCategory, PolicyDraft, PolicyItem, ResultView } from '../types/policy';
 import { getCommonCodes, getCommonCodeValues } from './commonCodeService';
 
@@ -36,7 +36,7 @@ function normalizePolicy(raw: any): Policy {
   const items: PolicyItem[] = Array.isArray(raw.items) ? raw.items : (raw.checks ?? []).map((id: string) => inferItem(id, category, raw.os));
   const normalized = items.map((item) => ({
     id: item.id, name: item.name || item.id, enabled: item.enabled !== false,
-    executor: { type: item.executor?.type || 'SCRIPT', ...(item.executor || {}) },
+    executor: { ...(item.executor || {}), type: item.executor?.type || 'SCRIPT' },
     inputs: Array.isArray(item.inputs) ? item.inputs : [],
     result: {
       ...(item.result || {}),
@@ -88,7 +88,7 @@ export function savePolicy(input: Partial<PolicyDraft>, id?: string) {
   });
   if (errors.length) throw new ValidationError(errors);
   const index = id ? policies.findIndex((policy) => policy.id === id) : -1;
-  if (id && index < 0) throw new NotFoundError(`Policy not found: ${id}`);
+  if (id && index < 0) throw new NotFoundError(`점검 정책을 찾을 수 없습니다: ${id}`);
   const policy = normalizePolicy({ id: id || randomUUID(), name, os: input.os, category: input.category, enabled: input.enabled, items });
   if (policies.some((entry) => entry.id !== id && entry.os === policy.os && entry.category === policy.category && entry.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
     throw new ValidationError([{ field: 'name', message: '같은 OS와 유형에 동일한 정책명이 있습니다.' }]);
@@ -100,6 +100,6 @@ export function savePolicy(input: Partial<PolicyDraft>, id?: string) {
 
 export function deletePolicy(id: string) {
   const policies = read(); const filtered = policies.filter((policy) => policy.id !== id);
-  if (filtered.length === policies.length) throw new NotFoundError(`Policy not found: ${id}`);
+  if (filtered.length === policies.length) throw new NotFoundError(`점검 정책을 찾을 수 없습니다: ${id}`);
   write(filtered);
 }

@@ -1,3 +1,4 @@
+import { BadRequestError, NotFoundError } from '../errors';
 import { getServer, getServerProduct, getServerRoles } from './serverService';
 import { getTemplate, getTemplates } from './templateService';
 import { assembleWindowsScript } from './windowsScriptService';
@@ -7,7 +8,7 @@ export function generateScript(serverId: string): string {
   const server = getServer(serverId);
 
   if (!server) {
-    throw new Error(`Server not found: ${serverId}`);
+    throw new NotFoundError(`서버를 찾을 수 없습니다: ${serverId}`);
   }
 
   const policyQueryTemplates = server.os === 'Windows' && getServerProduct(server, 'DB') === 'MSSQL' ? (server.roleChecks?.DB ?? [])
@@ -17,13 +18,13 @@ export function generateScript(serverId: string): string {
         || `WINDOWS-QUERY-${item}`;
       const template = getTemplate(selectedId);
       if (!template?.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(server, 'DB')) {
-        throw new Error(`${item} 점검에 사용할 DB 쿼리 템플릿을 선택하세요.`);
+        throw new BadRequestError(`${item} 점검에 사용할 DB 쿼리 템플릿을 선택하세요.`);
       }
       return { ...template, item };
     }) : [];
   const customQueryTemplates = (server.customQueryTemplateIds ?? []).map((id) => {
     const template = getTemplate(id);
-    if (!template?.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(server, 'DB')) throw new Error(`DBMS에 맞는 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
+    if (!template?.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(server, 'DB')) throw new BadRequestError(`DBMS에 맞는 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
     return template;
   });
   return server.os === 'Windows'

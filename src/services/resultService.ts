@@ -1,29 +1,7 @@
 import { db } from '../db/database';
+import type { CheckResult, CheckStatus } from '../types/result';
 
-export interface CheckResult {
-  fileName?: string;
-
-  server: string;
-  serverType: string;
-  hostname: string;
-  checkDate: string;
-
-  cpu: number;
-  memory: number;
-  disk: number;
-
-  network: string;
-  logError: boolean;
-  fileChecks?: Array<{ status?: string; exists?: boolean }>;
-  disks?: Array<{ status?: string; usagePercent?: number }>;
-  ports?: Array<{ listening?: boolean }>;
-  httpChecks?: Array<{ success?: boolean }>;
-  wasChecks?: Array<{ status?: string }>;
-  webtobCheck?: { status?: string };
-  databaseChecks?: { status?: string };
-  rolePolicies?: Partial<Record<'WEB' | 'WAS' | 'DB', { status?: string; items?: Array<{ item?: string; name?: string; status?: string; message?: string; detail?: unknown }> }>>;
-  summary?: { status?: string };
-}
+export type { CheckResult } from '../types/result';
 
 /*
  * 점검 결과 원본 JSON 문자열을 화면에서 쓰는 형태로 정규화합니다.
@@ -96,11 +74,14 @@ export function getResultByFile(serverId: string, fileName: string): CheckResult
   return row ? parseResultJson(row.raw_json) : null;
 }
 
-export function getHealthStatus(result: CheckResult): string {
+const CHECK_STATUSES: readonly string[] = ['Healthy', 'Warning', 'Critical', 'NotCollected'];
+
+export function getHealthStatus(result: CheckResult): CheckStatus {
   // Version 2 results store the status calculated with the policy used during
   // collection. Keep historical reports tied to that snapshot instead of
   // re-evaluating them against today's policy thresholds.
-  if (result.summary?.status) return result.summary.status;
+  const snapshot = result.summary?.status;
+  if (snapshot && CHECK_STATUSES.includes(snapshot)) return snapshot as CheckStatus;
 
   if (result.fileChecks?.some((file) => file.status === 'Critical' || file.exists === false)) return 'Critical';
   if (result.disks?.some((disk) => disk.status === 'Critical')) return 'Critical';

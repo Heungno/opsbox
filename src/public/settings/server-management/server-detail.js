@@ -1,4 +1,5 @@
 import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
+import { api, apiRequest, downloadFile, loadText, notifyError, showToast } from '/shared/js/api.js';
 
 await window.opsboxLayoutReady;
 
@@ -40,17 +41,10 @@ function isDbQueryItem(itemId) {
 }
 
 async function init() {
-  const modalResponse = await fetch('/shared/fragments/server-modal.html');
-  if (!modalResponse.ok) throw new Error('서버 정보 모달을 불러오지 못했습니다.');
-  document.getElementById('server-modal-container').innerHTML = await modalResponse.text();
-  const pickerResponse = await fetch('/shared/fragments/script-template-picker-modal.html');
-  if (!pickerResponse.ok) throw new Error('스크립트 선택 모달을 불러오지 못했습니다.');
-  document.getElementById('script-template-picker-container').innerHTML = await pickerResponse.text();
-  const codeResponse = await fetch('/api/common-codes');
-  if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
-  commonCodes = await codeResponse.json();
-  const policyResponse = await fetch('/api/policies');
-  if (policyResponse.ok) policies = await policyResponse.json();
+  document.getElementById('server-modal-container').innerHTML = await loadText('/shared/fragments/server-modal.html');
+  document.getElementById('script-template-picker-container').innerHTML = await loadText('/shared/fragments/script-template-picker-modal.html');
+  commonCodes = await api('/api/common-codes');
+  policies = await api('/api/policies').catch((error) => { notifyError(error, '점검 정책 목록을 불러오지 못했습니다.'); return []; });
   populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
   bindScriptTemplatePicker();
   await loadManagedTemplates();
@@ -110,9 +104,7 @@ async function init() {
 }
 
 async function loadServerPicker() {
-  const response = await fetch('/api/servers');
-  if (!response.ok) throw new Error('서버 목록을 불러오지 못했습니다.');
-  serverCache = await response.json();
+  serverCache = (await api('/api/servers')) || [];
   renderServerPicker();
   if (!serverCache.length) {
     document.getElementById('server-title').textContent = '등록된 서버가 없습니다.';
@@ -161,19 +153,17 @@ async function selectServer(id) {
 }
 
 async function loadManagedTemplates() {
-  const response = await fetch('/api/templates');
-  managedTemplates = response.ok ? await response.json() : [];
+  managedTemplates = await api('/api/templates').catch((error) => { notifyError(error, '스크립트 템플릿을 불러오지 못했습니다.'); return []; });
 }
 
 async function loadServer() {
-  const response = await fetch(`/api/servers/${serverId}`);
-
-  if (!response.ok) {
-    alert('서버 조회 실패');
+  let server;
+  try {
+    server = await api(`/api/servers/${encodeURIComponent(serverId)}`);
+  } catch (error) {
+    notifyError(error, '서버 정보를 불러오지 못했습니다.');
     return;
   }
-
-  const server = await response.json();
 
   currentServer = server;
 
@@ -321,20 +311,14 @@ function bindServerEdit() {
         ip: document.getElementById('server-form-ip').value.trim(),
         sharedPath: document.getElementById('server-form-shared-path').value.trim(),
       };
-      const response = await fetch(creating ? '/api/servers' : `/api/servers/${encodeURIComponent(currentServer.id)}`, {
-        method: creating ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.message || '서버 정보 수정에 실패했습니다.');
+      await api(creating ? '/api/servers' : `/api/servers/${encodeURIComponent(currentServer.id)}`, { method: creating ? 'POST' : 'PUT', body: data });
       serverInfoDirty = false;
+      showToast(creating ? '서버를 등록했습니다.' : '서버 정보를 저장했습니다.', 'success');
       dialog.close();
       if (creating) { await loadServerPicker(); await selectServer(data.id); }
       else await loadServer();
     } catch (error) {
-      console.error(error);
-      alert(error.message || '서버 정보 수정 중 오류가 발생했습니다.');
+      notifyError(error, '서버 정보를 저장하지 못했습니다.');
     }
   });
 }
@@ -385,7 +369,8 @@ function loadScripts(server) {
   downloadButton.className = 'btn btn-primary';
   downloadButton.textContent = '스크립트 다운로드';
   downloadButton.onclick = () => {
-    window.open(`/api/scripts/generate/${server.id}`, '_blank');
+    downloadFile(`/api/scripts/generate/${encodeURIComponent(server.id)}`, `${server.id}.ps1`)
+      .catch((error) => notifyError(error, '점검 스크립트를 만들지 못했습니다.'));
   };
 
   const copyButton = document.createElement('button');
@@ -409,13 +394,17 @@ function loadScripts(server) {
 }
 
 async function loadLatestResult(serverId) {
-  const response = await fetch(`/api/results/${serverId}/latest`);
+  let result;
+  try {
+    result = await apiRequest(`/api/results/${encodeURIComponent(serverId)}/latest`);
+  } catch (error) {
+    document.getElementById('latest-result').textContent = '최근 점검 결과를 불러오지 못했습니다.';
+    notifyError(error, '최근 점검 결과를 불러오지 못했습니다.');
+    return;
+  }
 
-  const result = await response.json();
-
-  if (!result.success) {
+  if (!result.data) {
     document.getElementById('latest-result').textContent = '점검 결과가 없습니다.';
-
     return;
   }
 
@@ -506,18 +495,10 @@ function renderLatestResult(result, health) {
 
 async function loadResultHistory(serverId) {
   try {
-    const response = await fetch(`/api/results/${serverId}`);
-    const result = await response.json();
-
-    if (!result.success) {
-      document.getElementById('result-history').textContent = '점검 이력이 없습니다.';
-      return;
-    }
-
-    renderResultHistory(result.data);
+    renderResultHistory((await api(`/api/results/${encodeURIComponent(serverId)}`)) || []);
   } catch (error) {
-    console.error(error);
-    document.getElementById('result-history').textContent = '이력 조회 실패';
+    document.getElementById('result-history').textContent = '점검 이력을 불러오지 못했습니다.';
+    notifyError(error, '점검 이력을 불러오지 못했습니다.');
   }
 }
 
@@ -618,10 +599,13 @@ function getHealthStatus(result) {
 }
 
 async function loadPolicy(serverId) {
-  const response = await fetch(`/api/servers/${serverId}/check-config`);
-  if (!response.ok) return;
-
-  const config = await response.json();
+  let config;
+  try {
+    config = await api(`/api/servers/${encodeURIComponent(serverId)}/check-config`);
+  } catch (error) {
+    notifyError(error, '점검 정책 설정을 불러오지 못했습니다.');
+    return;
+  }
   selectedQueryTemplateId = config.queryTemplateId || currentServer?.queryTemplateId || '';
   selectedCustomQueryTemplateIds = config.customQueryTemplateIds ?? currentServer?.customQueryTemplateIds ?? [];
   selectedRoleChecks = config.roleChecks ?? currentServer?.roleChecks ?? {};
@@ -891,13 +875,9 @@ async function savePolicy() {
       rolePolicySettings[item] = { ...setting, inputs: values };
     });
     const queryTemplateId = '';
-    const response = await fetch(`/api/servers/${serverId}/check-config`, {
+    await api(`/api/servers/${encodeURIComponent(serverId)}/check-config`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-
-      body: JSON.stringify({
+      body: {
         processes,
         directories,
         fileChecks,
@@ -909,21 +889,11 @@ async function savePolicy() {
         queryTemplateId,
         customQueryTemplateIds: selectedCustomQueryTemplateIds,
         policyIds: selectedCatalogPolicyIds,
-      }),
+      },
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error(result);
-      const errors = Array.isArray(result.errors) ? result.errors : [];
-      alert(errors.map((error) => error.message).filter(Boolean).join('\n') || result.message || '정책 저장에 실패했습니다.');
-      focusPolicyValidationError(errors[0]);
-      return;
-    }
-
     policyDirty = false;
-    alert('정책이 저장되었습니다.');
+    showToast('정책이 저장되었습니다.', 'success');
     currentServer.processes = processes;
     currentServer.directories = directories;
     currentServer.fileChecks = fileChecks;
@@ -938,8 +908,8 @@ async function savePolicy() {
     currentServer.policyIds = selectedCatalogPolicyIds;
     renderPolicyScriptControls(scriptParts, queryTemplateId);
   } catch (error) {
-    console.error(error);
-    alert(error.message || '정책 저장 중 오류가 발생했습니다.');
+    notifyError(error, '정책을 저장하지 못했습니다.');
+    if (error?.errors?.length) focusPolicyValidationError(error.errors[0]);
   }
 }
 
@@ -1510,4 +1480,4 @@ function renderFinalJsonExample(activeItems, roleChecks) {
   if (preview) highlightJsonBlock(preview, JSON.stringify(example, null, 2));
 }
 
-init().catch((error) => { console.error(error); alert(error.message || '서버 상세 화면을 초기화하지 못했습니다.'); });
+init().catch((error) => notifyError(error, '서버 상세 화면을 초기화하지 못했습니다.'));

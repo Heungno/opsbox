@@ -1,3 +1,5 @@
+import { api, loadText, notifyError, showToast } from '/shared/js/api.js';
+
 await window.opsboxLayoutReady;
 
 let serverCache = [];
@@ -6,12 +8,8 @@ let commonCodes;
 let activeRole = 'ALL';
 
 async function initializeServerList() {
-  const response = await fetch('/shared/fragments/server-modal.html');
-  if (!response.ok) throw new Error('서버 입력 모달을 불러오지 못했습니다.');
-  document.getElementById('server-modal-container').innerHTML = await response.text();
-  const codeResponse = await fetch('/api/common-codes');
-  if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
-  commonCodes = await codeResponse.json();
+  document.getElementById('server-modal-container').innerHTML = await loadText('/shared/fragments/server-modal.html');
+  commonCodes = await api('/api/common-codes');
   populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
   serverDialog = document.getElementById('server-modal');
   serverForm = document.getElementById('server-modal-form');
@@ -84,21 +82,13 @@ function getRoleProductSelection(container) {
 
 async function loadServers() {
   try {
-    const response = await fetch("/api/servers");
-
-    if (!response.ok) {
-      throw new Error("서버 조회 실패");
-    }
-
-    serverCache = await response.json();
+    serverCache = (await api('/api/servers')) || [];
 
     updateSummary();
 
     renderServers();
   } catch (error) {
-    console.error(error);
-
-    alert("서버 목록 조회 실패");
+    notifyError(error, '서버 목록을 불러오지 못했습니다.');
   }
 }
 
@@ -120,23 +110,14 @@ async function saveServer(event) {
   };
 
   try {
-    const response = await fetch("/api/servers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(server),
-    });
-    if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
-      throw new Error(result.message || "등록 실패");
-    }
+    await api('/api/servers', { method: 'POST', body: server });
 
     closeServerDialog();
+    showToast('서버를 등록했습니다.', 'success');
 
     await loadServers();
   } catch (error) {
-    console.error(error);
-
-    alert(error.message || "등록 실패");
+    notifyError(error, '서버를 등록하지 못했습니다.');
   }
 }
 
@@ -239,19 +220,11 @@ async function removeServer(id) {
   }
 
   try {
-    const response = await fetch(`/api/servers/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      throw new Error("삭제 실패");
-    }
-
+    await api(`/api/servers/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    showToast(`${id} 서버를 삭제했습니다.`, 'success');
     await loadServers();
   } catch (error) {
-    console.error(error);
-
-    alert("삭제 실패");
+    notifyError(error, '서버를 삭제하지 못했습니다.');
   }
 }
 
@@ -298,4 +271,4 @@ function getServerTypeLabel(type) {
   return type === "OTHER" ? "기타" : type;
 }
 
-initializeServerList().catch((error) => { console.error(error); alert(error.message || '서버 관리 화면을 초기화하지 못했습니다.'); });
+initializeServerList().catch((error) => notifyError(error, '서버 관리 화면을 초기화하지 못했습니다.'));

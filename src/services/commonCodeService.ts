@@ -1,22 +1,10 @@
 import { readSetting, writeSetting } from '../db/database';
-import type { CommonCode } from '../types/commonCode';
+import { BadRequestError } from '../errors';
+import type { CommonCodes } from '../types/commonCode';
 
 const REQUIRED_SYSTEM_SCRIPT_CODES = ['START', 'SAVE'];
 
-export type { CommonCode } from '../types/commonCode';
-export interface CommonCodes {
-  serverRoles: CommonCode[];
-  operatingSystems: CommonCode[];
-  productsByRole: Record<string, string[]>;
-  portProtocols: CommonCode[];
-  templateKinds: CommonCode[];
-  scriptItems: CommonCode[];
-  rolePolicies: Record<string, string[]>;
-  healthStatuses: CommonCode[];
-  policyCategories: CommonCode[];
-  policyExecutors: CommonCode[];
-  resultViews: CommonCode[];
-}
+export type { CommonCode, CommonCodes } from '../types/commonCode';
 
 export function getCommonCodeValues(category: keyof CommonCodes): string[] {
   const value = getCommonCodes()[category];
@@ -47,20 +35,20 @@ export function getCommonCodes(): CommonCodes {
 
 export function saveCommonCodes(codes: CommonCodes): CommonCodes {
   if (!codes || typeof codes !== 'object' || Array.isArray(codes)) {
-    throw new Error('공통코드 JSON 구조가 올바르지 않습니다.');
+    throw new BadRequestError('공통코드 JSON 구조가 올바르지 않습니다.');
   }
   const scriptItems = Array.isArray((codes as any).scriptItems) ? (codes as any).scriptItems : [];
   const submittedScriptValues = new Set(scriptItems.map((item: unknown) => typeof item === 'object' && item !== null ? String((item as any).value) : String(item)));
   if (REQUIRED_SYSTEM_SCRIPT_CODES.some((value) => !submittedScriptValues.has(value))) {
-    throw new Error('시스템 코드는 삭제할 수 없습니다.');
+    throw new BadRequestError('시스템 코드는 삭제할 수 없습니다.');
   }
   for (const value of Object.values(codes)) {
     if (Array.isArray(value) && value.some((item) => typeof item !== 'string' && (!item || typeof item.value !== 'string' || typeof item.label !== 'string'))) {
-      throw new Error('각 코드 항목은 문자열 또는 문자열 value와 label을 가진 객체여야 합니다.');
+      throw new BadRequestError('각 코드 항목은 문자열 또는 문자열 value와 label을 가진 객체여야 합니다.');
     }
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       for (const list of Object.values(value)) if (Array.isArray(list) && list.some((item) => typeof item !== 'string' && (!item || typeof item.value !== 'string' || typeof item.label !== 'string'))) {
-        throw new Error('그룹별 코드 항목의 형식이 올바르지 않습니다.');
+        throw new BadRequestError('그룹별 코드 항목의 형식이 올바르지 않습니다.');
       }
     }
   }

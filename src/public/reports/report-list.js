@@ -1,3 +1,4 @@
+import { api, notifyError } from '/shared/js/api.js';
 await window.opsboxLayoutReady;
 
 async function init() {
@@ -34,18 +35,9 @@ async function loadReports() {
   const url = `/api/reports?${params.toString()}`;
 
   try {
-    const response = await fetch(url);
-    const result = await response.json();
-
-    if (!result.success) {
-      alert('보고서 목록 조회 실패');
-      return;
-    }
-
-    renderReportList(result.data || []);
-  } catch (err) {
-    console.error(err);
-    alert('보고서 목록 로딩 중 오류가 발생했습니다.');
+    renderReportList((await api(url)) || []);
+  } catch (error) {
+    notifyError(error, '보고서 목록을 불러오지 못했습니다.');
   }
 }
 

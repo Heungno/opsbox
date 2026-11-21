@@ -1,11 +1,8 @@
-export interface ReportField {
-  key: string;
-  label: string;
+import type { ReportField } from '../types/report';
 
-  category: 'resource' | 'service' | 'network' | 'database';
-}
+export type { ReportField } from '../types/report';
 
-const REPORT_RULES = {
+const REPORT_RULES: Record<string, ReportField[]> = {
   WEB: [
     {
       key: 'cpu',

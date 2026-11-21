@@ -310,6 +310,63 @@ Windows 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/
 
 ## API
 
+### 응답 형식
+
+모든 JSON API는 같은 형식으로 응답합니다.
+
+```jsonc
+// 성공 (HTTP 2xx)
+{ "success": true, "data": { ... }, "count": 3 }          // count·health 같은 부가 정보는 data 옆에
+
+// 실패 (HTTP 4xx/5xx)
+{
+  "success": false,
+  "code": "VALIDATION_ERROR",                            // 아래 오류 코드 표
+  "message": "서버 ID는 필수입니다.",                       // 화면에 그대로 보여줄 수 있는 문장
+  "errors": [{ "field": "id", "message": "서버 ID는 필수입니다." }],  // 입력값 오류일 때만
+  "requestId": "req-1a"                                  // 서버 오류(5xx)일 때만, 로그 추적용
+}
+```
+
+| HTTP | code | 언제 |
+| --- | --- | --- |
+| 400 | `BAD_REQUEST` | JSON 형식 오류, 빈 본문, 처리할 수 없는 입력(스크립트 템플릿 미선택 등) |
+| 400 | `VALIDATION_ERROR` | 입력값 검증 실패 (`errors`에 필드별 내용) |
+| 401 | `UNAUTHENTICATED` | 로그인 안 됨·세션 만료·로그인 실패 |
+| 404 | `NOT_FOUND` | 대상 없음, 없는 API |
+| 409 | `CONFLICT` | 이미 실행 중 등 현재 상태와 충돌 |
+| 413 / 415 | `PAYLOAD_TOO_LARGE` / `UNSUPPORTED_MEDIA_TYPE` | 요청이 너무 크거나 JSON이 아님 |
+| 500 | `INTERNAL_ERROR` | 예상하지 못한 서버 오류 (내부 메시지는 숨기고 `requestId`로 로그 확인) |
+
+- 서버 코드에서는 `src/errors.ts`의 `BadRequestError`, `ValidationError`, `NotFoundError`, `ConflictError`, `UnauthorizedError`를 던지면 위 형식으로 응답됩니다. 일반 `Error`는 500으로 처리됩니다.
+- 화면 코드에서는 `fetch` 대신 `src/public/shared/js/api.js`를 사용합니다.
+  - `api(url, { method, body })` → `data`만 반환, `apiRequest()` → 응답 전체 반환
+  - 실패하면 `ApiError`(message, status, code, errors)를 던짐. 네트워크 오류·시간 초과(30초)·JSON이 아닌 응답도 같은 형태
+  - 401이면 로그인 화면으로 이동 (`?next=`로 원래 화면 복귀)
+  - `notifyError(error)` / `showToast(message, 'success')`로 화면 알림, 처리되지 않은 오류도 자동으로 알림
+  - `downloadFile(url)`: 파일 다운로드 (실패하면 오류 알림)
+
+### 타입 구조
+
+```text
+src/types/
+├─ index.ts       모든 타입 모음 (import from '../types')
+├─ api.ts         응답 형식, 오류 코드, 공통 파라미터
+├─ auth.ts        사용자·세션
+├─ commonCode.ts  공통코드
+├─ server.ts      서버, 점검 설정(CheckConfig), DB 저장 구조(StoredServer)
+├─ policy.ts      점검 정책
+├─ template.ts    스크립트·쿼리 템플릿
+├─ result.ts      점검 결과, 가져오기 요약
+├─ report.ts      대시보드·보고서
+└─ validation.ts  입력값 검증 결과
+```
+
+TypeScript는 `strict` 모드로 검사합니다.
+
+### 목록
+
+
 ### Servers
 
 | Method | URL              |
@@ -331,6 +388,8 @@ Windows 점검 스크립트와 DB 쿼리를 포함한 기본 템플릿은 `data/
 
 | Method | URL                                   |
 | ------ | ------------------------------------- |
+| POST   | /api/results/import                   |
+| GET    | /api/results/import/status            |
 | GET    | /api/results/:serverId                |
 | GET    | /api/results/:serverId/latest         |
 | GET    | /api/results/:serverId/file/:fileName |

@@ -1,14 +1,18 @@
+import { api, errorMessage, loadText, notifyError } from '/shared/js/api.js';
+
 await window.opsboxLayoutReady;
 
-const modalResponse = await fetch('/shared/fragments/common-code-entry-modal.html');
-if (!modalResponse.ok) throw new Error('공통코드 편집 모달을 불러오지 못했습니다.');
-document.getElementById('code-dialog-container').innerHTML = await modalResponse.text();
-const categoryModalResponse = await fetch('/shared/fragments/common-code-category-modal.html');
-if (!categoryModalResponse.ok) throw new Error('공통코드 분류 모달을 불러오지 못했습니다.');
-document.getElementById('category-dialog-container').innerHTML = await categoryModalResponse.text();
-const groupModalResponse = await fetch('/shared/fragments/common-code-group-modal.html');
-if (!groupModalResponse.ok) throw new Error('공통코드 그룹 모달을 불러오지 못했습니다.');
-document.getElementById('group-dialog-container').innerHTML = await groupModalResponse.text();
+const [entryModal, categoryModal, groupModal] = await Promise.all([
+  loadText('/shared/fragments/common-code-entry-modal.html'),
+  loadText('/shared/fragments/common-code-category-modal.html'),
+  loadText('/shared/fragments/common-code-group-modal.html'),
+]).catch((error) => {
+  notifyError(error, '공통코드 화면을 불러오지 못했습니다.');
+  throw error;
+});
+document.getElementById('code-dialog-container').innerHTML = entryModal;
+document.getElementById('category-dialog-container').innerHTML = categoryModal;
+document.getElementById('group-dialog-container').innerHTML = groupModal;
 
 const select = document.getElementById('category-select');
 const table = document.getElementById('codes-table');
@@ -118,13 +122,19 @@ async function deleteCategory(category) {
   if (!confirm(`'${category}' 분류와 포함된 코드를 모두 삭제할까요?`)) return;
   delete codes[category];
   if (codes[reservedMeta]) for (const key of Object.keys(codes[reservedMeta])) if (key.startsWith(`${category}::`)) delete codes[reservedMeta][key];
-  try { await persist(); message.textContent = '분류를 삭제했습니다.'; } catch (error) { message.textContent = error.message; }
+  try { await persist(); message.textContent = '분류를 삭제했습니다.'; } catch (error) { message.textContent = errorMessage(error, '저장하지 못했습니다.'); }
 }
 async function persist() {
-  const response = await fetch('/api/common-codes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(codes) });
-  const result = await response.json(); if (!response.ok) throw new Error(result.message || '저장에 실패했습니다.'); codes = result; renderCategories();
+  try {
+    codes = await api('/api/common-codes', { method: 'PUT', body: codes });
+    renderCategories();
+  } catch (error) {
+    // 저장에 실패하면 화면을 서버에 저장된 상태로 되돌립니다.
+    try { codes = await api('/api/common-codes/manage'); renderCategories(); } catch { /* 원래 오류를 보여줍니다 */ }
+    throw error;
+  }
 }
-async function load() { try { const response = await fetch('/api/common-codes/manage'); if (!response.ok) throw new Error('불러오기에 실패했습니다.'); codes = await response.json(); renderCategories(); message.textContent = ''; } catch (error) { message.textContent = error.message; } }
+async function load() { try { codes = await api('/api/common-codes/manage'); renderCategories(); message.textContent = ''; } catch (error) { message.textContent = errorMessage(error, '공통코드를 불러오지 못했습니다.'); } }
 function openEditor(row) {
   editing = row || null;
   document.getElementById('dialog-title').textContent = row ? '코드 수정' : '코드 추가';
@@ -156,13 +166,13 @@ async function saveRow(event) {
   }
   if (editing && oldValue !== value) setMeta(current(), group, oldValue, { enabled: true, sortOrder: 0, label: '' });
   dialog.close();
-  try { await persist(); message.textContent = '저장했습니다.'; } catch (error) { message.textContent = error.message; }
+  try { await persist(); message.textContent = '저장했습니다.'; } catch (error) { message.textContent = errorMessage(error, '저장하지 못했습니다.'); }
 }
 async function deleteRow(row) {
   if (row.protected) { message.textContent = '시스템 코드는 삭제할 수 없습니다.'; return; }
   const list = grouped() ? codes[current()][row.group] : codes[current()];
   list.splice(row.index, 1); setMeta(current(), row.group, row.value, { enabled: true, sortOrder: 0, label: '' });
-  try { await persist(); message.textContent = '코드를 삭제했습니다.'; } catch (error) { message.textContent = error.message; }
+  try { await persist(); message.textContent = '코드를 삭제했습니다.'; } catch (error) { message.textContent = errorMessage(error, '저장하지 못했습니다.'); }
 }
 select.addEventListener('change', () => { renderCategoryList(); render(); });
 document.getElementById('entry-add').addEventListener('click', () => {
@@ -177,7 +187,7 @@ async function saveCategory(event) {
   if (!key || Object.hasOwn(codes, key)) { message.textContent = '분류명이 비어 있거나 이미 존재합니다.'; return; }
   codes[key] = document.getElementById('category-mapping').value === 'true' ? {} : [];
   categoryDialog.close();
-  try { await persist(); select.value = key; renderCategoryList(); render(); message.textContent = '분류를 추가했습니다.'; } catch (error) { message.textContent = error.message; }
+  try { await persist(); select.value = key; renderCategoryList(); render(); message.textContent = '분류를 추가했습니다.'; } catch (error) { message.textContent = errorMessage(error, '저장하지 못했습니다.'); }
 }
 document.getElementById('category-add').addEventListener('click', () => {
   document.getElementById('category-name').value = '';
@@ -199,7 +209,7 @@ document.getElementById('group-form').addEventListener('submit', async (event) =
   codes[current()][name] = [];
   groupDialog.close();
   try { await persist(); document.getElementById('code-group').value = name; message.textContent = '그룹을 추가했습니다.'; }
-  catch (error) { message.textContent = error.message; }
+  catch (error) { message.textContent = errorMessage(error, '저장하지 못했습니다.'); }
 });
 document.getElementById('group-dialog-cancel').addEventListener('click', () => groupDialog.close());
 document.getElementById('group-dialog-close').addEventListener('click', () => groupDialog.close());

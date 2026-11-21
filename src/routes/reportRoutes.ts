@@ -1,41 +1,20 @@
-import { FastifyInstance } from 'fastify';
-import { getReport, getAllReports } from '../services/reportService';
+import type { FastifyInstance } from 'fastify';
+
+import { NotFoundError } from '../errors';
+import { getAllReports, getReport } from '../services/reportService';
+import type { ResultFileParams } from '../types/api';
+import type { ReportListQuery } from '../types/report';
+import { ok } from '../utils/http';
 
 export async function reportRoutes(app: FastifyInstance) {
-  app.get('/reports', async (request) => {
-    const query = request.query as {
-      serverId?: string;
-      startDate?: string;
-      endDate?: string;
-    };
-
-    const reports = getAllReports(query);
-
-    return {
-      success: true,
-      count: reports.length,
-      data: reports,
-    };
+  app.get<{ Querystring: ReportListQuery }>('/reports', async (request) => {
+    const reports = getAllReports(request.query);
+    return ok(reports, { count: reports.length });
   });
 
-  app.get('/report/:serverId/:fileName', async (request) => {
-    const { serverId, fileName } = request.params as {
-      serverId: string;
-      fileName: string;
-    };
-
-    const report = getReport(serverId, fileName);
-
-    if (!report) {
-      return {
-        success: false,
-        message: 'Report not found',
-      };
-    }
-
-    return {
-      success: true,
-      data: report,
-    };
+  app.get<{ Params: ResultFileParams }>('/report/:serverId/:fileName', async (request) => {
+    const report = getReport(request.params.serverId, request.params.fileName);
+    if (!report) throw new NotFoundError('보고서를 찾을 수 없습니다.');
+    return ok(report);
   });
 }

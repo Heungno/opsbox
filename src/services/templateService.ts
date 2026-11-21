@@ -1,6 +1,6 @@
 import { db, readCollection, transaction, writeCollection } from '../db/database';
 import { ManagedTemplate, ScriptPart, TemplateVersion } from '../types/template';
-import { ValidationError } from '../types/error';
+import { NotFoundError, ValidationError } from '../errors';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
 
@@ -70,10 +70,10 @@ export function getTemplateHistory(id: string) {
 export function restoreTemplateVersion(id: string, versionId: string) {
   const items = read();
   const index = items.findIndex((item) => item.id === id);
-  if (index < 0) throw new Error(`Template not found: ${id}`);
+  if (index < 0) throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${id}`);
   const history = readHistory();
   const version = (history[id] ?? []).find((item) => item.versionId === versionId);
-  if (!version) throw new Error(`Template version not found: ${versionId}`);
+  if (!version) throw new NotFoundError(`템플릿 버전을 찾을 수 없습니다: ${versionId}`);
   const restored = { ...version.template, id, updatedAt: new Date().toISOString() };
   items[index] = restored;
   write(items);
@@ -107,7 +107,7 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
   validate(input);
   const items = read();
   const index = id ? items.findIndex((item) => item.id === id) : -1;
-  if (id && index < 0) throw new Error(`Template not found: ${id}`);
+  if (id && index < 0) throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${id}`);
   const item: ManagedTemplate = {
     id: id ?? `TPL-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     name: input.name!.trim(), kind: input.kind!, os: input.os, role: input.role, product: input.product, dbms: input.dbms, item: input.kind === 'SCRIPT_PART' ? input.item : undefined, usesQueryTemplate: input.usesQueryTemplate === true,
@@ -126,6 +126,6 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
 export function deleteTemplate(id: string) {
   const items = read();
   const remaining = items.filter((item) => item.id !== id);
-  if (remaining.length === items.length) throw new Error(`Template not found: ${id}`);
+  if (remaining.length === items.length) throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${id}`);
   write(remaining);
 }

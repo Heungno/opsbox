@@ -1,3 +1,5 @@
+import { api } from '/shared/js/api.js';
+
 await window.opsboxLayoutReady;
 
 async function init() {
@@ -7,9 +9,7 @@ async function init() {
 }
 
 async function loadSummary() {
-  const response = await fetch('/api/dashboard/summary');
-  const result = await response.json();
-  const data = result.data;
+  const data = await api('/api/dashboard/summary');
 
   document.getElementById('total-count').textContent = data.total;
   document.getElementById('healthy-count').textContent = data.healthy;
@@ -22,10 +22,7 @@ async function loadSummary() {
 }
 
 async function loadRecentChecks() {
-  const response = await fetch('/api/dashboard/recent');
-  const result = await response.json();
-
-  renderRecentChecks(result.data);
+  renderRecentChecks(await api('/api/dashboard/recent'));
 }
 
 function renderRecentChecks(checks) {

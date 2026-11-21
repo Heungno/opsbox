@@ -68,3 +68,35 @@ export interface Server {
   httpChecks?: HttpCheck[];
 }
 
+
+/** 점검 정책 설정 (GET/PUT /api/servers/:id/check-config) */
+export interface CheckConfig {
+  processes: ProcessCheck[];
+  directories: DirectoryCheck[];
+  fileChecks: FileCheck[];
+  ports: PortCheck[];
+  httpChecks: HttpCheck[];
+  scriptParts: Partial<Record<ScriptPart, string>>;
+  roleChecks: Partial<Record<RolePolicyType, ScriptPart[]>>;
+  rolePolicySettings: Partial<Record<ScriptPart, RolePolicySetting>>;
+  queryTemplateId: string;
+  customQueryTemplateIds: string[];
+  policyIds: Partial<Record<PolicyCategory, string>>;
+}
+
+export type CheckConfigInput = Partial<CheckConfig>;
+
+type ScriptPartMap = Partial<Record<ScriptPart, string>>;
+type RoleSettings = Partial<Record<ScriptPart, RolePolicySetting>>;
+
+/** DB(servers.data)에 저장하는 서버 구조 (기본정보 / 역할 / 정책 영역으로 나눔) */
+export interface StoredServer {
+  basicInfo: Pick<Server, 'id' | 'name' | 'os' | 'ip' | 'sharedPath'>;
+  roles: { selected: ServerRole[]; products: Server['products'] };
+  policy: {
+    basic: Pick<Server, 'processes' | 'directories' | 'fileChecks' | 'ports' | 'httpChecks' | 'policy' | 'queryTemplateId' | 'policyIds'> & { scriptParts: ScriptPartMap };
+    web: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap };
+    was: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap };
+    db: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap; customQueryTemplateIds: string[] };
+  };
+}

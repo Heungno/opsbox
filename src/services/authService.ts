@@ -1,17 +1,10 @@
 import { db } from '../db/database';
+import type { SessionUser, UserRecord } from '../types/auth';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 const SESSION_COOKIE = 'opsbox_session';
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
 const SESSION_KEY = randomBytes(32);
-
-interface UserRecord {
-  username: string;
-  displayName?: string;
-  passwordSalt: string;
-  passwordHash: string;
-}
-
 
 function readUsers(): UserRecord[] {
   const rows = db.prepare('SELECT username, display_name, password_salt, password_hash FROM users').all() as Array<Record<string, string | null>>;
@@ -27,7 +20,7 @@ function signature(payload: string): string {
   return createHmac('sha256', SESSION_KEY).update(payload).digest('base64url');
 }
 
-export function authenticate(username: string, password: string) {
+export function authenticate(username: string, password: string): SessionUser | undefined {
   const user = readUsers().find((entry) => entry.username.toLowerCase() === username.trim().toLowerCase());
   if (!user || !/^[a-f\d]{64}$/i.test(user.passwordSalt) || !/^[a-f\d]{128}$/i.test(user.passwordHash)) return undefined;
   const actual = scryptSync(password, Buffer.from(user.passwordSalt, 'hex'), 64);
@@ -41,7 +34,7 @@ export function createSession(username: string, displayName: string): string {
   return `${payload}.${signature(payload)}`;
 }
 
-export function getSession(token?: string) {
+export function getSession(token?: string): SessionUser | undefined {
   if (!token) return undefined;
   const [payload, providedSignature, extra] = token.split('.');
   if (!payload || !providedSignature || extra !== undefined) return undefined;
@@ -65,7 +58,7 @@ export function clearSessionCookie(secure: boolean): string {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure ? '; Secure' : ''}`;
 }
 
-export function readSessionCookie(cookieHeader?: string) {
+export function readSessionCookie(cookieHeader?: string): SessionUser | undefined {
   const token = cookieHeader?.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1);
   return getSession(token);
 }

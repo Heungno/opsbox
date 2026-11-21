@@ -1,3 +1,5 @@
+import { api, notifyError, showToast } from '/shared/js/api.js';
+
 await window.opsboxLayoutReady;
 
 let templates = [];
@@ -173,12 +175,9 @@ function renderOutputExample() {
 
 async function loadTemplates() {
   if (!commonCodes) {
-    const codeResponse = await fetch('/api/common-codes');
-    if (!codeResponse.ok) throw new Error('공통코드를 불러오지 못했습니다.');
-    commonCodes = await codeResponse.json();
-    const policyResponse = await fetch('/api/policies');
-    if (policyResponse.ok) {
-      const policies = await policyResponse.json();
+    commonCodes = await api('/api/common-codes');
+    const policies = await api('/api/policies').catch((error) => { notifyError(error, '점검 정책 목록을 불러오지 못했습니다.'); return null; });
+    if (policies) {
       const custom = new Map();
       policies.forEach((policy) => (policy.items || []).filter((item) => item.id.startsWith('CUSTOM_')).forEach((item) => {
         if (!custom.has(item.id)) custom.set(item.id, { value: item.id, label: `${item.name} · ${policy.category}`, group: policy.category, role: ['WEB', 'WAS', 'DB'].includes(policy.category) ? policy.category : undefined, description: `${policy.os} 정책 항목` });
@@ -201,8 +200,7 @@ async function loadTemplates() {
     kind.value = requestedKind;
     updateFormMode();
   }
-  const response = await fetch('/api/templates');
-  allTemplates = response.ok ? await response.json() : [];
+  allTemplates = (await api('/api/templates')) || [];
   const requestedParams = new URLSearchParams(location.search);
   const requestedItem = requestedParams.get('item');
   const requestedId = requestedParams.get('id');
@@ -281,7 +279,8 @@ function populateCodeSelect(select, codes, placeholder) {
   if (!select) return;
   select.replaceChildren();
   if (placeholder !== undefined) select.add(new Option(placeholder, ''));
-  codes.forEach(({ value, label }) => select.add(new Option(label, value)));
+  // 공통코드는 { value, label } 객체 또는 문자열(예: productsByRole) 둘 다 올 수 있습니다.
+  (codes || []).forEach((entry) => { const value = typeof entry === 'string' ? entry : entry.value; const label = typeof entry === 'string' ? entry : entry.label || entry.value; select.add(new Option(label, value)); });
 }
 
 function renderList() {
@@ -354,12 +353,14 @@ async function persistTemplate() {
     enabled: document.getElementById('template-enabled').checked,
     content: document.getElementById('template-content').value,
   };
-  const response = await fetch(editingId ? `/api/templates/${encodeURIComponent(editingId)}` : '/api/templates', {
-    method: editingId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) { alert(result.message || '템플릿 저장에 실패했습니다.'); return false; }
-  const saved = result.data;
+  let saved;
+  try {
+    saved = await api(editingId ? `/api/templates/${encodeURIComponent(editingId)}` : '/api/templates', { method: editingId ? 'PUT' : 'POST', body: data });
+  } catch (error) {
+    notifyError(error, '템플릿을 저장하지 못했습니다.');
+    return false;
+  }
+  showToast('템플릿을 저장했습니다.', 'success');
   allTemplates = allTemplates.some((item) => item.id === saved.id) ? allTemplates.map((item) => item.id === saved.id ? saved : item) : [...allTemplates, saved];
   editingId = saved.id;
   hasUnsavedChanges = false;
@@ -371,9 +372,13 @@ async function persistTemplate() {
 async function showTemplateHistory() {
   if (!editingId) return;
   if (hasUnsavedChanges && !confirm('현재 저장하지 않은 변경사항은 이력에서 복원할 때 사라집니다. 이력을 계속 볼까요?')) return;
-  const response = await fetch(`/api/templates/${encodeURIComponent(editingId)}/history`);
-  if (!response.ok) { alert('변경 이력을 불러오지 못했습니다.'); return; }
-  const versions = await response.json();
+  let versions;
+  try {
+    versions = (await api(`/api/templates/${encodeURIComponent(editingId)}/history`)) || [];
+  } catch (error) {
+    notifyError(error, '변경 이력을 불러오지 못했습니다.');
+    return;
+  }
   const historyList = document.getElementById('template-history-list');
   historyList.replaceChildren();
   if (!versions.length) {
@@ -396,12 +401,17 @@ async function showTemplateHistory() {
     restore.textContent = '이 버전 복원';
     restore.addEventListener('click', async () => {
       if (!confirm(`'${version.template.name}'의 이 버전을 복원할까요? 현재 내용도 변경 이력에 저장됩니다.`)) return;
-      const restoredResponse = await fetch(`/api/templates/${encodeURIComponent(editingId)}/history/${encodeURIComponent(version.versionId)}/restore`, { method: 'POST' });
-      const result = await restoredResponse.json().catch(() => ({}));
-      if (!restoredResponse.ok) { alert(result.message || '버전을 복원하지 못했습니다.'); return; }
+      let restored;
+      try {
+        restored = await api(`/api/templates/${encodeURIComponent(editingId)}/history/${encodeURIComponent(version.versionId)}/restore`, { method: 'POST' });
+      } catch (error) {
+        notifyError(error, '버전을 복원하지 못했습니다.');
+        return;
+      }
       document.getElementById('template-history-dialog').close();
+      showToast('이전 버전으로 복원했습니다.', 'success');
       await loadTemplates();
-      openTemplate(result.data);
+      openTemplate(restored);
     });
     row.append(info, restore);
     historyList.append(row);
@@ -411,12 +421,17 @@ async function showTemplateHistory() {
 
 async function removeTemplate(item) {
   if (!confirm(`'${item.name}' 템플릿을 삭제할까요?`)) return;
-  const response = await fetch(`/api/templates/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
-  if (!response.ok) { alert('템플릿 삭제에 실패했습니다.'); return; }
+  try {
+    await api(`/api/templates/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+  } catch (error) {
+    notifyError(error, '템플릿을 삭제하지 못했습니다.');
+    return;
+  }
+  showToast('템플릿을 삭제했습니다.', 'success');
   await loadTemplates();
 }
 
 function resetForm() { editingId = ''; hasUnsavedChanges = false; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; document.getElementById('btn-template-history').hidden = true; updateFormMode(); renderList(); }
 
 renderHighlightedTemplate();
-loadTemplates().catch((error) => { console.error(error); alert(error.message || '공통코드 또는 템플릿을 불러오지 못했습니다.'); });
+loadTemplates().catch((error) => notifyError(error, '공통코드 또는 템플릿을 불러오지 못했습니다.'));

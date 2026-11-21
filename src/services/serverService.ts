@@ -1,11 +1,11 @@
 import { readCollection, writeCollection } from '../db/database';
 
-import { Server, ServerRole, ServerProduct, RolePolicyType, RolePolicySetting, DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
+import type { CheckConfig, CheckConfigInput, Server, ServerRole, ServerProduct, RolePolicyType, RolePolicySetting, StoredServer } from '../types/server';
 import type { ScriptPart } from '../types/template';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
-import { NotFoundError, ValidationError } from '../types/error';
+import { NotFoundError, ValidationError } from '../errors';
 import { getTemplate } from './templateService';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
@@ -28,17 +28,6 @@ export function getServerRoles(server: Pick<Server, 'type' | 'roles'>): ServerRo
 export function getServerProduct(server: Pick<Server, 'type' | 'product' | 'products'>, role: ServerRole): ServerProduct | undefined {
   return server.products?.[role] ?? (server.type === role ? server.product : undefined);
 }
-
-type StoredServer = {
-  basicInfo: Pick<Server, 'id' | 'name' | 'os' | 'ip' | 'sharedPath'>;
-  roles: { selected: ServerRole[]; products: Server['products'] };
-  policy: {
-    basic: Pick<Server, 'processes' | 'directories' | 'fileChecks' | 'ports' | 'httpChecks' | 'policy' | 'queryTemplateId' | 'policyIds'> & { scriptParts: Partial<Record<ScriptPart, string>> };
-    web: { checks: ScriptPart[]; settings: Partial<Record<ScriptPart, RolePolicySetting>>; scriptParts: Partial<Record<ScriptPart, string>> };
-    was: { checks: ScriptPart[]; settings: Partial<Record<ScriptPart, RolePolicySetting>>; scriptParts: Partial<Record<ScriptPart, string>> };
-    db: { checks: ScriptPart[]; settings: Partial<Record<ScriptPart, RolePolicySetting>>; scriptParts: Partial<Record<ScriptPart, string>>; customQueryTemplateIds: string[] };
-  };
-};
 
 function normalizeServer(input: Server | StoredServer): Server {
   const nested = input as StoredServer;
@@ -70,7 +59,7 @@ function normalizeServer(input: Server | StoredServer): Server {
   const rolePolicySettings = { ...(server.rolePolicySettings ?? {}) };
   ROLE_POLICY_TYPES.forEach((role) => {
     if (!roles.includes(role)) { delete roleChecks[role]; return; }
-    const assigned = policiesById.get(policyIds[role]);
+    const assigned = policiesById.get(policyIds[role] ?? '');
     if (assigned?.category === role && assigned.enabled) {
       roleChecks[role] = assigned.items.filter((item) => item.enabled).map((item) => item.id as ScriptPart);
       assigned.items.filter((item) => item.enabled && item.executor.type === 'SQL_QUERY').forEach((item) => {
@@ -81,12 +70,12 @@ function normalizeServer(input: Server | StoredServer): Server {
   });
   const customQueryTemplateIds = Array.isArray(server.customQueryTemplateIds) ? [...new Set(server.customQueryTemplateIds)] : [];
   const scriptParts = { ...(server.scriptParts ?? {}) } as Partial<Record<ScriptPart, string>> & { OS_DISK?: string; WEBTOB?: string };
-  const assignedBasic = policiesById.get(policyIds.BASIC);
+  const assignedBasic = policiesById.get(policyIds.BASIC ?? '');
   if (assignedBasic?.category === 'BASIC' && assignedBasic.enabled) {
     assignedBasic.items.filter((item) => item.enabled && ['SCRIPT', 'CONSOLE_COMMAND', 'LOG_ANALYSIS'].includes(item.executor.type) && item.executor.templateId)
       .forEach((item) => { scriptParts[item.id as ScriptPart] = item.executor.templateId; });
   }
-  ROLE_POLICY_TYPES.forEach((role) => policiesById.get(policyIds[role])?.items.filter((item) => item.enabled && item.executor.templateId && item.executor.type !== 'SQL_QUERY')
+  ROLE_POLICY_TYPES.forEach((role) => policiesById.get(policyIds[role] ?? '')?.items.filter((item) => item.enabled && item.executor.templateId && item.executor.type !== 'SQL_QUERY')
     .forEach((item) => { scriptParts[item.id as ScriptPart] = item.executor.templateId; }));
   if (scriptParts.WEBTOB && !scriptParts.WEB) scriptParts.WEB = scriptParts.WEBTOB === 'WINDOWS-PART-WEBTOB' ? 'WINDOWS-PART-WEB_ENGINE_STATUS' : scriptParts.WEBTOB;
   delete scriptParts.WEBTOB;
@@ -190,7 +179,8 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
   errors.push(...portValidation.errors);
   errors.push(...httpValidation.errors);
   for (const role of roles) {
-    if (role === 'OTHER') continue;
+    // 알 수 없는 역할은 위에서 roles 오류로 알리므로 제품 검사는 건너뜁니다.
+    if (role === 'OTHER' || !role || !PRODUCTS[role as Exclude<ServerRole, 'OTHER'>]) continue;
     const product = server.products?.[role] ?? (server.type === role ? server.product : undefined);
     if (!product || !PRODUCTS[role].includes(product)) errors.push({ field: `products.${role}`, message: `${role} 제품을 선택해야 합니다.` });
   }
@@ -229,7 +219,7 @@ export function updateServer(id: string, data: Partial<Server>) {
   const index = servers.findIndex((server) => server.id === id);
 
   if (index === -1) {
-    throw new Error(`Server not found: ${id}`);
+    throw new NotFoundError(`서버를 찾을 수 없습니다: ${id}`);
   }
 
   const updatedServer = normalizeServer({
@@ -252,7 +242,7 @@ export function deleteServer(id: string) {
   const exists = servers.some((server) => server.id === id);
 
   if (!exists) {
-    throw new Error(`Server not found: ${id}`);
+    throw new NotFoundError(`서버를 찾을 수 없습니다: ${id}`);
   }
 
   const filtered = servers.filter((server) => server.id !== id);
@@ -262,11 +252,11 @@ export function deleteServer(id: string) {
   return true;
 }
 
-export function getCheckConfig(id: string) {
+export function getCheckConfig(id: string): CheckConfig {
   const server = getServer(id);
 
   if (!server) {
-    throw new NotFoundError(`Server not found: ${id}`);
+    throw new NotFoundError(`서버를 찾을 수 없습니다: ${id}`);
   }
 
   return {
@@ -285,30 +275,13 @@ export function getCheckConfig(id: string) {
   };
 }
 
-export function updateCheckConfig(
-  id: string,
-
-  config: {
-    processes?: ProcessCheck[];
-
-    directories?: DirectoryCheck[];
-    fileChecks?: FileCheck[];
-    ports?: PortCheck[];
-    httpChecks?: HttpCheck[];
-    scriptParts?: Partial<Record<ScriptPart, string>>;
-    roleChecks?: Partial<Record<RolePolicyType, ScriptPart[]>>;
-    rolePolicySettings?: Server['rolePolicySettings'];
-    queryTemplateId?: string;
-    customQueryTemplateIds?: string[];
-    policyIds?: Server['policyIds'];
-  },
-) {
+export function updateCheckConfig(id: string, config: CheckConfigInput) {
   const servers = read();
 
   const index = servers.findIndex((server) => server.id === id);
 
   if (index === -1) {
-    throw new NotFoundError(`Server not found: ${id}`);
+    throw new NotFoundError(`서버를 찾을 수 없습니다: ${id}`);
   }
 
   const policyIds = config.policyIds ?? servers[index].policyIds ?? {};

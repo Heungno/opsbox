@@ -1,19 +1,9 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 import { getDashboardSummary, getRecentChecks } from '../services/dashboardService';
+import { ok } from '../utils/http';
 
 export async function dashboardRoutes(app: FastifyInstance) {
-  app.get('/dashboard/summary', async () => {
-    return {
-      success: true,
-      data: getDashboardSummary(),
-    };
-  });
-
-  app.get('/dashboard/recent', async () => {
-    return {
-      success: true,
-      data: getRecentChecks(),
-    };
-  });
+  app.get('/dashboard/summary', async () => ok(getDashboardSummary()));
+  app.get('/dashboard/recent', async () => ok(getRecentChecks()));
 }

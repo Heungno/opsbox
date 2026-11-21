@@ -80,21 +80,90 @@ export interface DatabaseCheckResult {
   message?: string;
 }
 
+/** 서버 종합 상태 */
+export type HealthStatus = 'Healthy' | 'Warning' | 'Critical';
+/** 개별 점검 항목 상태 (수집 실패 포함) */
+export type CheckStatus = HealthStatus | 'NotCollected';
+
+export interface RolePolicyItemResult {
+  item?: string;
+  name?: string;
+  status?: string;
+  message?: string;
+  detail?: unknown;
+}
+
+export interface RolePolicyResult {
+  status?: string;
+  items?: RolePolicyItemResult[];
+}
+
+/**
+ * 화면에서 쓰는 점검 결과 (원본 JSON을 parseResultJson으로 정규화한 형태).
+ * 스크립트 버전에 따라 필드가 더 있을 수 있어 나머지는 unknown으로 둡니다.
+ */
 export interface CheckResult {
+  fileName?: string;
+
+  server: string;
+  serverType: string;
+  serverTypes?: string[];
+  product?: string;
   hostname: string;
   checkDate: string;
-  uptimeMinutes: number;
+
   cpu: number;
   memory: number;
   disk: number;
-  processes: ProcessCheckResult[];
-  directories: DirectoryCheckResult[];
-  fileChecks?: FileCheckResult[];
-  disks?: DiskCheckResult[];
-  ports?: PortCheckResult[];
-  httpChecks?: HttpCheckResult[];
-  wasChecks?: WasRuntimeCheckResult[];
-  webtobCheck?: WebtoBCheckResult;
-  databaseChecks?: DatabaseCheckResult;
-  rolePolicies?: Record<string, { status?: string; items?: Array<{ status?: string }> }>;
+  uptimeMinutes?: number;
+  uptimeParts?: unknown;
+
+  network?: string;
+  logError?: boolean;
+  processes?: ProcessCheckResult[];
+  directories?: DirectoryCheckResult[];
+  fileChecks?: Array<Partial<FileCheckResult>>;
+  disks?: Array<Partial<DiskCheckResult>>;
+  ports?: Array<Partial<PortCheckResult>>;
+  httpChecks?: Array<Partial<HttpCheckResult>>;
+  wasChecks?: Array<Partial<WasRuntimeCheckResult>>;
+  webtobCheck?: Partial<WebtoBCheckResult>;
+  databaseChecks?: Partial<DatabaseCheckResult>;
+  rolePolicies?: Partial<Record<'WEB' | 'WAS' | 'DB', RolePolicyResult>>;
+  /** 스키마 v2: 수집 시점 정책으로 계산한 종합 상태 */
+  summary?: { status?: string };
+
+  [key: string]: unknown;
+}
+
+/* 점검 결과 가져오기 (공유 폴더 → DB → 암호화 백업) */
+export interface ImportFileError {
+  file: string;
+  message: string;
+}
+
+export interface ImportSummary {
+  startedAt: string;
+  finishedAt: string;
+  scanned: number;
+  imported: number;
+  duplicates: number;
+  skippedRecent: number;
+  failed: number;
+  errors: ImportFileError[];
+}
+
+export interface PendingImportError {
+  file: string;
+  serverId: string | null;
+  message: string;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+export interface ImportStatus {
+  running: boolean;
+  lastRun: ImportSummary | null;
+  totalResults: number;
+  pendingErrors: PendingImportError[];
 }

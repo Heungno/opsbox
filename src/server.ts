@@ -4,7 +4,9 @@ import fastifyStatic from '@fastify/static';
 import path from 'path';
 
 import { routes } from './routes';
-import { handleError } from './utils/errorHandler';
+import { registerErrorHandlers } from './utils/errorHandler';
+import { UnauthorizedError } from './errors';
+import { ok } from './utils/http';
 import { readSessionCookie } from './services/authService';
 import { startResultImportScheduler } from './services/resultImportService';
 
@@ -24,18 +26,15 @@ const app = Fastify({
   },
 });
 
-app.setErrorHandler((error, request, reply) => {
-  const response = handleError(reply, error);
+registerErrorHandlers(app);
 
-  reply.send(response);
-});
-
-app.addHook('preHandler', async (request, reply) => {
+// 인증: 라우트가 없는 경로(404)보다 먼저 검사하도록 onRequest에서 처리합니다.
+app.addHook('onRequest', async (request, reply) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   const publicPaths = new Set(['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/me', '/api/health']);
   if (publicPaths.has(pathname)) return;
   if (pathname.startsWith('/api/')) {
-    if (!readSessionCookie(request.headers.cookie)) return reply.code(401).send({ success: false, code: 'UNAUTHENTICATED', message: '로그인이 필요합니다.' });
+    if (!readSessionCookie(request.headers.cookie)) throw new UnauthorizedError('로그인이 필요합니다. 다시 로그인해 주세요.');
     return;
   }
   const protectedPage = ['/', '/dashboard', '/servers', '/settings/server-management', '/servers/detail', '/settings/server-management/detail', '/reports', '/reports/detail', '/settings/templates', '/settings/script-management', '/settings/policy-management', '/settings/common-code-management'].includes(pathname)
@@ -92,14 +91,7 @@ app.register(routes, {
 /*
  * Health Check
  */
-app.get('/api/health', async () => {
-  return {
-    success: true,
-    service: 'OpsBox',
-    status: 'UP',
-    timestamp: new Date().toISOString(),
-  };
-});
+app.get('/api/health', async () => ok({ service: 'OpsBox', status: 'UP', timestamp: new Date().toISOString() }));
 
 /*
  * Start Server

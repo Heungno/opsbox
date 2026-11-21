@@ -1,3 +1,4 @@
+import { api, loadText, notifyError, showToast } from '/shared/js/api.js';
 await window.opsboxLayoutReady;
 
 let categoryNames = {}; let executorNames = {}; let viewNames = {};
@@ -50,7 +51,7 @@ function renderCategoryTabs(matching = policies) {
 function setActiveCategory(category) { if (categoryNames[category]) { activeCategory = category; renderList(); } }
 function resetForm() { editingId = ''; editingItems = []; hasUnsavedChanges = false; form.reset(); document.getElementById('policy-category').value = activeCategory; document.getElementById('policy-form-title').textContent = '새 정책'; renderItems(); renderList(); }
 function openPolicy(policy) { editingId = policy.id; activeCategory = policy.category; hasUnsavedChanges = false; document.getElementById('policy-name').value = policy.name; document.getElementById('policy-os').value = policy.os; document.getElementById('policy-category').value = policy.category; document.getElementById('policy-form-title').textContent = '정책 수정'; editingItems = structuredClone(policy.items || []); renderItems(); renderList(); }
-async function deletePolicy(policy) { if (!confirm(`'${policy.name}' 정책을 삭제할까요?`)) return; try { const response = await fetch(`/api/policies/${encodeURIComponent(policy.id)}`, { method: 'DELETE' }); if (!response.ok) throw new Error('정책 삭제에 실패했습니다.'); if (editingId === policy.id) resetForm(); await loadPolicies(); } catch (error) { alert(error.message || '정책 삭제에 실패했습니다.'); } }
+async function deletePolicy(policy) { if (!confirm(`'${policy.name}' 정책을 삭제할까요?`)) return; try { await api(`/api/policies/${encodeURIComponent(policy.id)}`, { method: 'DELETE' }); if (editingId === policy.id) resetForm(); showToast('정책을 삭제했습니다.', 'success'); await loadPolicies(); } catch (error) { notifyError(error, '정책을 삭제하지 못했습니다.'); } }
 function parseJson(id, fallback) { const input = document.getElementById(id); try { input.setCustomValidity(''); return JSON.parse(input.value || fallback); } catch { input.setCustomValidity('올바른 JSON 형식으로 입력하세요.'); input.reportValidity(); throw new Error(`${input.previousElementSibling?.textContent || 'JSON'} 형식을 확인하세요.`); } }
 function populateItemDialog(item) {
   document.getElementById('policy-item-name').value = item.name || ''; document.getElementById('policy-item-executor').value = item.executor?.type || 'SCRIPT';
@@ -98,7 +99,7 @@ function bindTemplatePicker() {
     querySelect.value = draft.executor.templateId || ''; refreshEditButton();
   }
   $('script-template-picker-close').addEventListener('click', () => dialog.close()); $('script-template-picker-cancel').addEventListener('click', () => dialog.close());
-  $('script-template-picker-refresh').addEventListener('click', async () => { const response = await fetch('/api/templates'); templates = response.ok ? await response.json() : []; populate(); });
+  $('script-template-picker-refresh').addEventListener('click', async () => { try { templates = await api('/api/templates'); populate(); } catch (error) { notifyError(error, '템플릿 목록을 새로고침하지 못했습니다.'); } });
   pickerSelect.addEventListener('change', refreshEditButton); querySelect.addEventListener('change', refreshEditButton);
   $('script-template-picker-edit').addEventListener('click', () => { const template = selectedTemplate(); if (template) window.open(`/settings/script-management?id=${encodeURIComponent(template.id)}`, '_blank', 'noopener'); });
   $('script-template-picker-save').addEventListener('click', () => { draft.executor.templateId = draft.executor.type === 'SQL_QUERY' ? querySelect.value : pickerSelect.value; document.getElementById('policy-item-template-id').value = draft.executor.templateId || ''; dialog.close(); });
@@ -138,12 +139,12 @@ document.getElementById('policy-item-save').addEventListener('click', () => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const payload = { name: document.getElementById('policy-name').value.trim(), os: document.getElementById('policy-os').value, category: document.getElementById('policy-category').value, enabled: true, items: editingItems };
-  try { const response = await fetch(editingId ? `/api/policies/${encodeURIComponent(editingId)}` : '/api/policies', { method: editingId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const result = await response.json(); if (!response.ok) throw new Error(result.errors?.map((error) => error.message).join('\n') || '정책 저장에 실패했습니다.'); await loadPolicies(); openPolicy(result.data); } catch (error) { alert(error.message || '정책 저장에 실패했습니다.'); }
+  try { const saved = await api(editingId ? `/api/policies/${encodeURIComponent(editingId)}` : '/api/policies', { method: editingId ? 'PUT' : 'POST', body: payload }); showToast('정책을 저장했습니다.', 'success'); await loadPolicies(); openPolicy(saved); } catch (error) { notifyError(error, '정책을 저장하지 못했습니다.'); }
 });
-async function loadPolicies() { const response = await fetch('/api/policies'); if (!response.ok) throw new Error('정책 목록 조회 실패'); policies = await response.json(); renderList(); }
+async function loadPolicies() { policies = (await api('/api/policies')) || []; renderList(); }
 async function init() {
-  const fragment = await fetch('/shared/fragments/script-template-picker-modal.html'); if (!fragment.ok) throw new Error('공용 템플릿 선택 모달을 불러오지 못했습니다.'); document.getElementById('script-template-picker-container').innerHTML = await fragment.text();
-  const codeResponse = await fetch('/api/common-codes'); if (!codeResponse.ok) throw new Error('공통 코드를 불러오지 못했습니다.'); codes = await codeResponse.json();
+  document.getElementById('script-template-picker-container').innerHTML = await loadText('/shared/fragments/script-template-picker-modal.html');
+  codes = await api('/api/common-codes');
   const fill = (id, entries, placeholder = '') => { const select = document.getElementById(id); select.replaceChildren(); if (placeholder) select.add(new Option(placeholder, '')); entries.forEach((entry) => select.add(new Option(entry.label || entry.value, entry.value))); };
   categoryNames = Object.fromEntries(codes.policyCategories.map((entry) => [entry.value, entry.label]));
   executorNames = Object.fromEntries(codes.policyExecutors.map((entry) => [entry.value, entry.label]));
@@ -152,7 +153,7 @@ async function init() {
   fill('policy-category', codes.policyCategories); fill('policy-item-executor', codes.policyExecutors);
   const views = document.getElementById('policy-item-result-components'); views.replaceChildren();
   codes.resultViews.forEach((entry) => { const label = document.createElement('label'); const input = document.createElement('input'); input.type = 'checkbox'; input.value = entry.value; input.addEventListener('change', updateColumnVisibility); label.append(input, document.createTextNode(entry.label)); views.append(label); });
-  const templateResponse = await fetch('/api/templates'); templates = templateResponse.ok ? await templateResponse.json() : [];
+  templates = await api('/api/templates').catch((error) => { notifyError(error, '템플릿 목록을 불러오지 못했습니다.'); return []; });
   bindTemplatePicker(); renderItems(); await loadPolicies();
 }
-try { await init(); } catch (error) { console.error(error); document.getElementById('policy-error').hidden = false; }
+try { await init(); } catch (error) { document.getElementById('policy-error').hidden = false; notifyError(error, '점검 정책 화면을 초기화하지 못했습니다.'); }

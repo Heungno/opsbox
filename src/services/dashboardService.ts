@@ -1,8 +1,9 @@
 import { getAllServers, getServerRoles } from './serverService';
 
 import { getLatestResult, getHealthStatus } from './resultService';
+import type { DashboardSummary, RecentCheck } from '../types/report';
 
-export function getDashboardSummary() {
+export function getDashboardSummary(): DashboardSummary {
   const servers = getAllServers();
 
   let web = 0;
@@ -56,10 +57,10 @@ export function getDashboardSummary() {
   };
 }
 
-export function getRecentChecks() {
+export function getRecentChecks(): RecentCheck[] {
   const servers = getAllServers();
 
-  const checks: any[] = [];
+  const checks: RecentCheck[] = [];
 
   servers.forEach((server) => {
     const latest = getLatestResult(server.id);

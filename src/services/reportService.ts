@@ -1,10 +1,11 @@
 import { getResultByFile, getHealthStatus, getResults } from './resultService';
 import { getReportFields } from './reportRuleService';
 import { getAllServers, getServerRoles } from './serverService';
+import type { ReportDetail, ReportListItem, ReportListQuery } from '../types/report';
 
-export function getAllReports(filter?: { serverId?: string; startDate?: string; endDate?: string }) {
+export function getAllReports(filter?: ReportListQuery): ReportListItem[] {
   const servers = getAllServers();
-  const reports: any[] = [];
+  const reports: ReportListItem[] = [];
 
   const targetServers = filter?.serverId
     ? servers.filter(
@@ -52,7 +53,7 @@ export function getAllReports(filter?: { serverId?: string; startDate?: string; 
   return reports.sort((a, b) => (b.checkDate || '').localeCompare(a.checkDate || ''));
 }
 
-export function getReport(serverId: string, fileName: string) {
+export function getReport(serverId: string, fileName: string): ReportDetail | null {
   const result = getResultByFile(serverId, fileName);
 
   if (!result) {

@@ -13,7 +13,7 @@
     .login-card label { display: block; margin: 16px 0 6px; font-weight: 600; }
     .login-card input { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
     .login-card button { width: 100%; margin-top: 22px; padding: 12px; border: 0; border-radius: 6px; background: #2563eb; color: white; font-weight: 700; cursor: pointer; }
-    #message { min-height: 1.5em; margin-top: 12px; color: #b91c1c; }
+    #message { min-height: 1.5em; margin-top: 12px; color: #b91c1c; white-space: pre-line; }
   </style>
 </head>
 <body>
@@ -29,18 +29,35 @@
       <div id="message" role="alert"></div>
     </form>
   </main>
-  <script>
+  <script type="module">
+    import { api, apiRequest, errorMessage } from '/shared/js/api.js';
+
     const params = new URLSearchParams(location.search);
     const requestedNext = params.get('next') || '/';
     const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
-    fetch('/api/auth/me').then((response) => response.json()).then(({ user }) => { if (user) location.replace(next); });
-    document.getElementById('login-form').addEventListener('submit', async (event) => {
+    const message = document.getElementById('message');
+    const form = document.getElementById('login-form');
+    const submit = form.querySelector('button[type="submit"]');
+
+    // 이미 로그인되어 있으면 이동 (확인 실패는 무시하고 로그인 화면 유지)
+    api('/api/auth/me', { redirectOnUnauthorized: false }).then((user) => { if (user) location.replace(next); }).catch(() => {});
+
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: form.get('username'), password: form.get('password') }) });
-      const result = await response.json();
-      if (response.ok) location.replace(next);
-      else document.getElementById('message').textContent = result.message || '로그인할 수 없습니다.';
+      const data = new FormData(form);
+      message.textContent = '';
+      submit.disabled = true;
+      try {
+        await apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: { username: String(data.get('username') || ''), password: String(data.get('password') || '') },
+          redirectOnUnauthorized: false,
+        });
+        location.replace(next);
+      } catch (error) {
+        message.textContent = errorMessage(error, '로그인할 수 없습니다.');
+        submit.disabled = false;
+      }
     });
   </script>
 </body>

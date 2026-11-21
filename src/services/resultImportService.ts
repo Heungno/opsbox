@@ -6,6 +6,8 @@ import { db, transaction } from '../db/database';
 import { getAllServers } from './serverService';
 import { getHealthStatus, parseResultJson } from './resultService';
 import { writeEncryptedBackup } from './backupCrypto';
+import { ConflictError } from '../errors';
+import type { ImportStatus, ImportSummary } from '../types/result';
 
 /*
  * 점검 결과 가져오기
@@ -21,17 +23,6 @@ import { writeEncryptedBackup } from './backupCrypto';
  */
 
 const MIN_FILE_AGE_MS = Number(process.env.OPSBOX_IMPORT_MIN_AGE_SECONDS ?? 10) * 1000;
-
-export interface ImportSummary {
-  startedAt: string;
-  finishedAt: string;
-  scanned: number;
-  imported: number;
-  duplicates: number;
-  skippedRecent: number;
-  failed: number;
-  errors: Array<{ file: string; message: string }>;
-}
 
 let running = false;
 let lastSummary: ImportSummary | undefined;
@@ -114,7 +105,7 @@ function importFile(serverId: string, year: string, fullPath: string, fileName: 
 }
 
 export function importResults(): ImportSummary {
-  if (running) throw new Error('점검 결과 가져오기가 이미 실행 중입니다.');
+  if (running) throw new ConflictError('점검 결과 가져오기가 이미 실행 중입니다. 잠시 후 다시 시도하세요.');
   running = true;
   const summary: ImportSummary = {
     startedAt: new Date().toISOString(),
@@ -162,8 +153,8 @@ export function importResults(): ImportSummary {
   return summary;
 }
 
-export function getImportStatus() {
-  const errors = db.prepare('SELECT source_path AS file, server_id AS serverId, message, first_seen AS firstSeen, last_seen AS lastSeen FROM result_import_errors ORDER BY last_seen DESC').all();
+export function getImportStatus(): ImportStatus {
+  const errors = db.prepare('SELECT source_path AS file, server_id AS serverId, message, first_seen AS firstSeen, last_seen AS lastSeen FROM result_import_errors ORDER BY last_seen DESC').all() as unknown as ImportStatus['pendingErrors'];
   const total = (db.prepare('SELECT COUNT(*) AS count FROM check_results').get() as { count: number }).count;
   return { running, lastRun: lastSummary ?? null, totalResults: total, pendingErrors: errors };
 }

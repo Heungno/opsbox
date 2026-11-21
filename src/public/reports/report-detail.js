@@ -1,4 +1,5 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
+import { api, apiRequest, notifyError } from '/shared/js/api.js';
 
 await window.opsboxLayoutReady;
 
@@ -35,9 +36,9 @@ async function init() {
 
 async function loadHistoryAndReport(serverId, fileName) {
   try {
-    const serverResponse = await fetch(`/api/servers/${encodeURIComponent(serverId)}`);
-    if (serverResponse.ok) {
-      const server = await serverResponse.json();
+    // 서버 정보는 보조 정보라 실패해도 보고서는 계속 표시합니다.
+    const server = await api(`/api/servers/${encodeURIComponent(serverId)}`).catch(() => null);
+    if (server) {
       currentServerType = server.type || '';
       currentServerTypes = server.roles?.length ? server.roles : [server.type];
       currentServerProduct = server.product || '';
@@ -45,34 +46,21 @@ async function loadHistoryAndReport(serverId, fileName) {
       currentServerOS = server.os || '';
     }
     // 1. Fetch history results for comparison
-    const historyRes = await fetch(`/api/results/${serverId}`);
-    const historyJson = await historyRes.json();
-    if (historyJson.success) {
-      historyResults = historyJson.data || [];
-    }
+    historyResults = (await api(`/api/results/${encodeURIComponent(serverId)}`)) || [];
 
     // 2. Populate comparison dropdown
     populateCompareSelect(fileName);
 
     // 3. Load current report data
-    const response = await fetch(`/api/results/${serverId}/file/${encodeURIComponent(fileName)}`);
-    const result = await response.json();
-
-    if (!result.success) {
-      alert(result.message || '보고서를 불러올 수 없습니다.');
-      return;
-    }
-
-    currentReportData = result;
+    currentReportData = await apiRequest(`/api/results/${encodeURIComponent(serverId)}/file/${encodeURIComponent(fileName)}`);
     renderReport();
 
     // 4. Bind compare select change event
     document.getElementById('compare-select').addEventListener('change', () => {
       renderReport();
     });
-  } catch (err) {
-    console.error(err);
-    alert('보고서 로딩 중 오류가 발생했습니다.');
+  } catch (error) {
+    notifyError(error, '보고서를 불러오지 못했습니다.');
   }
 }
 

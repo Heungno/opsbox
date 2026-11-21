@@ -1,3 +1,5 @@
+import { api, loadText, notifyError } from './api.js';
+
 async function applySharedLayout() {
   let root = document.getElementById('shared-layout-root');
   let originalContent = null;
@@ -12,9 +14,7 @@ async function applySharedLayout() {
     root.id = 'shared-layout-root';
     currentLayout.replaceWith(root);
   }
-  const response = await fetch('/shared/fragments/layout.html');
-  if (!response.ok) throw new Error('공통 레이아웃을 불러오지 못했습니다.');
-  root.innerHTML = await response.text();
+  root.innerHTML = await loadText('/shared/fragments/layout.html');
   const page = document.getElementById('page-content');
   if (!page) return;
   if (pageTemplate) page.append(pageTemplate.content.cloneNode(true));
@@ -23,9 +23,7 @@ async function applySharedLayout() {
 
 async function loadSidebar() {
   await window.opsboxLayoutReady;
-  const response = await fetch('/shared/fragments/sidebar.html');
-
-  const html = await response.text();
+  const html = await loadText('/shared/fragments/sidebar.html');
 
   const container = document.getElementById('sidebar-container');
 
@@ -43,7 +41,12 @@ async function loadSidebar() {
   bindSettingsMenu();
   loadCurrentUser();
   document.getElementById('logout-button')?.addEventListener('click', async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      notifyError(error, '로그아웃 처리 중 오류가 발생했습니다.');
+      return;
+    }
     location.replace('/login');
   });
 
@@ -54,8 +57,7 @@ async function loadCurrentUser() {
   const label = document.getElementById('current-user-name');
   if (!label) return;
   try {
-    const response = await fetch('/api/auth/me');
-    const { user } = await response.json();
+    const user = await api('/api/auth/me');
     const displayName = user?.displayName || user?.username || '알 수 없음';
     label.textContent = displayName;
     label.title = displayName;

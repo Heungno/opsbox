@@ -1,8 +1,8 @@
 import { DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
-import { ValidationError, ValidationResult } from '../types/validation';
+import type { FieldError, ValidationResult } from '../types/validation';
 
 export function validateProcesses(processes: ProcessCheck[]): ValidationResult<ProcessCheck[]> {
-  const errors: ValidationError[] = [];
+  const errors: FieldError[] = [];
 
   const names = new Set<string>();
 
@@ -44,7 +44,7 @@ export function validateProcesses(processes: ProcessCheck[]): ValidationResult<P
 }
 
 export function validateDirectories(directories: DirectoryCheck[]): ValidationResult<DirectoryCheck[]> {
-  const errors: ValidationError[] = [];
+  const errors: FieldError[] = [];
 
   const paths = new Set<string>();
 
@@ -105,7 +105,7 @@ export function validateDirectories(directories: DirectoryCheck[]): ValidationRe
   };
 }
 export function validateFileChecks(fileChecks: FileCheck[]): ValidationResult<FileCheck[]> {
-  const errors: ValidationError[] = [];
+  const errors: FieldError[] = [];
   const paths = new Set<string>();
 
   fileChecks.forEach((item, index) => {
@@ -131,7 +131,7 @@ export function validateFileChecks(fileChecks: FileCheck[]): ValidationResult<Fi
 }
 
 export function validatePorts(ports: PortCheck[]): ValidationResult<PortCheck[]> {
-  const errors: ValidationError[] = [];
+  const errors: FieldError[] = [];
   const endpoints = new Set<string>();
 
   ports.forEach((item, index) => {
@@ -153,7 +153,7 @@ export function validatePorts(ports: PortCheck[]): ValidationResult<PortCheck[]>
 }
 
 export function validateHttpChecks(checks: HttpCheck[]): ValidationResult<HttpCheck[]> {
-  const errors: ValidationError[] = [];
+  const errors: FieldError[] = [];
   const names = new Set<string>();
   checks.forEach((item, index) => {
     const name = item.name?.trim(); const url = item.url?.trim();
