@@ -12,10 +12,11 @@ export type ExecutorType =
   | 'HTTP_CHECK'
   | 'TCP_CHECK'
   | 'PROCESS_CHECK'
-  | 'FILESYSTEM_CHECK';
+  | 'FILESYSTEM_CHECK'
+  | 'CHECK_BUILDER';
 
 export type ResultView = 'SUMMARY' | 'METRIC' | 'TABLE' | 'LOG_TABLE' | 'CONSOLE' | 'JSON';
-export type PolicyInputType = 'TEXT' | 'NUMBER' | 'PATH' | 'PATH_LIST' | 'PORT';
+export type PolicyInputType = 'TEXT' | 'NUMBER' | 'PATH' | 'PATH_LIST' | 'PORT' | 'TARGET_LIST';
 export type PolicyInputScope = 'POLICY' | 'SERVER';
 
 export interface ResultColumn {
