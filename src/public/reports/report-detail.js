@@ -115,7 +115,9 @@ function renderReport() {
   const serverTypes = data.serverTypes?.length ? data.serverTypes : (currentServerTypes.length ? currentServerTypes : [data.serverType || currentServerType || 'OTHER']);
   const serverType = serverTypes[0] || 'OTHER';
   const typeLabel = serverTypes.map((role) => role === 'OTHER' ? '기타' : role).join(' + ');
-  document.getElementById('report-title').textContent = `서버: ${data.server || data.hostname || '-'} | 역할: ${typeLabel} | 점검일시: ${data.checkDate}`;
+  const osInfo = getOsInfo(data);
+  document.getElementById('report-title').textContent = `서버: ${data.server || data.hostname || '-'} | 역할: ${typeLabel} | OS: ${osInfo.label || '-'} | 점검일시: ${data.checkDate}`;
+  renderServerInfo(data, osInfo);
   document.getElementById('http-report-details').hidden = !serverTypes.some((role) => role === 'WEB' || role === 'WAS');
 
   renderHealth(health);
@@ -610,6 +612,24 @@ function renderPendingChecklist(targetId, rows) {
   });
 }
 
+// OS 정보: 점검 스크립트가 수집한 값(data.host)을 우선, 없으면 서버에 등록된 운영체제
+function getOsInfo(data) {
+  const name = data.host?.osName?.trim() || '';
+  const version = data.host?.osVersion?.trim() || '';
+  const registered = currentServer?.os || currentServerOS || '';
+  if (name) {
+    return { name, version, collected: true, label: version ? `${name} (${version})` : name };
+  }
+  return { name: registered, version, collected: false, label: registered };
+}
+
+function renderServerInfo(data, osInfo) {
+  setPrintText('report-hostname', data.hostname || data.host?.hostname || data.server);
+  setPrintText('report-ip', currentServer?.ip);
+  setPrintText('report-os-name', osInfo.name ? (osInfo.collected ? osInfo.name : `${osInfo.name} (서버 등록 정보)`) : '');
+  setPrintText('report-os-version', osInfo.version || '수집되지 않음');
+}
+
 // 인쇄용 문서 개요 (화면에서는 숨겨지고 인쇄할 때만 보임)
 const PRINT_HEALTH_LABEL = { Healthy: '○ 정상 (Healthy)', Warning: '△ 주의 (Warning)', Critical: '× 위험 (Critical)' };
 
@@ -636,7 +656,8 @@ function renderPrintHeader(data, health, serverTypes) {
   setPrintText('print-server-name', server.name || data.server || data.hostname);
   setPrintText('print-server-id', server.id || new URLSearchParams(location.search).get('serverId'));
   setPrintText('print-role', roles);
-  setPrintText('print-os-ip', [server.os || currentServerOS, server.ip].filter(Boolean).join(' · '));
+  setPrintText('print-ip', server.ip);
+  setPrintText('print-os', getOsInfo(data).label);
   setPrintText('print-check-date', data.checkDate);
   setPrintText('print-health', PRINT_HEALTH_LABEL[health] || health);
   updatePrintSigner();

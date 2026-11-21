@@ -52,7 +52,8 @@
           <table class="print-doc-info">
             <tbody>
               <tr><th>대상 서버</th><td id="print-server-name">-</td><th>서버 ID</th><td id="print-server-id">-</td></tr>
-              <tr><th>역할 · 제품</th><td id="print-role">-</td><th>운영체제 · IP</th><td id="print-os-ip">-</td></tr>
+              <tr><th>역할 · 제품</th><td id="print-role">-</td><th>IP</th><td id="print-ip">-</td></tr>
+              <tr><th>운영체제</th><td id="print-os" colspan="3">-</td></tr>
               <tr><th>점검 일시</th><td id="print-check-date">-</td><th>종합 판정</th><td id="print-health">-</td></tr>
               <tr><th>보고 일자</th><td id="print-report-date">-</td><th>작성자</th><td id="print-author">-</td></tr>
             </tbody>
@@ -73,6 +74,15 @@
 
         <section class="report-group common-report-group" aria-labelledby="common-report-title">
         <h2 id="common-report-title" class="report-group-title">공통 점검 결과</h2>
+        <section id="server-info-details" class="card">
+          <h2>서버 정보</h2>
+          <table class="detail-table report-server-info">
+            <tbody>
+              <tr><th>호스트명</th><td id="report-hostname">-</td><th>IP</th><td id="report-ip">-</td></tr>
+              <tr><th>운영체제</th><td id="report-os-name">-</td><th>OS 버전</th><td id="report-os-version">-</td></tr>
+            </tbody>
+          </table>
+        </section>
         <section class="card">
           <div class="section-header">
             <h2>종합 진단 상태</h2>
@@ -233,7 +243,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261121-print"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261121-os"></script>
 </body>
 
 </html>
