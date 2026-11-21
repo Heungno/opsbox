@@ -304,7 +304,8 @@ function bindServerEdit() {
     const products = Object.fromEntries([...roleContainer.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
     try {
       const data = {
-        id: document.getElementById('server-form-id').value.trim(),
+        // 수정할 때는 ID를 보내지 않습니다 (ID 변경 불가, 입력칸도 숨김).
+        ...(creating ? { id: document.getElementById('server-form-id').value.trim() } : {}),
         name: document.getElementById('server-form-name').value.trim(),
         roles, products, type: roles[0], product: products[roles[0]],
         os: document.getElementById('server-form-os').value,

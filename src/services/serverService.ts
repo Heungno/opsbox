@@ -222,9 +222,12 @@ export function updateServer(id: string, data: Partial<Server>) {
     throw new NotFoundError(`서버를 찾을 수 없습니다: ${id}`);
   }
 
+  // 서버 ID는 점검 결과·스크립트 경로와 연결되어 있어 수정으로 바꿀 수 없습니다.
+  const { id: _ignoredId, ...changes } = data;
   const updatedServer = normalizeServer({
     ...servers[index],
-    ...data,
+    ...changes,
+    id: servers[index].id,
   });
 
   validateServer(updatedServer, servers, id);

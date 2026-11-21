@@ -28,7 +28,7 @@ if (!fs.existsSync(serverFile)) {
   const servers = [
     {
       basicInfo: { id: 'SAMPLE-WEB01', name: '샘플 웹서버', os: 'Linux', ip: '192.0.2.10', sharedPath: sharePath },
-      roles: { selected: ['WEB'], products: {} },
+      roles: { selected: ['WEB'], products: { WEB: 'Nginx' } },
       policy: {
         basic: { processes: [], directories: [], fileChecks: [], ports: [], httpChecks: [], policy: null, queryTemplateId: '', policyIds: {}, scriptParts: {} },
         web: { checks: [], settings: {}, scriptParts: {} },
