@@ -572,17 +572,13 @@ class ResultBuilder {
 
 async function main() {
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
-  const { db, readCollection, writeCollection } = await import('../src/db/database');
+  const { db, readCollection } = await import('../src/db/database');
   const { createServer } = await import('../src/services/serverService');
   const { buildScriptConfig } = await import('../src/services/scriptAssembly');
   const { storeUploadedResult } = await import('../src/services/resultImportService');
   const { getHealthStatus, parseResultJson } = await import('../src/services/resultService');
 
-  // 저장소 초기 정책에 섞인 테스트용 항목·정책은 데모에서 빼서 보고서를 깔끔하게 둡니다.
-  const policies = readCollection<any>('policies')
-    .filter((policy) => policy.id !== 'c0874692-a019-4daf-97ce-7f818d1f2564')
-    .map((policy) => ({ ...policy, items: (policy.items ?? []).filter((item: any) => item.name !== '정책테스트') }));
-  writeCollection('policies', policies, (policy: any) => policy.id);
+  const policies = readCollection<any>('policies');
 
   // 로그인 계정
   const salt = randomBytes(32);
