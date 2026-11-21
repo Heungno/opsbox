@@ -29,6 +29,8 @@ export const LIMITS = {
   phraseLength: 200,
   phraseCount: 20,
   outputLength: 2000,
+  /** 판정용 출력 상한(바이트) — 보관은 outputLength, 판정은 이만큼 전체를 봅니다 */
+  judgeOutputBytes: 1048576,
   commandTimeoutSeconds: 30,
   sampleLines: 5,
 } as const;

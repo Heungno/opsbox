@@ -129,3 +129,23 @@ test('생성기 버전이 낮은 고치지 않은 생성 템플릿은 다시 만
   assert.deepEqual(upgradeGeneratedTemplates(), []);
   assert.match(template(TEMPLATE_ID)!.content, /# 손댐$/);
 });
+
+test('트랜잭션 확정이 실패해도 다음 트랜잭션은 정상으로 쓸 수 있다', () => {
+  // 안에서 트랜잭션을 먼저 끝내 바깥 COMMIT이 실패하게 함
+  assert.throws(() => transaction(() => { db.exec('COMMIT'); }));
+  transaction(() => writeSetting('after_commit_failure', 1));
+  assert.equal(readSetting('after_commit_failure'), 1);
+  transaction(() => transaction(() => writeSetting('after_commit_failure', 2)));
+  assert.equal(readSetting('after_commit_failure'), 2);
+});
+
+test('직접 편집한 생성 조각을 항목 삭제로 지우면 편집 내용을 스크립트 이력에 남긴다', () => {
+  const id = 'CUSTOM_TPL0000000000009';
+  const templateId = `GEN-${id}-LINUX`;
+  saveWith([builderItem(id, spec())]);
+  const current = template(templateId)!;
+  saveTemplate({ ...current, content: `${current.content}\n# 지우기 전 편집` }, templateId);
+  saveWith([]);
+  assert.equal(template(templateId), undefined);
+  assert.ok(getTemplateHistory(templateId).some((version) => version.template.content.endsWith('# 지우기 전 편집')));
+});

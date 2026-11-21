@@ -79,3 +79,20 @@ test('항목 전체를 try/catch로 감싸 오류가 나도 스크립트가 멈�
 test('항목 ID가 함수 이름으로 쓸 수 없는 글자를 포함하면 생성하지 않는다', () => {
   assert.throws(() => generateWindowsPart({ itemId: 'BAD-ID;', itemName: 'x', role: 'BASIC', spec: specs.port }), /항목 ID/);
 });
+
+test('문구 확인·숫자 비교는 잘리지 않은 전체 출력으로 판정하고, 보관 출력만 2,000자로 자른다', () => {
+  assert.match(generate(specs.text), /OpsBoxCb1-Contains \$cbRun\.full \$cbPhrase/);
+  assert.match(generate(specs.number), /\[regex\]::Match\(\[string\]\$cbRun\.full/);
+  assert.match(generate(specs.number), /\$cbOutput = \$cbRun\.output/);
+});
+
+test('자식 PowerShell은 명령 없음(127)·명령 오류(1)를 종료 코드로 알리고, 0이 아니면 판정하지 않는다', () => {
+  const content = generate(specs.number);
+  assert.match(content, /CommandNotFoundException/);
+  assert.match(content, /exit 127/);
+  assert.match(content, /\$LASTEXITCODE/);
+  // 0이 아닌 종료 코드는 공통 함수(OpsBoxCb1-Failure)가 미수집 메시지로 바꾸고, 두 유형 모두 그 함수를 거침
+  assert.match(content, /\$Result\.rc -ne 0/);
+  assert.match(content, /\$cbMessage = OpsBoxCb1-Failure \$cbRun/);
+  assert.match(generate(specs.text), /\$cbMessage = OpsBoxCb1-Failure \$cbRun/);
+});

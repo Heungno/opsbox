@@ -42,7 +42,7 @@ const PRESETS: Preset[] = [
   {
     id: 'linux.raid', os: 'Linux', type: 'COMMAND_TEXT', name: 'Disk 이중화 (소프트웨어 RAID)',
     description: '/proc/mdstat 의 디스크 상태([UU])에 결손(_)이 있는지 확인합니다.',
-    command: `[ -r /proc/mdstat ] || { echo '/proc/mdstat 이 없습니다 (소프트웨어 RAID 미사용).' >&2; exit 127; }\ngrep -o '\\[[U_]*\\]' /proc/mdstat`,
+    command: `[ -r /proc/mdstat ] || { echo '/proc/mdstat 이 없습니다 (소프트웨어 RAID 미사용).' >&2; exit 127; }\ngrep -o '\\[[U_]*\\]' /proc/mdstat || true`,
     defaults: { badPhrases: ['_'], level: 'Critical' }, inputs: [],
   },
   {
@@ -60,7 +60,14 @@ const PRESETS: Preset[] = [
   {
     id: 'linux.cluster', os: 'Linux', type: 'COMMAND_TEXT', name: 'Cluster 데몬 상태',
     description: 'Pacemaker(pcs status) 결과에 OFFLINE, Stopped, FAILED 가 있는지 확인합니다.',
-    command: 'pcs status',
+    // pcs 는 클러스터가 멈추면 오류로 끝나므로, 그 경우 FAILED 를 출력해 위험으로 판정되게 합니다.
+    command: [
+      'out=$(pcs status 2>&1); rc=$?',
+      `printf '%s\n' "$out"`,
+      '[ "$rc" -eq 127 ] && exit 127',
+      `[ "$rc" -ne 0 ] && echo "FAILED: pcs status 종료 코드 $rc (클러스터가 실행 중이 아닐 수 있습니다)"`,
+      'exit 0',
+    ].join('\n'),
     defaults: { badPhrases: ['OFFLINE', 'Stopped', 'FAILED'], level: 'Critical' }, inputs: [],
   },
   {

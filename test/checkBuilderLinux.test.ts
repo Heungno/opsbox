@@ -36,6 +36,13 @@ const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000);
 fs.utimesSync(old, hoursAgo(3), hoursAgo(3));
 const logDir = makeDir('cb-linux', 'logs');
 fs.writeFileSync(path.join(logDir, 'app.log'), 'INFO 시작\nERROR 첫 번째 오류\nWARN 경고\nerror 두 번째 오류\n');
+// 검토 지적: 읽을 수 없는 로그 파일, 실패하는 pcs
+const mixedLogDir = makeDir('cb-linux', 'mixed-logs');
+fs.writeFileSync(path.join(mixedLogDir, 'ok.log'), 'ERROR 읽을 수 있는 오류\n');
+fs.writeFileSync(path.join(mixedLogDir, 'secret.log'), 'ERROR 권한 없음\n');
+fs.chmodSync(path.join(mixedLogDir, 'secret.log'), 0o000);
+fs.writeFileSync(path.join(fakeBin, 'pcs'), `#!${bashPath}\necho 'Error: cluster is not currently running on this node' >&2\nexit 1\n`);
+fs.chmodSync(path.join(fakeBin, 'pcs'), 0o755);
 
 const big = `for i in $(seq 1 1000); do printf '한글ab'; done; printf '\\001\\002끝'`;
 const items: Record<string, { spec: BuilderSpec; inputs?: Record<string, string>; name?: string }> = {
@@ -55,6 +62,11 @@ const items: Record<string, { spec: BuilderSpec; inputs?: Record<string, string>
   CUSTOM_CB00000000000014: { spec: { version: 1, type: 'REMOTE_PORT', presetId: null }, inputs: { targets: '' } },
   CUSTOM_CB00000000000015: { spec: { version: 1, type: 'COMMAND_NUMBER', presetId: 'linux.ping' }, inputs: { target: '10.1.1.1' } },
   CUSTOM_CB00000000000016: { spec: { version: 1, type: 'SETTING_VALUE', presetId: null, settingName: 'vm.none', comparator: '=', expected: '1' } },
+  CUSTOM_CB00000000000017: { spec: { version: 1, type: 'COMMAND_TEXT', presetId: null, command: "for i in $(seq 1 700); do echo \"path$i active ready running\"; done; echo 'path701 failed faulty'", badPhrases: ['failed'] } },
+  CUSTOM_CB00000000000018: { spec: { version: 1, type: 'COMMAND_NUMBER', presetId: null, command: 'echo 5; exit 3', warning: 70, critical: 90 } },
+  CUSTOM_CB00000000000019: { spec: { version: 1, type: 'COMMAND_TEXT', presetId: null, command: 'echo all ok; exit 1', badPhrases: ['zzz'] } },
+  CUSTOM_CB00000000000020: { spec: { version: 1, type: 'COMMAND_TEXT', presetId: 'linux.cluster' } },
+  CUSTOM_CB00000000000021: { spec: { version: 1, type: 'LOG_PATTERN', presetId: null, phrases: ['ERROR'], periodDays: 7, warning: 1, critical: 5 }, inputs: { paths: mixedLogDir } },
 };
 
 const listener = net.createServer((socket) => socket.end());
@@ -179,4 +191,26 @@ test('생성 조각은 생성기 버전과 자동 생성 안내를 첫 줄에 �
 
 test('항목 ID가 함수 이름으로 쓸 수 없는 글자를 포함하면 생성하지 않는다', () => {
   assert.throws(() => generateLinuxPart({ itemId: 'BAD;ID', itemName: 'x', role: 'BASIC', spec: items.CUSTOM_CB00000000000001.spec }), /항목 ID/);
+});
+
+test('문구 확인은 2,000바이트 뒤의 비정상 문구도 찾는다 (보관 출력만 자름)', { skip: !canRunBash }, () => {
+  assert.equal(item('17').status, 'Critical');
+  assert.ok(Buffer.byteLength(item('17').detail.output, 'utf8') <= 2000);
+});
+
+test('명령이 0이 아닌 종료 코드로 끝나면 판정하지 않고 미수집과 종료 코드를 남긴다', { skip: !canRunBash }, () => {
+  assert.equal(item('18').status, 'NotCollected');
+  assert.match(item('18').detail.rows[0].message, /종료 코드 3/);
+  assert.equal(item('19').status, 'NotCollected');
+  assert.match(item('19').detail.rows[0].message, /종료 코드 1/);
+});
+
+test('클러스터 준비된 점검: pcs 가 실패하면(클러스터 중지) 위험', { skip: !canRunBash }, () => {
+  assert.equal(item('20').status, 'Critical');
+});
+
+test('로그 문구 검색: 읽을 수 없는 파일이 있어도 나머지로 판정하고 알려 준다', { skip: !canRunBash }, () => {
+  assert.equal(item('21').status, 'Warning');
+  assert.equal(item('21').detail.rows[0].value, '1');
+  assert.match(item('21').detail.rows[0].message, /읽을 수 없는 파일 1개/);
 });

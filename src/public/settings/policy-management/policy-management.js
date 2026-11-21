@@ -10,6 +10,16 @@ let activeCategory = 'BASIC';
 let hasUnsavedChanges = false;
 function confirmDiscard() { if (!hasUnsavedChanges) return true; if (!confirm('현재 저장하지 않은 변경사항이 있습니다. 저장하지 않고 이동할까요?')) return false; hasUnsavedChanges = false; return true; }
 
+// 직접 편집한 점검 만들기 스크립트(삭제 시 확인)
+function detachedTemplateNames(items) {
+  return items.filter((item) => item.executor?.type === 'CHECK_BUILDER')
+    .map((item) => templates.find((template) => template.id === item.executor.templateId))
+    .filter((template) => template?.generatedState === 'DETACHED').map((template) => template.name);
+}
+function confirmDetachedLoss(items, action) {
+  const names = detachedTemplateNames(items);
+  return !names.length || confirm(`${action} 직접 편집한 점검 만들기 스크립트도 삭제됩니다.\n${names.join('\n')}\n\n편집한 내용은 스크립트 이력에 남습니다. 계속할까요?`);
+}
 function itemId() { return `CUSTOM_${crypto.randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`; }
 function makeItem(name = '') { return { id: itemId(), name, enabled: true, executor: { type: document.getElementById('policy-category').value === 'DB' ? 'SQL_QUERY' : 'SCRIPT', options: {} }, inputs: [], result: { components: [{ type: 'SUMMARY' }] } }; }
 function renderItems() {
@@ -19,7 +29,7 @@ function renderItems() {
     const summary = document.createElement('span'); summary.textContent = `${item.name || item.id} · ${executorNames[item.executor?.type] || item.executor?.type} · ${(item.result?.components || []).map((component) => viewNames[component.type] || component.type).join(', ')}`;
     const actions = document.createElement('div'); actions.className = 'button-area'; actions.style.margin = '0';
     const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'btn btn-small'; edit.textContent = '편집'; edit.addEventListener('click', () => openItem(item));
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => { editingItems = editingItems.filter((entry) => entry.id !== item.id); hasUnsavedChanges = true; renderItems(); });
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => { if (!confirmDetachedLoss([item], '이 항목을 지우고 정책을 저장하면')) return; editingItems = editingItems.filter((entry) => entry.id !== item.id); hasUnsavedChanges = true; renderItems(); });
     actions.append(edit, remove); row.append(summary, actions); host.append(row);
   });
   if (!editingItems.length) { const empty = document.createElement('p'); empty.className = 'policy-help'; empty.textContent = '정책에 포함된 항목이 없습니다.'; host.append(empty); }
@@ -52,7 +62,7 @@ function renderCategoryTabs(matching = policies) {
 function setActiveCategory(category) { if (categoryNames[category]) { activeCategory = category; renderList(); } }
 function resetForm() { editingId = ''; editingItems = []; hasUnsavedChanges = false; form.reset(); document.getElementById('policy-category').value = activeCategory; document.getElementById('policy-form-title').textContent = '새 정책'; renderItems(); renderList(); }
 function openPolicy(policy) { editingId = policy.id; activeCategory = policy.category; hasUnsavedChanges = false; document.getElementById('policy-name').value = policy.name; document.getElementById('policy-os').value = policy.os; document.getElementById('policy-category').value = policy.category; document.getElementById('policy-form-title').textContent = '정책 수정'; editingItems = structuredClone(policy.items || []); renderItems(); renderList(); }
-async function deletePolicy(policy) { if (!confirm(`'${policy.name}' 정책을 삭제할까요?`)) return; try { await api(`/api/policies/${encodeURIComponent(policy.id)}`, { method: 'DELETE' }); if (editingId === policy.id) resetForm(); showToast('정책을 삭제했습니다.', 'success'); await loadPolicies(); } catch (error) { notifyError(error, '정책을 삭제하지 못했습니다.'); } }
+async function deletePolicy(policy) { if (!confirm(`'${policy.name}' 정책을 삭제할까요?`)) return; if (!confirmDetachedLoss(policy.items || [], '정책을 삭제하면')) return; try { await api(`/api/policies/${encodeURIComponent(policy.id)}`, { method: 'DELETE' }); if (editingId === policy.id) resetForm(); showToast('정책을 삭제했습니다.', 'success'); await loadPolicies(); } catch (error) { notifyError(error, '정책을 삭제하지 못했습니다.'); } }
 function parseJson(id, fallback) { const input = document.getElementById(id); try { input.setCustomValidity(''); return JSON.parse(input.value || fallback); } catch { input.setCustomValidity('올바른 JSON 형식으로 입력하세요.'); input.reportValidity(); throw new Error(`${input.previousElementSibling?.textContent || 'JSON'} 형식을 확인하세요.`); } }
 function populateItemDialog(item) {
   document.getElementById('policy-item-name').value = item.name || ''; document.getElementById('policy-item-executor').value = item.executor?.type || 'SCRIPT';
@@ -167,9 +177,11 @@ document.getElementById('policy-item-save').addEventListener('click', () => {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const payload = { name: document.getElementById('policy-name').value.trim(), os: document.getElementById('policy-os').value, category: document.getElementById('policy-category').value, enabled: true, items: editingItems };
-  try { const saved = await api(editingId ? `/api/policies/${encodeURIComponent(editingId)}` : '/api/policies', { method: editingId ? 'PUT' : 'POST', body: payload }); showToast('정책을 저장했습니다.', 'success'); await loadPolicies(); openPolicy(saved); } catch (error) { notifyError(error, '정책을 저장하지 못했습니다.'); }
+  const previous = policies.find((policy) => policy.id === editingId);
+  if (previous && previous.os !== payload.os && !confirmDetachedLoss(previous.items || [], '운영체제를 바꿔 저장하면 이전 OS용')) return;
+  try { const saved = await api(editingId ? `/api/policies/${encodeURIComponent(editingId)}` : '/api/policies', { method: editingId ? 'PUT' : 'POST', body: payload }); showToast('정책을 저장했습니다.', 'success'); templates = await api('/api/templates').catch(() => templates); await loadPolicies(); openPolicy(saved); } catch (error) { notifyError(error, '정책을 저장하지 못했습니다.'); }
 });
-async function loadPolicies() { policies = (await api('/api/policies')) || []; renderList(); }
+async function loadPolicies() { policies = (await api('/api/policies')) || []; templates = await api('/api/templates').catch(() => templates); renderList(); }
 async function init() {
   document.getElementById('script-template-picker-container').innerHTML = await loadText('/shared/fragments/script-template-picker-modal.html');
   codes = await api('/api/common-codes');

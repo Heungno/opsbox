@@ -32,20 +32,25 @@ ${V}_truncate() {
   done
   printf '%s' "$s"
 }
-# 명령 실행: cb_out(출력, stdout+stderr), cb_rc(종료 코드). 시간 제한 OPSBOX_CB_TIMEOUT(기본 ${LIMITS.commandTimeoutSeconds}초)
+# 명령 실행: cb_full(판정용 전체 출력, 최대 ${LIMITS.judgeOutputBytes}바이트), cb_out(보관용 ${LIMITS.outputLength}바이트), cb_rc(종료 코드)
+# 시간 제한 OPSBOX_CB_TIMEOUT(기본 ${LIMITS.commandTimeoutSeconds}초). 출력이 상한을 넘어 끊긴 경우(141)는 정상 종료로 봅니다.
 ${V}_run() {
   local t=\${OPSBOX_CB_TIMEOUT:-${LIMITS.commandTimeoutSeconds}}
-  if command -v timeout >/dev/null 2>&1; then cb_out=$(timeout "$t" bash -c "$1" 2>&1 </dev/null); cb_rc=$?
-  else cb_out=$(bash -c "$1" 2>&1 </dev/null); cb_rc=$?; fi
-  cb_out=$(${V}_truncate "$cb_out" ${LIMITS.outputLength})
+  if command -v timeout >/dev/null 2>&1; then cb_full=$(timeout "$t" bash -c "$1" 2>&1 </dev/null | head -c ${LIMITS.judgeOutputBytes}; exit "\${PIPESTATUS[0]}"); cb_rc=$?
+  else cb_full=$(bash -c "$1" 2>&1 </dev/null | head -c ${LIMITS.judgeOutputBytes}; exit "\${PIPESTATUS[0]}"); cb_rc=$?; fi
+  [ "$cb_rc" = 141 ] && cb_rc=0
+  cb_out=$(${V}_truncate "$cb_full" ${LIMITS.outputLength})
 }
-# 시간 초과(124)·실행 불가(126·127)면 cb_message를 채우고 참
+# 실패(시간 초과 124, 실행 불가 126·127, 그 밖의 0이 아닌 종료 코드)면 cb_message를 채우고 참
 ${V}_failed() {
   case "$cb_rc" in
     124) cb_message="명령 실행 시간이 \${OPSBOX_CB_TIMEOUT:-${LIMITS.commandTimeoutSeconds}}초를 초과했습니다."; return 0 ;;
     126|127) cb_message="명령을 실행할 수 없습니다: $(printf '%s\\n' "$cb_out" | head -n 1)"; return 0 ;;
+    0) return 1 ;;
   esac
-  return 1
+  # 그 밖의 실패는 출력이 정상처럼 보여도 판정하지 않습니다(예: 서비스가 멈춰 명령이 실패).
+  cb_message="명령이 종료 코드 $cb_rc(으)로 끝나 판정하지 않았습니다: $(printf '%s\\n' "$cb_out" | head -n 1)"
+  return 0
 }
 # 결과 표 한 줄: 대상 값 기준 상태 메시지
 ${V}_row() {
@@ -131,7 +136,7 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
         ...inputLines(spec),
         `  ${V}_run "$cb_command"`,
         `  if ! ${V}_failed; then`,
-        `    cb_value=$(printf '%s\\n' "$cb_out" | grep -oE -- '-?[0-9]+(\\.[0-9]+)?' | head -n 1)`,
+        `    cb_value=$(printf '%s\\n' "$cb_full" | grep -oE -- '-?[0-9]+(\\.[0-9]+)?' | head -n 1)`,
         `    if [ -z "$cb_value" ]; then cb_message='명령 출력에서 숫자를 찾지 못했습니다.'`,
         `    else cb_status=$(${V}_judge "$cb_value" "$cb_direction" "$cb_warning" "$cb_critical"); fi`,
         '  fi',
@@ -145,8 +150,8 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
         ...inputLines(spec),
         `  ${V}_run "$cb_command"`,
         `  if ! ${V}_failed; then`,
-        `    for p in "\${cb_bad[@]}"; do ${V}_contains "$cb_out" "$p" && cb_found+="\${cb_found:+, }$p"; done`,
-        `    for p in "\${cb_good[@]}"; do ${V}_contains "$cb_out" "$p" && cb_good_hit=1; done`,
+        `    for p in "\${cb_bad[@]}"; do ${V}_contains "$cb_full" "$p" && cb_found+="\${cb_found:+, }$p"; done`,
+        `    for p in "\${cb_good[@]}"; do ${V}_contains "$cb_full" "$p" && cb_good_hit=1; done`,
         `    if [ -n "$cb_found" ]; then cb_status=$cb_level; cb_message="비정상 문구 발견: $cb_found"`,
         `    elif [ "\${#cb_good[@]}" -gt 0 ] && [ "$cb_good_hit" = 0 ]; then cb_status=Warning; cb_message='정상 문구가 출력에 없습니다.'`,
         '    else cb_status=Healthy; fi',
@@ -210,7 +215,7 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
       ];
     case 'LOG_PATTERN':
       return [
-        `  local cb_days=${shLiteral(fmt(spec.periodDays))} cb_warning=${shLiteral(fmt(spec.warning))} cb_critical=${shLiteral(fmt(spec.critical))} cb_total=0 cb_found_path=0 cb_samples='' cb_sample_count=0 line f c st text`,
+        `  local cb_days=${shLiteral(fmt(spec.periodDays))} cb_warning=${shLiteral(fmt(spec.warning))} cb_critical=${shLiteral(fmt(spec.critical))} cb_total=0 cb_found_path=0 cb_samples='' cb_sample_count=0 cb_unreadable=0 line f c n rg st text msg`,
         `  local -a cb_args=() cb_files=()`,
         `  for p in ${(spec.phrases ?? []).map(shLiteral).join(' ')}; do cb_args+=(-e "$p"); done`,
         ...inputLines(spec),
@@ -220,9 +225,11 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
           `  if [ -d "$line" ]; then mapfile -t cb_files < <(find "$line" -type f -mtime "-$cb_days" 2>/dev/null | sort)`,
           `  elif [ -f "$line" ]; then mapfile -t cb_files < <(find "$line" -maxdepth 0 -mtime "-$cb_days" 2>/dev/null)`,
           `  else ${V}_row "$line" '' "$cb_threshold" NotCollected '경로가 없습니다.'; continue; fi`,
-          '  cb_found_path=1; c=0',
+          '  cb_found_path=1; c=0; cb_unreadable=0',
           '  for f in "${cb_files[@]}"; do',
-          '    c=$((c + $(grep -ciF "${cb_args[@]}" -- "$f" 2>/dev/null || true)))',
+          '    n=$(grep -ciF "${cb_args[@]}" -- "$f" 2>/dev/null); rg=$?',
+          '    if [ "$rg" -gt 1 ]; then cb_unreadable=$((cb_unreadable + 1)); continue; fi',
+          '    c=$((c + ${n:-0}))',
           `    if [ "$cb_sample_count" -lt ${LIMITS.sampleLines} ]; then`,
           '      while IFS= read -r text; do',
           `        [ -n "$cb_samples" ] && cb_samples+=','`,
@@ -233,7 +240,8 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
           '  done',
           '  cb_total=$((cb_total + c))',
           `  st=$(${V}_judge "$c" HIGHER_IS_WORSE "$cb_warning" "$cb_critical")`,
-          `  ${V}_row "$line" "$c" "$cb_threshold" "$st" "파일 \${#cb_files[@]}개 확인"`,
+          `  msg="파일 \${#cb_files[@]}개 확인"; [ "$cb_unreadable" -gt 0 ] && msg+=", 읽을 수 없는 파일 \${cb_unreadable}개(권한 확인 필요)"`,
+          `  ${V}_row "$line" "$c" "$cb_threshold" "$st" "$msg"`,
           'done <<< "$cb_in_paths"',
           `if [ "$cb_found_path" = 1 ]; then cb_status=$(${V}_judge "$cb_total" HIGHER_IS_WORSE "$cb_warning" "$cb_critical"); else cb_message='확인할 수 있는 로그 경로가 없습니다.'; fi`,
           `cb_extra=",\\"samples\\":[$cb_samples]"`,
@@ -251,7 +259,7 @@ export function generateLinuxPart({ itemId, itemName, role, spec }: GenerateArgs
     HELPERS,
     `${fn}() {`,
     `  local cb_item=${shLiteral(itemId)} cb_role=${shLiteral(role)} cb_name=${shLiteral(itemName)} cb_threshold=${shLiteral(thresholdText(resolved))}`,
-    `  local cb_rows='' cb_statuses='' cb_out='' cb_rc=0 cb_status=NotCollected cb_message='' cb_extra=''`,
+    `  local cb_rows='' cb_statuses='' cb_out='' cb_full='' cb_rc=0 cb_status=NotCollected cb_message='' cb_extra=''`,
     '  opsbox_log "점검 만들기 시작: $cb_name"',
     ...body(resolved),
     `  ${V}_finish "$cb_role" "$cb_item" "$cb_status" "$cb_message" "$cb_extra"`,

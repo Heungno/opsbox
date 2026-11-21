@@ -21,12 +21,15 @@ function ${P}-Truncate {
   if ($Text.Length -le $Max) { return $Text }
   return $Text.Substring(0, $Max)
 }
-# 명령 실행: 자식 PowerShell(UTF-8 출력), 시간 제한 OPSBOX_CB_TIMEOUT(기본 ${LIMITS.commandTimeoutSeconds}초). 반환 @{ rc; output }, 시간 초과는 rc 124
+# 명령 실행: 자식 PowerShell(UTF-8 출력), 시간 제한 OPSBOX_CB_TIMEOUT(기본 ${LIMITS.commandTimeoutSeconds}초). 반환 @{ rc; full; output }, 시간 초과는 rc 124
 function ${P}-Run {
   param([string]$Command, [hashtable]$Environment)
   $cbTimeout = ${LIMITS.commandTimeoutSeconds}
   if ($env:OPSBOX_CB_TIMEOUT) { $cbTimeout = [int]$env:OPSBOX_CB_TIMEOUT }
-  $script = "$" + "ProgressPreference = 'SilentlyContinue'; [Console]::OutputEncoding = [Text.Encoding]::UTF8" + [Environment]::NewLine + $Command
+  # 명령 없음은 127, 그 밖의 오류는 1, 네이티브 명령 실패는 그 종료 코드로 끝나게 감쌉니다.
+  $prefix = '$ProgressPreference = ''SilentlyContinue''; [Console]::OutputEncoding = [Text.Encoding]::UTF8; $ErrorActionPreference = ''Stop''' + [Environment]::NewLine + 'try {'
+  $suffix = '} catch [System.Management.Automation.CommandNotFoundException] { [Console]::Error.WriteLine($_.Exception.Message); exit 127 } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }' + [Environment]::NewLine + 'if ($LASTEXITCODE) { exit $LASTEXITCODE }'
+  $script = $prefix + [Environment]::NewLine + $Command + [Environment]::NewLine + $suffix
   $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = Join-Path $PSHOME 'powershell.exe'
@@ -46,8 +49,9 @@ function ${P}-Run {
     return @{ rc = 124; output = ''; timeout = $cbTimeout }
   }
   $process.WaitForExit()
-  $output = ($stdoutTask.Result + [Environment]::NewLine + $stderrTask.Result).Trim()
-  return @{ rc = $process.ExitCode; output = (${P}-Truncate $output ${LIMITS.outputLength}); timeout = $cbTimeout }
+  # 판정은 전체 출력(최대 ${LIMITS.judgeOutputBytes}자), 보관은 ${LIMITS.outputLength}자
+  $full = ${P}-Truncate ($stdoutTask.Result + [Environment]::NewLine + $stderrTask.Result).Trim() ${LIMITS.judgeOutputBytes}
+  return @{ rc = $process.ExitCode; full = $full; output = (${P}-Truncate $full ${LIMITS.outputLength}); timeout = $cbTimeout }
 }
 # 정책 항목의 서버별 입력 값 (없으면 빈 문자열)
 function ${P}-Input {
@@ -91,11 +95,13 @@ function ${P}-Row {
   param([string]$Target, [string]$Value, [string]$Threshold, [string]$Status, [string]$Message)
   return @{ target = $Target; value = $Value; threshold = $Threshold; status = $Status; message = $Message }
 }
-# 명령 실행 결과가 시간 초과·실행 불가면 메시지, 아니면 $null
+# 명령 실행이 실패했으면(시간 초과·실행 불가·0이 아닌 종료 코드) 메시지, 아니면 $null
 function ${P}-Failure {
   param([hashtable]$Result)
   if ($Result.rc -eq 124) { return "명령 실행 시간이 $($Result.timeout)초를 초과했습니다." }
   if ($Result.rc -eq 126 -or $Result.rc -eq 127) { return "명령을 실행할 수 없습니다: $(@(([string]$Result.output) -split "\`r?\`n")[0])" }
+  # 그 밖의 실패는 출력이 정상처럼 보여도 판정하지 않습니다(예: 오류 메시지의 줄 번호를 값으로 읽는 일 방지).
+  if ($Result.rc -ne 0) { return "명령이 종료 코드 $($Result.rc)(으)로 끝나 판정하지 않았습니다: $(@(([string]$Result.output) -split "\`r?\`n")[0])" }
   return $null
 }`.trim();
 
@@ -155,7 +161,7 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
         `    $cbMessage = ${P}-Failure $cbRun`,
         "    $cbValue = ''",
         '    if (-not $cbMessage) {',
-        "      $cbMatch = [regex]::Match([string]$cbOutput, '-?[0-9]+(\\.[0-9]+)?')",
+        "      $cbMatch = [regex]::Match([string]$cbRun.full, '-?[0-9]+(\\.[0-9]+)?')",
         "      if (-not $cbMatch.Success) { $cbMessage = '명령 출력에서 숫자를 찾지 못했습니다.' }",
         `      else { $cbValue = $cbMatch.Value; $cbStatus = ${P}-Judge (${P}-Number $cbValue) ${psLiteral(spec.direction ?? 'HIGHER_IS_WORSE')} (${P}-Number ${psLiteral(fmt(spec.warning))}) (${P}-Number ${psLiteral(fmt(spec.critical))}) }`,
         '    }',
@@ -170,8 +176,8 @@ function body(spec: BuilderSpec & { command?: string }): string[] {
         '    $cbFound = @()',
         '    if (-not $cbMessage) {',
         `      $cbGood = ${list(spec.goodPhrases)}`,
-        `      foreach ($cbPhrase in ${list(spec.badPhrases)}) { if (${P}-Contains $cbOutput $cbPhrase) { $cbFound += $cbPhrase } }`,
-        `      $cbGoodHit = @($cbGood | Where-Object { ${P}-Contains $cbOutput $_ }).Count -gt 0`,
+        `      foreach ($cbPhrase in ${list(spec.badPhrases)}) { if (${P}-Contains $cbRun.full $cbPhrase) { $cbFound += $cbPhrase } }`,
+        `      $cbGoodHit = @($cbGood | Where-Object { ${P}-Contains $cbRun.full $_ }).Count -gt 0`,
         `      if ($cbFound.Count -gt 0) { $cbStatus = ${psLiteral(spec.level ?? 'Critical')}; $cbMessage = '비정상 문구 발견: ' + ($cbFound -join ', ') }`,
         "      elseif ($cbGood.Count -gt 0 -and -not $cbGoodHit) { $cbStatus = 'Warning'; $cbMessage = '정상 문구가 출력에 없습니다.' }",
         "      else { $cbStatus = 'Healthy' }",

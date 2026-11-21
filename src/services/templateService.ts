@@ -150,8 +150,13 @@ export function saveGeneratedTemplate(template: ManagedTemplate) {
   return template;
 }
 
+/** 지우기 전 내용을 이력에 남깁니다(직접 편집한 내용을 잃지 않게). */
 export function deleteGeneratedTemplate(id: string) {
   const items = read();
-  const remaining = items.filter((item) => item.id !== id);
-  if (remaining.length !== items.length) write(remaining);
+  const target = items.find((item) => item.id === id);
+  if (!target) return;
+  const history = readHistory();
+  addHistoryVersion(history, target);
+  writeHistory(history);
+  write(items.filter((item) => item.id !== id));
 }

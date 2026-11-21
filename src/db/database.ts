@@ -109,19 +109,27 @@ db.exec(`
  */
 let transactionDepth = 0;
 export function transaction<T>(fn: () => T): T {
-  const savepoint = `sp_${transactionDepth}`;
-  db.exec(transactionDepth === 0 ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
-  transactionDepth++;
+  const depth = transactionDepth;
+  const savepoint = `sp_${depth}`;
+  db.exec(depth === 0 ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
+  transactionDepth = depth + 1;
+  let result: T;
   try {
-    const result = fn();
-    transactionDepth--;
-    db.exec(transactionDepth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
-    return result;
+    result = fn();
   } catch (error) {
-    transactionDepth--;
-    db.exec(transactionDepth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
+    transactionDepth = depth;
+    try { db.exec(depth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`); } catch { /* 이미 끝난 트랜잭션 */ }
     throw error;
   }
+  // 깊이는 확정 성공 여부와 관계없이 한 번만 되돌립니다(확정 실패 뒤에도 다음 트랜잭션을 쓸 수 있게).
+  transactionDepth = depth;
+  try {
+    db.exec(depth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
+  } catch (error) {
+    if (depth === 0 && db.isTransaction) { try { db.exec('ROLLBACK'); } catch { /* 되돌릴 수 없으면 그대로 오류 전달 */ } }
+    throw error;
+  }
+  return result;
 }
 
 /*
