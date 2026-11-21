@@ -19,6 +19,30 @@ async function loadSummary() {
   document.getElementById('was-count').textContent = data.was;
   document.getElementById('db-count').textContent = data.db;
   document.getElementById('other-count').textContent = data.other;
+  renderFleetBar(data);
+}
+
+// 상태 분포 막대: 각 구간 너비를 서버 수 비율로 설정 (점검 기록이 없는 서버는 회색 구간)
+function renderFleetBar(data) {
+  const total = Number(data.total) || 0;
+  const counts = {
+    healthy: Number(data.healthy) || 0,
+    warning: Number(data.warning) || 0,
+    critical: Number(data.critical) || 0,
+  };
+  counts.unknown = Math.max(0, total - counts.healthy - counts.warning - counts.critical);
+
+  document.querySelectorAll('#fleet-bar [data-seg]').forEach((segment) => {
+    const count = counts[segment.dataset.seg] || 0;
+    segment.style.flexGrow = String(count);
+    segment.hidden = count === 0;
+  });
+  document.getElementById('unknown-count').textContent = counts.unknown;
+  document.getElementById('fleet-unknown').hidden = counts.unknown === 0;
+  document.getElementById('fleet-bar').setAttribute(
+    'aria-label',
+    `전체 ${total}대 중 Healthy ${counts.healthy}, Warning ${counts.warning}, Critical ${counts.critical}, 점검 기록 없음 ${counts.unknown}`,
+  );
 }
 
 async function loadRecentChecks() {
@@ -53,18 +77,21 @@ function renderRecentChecks(checks) {
     healthCell.appendChild(badge);
 
     const cpu = document.createElement('td');
+    cpu.className = 'num';
     cpu.textContent = `${item.cpu}%`;
 
     const memory = document.createElement('td');
+    memory.className = 'num';
     memory.textContent = `${item.memory}%`;
 
     const disk = document.createElement('td');
+    disk.className = 'num';
     disk.textContent = `${item.disk}%`;
 
     const Report = document.createElement('td');
     const linkReport = document.createElement('a');
-    linkReport.className = 'btn btn-small btn-primary';
-    linkReport.textContent = 'Report';
+    linkReport.className = 'btn btn-small btn-secondary';
+    linkReport.textContent = '보고서 보기';
     linkReport.href = `/reports/detail?serverId=${item.serverId}&file=${encodeURIComponent(item.fileName)}`;
     Report.appendChild(linkReport);
 

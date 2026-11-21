@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OpsBox | 대시보드</title>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261121-audit2" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261121-design" />
 </head>
 
 <body>
@@ -19,47 +19,33 @@
           <p>서버 운영 현황 요약</p>
         </header>
 
-        <section class="dashboard stats-grid">
-          <div class="summary-card summary-total">
-            <span>총 서버</span>
-            <strong id="total-count"> - </strong>
+        <section class="fleet-panel" aria-label="서버 상태 요약">
+          <div class="fleet-total">
+            <strong id="total-count">-</strong>
+            <span>등록 서버</span>
           </div>
 
-          <div class="summary-card summary-healthy">
-            <span>Healthy</span>
-            <strong id="healthy-count"> - </strong>
+          <div class="fleet-health">
+            <div id="fleet-bar" class="fleet-bar" role="img" aria-label="최근 점검 상태 분포">
+              <span class="fleet-seg healthy" data-seg="healthy"></span>
+              <span class="fleet-seg warning" data-seg="warning"></span>
+              <span class="fleet-seg critical" data-seg="critical"></span>
+              <span class="fleet-seg unknown" data-seg="unknown"></span>
+            </div>
+            <dl class="fleet-legend">
+              <div class="fleet-stat healthy"><dt>Healthy</dt><dd id="healthy-count">-</dd></div>
+              <div class="fleet-stat warning"><dt>Warning</dt><dd id="warning-count">-</dd></div>
+              <div class="fleet-stat critical"><dt>Critical</dt><dd id="critical-count">-</dd></div>
+              <div id="fleet-unknown" class="fleet-stat unknown" hidden><dt>점검 기록 없음</dt><dd id="unknown-count">0</dd></div>
+            </dl>
           </div>
 
-          <div class="summary-card summary-warning">
-            <span>Warning</span>
-            <strong id="warning-count"> - </strong>
-          </div>
-
-          <div class="summary-card summary-critical">
-            <span>Critical</span>
-            <strong id="critical-count"> - </strong>
-          </div>
-        </section>
-
-        <section class="dashboard">
-          <div class="summary-card summary-web">
-            <span>WEB</span>
-            <strong id="web-count"> - </strong>
-          </div>
-
-          <div class="summary-card summary-was">
-            <span>WAS</span>
-            <strong id="was-count"> - </strong>
-          </div>
-
-          <div class="summary-card summary-db">
-            <span>DB</span>
-            <strong id="db-count"> - </strong>
-          </div>
-          <div class="summary-card">
-            <span>기타</span>
-            <strong id="other-count"> - </strong>
-          </div>
+          <dl class="fleet-roles" aria-label="유형별 서버 수">
+            <div><dt>WEB</dt><dd id="web-count">-</dd></div>
+            <div><dt>WAS</dt><dd id="was-count">-</dd></div>
+            <div><dt>DB</dt><dd id="db-count">-</dd></div>
+            <div><dt>기타</dt><dd id="other-count">-</dd></div>
+          </dl>
         </section>
 
         <section class="card">
@@ -69,6 +55,7 @@
             <a href="/settings/server-management" class="btn btn-secondary">서버 목록</a>
           </div>
 
+          <div class="table-scroll">
           <table class="history-table">
             <thead>
               <tr>
@@ -76,21 +63,22 @@
                 <th>유형</th>
                 <th>점검일시</th>
                 <th>상태</th>
-                <th>CPU</th>
-                <th>MEM</th>
-                <th>DISK</th>
+                <th class="num">CPU</th>
+                <th class="num">MEM</th>
+                <th class="num">DISK</th>
                 <th>리포트</th>
               </tr>
             </thead>
 
             <tbody id="recent-checks"></tbody>
           </table>
+          </div>
         </section>
       </div>
     </main>
   </div>
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/dashboard/dashboard.js?v=20261121-api"></script>
+  <script type="module" src="/dashboard/dashboard.js?v=20261121-design"></script>
 </body>
 
 </html>
