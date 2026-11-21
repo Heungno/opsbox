@@ -85,7 +85,7 @@ export function registerErrorHandlers(app: FastifyInstance) {
   app.setErrorHandler((error, request, reply) => {
     const { status, body } = toApiFailure(error, request);
     if (status >= 500) request.log.error({ err: error }, '요청 처리 중 오류');
-    else request.log.warn({ code: body.code, status, message: body.message }, '요청 오류');
+    else request.log.warn({ errorCode: body.code, statusCode: status }, `요청 오류 (${status} ${body.code}): ${body.message}`);
     return sendFailure(reply, request, status, body);
   });
 

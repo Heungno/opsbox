@@ -4,7 +4,7 @@ import pino from 'pino';
 /*
  * OpsBox 애플리케이션 로그
  *
- * - 화면(터미널): 읽기 쉬운 형태(pino-pretty)
+ * - 화면(터미널): 읽기 쉬운 형태(pino-pretty). 요청은 'GET /경로 → 200 (5ms) [요청ID]' 한 줄
  * - 파일: JSON 한 줄씩, logs/opsbox.<날짜>.<번호>.log
  *   하루마다 새 파일, 한 파일이 OPSBOX_LOG_MAX_SIZE(기본 100m)를 넘으면 번호를 올려 새 파일.
  *   최근 OPSBOX_LOG_RETENTION_FILES(기본 30)개만 남기고 오래된 파일은 자동 삭제.
@@ -28,7 +28,13 @@ const targets: pino.TransportTargetOptions[] = [
   {
     target: 'pino-pretty',
     level,
-    options: { colorize: true, translateTime: 'SYS:yyyy-mm-dd HH:MM:ss', ignore: 'pid,hostname' },
+    // 요청 관련 필드는 메시지 한 줄에 담겨 있으므로 콘솔에서는 펼치지 않고(파일에는 남음), 요청 ID만 끝에 붙입니다.
+    options: {
+      colorize: true,
+      translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+      ignore: 'pid,hostname,reqId,req,res,responseTime,method,url,statusCode,errorCode,ip',
+      messageFormat: '{msg}{if reqId} [{reqId}]{end}',
+    },
   },
 ];
 

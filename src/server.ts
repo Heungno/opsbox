@@ -19,6 +19,16 @@ const app = Fastify({
   loggerInstance: logger as FastifyBaseLogger,
   // 재시작해도 겹치지 않는 요청 ID (오류 알림·로그 파일·감사 로그에서 같은 값으로 추적)
   genReqId: () => randomUUID().replace(/-/g, '').slice(0, 12),
+  // 요청 시작·완료를 따로 남기는 기본 로그 대신, 응답이 끝날 때 한 줄로 남깁니다(아래 onResponse).
+  disableRequestLogging: true,
+});
+
+// 요청 로그: 콘솔에는 'GET /경로 → 200 (5ms) [요청ID]' 한 줄, 파일에는 method·url·statusCode·responseTime 필드까지
+app.addHook('onResponse', async (request, reply) => {
+  request.log.info(
+    { method: request.method, url: request.url, statusCode: reply.statusCode, responseTime: reply.elapsedTime, ip: request.ip },
+    `${request.method} ${request.url} → ${reply.statusCode} (${Math.round(reply.elapsedTime)}ms)`,
+  );
 });
 
 registerErrorHandlers(app);
@@ -114,7 +124,7 @@ async function start() {
       port,
     });
 
-    app.log.info({ url: `http://localhost:${port}` }, 'OpsBox 시작');
+    app.log.info({ address: `http://localhost:${port}` }, 'OpsBox 시작');
     app.log.debug(`\n${app.printRoutes()}`);
 
     startResultImportScheduler();
