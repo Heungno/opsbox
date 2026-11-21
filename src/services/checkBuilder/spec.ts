@@ -82,6 +82,8 @@ export function validateBuilderSpec(raw: unknown, os: BuilderOs, field: string):
       break;
     case 'SETTING_VALUE':
       if (!isText(resolved.settingName, LIMITS.phraseLength)) errors.push({ field: at('settingName'), message: os === 'Windows' ? '레지스트리 값 이름을 입력하세요.' : '커널 파라미터 이름(예: vm.swappiness)을 입력하세요.' });
+      // Linux 커널 파라미터 이름은 sysctl 옵션으로 해석되지 않도록 영문·숫자·. _ / - 만 허용하고 - 로 시작할 수 없음
+      else if (os === 'Linux' && !/^[A-Za-z0-9_][A-Za-z0-9._/-]*$/.test(resolved.settingName!)) errors.push({ field: at('settingName'), message: '커널 파라미터 이름은 영문·숫자·. _ / - 만 쓸 수 있습니다. (예: vm.swappiness)' });
       if (os === 'Windows' && !isText(resolved.settingPath, 500)) errors.push({ field: at('settingPath'), message: '레지스트리 경로를 입력하세요. (예: HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters)' });
       if (!COMPARATORS.includes(resolved.comparator as string)) errors.push({ field: at('comparator'), message: '비교 방법(=, ≠, ≥, ≤)을 고르세요.' });
       if (!isText(resolved.expected, LIMITS.phraseLength)) errors.push({ field: at('expected'), message: '기대값을 입력하세요.' });

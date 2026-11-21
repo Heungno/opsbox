@@ -54,6 +54,9 @@ test('유형별 필수 값을 확인한다', () => {
   assert.ok(fields({ type: 'SETTING_VALUE', comparator: '=', expected: '1' }).includes('i.settingName'));
   assert.ok(fields({ type: 'SETTING_VALUE', settingName: 'Name', comparator: '=', expected: '1' }, 'Windows').includes('i.settingPath'));
   assert.ok(fields({ type: 'SETTING_VALUE', settingName: 'vm.swappiness', comparator: '~', expected: '1' }).includes('i.comparator'));
+  // 커널 파라미터 이름은 옵션으로 해석되지 않도록 글자를 제한 (예: -w 로 시작하면 값 변경 옵션)
+  assert.ok(fields({ type: 'SETTING_VALUE', settingName: '-w vm.swappiness=1', comparator: '=', expected: '1' }).includes('i.settingName'));
+  assert.deepEqual(fields({ type: 'SETTING_VALUE', settingName: 'net.ipv4.tcp_syncookies', comparator: '=', expected: '1' }), []);
   assert.ok(fields({ type: 'FILE_FRESHNESS', maxAgeHours: 0 }).includes('i.maxAgeHours'));
   assert.ok(fields({ type: 'LOG_PATTERN', phrases: [], periodDays: 7, warning: 1, critical: 5 }).includes('i.phrases'));
   assert.ok(fields({ type: 'REMOTE_PORT', timeoutSeconds: 0 }).includes('i.timeoutSeconds'));
