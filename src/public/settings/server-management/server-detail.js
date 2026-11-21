@@ -169,6 +169,7 @@ async function loadServer() {
 
   renderServerInfo(server);
   bindServerEdit(server);
+  bindResultUpload();
 
   await loadScripts(server);
   await loadLatestResult(server.id);
@@ -177,8 +178,6 @@ async function loadServer() {
 }
 
 function renderServerInfo(server) {
-  const year = new Date().getFullYear();
-
   document.getElementById('server-title').textContent = `${server.id} - ${server.name}`;
   document.getElementById('server-id').textContent = server.id;
   document.getElementById('server-name').textContent = server.name;
@@ -186,11 +185,12 @@ function renderServerInfo(server) {
   renderPolicyRoleTabs(roles);
   document.getElementById('server-product').textContent = roles.map((role) => `${role}: ${server.products?.[role] || (server.type === role ? server.product : '') || '미지정'}`).join(' · ');
   const httpPolicy = document.getElementById('http-check-policy');
-  if (httpPolicy) httpPolicy.hidden = server.os !== 'Windows' || !roles.some((role) => role === 'WEB' || role === 'WAS');
+  if (httpPolicy) httpPolicy.hidden = !roles.some((role) => role === 'WEB' || role === 'WAS');
   document.getElementById('server-ip').textContent = server.ip;
   document.getElementById('server-shared-path').textContent = server.sharedPath;
-  document.getElementById('server-script-path').textContent = `${server.sharedPath}\\scripts`;
-  document.getElementById('server-result-path').textContent = `${server.sharedPath}\\results\\${year}\\${server.id}`;
+  document.getElementById('server-script-path').textContent = joinSharedPath(server.sharedPath, 'scripts');
+  // 결과 수신함: results 폴더에 파일을 넣으면 파일 안의 서버 ID로 가져옵니다.
+  document.getElementById('server-result-path').textContent = joinSharedPath(server.sharedPath, 'results');
   [
     ['btn-add-directory', addDirectoryRow],
     ['btn-add-file-check', addFileCheckRow],
@@ -345,7 +345,7 @@ function loadScripts(server) {
   desc.className = 'script-desc';
   desc.textContent = server.os === 'Windows'
     ? '정책에 연결된 점검 스크립트를 조립합니다. 실행 명령의 $resultDirectory에 경로를 입력하면 그곳에 저장하고, 비워 두면 서버정보의 공유 경로를 사용합니다.'
-    : '스크립트 파일이 있는 폴더에서 실행하세요. 결과 JSON은 서버 공유 경로에 저장됩니다.';
+    : '스크립트 파일이 있는 폴더에서 bash로 실행하세요. 결과 폴더를 지정하면 그곳에, 지정하지 않거나 쓸 수 없으면 스크립트 폴더에 결과 JSON을 저장합니다. 저장된 파일은 공유 폴더의 results 폴더에 넣거나 [결과 파일 올리기]로 올리세요.';
 
   const commandTitle = document.createElement('div');
   commandTitle.className = 'command-title';
@@ -357,7 +357,7 @@ function loadScripts(server) {
   const scriptFilter = quotePowerShell(`${server.id}*.ps1`);
   const command = server.os.toLowerCase() === 'windows'
     ? `$resultDirectory = ''; $script = Get-ChildItem -File -Filter ${scriptFilter} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; $scriptArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script); if (-not [string]::IsNullOrWhiteSpace($resultDirectory)) { $scriptArgs += @('-ResultDirectory', $resultDirectory) }; powershell.exe @scriptArgs`
-    : `year=$(date +%Y); resPath="${server.sharedPath}/results/$year/${server.id}"; mkdir -p "$resPath"; bash ./${scriptFileName} > "$resPath/$(date +%Y-%m-%d_%H-%M-%S).json"`;
+    : `# 결과를 스크립트 폴더에 저장\nbash ./${scriptFileName}\n\n# 공유 폴더가 마운트되어 있으면 그 안의 results 폴더를 지정 (예: /mnt/opsbox/results)\nbash ./${scriptFileName} /mnt/opsbox/results`;
 
   const commandBox = document.createElement('pre');
   commandBox.className = 'command-box';
@@ -492,6 +492,56 @@ function renderLatestResult(result, health) {
   container.appendChild(date);
 
   renderHealthSummary(health);
+}
+
+// 공유 폴더 경로 표기(\\NAS\share 또는 /mnt/share)에 맞는 구분자로 붙입니다.
+function joinSharedPath(base, child) {
+  if (!base) return '-';
+  const separator = base.includes('\\') || !base.includes('/') ? '\\' : '/';
+  return `${base.replace(/[\\/]+$/, '')}${separator}${child}`;
+}
+
+// 점검자가 내려받은 결과 파일 올리기 (여러 개 선택 가능)
+function bindResultUpload() {
+  const button = document.getElementById('btn-upload-result');
+  const input = document.getElementById('upload-result-input');
+  if (!button || !input || button.dataset.bound === 'true') return;
+  button.dataset.bound = 'true';
+  button.addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    const files = [...input.files];
+    input.value = '';
+    if (!files.length || !currentServer) return;
+    button.disabled = true;
+    const label = button.textContent;
+    button.textContent = '올리는 중…';
+    let imported = 0;
+    let duplicates = 0;
+    const failures = [];
+    for (const file of files) {
+      try {
+        const stored = await api('/api/results/upload', {
+          method: 'POST',
+          body: { fileName: file.name, content: await file.text(), serverId: currentServer.id },
+        });
+        if (stored.outcome === 'imported') imported++;
+        else duplicates++;
+      } catch (error) {
+        failures.push(`${file.name}: ${error.message}`);
+      }
+    }
+    button.disabled = false;
+    button.textContent = label;
+    const parts = [];
+    if (imported) parts.push(`${imported}건을 가져왔습니다`);
+    if (duplicates) parts.push(`${duplicates}건은 이미 있는 결과입니다`);
+    if (parts.length) showToast(`결과 파일 ${parts.join(', ')}.`, 'success');
+    if (failures.length) showToast(`올리지 못한 파일 ${failures.length}건\n${failures.join('\n')}`, 'error', { duration: 15000 });
+    if (imported) {
+      await loadLatestResult(currentServer.id);
+      await loadResultHistory(currentServer.id);
+    }
+  });
 }
 
 async function loadResultHistory(serverId) {

@@ -1657,6 +1657,283 @@
               "criticalPercent": 90
             }
           }
+        },
+        {
+          "id": "PROCESS",
+          "name": "프로세스",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "name",
+                    "label": "프로세스"
+                  },
+                  {
+                    "key": "processId",
+                    "label": "PID"
+                  },
+                  {
+                    "key": "running",
+                    "label": "실행 중"
+                  },
+                  {
+                    "key": "cpuSeconds",
+                    "label": "CPU(초)"
+                  },
+                  {
+                    "key": "memoryMB",
+                    "label": "메모리(MB)"
+                  },
+                  {
+                    "key": "uptimeMinutes",
+                    "label": "가동(분)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "DIRECTORY",
+          "name": "디렉터리 사용량",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "path",
+                    "label": "경로"
+                  },
+                  {
+                    "key": "exists",
+                    "label": "존재"
+                  },
+                  {
+                    "key": "sizeGB",
+                    "label": "크기(GB)"
+                  },
+                  {
+                    "key": "usedGB",
+                    "label": "사용(GB)"
+                  },
+                  {
+                    "key": "freeGB",
+                    "label": "여유(GB)"
+                  },
+                  {
+                    "key": "totalGB",
+                    "label": "전체(GB)"
+                  },
+                  {
+                    "key": "usagePercent",
+                    "label": "사용률(%)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "message",
+                    "label": "메시지"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "FILE_SIZE",
+          "name": "파일 크기",
+          "enabled": true,
+          "executor": {
+            "type": "FILESYSTEM_CHECK",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "path",
+                    "label": "파일 경로"
+                  },
+                  {
+                    "key": "exists",
+                    "label": "존재"
+                  },
+                  {
+                    "key": "sizeMB",
+                    "label": "크기(MB)"
+                  },
+                  {
+                    "key": "status",
+                    "label": "상태"
+                  },
+                  {
+                    "key": "message",
+                    "label": "메시지"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "PORT",
+          "name": "포트 리스닝",
+          "enabled": true,
+          "executor": {
+            "type": "TCP_CHECK",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "port",
+                    "label": "포트"
+                  },
+                  {
+                    "key": "protocol",
+                    "label": "프로토콜"
+                  },
+                  {
+                    "key": "description",
+                    "label": "설명"
+                  },
+                  {
+                    "key": "listening",
+                    "label": "수신 중"
+                  },
+                  {
+                    "key": "processName",
+                    "label": "프로세스"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
+          "id": "HTTP",
+          "name": "HTTP 응답",
+          "enabled": true,
+          "executor": {
+            "type": "HTTP_CHECK",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "TABLE",
+                "columns": [
+                  {
+                    "key": "name",
+                    "label": "점검명"
+                  },
+                  {
+                    "key": "url",
+                    "label": "URL"
+                  },
+                  {
+                    "key": "expectedStatus",
+                    "label": "기대 코드"
+                  },
+                  {
+                    "key": "statusCode",
+                    "label": "응답 코드"
+                  },
+                  {
+                    "key": "responseTimeMs",
+                    "label": "응답 시간(ms)"
+                  },
+                  {
+                    "key": "success",
+                    "label": "성공"
+                  },
+                  {
+                    "key": "error",
+                    "label": "오류"
+                  }
+                ]
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
         }
       ]
     },

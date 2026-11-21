@@ -90,7 +90,11 @@
                 <div id="latest-result">조회중...</div>
               </section>
               <section class="server-overview-history">
-                <h3>최근 점검 기록</h3>
+                <div class="overview-heading">
+                  <h3>최근 점검 기록</h3>
+                  <button id="btn-upload-result" type="button" class="btn btn-small btn-secondary" title="점검자가 내려받은 결과 JSON 파일을 올립니다">결과 파일 올리기</button>
+                  <input id="upload-result-input" type="file" accept=".json,application/json" multiple hidden>
+                </div>
                 <table class="history-table compact-history-table">
                   <thead><tr><th>점검일시</th><th>CPU</th><th>MEM</th><th>DISK</th><th>상태</th><th>보고서</th></tr></thead>
                   <tbody id="result-history"><tr><td colspan="6">조회중...</td></tr></tbody>
@@ -203,7 +207,7 @@
   </div>
 
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/settings/server-management/server-detail.js?v=20261121-api2"></script>
+  <script type="module" src="/settings/server-management/server-detail.js?v=20261121-upload"></script>
 
 </body>
 

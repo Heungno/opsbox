@@ -28,6 +28,7 @@ export const AUDIT_ACTIONS: AuditActionOption[] = [
   { value: 'TEMPLATE_RESTORE', label: '템플릿 버전 복원', targetType: 'TEMPLATE' },
   { value: 'COMMON_CODE_UPDATE', label: '공통코드 변경', targetType: 'COMMON_CODE' },
   { value: 'RESULT_IMPORT', label: '점검 결과 가져오기', targetType: 'RESULT' },
+  { value: 'RESULT_UPLOAD', label: '점검 결과 올리기', targetType: 'RESULT' },
   { value: 'SCRIPT_DOWNLOAD', label: '점검 스크립트 다운로드', targetType: 'SCRIPT' },
 ];
 

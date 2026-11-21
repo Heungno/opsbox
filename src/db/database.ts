@@ -216,4 +216,74 @@ function seedFromJsonFiles() {
   if (seeded.length) logger.info({ dbPath: DB_PATH, seeded }, 'JSON 데이터를 SQLite로 옮겼습니다');
 }
 
+/*
+ * 기존 DB 업그레이드 (이미 쓰고 있는 설치본에 새 기본값 추가)
+ *
+ * 템플릿·정책은 DB가 비어 있을 때만 JSON에서 채우므로, 새 버전에서 추가된 기본 템플릿은
+ * 기존 DB에 들어가지 않습니다. 여기서 "한 번도 넣은 적 없는" 기본 템플릿만 추가합니다.
+ * - 이미 넣었던 기본 템플릿 id는 settings.builtin_template_ids 에 기록해 두므로,
+ *   사용자가 지운 기본 템플릿을 다시 살리지 않습니다.
+ * - 사용자가 고친 템플릿·정책은 덮어쓰지 않습니다.
+ */
+const BUILTIN_TEMPLATE_IDS_KEY = 'builtin_template_ids';
+/** 이 기록이 생기기 전(이전 버전)에 이미 시드된 것으로 볼 템플릿을 고르는 기준: Linux 조각은 새로 추가된 것 */
+const isTemplateAddedLater = (id: string) => id.startsWith('LINUX-PART-');
+
+function addNewBuiltInTemplates(): string[] {
+  const templates = readJsonFile('templates.json');
+  if (!Array.isArray(templates)) return [];
+  const builtInIds = templates.map((template: any) => String(template.id));
+  const recorded = readSetting<string[]>(BUILTIN_TEMPLATE_IDS_KEY);
+  const alreadyOffered = new Set(recorded ?? builtInIds.filter((id) => !isTemplateAddedLater(id)));
+  const existing = new Set((db.prepare('SELECT id FROM templates').all() as Array<{ id: string }>).map((row) => row.id));
+  const added: string[] = [];
+  transaction(() => {
+    let position = (db.prepare('SELECT COALESCE(MAX(position), -1) AS max FROM templates').get() as { max: number }).max;
+    const insert = db.prepare('INSERT INTO templates (id, position, data) VALUES (?, ?, ?)');
+    for (const template of templates as any[]) {
+      const id = String(template.id);
+      if (alreadyOffered.has(id) || existing.has(id)) continue;
+      insert.run(id, ++position, JSON.stringify(template));
+      added.push(id);
+    }
+  });
+  writeSetting(BUILTIN_TEMPLATE_IDS_KEY, [...new Set([...alreadyOffered, ...builtInIds])]);
+  return added;
+}
+
+/** Linux 기본 점검 정책에 프로세스·디렉터리·파일·포트·HTTP 항목 추가 (한 번만 실행) */
+const LINUX_BASIC_ITEMS_MIGRATION = 'migration_linux_basic_items_v1';
+
+function addLinuxBasicPolicyItems(): string[] {
+  if (readSetting(LINUX_BASIC_ITEMS_MIGRATION)) return [];
+  const row = db.prepare("SELECT data FROM policies WHERE id = 'linux-basic-default'").get() as { data: string } | undefined;
+  const parsed = readJsonFile('policy.json') as any;
+  const seedPolicy = (Array.isArray(parsed) ? parsed : parsed?.policies)?.find((policy: any) => policy.id === 'linux-basic-default');
+  const added: string[] = [];
+  if (row && seedPolicy) {
+    const policy = JSON.parse(row.data);
+    const have = new Set((policy.items ?? []).map((item: any) => item.id));
+    for (const item of seedPolicy.items ?? []) {
+      if (['PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP'].includes(item.id) && !have.has(item.id)) {
+        policy.items = [...(policy.items ?? []), item];
+        added.push(item.id);
+      }
+    }
+    if (added.length) {
+      db.prepare("UPDATE policies SET data = ? WHERE id = 'linux-basic-default'").run(JSON.stringify(policy));
+    }
+  }
+  writeSetting(LINUX_BASIC_ITEMS_MIGRATION, { appliedAt: new Date().toISOString(), added });
+  return added;
+}
+
+function applyBuiltInUpdates() {
+  const templates = addNewBuiltInTemplates();
+  const policyItems = addLinuxBasicPolicyItems();
+  if (templates.length || policyItems.length) {
+    logger.info({ templates, linuxBasicPolicyItems: policyItems }, '새 버전의 기본 템플릿·정책 항목을 추가했습니다');
+  }
+}
+
 seedFromJsonFiles();
+applyBuiltInUpdates();

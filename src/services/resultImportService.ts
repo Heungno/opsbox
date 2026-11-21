@@ -6,7 +6,7 @@ import { db, transaction } from '../db/database';
 import { getAllServers } from './serverService';
 import { getHealthStatus, parseResultJson } from './resultService';
 import { writeEncryptedBackup } from './backupCrypto';
-import { ConflictError } from '../errors';
+import { BadRequestError, ConflictError } from '../errors';
 import { logger } from '../logger';
 import { recordAudit } from './auditService';
 import type { ImportStatus, ImportSummary } from '../types/result';
@@ -14,14 +14,21 @@ import type { ImportStatus, ImportSummary } from '../types/result';
 /*
  * 점검 결과 가져오기
  *
- * 각 서버의 공유 폴더 <sharedPath>/results/<연도>/<서버ID>/*.json 을 찾아
+ * 공유 폴더의 <sharedPath>/results/ 는 "수신함"입니다.
+ *   - 그 아래 어디에 있든(.json) 파일을 찾고, 파일 안의 서버 ID로 어느 서버 결과인지 정합니다.
+ *     점검자는 파일을 results/ 에 그냥 넣으면 됩니다.
+ *   - 예전 구조 results/<연도>/<서버ID>/ 도 그대로 읽습니다. 이때 폴더의 서버 ID와
+ *     파일 안의 서버 ID가 다르면 잘못 넣은 것으로 보고 가져오지 않습니다.
+ *
+ * 가져온 파일은
  *   1) DB(check_results)에 저장하고
- *   2) 원본을 암호화해 백업 폴더(<BACKUP_DIR>/<연도>/<서버ID>/<파일>.enc)에 보관한 뒤
- *   3) 공유 폴더의 원본을 삭제합니다.
+ *   2) 원본을 암호화해 <BACKUP_DIR>/<점검 연도>/<서버ID>/<파일>.enc 로 정리해 보관한 뒤
+ *   3) 수신함의 원본을 삭제합니다.
  *
  * - 같은 내용의 파일(SHA-256 동일)은 다시 저장하지 않습니다.
  * - 아직 쓰는 중일 수 있는 파일(최근 수정)은 다음 주기로 미룹니다.
- * - 읽기/형식 오류는 result_import_errors에 남기고 원본은 그대로 둡니다.
+ * - 읽기/형식/서버 확인 오류는 result_import_errors에 남기고 원본은 그대로 둡니다.
+ * - 화면에서 올린 파일(storeUploadedResult)도 같은 검증·저장·백업 과정을 거칩니다.
  */
 
 const MIN_FILE_AGE_MS = Number(process.env.OPSBOX_IMPORT_MIN_AGE_SECONDS ?? 10) * 1000;
@@ -29,24 +36,50 @@ const MIN_FILE_AGE_MS = Number(process.env.OPSBOX_IMPORT_MIN_AGE_SECONDS ?? 10) 
 let running = false;
 let lastSummary: ImportSummary | undefined;
 
-function listResultFiles(sharedPath: string, serverId: string) {
-  const resultsRoot = path.join(sharedPath, 'results');
-  if (!sharedPath || !fs.existsSync(resultsRoot)) return [];
-  const files: Array<{ year: string; fullPath: string; fileName: string }> = [];
-  for (const year of fs.readdirSync(resultsRoot, { withFileTypes: true })) {
-    if (!year.isDirectory() || !/^\d{4}$/.test(year.name)) continue;
-    const folder = path.join(resultsRoot, year.name, serverId);
-    if (!fs.existsSync(folder)) continue;
+const MAX_SCAN_DEPTH = 3; // results/ → <연도>/ → <서버ID>/
+
+interface InboxFile {
+  fullPath: string;
+  fileName: string;
+  /** 예전 구조(results/<연도>/<서버ID>/)에 있을 때의 폴더 정보 */
+  folderYear?: string;
+  folderServerId?: string;
+}
+
+/** 여러 서버가 같은 공유 폴더를 쓰면 수신함을 한 번만 읽도록 경로를 모읍니다. */
+function inboxRoots(): string[] {
+  const roots = new Set<string>();
+  for (const server of getAllServers()) {
+    if (server.sharedPath?.trim()) roots.add(path.resolve(server.sharedPath.trim(), 'results'));
+  }
+  return [...roots];
+}
+
+function listInboxFiles(root: string): InboxFile[] {
+  if (!fs.existsSync(root)) return [];
+  const files: InboxFile[] = [];
+  const walk = (folder: string, parts: string[]) => {
     for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
-      if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
-        files.push({ year: year.name, fullPath: path.join(folder, entry.name), fileName: entry.name });
+      if (entry.name.startsWith('.')) continue;
+      const fullPath = path.join(folder, entry.name);
+      if (entry.isDirectory() && parts.length < MAX_SCAN_DEPTH - 1) {
+        walk(fullPath, [...parts, entry.name]);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
+        const legacy = parts.length === 2 && /^\d{4}$/.test(parts[0]);
+        files.push({
+          fullPath,
+          fileName: entry.name,
+          folderYear: legacy ? parts[0] : undefined,
+          folderServerId: legacy ? parts[1] : undefined,
+        });
       }
     }
-  }
+  };
+  walk(root, []);
   return files.sort((a, b) => a.fileName.localeCompare(b.fileName));
 }
 
-function recordError(sourcePath: string, serverId: string, message: string) {
+function recordError(sourcePath: string, serverId: string | null, message: string) {
   const now = new Date().toISOString();
   db.prepare(`
     INSERT INTO result_import_errors (source_path, server_id, message, first_seen, last_seen) VALUES (?, ?, ?, ?, ?)
@@ -63,12 +96,51 @@ function numberOrNull(value: unknown) {
   return value === undefined || value === null || value === '' || !Number.isFinite(number) ? null : number;
 }
 
-function importFile(serverId: string, year: string, fullPath: string, fileName: string): 'imported' | 'duplicate' {
-  const content = fs.readFileSync(fullPath);
+/** 결과 파일 안의 서버 ID (schemaVersion 2: server.id, 이전 형식: server) */
+function serverIdInResult(parsed: { server?: unknown }): string {
+  return typeof parsed.server === 'string' ? parsed.server.trim() : '';
+}
+
+/** 백업 폴더의 연도는 파일 안의 점검 일시에서 정합니다. */
+function resultYear(checkDate: unknown, fallback?: string): string {
+  const match = /^(\d{4})/.exec(String(checkDate ?? ''));
+  return match?.[1] ?? fallback ?? String(new Date().getFullYear());
+}
+
+/** 경로 구분자 등을 제거해 백업·DB에 안전하게 쓸 파일 이름으로 만듭니다. */
+function safeFileName(fileName: string): string {
+  const base = path.basename(fileName.replace(/\\/g, '/')).replace(/[^\p{L}\p{N}._-]/gu, '_');
+  return base.toLowerCase().endsWith('.json') ? base : `${base || 'result'}.json`;
+}
+
+interface StoredResult {
+  serverId: string;
+  fileName: string;
+  checkDate: string | null;
+  outcome: 'imported' | 'duplicate';
+}
+
+/**
+ * 결과 한 건을 검증해 DB에 저장하고 암호화 백업을 만듭니다. (원본 삭제는 호출한 쪽에서)
+ * 서버를 알 수 없거나 폴더와 내용이 맞지 않으면 예외를 던집니다.
+ */
+function storeResult(content: Buffer, originalName: string, hint: { folderYear?: string; folderServerId?: string } = {}): StoredResult {
   const text = content.toString('utf8');
   const parsed = parseResultJson(text); // 형식 오류면 여기서 예외
-  const hash = createHash('sha256').update(content).digest('hex');
+  const contentServerId = serverIdInResult(parsed);
 
+  if (hint.folderServerId && contentServerId && contentServerId !== hint.folderServerId) {
+    throw new Error(`파일 안의 서버 ID(${contentServerId})가 폴더(${hint.folderServerId})와 다릅니다. 올바른 서버의 결과인지 확인하세요.`);
+  }
+  const serverId = contentServerId || hint.folderServerId || '';
+  if (!serverId) throw new Error('파일에 서버 ID가 없습니다. OpsBox에서 내려받은 점검 스크립트의 결과 파일인지 확인하세요.');
+  if (!getAllServers().some((server) => server.id === serverId)) {
+    throw new Error(`등록되지 않은 서버 ID입니다: ${serverId}. 서버 관리에서 서버를 먼저 등록하세요.`);
+  }
+
+  const fileName = safeFileName(originalName);
+  const year = resultYear(parsed.checkDate, hint.folderYear);
+  const hash = createHash('sha256').update(content).digest('hex');
   const exists = db.prepare('SELECT backup_path FROM check_results WHERE file_hash = ?').get(hash) as { backup_path: string | null } | undefined;
 
   // 1) 먼저 암호화 백업을 만들고 (실패하면 원본을 지우지 않음)
@@ -91,7 +163,7 @@ function importFile(serverId: string, year: string, fullPath: string, fileName: 
         numberOrNull(parsed.memory),
         numberOrNull(parsed.disk),
         hash,
-        text.replace(/^﻿/, ''),
+        text.replace(/^\uFEFF/, ''),
         backupPath,
         new Date().toISOString(),
       );
@@ -100,10 +172,39 @@ function importFile(serverId: string, year: string, fullPath: string, fileName: 
     db.prepare('UPDATE check_results SET backup_path = ? WHERE file_hash = ?').run(backupPath, hash);
   }
 
-  // 3) 공유 폴더의 원본 삭제
-  fs.unlinkSync(fullPath);
-  clearError(fullPath);
-  return exists ? 'duplicate' : 'imported';
+  return { serverId, fileName, checkDate: parsed.checkDate ? String(parsed.checkDate) : null, outcome: exists ? 'duplicate' : 'imported' };
+}
+
+function importInboxFile(file: InboxFile): StoredResult {
+  const stored = storeResult(fs.readFileSync(file.fullPath), file.fileName, file);
+  // 3) 수신함의 원본 삭제
+  fs.unlinkSync(file.fullPath);
+  clearError(file.fullPath);
+  return stored;
+}
+
+/**
+ * 화면에서 올린 결과 파일 저장. expectedServerId가 있으면(서버 상세 화면에서 올린 경우)
+ * 파일 안의 서버 ID와 같아야 합니다.
+ */
+export function storeUploadedResult(content: Buffer, originalName: string, expectedServerId?: string): StoredResult {
+  if (!content.length) throw new BadRequestError('빈 파일입니다.');
+  let stored: StoredResult;
+  try {
+    if (expectedServerId) {
+      const parsed = parseResultJson(content.toString('utf8'));
+      const contentServerId = serverIdInResult(parsed);
+      if (contentServerId && contentServerId !== expectedServerId) {
+        throw new Error(`이 파일은 ${contentServerId} 서버의 결과입니다. ${expectedServerId} 서버 화면에서는 올릴 수 없습니다.`);
+      }
+    }
+    stored = storeResult(content, originalName, { folderServerId: expectedServerId });
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new BadRequestError('JSON 형식이 아닙니다. OpsBox 점검 스크립트가 만든 결과 파일인지 확인하세요.');
+    if (error instanceof BadRequestError) throw error;
+    throw new BadRequestError((error as Error).message);
+  }
+  return stored;
 }
 
 export function importResults(): ImportSummary {
@@ -120,13 +221,13 @@ export function importResults(): ImportSummary {
     errors: [],
   };
   try {
-    for (const server of getAllServers()) {
-      let files: ReturnType<typeof listResultFiles> = [];
+    for (const root of inboxRoots()) {
+      let files: InboxFile[] = [];
       try {
-        files = listResultFiles(server.sharedPath, server.id);
+        files = listInboxFiles(root);
       } catch (error) {
         summary.failed++;
-        summary.errors.push({ file: server.sharedPath, message: `공유 폴더를 읽을 수 없습니다: ${(error as Error).message}` });
+        summary.errors.push({ file: root, message: `공유 폴더를 읽을 수 없습니다: ${(error as Error).message}` });
         continue;
       }
       for (const file of files) {
@@ -136,7 +237,7 @@ export function importResults(): ImportSummary {
             summary.skippedRecent++;
             continue;
           }
-          const outcome = importFile(server.id, file.year, file.fullPath, file.fileName);
+          const { outcome } = importInboxFile(file);
           if (outcome === 'imported') summary.imported++;
           else summary.duplicates++;
         } catch (error) {
@@ -144,7 +245,7 @@ export function importResults(): ImportSummary {
           const repeated = Boolean(db.prepare('SELECT 1 FROM result_import_errors WHERE source_path = ? AND message = ?').get(file.fullPath, message));
           summary.failed++;
           summary.errors.push({ file: file.fullPath, message, repeated });
-          recordError(file.fullPath, server.id, message);
+          recordError(file.fullPath, file.folderServerId ?? null, message);
         }
       }
     }

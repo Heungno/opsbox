@@ -3685,3 +3685,17 @@ input[type="radio"] {
     transition: none;
   }
 }
+
+/* 서버 상세: 점검 기록 제목 + 결과 파일 올리기 */
+.overview-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.overview-heading h3 {
+  margin: 0;
+}

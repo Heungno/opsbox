@@ -1,11 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 
-import { NotFoundError } from '../errors';
+import { BadRequestError, NotFoundError } from '../errors';
 import { recordAudit } from '../services/auditService';
-import { getImportStatus, importResults, logImportSummary } from '../services/resultImportService';
+import { getImportStatus, importResults, logImportSummary, storeUploadedResult } from '../services/resultImportService';
 import { getHealthStatus, getLatestResult, getResultByFile, getResults } from '../services/resultService';
 import type { ResultFileParams, ServerIdParams } from '../types/api';
 import { ok } from '../utils/http';
+
+// 결과 JSON에는 콘솔 출력·쿼리 결과가 들어갈 수 있어 기본 한도(1MB)보다 넉넉히 둡니다.
+const UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024;
 
 export async function resultRoutes(app: FastifyInstance) {
   // 공유 폴더의 점검 결과 JSON을 지금 바로 가져오기 (DB 저장 → 암호화 백업 → 원본 삭제)
@@ -21,6 +24,27 @@ export async function resultRoutes(app: FastifyInstance) {
   });
 
   app.get('/results/import/status', async () => ok(getImportStatus()));
+
+  // 점검자가 내려받은 결과 파일을 화면에서 올리기. 공유 폴더 가져오기와 같은 검증·저장·백업을 거칩니다.
+  // 브라우저가 파일을 읽어 { fileName, content, serverId? } JSON으로 보냅니다.
+  app.post<{ Body: { fileName?: unknown; content?: unknown; serverId?: unknown } }>(
+    '/results/upload',
+    { bodyLimit: UPLOAD_LIMIT_BYTES },
+    async (request) => {
+      const { fileName, content, serverId } = request.body ?? {};
+      if (typeof content !== 'string' || !content.trim()) throw new BadRequestError('올릴 결과 파일을 선택하세요.');
+      const name = typeof fileName === 'string' && fileName.trim() ? fileName.trim() : 'result.json';
+      const expected = typeof serverId === 'string' && serverId.trim() ? serverId.trim() : undefined;
+      const stored = storeUploadedResult(Buffer.from(content, 'utf8'), name, expected);
+      recordAudit(request, {
+        action: 'RESULT_UPLOAD',
+        targetId: stored.serverId,
+        summary: `결과 파일 올리기: ${stored.fileName} (${stored.outcome === 'imported' ? '신규' : '이미 있는 결과'})`,
+        detail: { fileName: stored.fileName, checkDate: stored.checkDate, outcome: stored.outcome },
+      });
+      return ok(stored);
+    },
+  );
 
   app.get<{ Params: ServerIdParams }>('/results/:serverId', async (request) => {
     const results = getResults(request.params.serverId);

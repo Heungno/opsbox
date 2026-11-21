@@ -16,6 +16,7 @@ export type AuditAction =
   | 'TEMPLATE_RESTORE'
   | 'COMMON_CODE_UPDATE'
   | 'RESULT_IMPORT'
+  | 'RESULT_UPLOAD'
   | 'SCRIPT_DOWNLOAD';
 
 export type AuditTargetType = 'AUTH' | 'SERVER' | 'POLICY' | 'TEMPLATE' | 'COMMON_CODE' | 'RESULT' | 'SCRIPT';
