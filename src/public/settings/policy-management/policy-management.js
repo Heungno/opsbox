@@ -1,4 +1,5 @@
 import { api, loadText, notifyError, showToast } from '/shared/js/api.js';
+import { mountCheckBuilderForm, readCheckBuilderSpec } from './check-builder-form.js?v=20261121-builder';
 await window.opsboxLayoutReady;
 
 let categoryNames = {}; let executorNames = {}; let viewNames = {};
@@ -69,8 +70,25 @@ function updateColumnVisibility() {
   const hasTable = [...document.querySelectorAll('#policy-item-result-components input:checked')].some((input) => ['TABLE', 'LOG_TABLE'].includes(input.value));
   document.getElementById('policy-item-columns-group').hidden = !hasTable;
 }
+// 점검 만들기: 안내형 폼을 띄우고 직접 구성 칸(템플릿·결과·JSON)은 숨깁니다.
+function mountBuilderForm() {
+  const host = document.getElementById('check-builder-form');
+  mountCheckBuilderForm(host, {
+    os: document.getElementById('policy-os').value,
+    category: document.getElementById('policy-category').value,
+    item: draft,
+    template: templates.find((template) => template.id === draft?.executor?.templateId),
+    policyId: editingId,
+    onNameSuggest: (name) => { const input = document.getElementById('policy-item-name'); if (!input.value.trim()) input.value = name; },
+    onRegenerated: async () => { templates = await api('/api/templates').catch(() => templates); showToast('스크립트를 폼 기준으로 다시 만들었습니다.', 'success'); },
+  });
+}
 function updateItemExecutorFields() {
   const type = document.getElementById('policy-item-executor').value; const isDb = type === 'SQL_QUERY';
+  const isBuilder = type === 'CHECK_BUILDER';
+  document.getElementById('policy-item-expert-fields').hidden = isBuilder;
+  document.getElementById('check-builder-form').hidden = !isBuilder;
+  if (isBuilder) mountBuilderForm();
   document.getElementById('policy-item-dbms').closest('.form-group').hidden = !isDb;
   document.getElementById('policy-item-select-template').closest('.form-group').hidden = !['SQL_QUERY', 'SCRIPT', 'CONSOLE_COMMAND'].includes(type);
   document.getElementById('policy-item-template-id').placeholder = isDb ? 'DB 쿼리 템플릿 선택' : '스크립트 템플릿 선택';
@@ -127,6 +145,16 @@ document.getElementById('policy-item-close').addEventListener('click', () => doc
 document.getElementById('policy-item-executor').addEventListener('change', () => { if (draft) { const nextType = document.getElementById('policy-item-executor').value; if (draft.executor.type !== nextType) draft.executor.templateId = undefined; draft.executor.type = nextType; document.getElementById('policy-item-template-id').value = ''; } updateItemExecutorFields(); });
 document.getElementById('policy-item-save').addEventListener('click', () => {
   const name = document.getElementById('policy-item-name').value.trim(); if (!name) { alert('항목 이름을 입력하세요.'); return; }
+  if (document.getElementById('policy-item-executor').value === 'CHECK_BUILDER') {
+    // 서버별 입력·결과 표시·스크립트는 정책 저장 시 서버가 폼 값으로 정합니다.
+    draft.name = name;
+    draft.executor = { type: 'CHECK_BUILDER', templateId: draft.executor?.templateId, options: { builder: readCheckBuilderSpec(document.getElementById('check-builder-form')) } };
+    draft.inputs = Array.isArray(draft.inputs) ? draft.inputs : [];
+    draft.result = draft.result?.components?.length ? draft.result : { components: [{ type: 'SUMMARY' }] };
+    const index = editingItems.findIndex((item) => item.id === editingItemId); if (index >= 0) editingItems[index] = draft; else editingItems.push(draft);
+    hasUnsavedChanges = true; document.getElementById('policy-item-dialog').close(); renderItems();
+    return;
+  }
   const components = [...document.querySelectorAll('#policy-item-result-components input:checked')].map((input) => ({ type: input.value })); if (!components.length) { alert('결과 구성 요소를 하나 이상 선택하세요.'); return; }
   try {
     const columns = document.getElementById('policy-item-columns').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => { const split = line.indexOf('='); return split < 0 ? { key: line, label: line } : { key: line.slice(0, split).trim(), label: line.slice(split + 1).trim() }; });

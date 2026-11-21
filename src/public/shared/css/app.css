@@ -3718,3 +3718,12 @@ input[type="radio"] {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) { color-scheme: dark; }
 }
+
+/* 점검 만들기 안내형 폼 (정책 항목 창) */
+.check-builder-form { display: grid; gap: 12px; margin-top: 4px; }
+.check-builder-form .form-group > span { font-weight: 600; }
+.check-builder-form .policy-help { margin: 0; }
+.check-builder-command, .check-builder-preview { max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-all; margin: 0; }
+.check-builder-warning { margin: 0; padding: 8px 12px; border-left: 3px solid var(--warning, #b7791f); background: var(--surface-muted); color: var(--text); font-size: 13px; }
+.check-builder-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 6px; background: var(--surface-soft); }
+.check-builder-notice p { margin: 0; flex: 1 1 260px; }
