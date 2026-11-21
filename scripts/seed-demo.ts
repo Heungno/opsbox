@@ -234,7 +234,17 @@ const SERVERS: DemoServer[] = [
 type Definitions = {
   rolePolicies: Record<string, { item: string; name: string; result?: unknown; executorType?: string }[]>;
   policyItems: Record<string, unknown>;
+  basicPolicyItems: { item: string; name: string; result?: unknown; executorType?: string }[];
 };
+
+/* 점검 만들기 데모 항목 (정책 저장 경로로 추가) */
+const SWAP_ITEM = 'CUSTOM_DEMO_SWAP';
+const PORT_ITEM = 'CUSTOM_DEMO_DBPORT';
+const DEMO_BUILDER_ITEMS = [
+  { policyId: 'linux-basic-default', item: { id: SWAP_ITEM, name: 'Swap 사용률', enabled: true, executor: { type: 'CHECK_BUILDER', options: { builder: { version: 1, type: 'COMMAND_NUMBER', presetId: 'linux.swap' } } }, inputs: [], result: { components: [{ type: 'SUMMARY' }] } } },
+  { policyId: 'windows-basic-default', item: { id: PORT_ITEM, name: '포털 DB 포트 접속', enabled: true, executor: { type: 'CHECK_BUILDER', options: { builder: { version: 1, type: 'REMOTE_PORT', presetId: null, timeoutSeconds: 3 } } }, inputs: [], result: { components: [{ type: 'SUMMARY' }] } } },
+];
+const DB_PORT_TARGET = '10.10.4.41:1433';
 
 class ResultBuilder {
   cpuValue: number;
@@ -496,6 +506,29 @@ class ResultBuilder {
     return { items, summary };
   }
 
+  /** 점검 만들기 데모 항목 결과 (생성 조각이 남기는 detail 형식과 같음) */
+  private builderItems(definitions: Definitions) {
+    const { rnd, day } = this.ctx;
+    return definitions.basicPolicyItems.map((def) => {
+      const row = (target: string, value: string, threshold: string, status: Status, message: string) => ({ target, value, threshold, status, message });
+      if (def.item === SWAP_ITEM) {
+        // 배치 서버는 야간 작업으로 Swap을 많이 씀
+        const value = round(this.server.id === 'BATCH-01' ? 40 + day * 2.5 + rnd() * 5 : 3 + rnd() * 20);
+        const status = byPercent(value, 50, 80);
+        return { role: 'BASIC', item: def.item, name: def.name, result: def.result, executorType: def.executorType, status,
+          detail: { status, message: null, rows: [row('이 서버', String(value), '주의 ≥ 50% / 위험 ≥ 80%', status, '')], output: String(value) } };
+      }
+      if (def.item === PORT_ITEM) {
+        // WAS-01은 엿새 전 방화벽 정책 변경으로 DB 포트 접속 실패
+        const failed = this.server.id === 'WAS-01' && day === DAYS - 6;
+        const status: Status = failed ? 'Critical' : 'Healthy';
+        return { role: 'BASIC', item: def.item, name: def.name, result: def.result, executorType: def.executorType, status,
+          detail: { status, message: null, rows: [row(DB_PORT_TARGET, failed ? '실패' : '성공', '접속 제한 3초', status, failed ? '접속 실패 (3초 안에 응답 없음)' : '접속 성공')] } };
+      }
+      return { role: 'BASIC', item: def.item, name: def.name, result: def.result, executorType: def.executorType, status: 'NotCollected' as Status, message: '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' };
+    });
+  }
+
   build(definitions: Definitions) {
     const s = this.server;
     const cpuStatus = byPercent(this.cpuValue);
@@ -538,9 +571,11 @@ class ResultBuilder {
     }
 
     const processStatus = group(this.processes).status;
+    const policyItems = this.builderItems(definitions);
     const allStatuses: Status[] = [
       'Healthy', cpuStatus, memoryStatus, 'Healthy', diskStatus, processStatus, group(this.directories).status, group(this.files).status, portStatus, httpStatus,
       ...Object.values(rolePolicies).map((role) => role.status),
+      ...policyItems.map((item) => item.status),
     ];
     const counts = {
       healthy: allStatuses.filter((x) => x === 'Healthy').length, warning: allStatuses.filter((x) => x === 'Warning').length,
@@ -561,7 +596,7 @@ class ResultBuilder {
         policyDefinitions: definitions.policyItems,
         processes: group(this.processes), directories: group(this.directories), files: group(this.files),
         ports: { status: portStatus, items: ports }, http: { status: httpStatus, items: this.http },
-        web, was, database, rolePolicies, policyItems: [],
+        web, was, database, rolePolicies, policyItems,
       },
       summary: { status: worst(allStatuses), counts },
     };
@@ -578,6 +613,12 @@ async function main() {
   const { storeUploadedResult } = await import('../src/services/resultImportService');
   const { getHealthStatus, parseResultJson } = await import('../src/services/resultService');
 
+  const { savePolicy } = await import('../src/services/policyService');
+  // 점검 만들기 항목은 화면과 같은 정책 저장 경로로 추가 (생성 템플릿도 함께 만들어짐)
+  for (const { policyId, item } of DEMO_BUILDER_ITEMS) {
+    const policy = readCollection<any>('policies').find((entry) => entry.id === policyId);
+    savePolicy({ ...policy, items: [...policy.items, item] }, policyId);
+  }
   const policies = readCollection<any>('policies');
 
   // 로그인 계정
@@ -603,6 +644,7 @@ async function main() {
     }
     for (const [item, directories] of Object.entries(demo.logDirectories ?? {})) rolePolicySettings[item] = { logDirectories: directories, periodDays: 7 };
     for (const item of roleChecks.DB ?? []) rolePolicySettings[item] = { instanceTargets: demo.dbTargets ?? [] };
+    if (demo.os === 'Windows') rolePolicySettings[PORT_ITEM] = { inputs: { targets: DB_PORT_TARGET } };
 
     const server = createServer({
       id: demo.id, name: demo.name, type: demo.roles[0], roles: demo.roles, products: demo.products, os: demo.os, ip: demo.ip, sharedPath: demo.sharedPath ?? '',
@@ -610,7 +652,7 @@ async function main() {
       processes: demo.processes, directories: demo.directories, fileChecks: demo.fileChecks, ports: demo.ports, httpChecks: demo.httpChecks,
     } as any);
     const config = buildScriptConfig(server);
-    const definitions: Definitions = { rolePolicies: config.checks.rolePolicies as Definitions['rolePolicies'], policyItems: config.checks.policyItems };
+    const definitions: Definitions = { rolePolicies: config.checks.rolePolicies as Definitions['rolePolicies'], policyItems: config.checks.policyItems, basicPolicyItems: config.checks.basicPolicyItems };
 
     for (let day = 0; day < DAYS; day++) {
       if (demo.skipDays?.includes(day)) continue;
