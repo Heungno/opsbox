@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light dark" />
   <title>OpsBox | 점검 보고서 상세</title>
   <script src="/shared/js/theme-init.js?v=20261121-system"></script>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261122-trend" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261122-boxes" />
   <style>
     .diff-badge {
       display: inline-block;
@@ -116,7 +116,7 @@
           <div id="trend-chart"></div>
         </section>
         <section id="basic-policy-item-section" class="card" hidden>
-          <h2>기본 정책 사용자 항목</h2>
+          <h2>점검 항목별 결과</h2>
           <div id="basic-policy-item-results"></div>
           <section class="report-subsection" hidden><h3>로그 분석 상세</h3><div id="basic-log-results"></div></section>
         </section>
@@ -256,7 +256,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261122-trend2"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261122-boxes"></script>
 </body>
 
 </html>

@@ -3772,3 +3772,14 @@ input[type="radio"] {
 .trend-hit:focus-visible { fill: var(--focus-ring); }
 .trend-tooltip { position: absolute; top: 4px; transform: translateX(-50%); min-width: 150px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); color: var(--text); font-size: 12px; box-shadow: var(--shadow-card); pointer-events: none; display: grid; gap: 3px; }
 .trend-tooltip[hidden] { display: none; }
+
+/* ---- 보고서 항목 상자: 항목 하나 = 상자 하나 (제목 옆 상태, 아래 결과) ---- */
+.report-item-box { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-soft); break-inside: avoid; }
+.report-item-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.report-item-head h3 { margin: 0; font-size: 15px; }
+.report-item-message { margin: 6px 0 0; color: var(--text-light); font-size: 13px; }
+.report-item-body { margin-top: 10px; }
+.report-item-body > h4 { margin: 12px 0 6px; font-size: 12px; font-weight: 600; color: var(--text-light); }
+.report-item-body > h4:first-child { margin-top: 0; }
+.report-item-body .server-table { margin: 0; }
+.report-item-queries > h4 { margin: 10px 0 6px; font-size: 12px; color: var(--text-light); }

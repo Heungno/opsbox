@@ -1,6 +1,7 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
 import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
+import { renderItemBoxes } from './report-item-box.js?v=20261122-boxes';
 
 await window.opsboxLayoutReady;
 
@@ -154,6 +155,14 @@ function renderReport() {
   renderPrintHeader(data, health, serverTypes);
   renderMetrics(data, compareData);
   renderTrend();
+  // 다시 그릴 때(비교 선택 변경 등) 항목 상자로 옮겼던 상세 표를 원래 카드로 되돌린 뒤 다시 채웁니다.
+  restoreDedicatedTables();
+  renderDisks(data.disks);
+  renderProcesses(data.processes, compareData?.processes);
+  renderDirectories(data.directories, compareData?.directories);
+  renderFileChecks(data.fileChecks);
+  renderPorts(data.ports);
+  renderHttpChecks(data.httpChecks);
   const capturedPolicyDefinitions = data.checks?.policyDefinitions || {};
   const collectedBasicItems = data.checks?.policyItems || [];
   const collectedIds = new Set(collectedBasicItems.map((item) => item.item));
@@ -171,6 +180,8 @@ function renderReport() {
     HTTP: { status: data.checks?.http?.status, rows: data.httpChecks || [] },
   };
   Object.entries(capturedBasicOutputs).forEach(([id, output]) => {
+    // 서버 정보·CPU·메모리·가동시간은 '서버 정보'·'자원 사용량 요약' 카드가 비교까지 보여 주므로 상자를 만들지 않습니다.
+    if (OVERVIEW_ITEMS.has(id)) return;
     const definition = capturedPolicyDefinitions[id];
     const hasOutput = output.value !== undefined && output.value !== null || output.rows?.length > 0;
     if (definition && !collectedIds.has(id) && hasOutput) {
@@ -183,25 +194,46 @@ function renderReport() {
   const basicPolicySection = document.getElementById('basic-policy-item-section');
   basicPolicySection.hidden = basicPolicyItems.length === 0;
   document.getElementById('basic-log-results').closest('.report-subsection').hidden = true;
-  renderPolicyItemOutputs(basicPolicyItems, 'basic-policy-item-results');
+  // 항목 상자: 상세 표가 있는 항목은 그 표(이전 점검 비교 포함)를 일반 표 대신 넣습니다.
+  const boxedIds = new Set(basicPolicyItems.map((item) => item.item));
+  const extras = Object.fromEntries(Object.entries(DEDICATED_SECTIONS)
+    .filter(([id]) => boxedIds.has(id))
+    .map(([id, sectionId]) => [id, { nodes: [dedicatedTable(sectionId)], mode: 'replace' }]));
+  renderItemBoxes(document.getElementById('basic-policy-item-results'), basicPolicyItems, { extras });
   renderTypeReportForm(serverTypes, data, data.products || currentServerProduct);
-  renderDisks(data.disks);
-  renderProcesses(data.processes, compareData?.processes);
-  renderDirectories(data.directories, compareData?.directories);
-  renderFileChecks(data.fileChecks);
-  renderPorts(data.ports);
-  renderHttpChecks(data.httpChecks);
-  // 이 결과에 데이터가 있는 구역만 보여줍니다. 예전 보고서도 그때 실제로 점검한 항목만 표시됩니다.
-  [
-    ['process-report-details', data.processes],
-    ['disk-report-details', data.disks],
-    ['port-report-details', data.ports],
-    ['directory-report-details', data.directories],
-    ['file-report-details', data.fileChecks],
-  ].forEach(([sectionId, items]) => {
-    document.getElementById(sectionId).hidden = !Array.isArray(items) || items.length === 0;
+  // 별도 카드: 표를 항목 상자로 옮겼으면 숨기고, 아니면(예전 결과 등) 데이터가 있을 때만 보입니다.
+  const sectionData = { PROCESS: data.processes, DISK: data.disks, PORT: data.ports, DIRECTORY: data.directories, FILE_SIZE: data.fileChecks, HTTP: data.httpChecks };
+  Object.entries(DEDICATED_SECTIONS).forEach(([id, sectionId]) => {
+    const items = sectionData[id];
+    document.getElementById(sectionId).hidden = boxedIds.has(id) || !Array.isArray(items) || items.length === 0;
   });
-  document.getElementById('http-report-details').hidden = !Array.isArray(data.httpChecks) || data.httpChecks.length === 0;
+}
+
+/* 항목 상자로 옮기는 공통 상세 표 (항목 ID → 원래 카드) */
+const DEDICATED_SECTIONS = {
+  DISK: 'disk-report-details',
+  PROCESS: 'process-report-details',
+  DIRECTORY: 'directory-report-details',
+  FILE_SIZE: 'file-report-details',
+  PORT: 'port-report-details',
+  HTTP: 'http-report-details',
+};
+const OVERVIEW_ITEMS = new Set(['HOST_INFO', 'CPU', 'MEMORY', 'UPTIME']);
+const dedicatedTables = new Map();
+
+/** 카드의 상세 표 (처음 한 번 기억해 두고, 상자로 옮겨진 뒤에도 같은 요소를 씀) */
+function dedicatedTable(sectionId) {
+  if (!dedicatedTables.has(sectionId)) dedicatedTables.set(sectionId, document.getElementById(sectionId).querySelector('table'));
+  return dedicatedTables.get(sectionId);
+}
+
+/** 상자로 옮겼던 표를 원래 카드로 되돌림 (그리기 함수가 표 안의 tbody를 id로 찾기 때문) */
+function restoreDedicatedTables() {
+  Object.values(DEDICATED_SECTIONS).forEach((sectionId) => {
+    const section = document.getElementById(sectionId);
+    const table = dedicatedTable(sectionId);
+    if (table && table.parentElement !== section) section.append(table);
+  });
 }
 
 function renderTypeReportForm(serverTypes, data, productMap) {
