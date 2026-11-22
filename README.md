@@ -32,6 +32,7 @@ npm run dev        # 개발 실행 (http://localhost:3000)
 npm run build      # dist/ 에 서버·화면·초기 데이터 모으기
 npm start          # dist/server.js 실행
 npm test           # 테스트 (bash 스크립트 실행 테스트는 Linux에서만)
+npm run test:e2e   # 브라우저 테스트 (Chromium 필요, OPSBOX_E2E_BROWSER로 경로 지정)
 ```
 
 계정 추가: `node scripts/create-user.cjs <아이디>` (비밀번호 12자 이상). 이름과 비밀번호는 각자 화면의 **내 정보**에서 바꿉니다.
@@ -103,9 +104,11 @@ src/features/      기능별 폴더: servers, policies, templates, common-codes,
                    각 폴더: routes.ts(API) · service.ts(규칙) · repository.ts(SQL) · types.ts
 src/shared/        오류 클래스, HTTP 응답 도우미, 로거, 화면 레이아웃 조립
 src/public/        화면: 메뉴별 폴더(dashboard, reports, settings/*), 공통은 shared/
+                   각 화면: <화면>.js(연결부) + <화면>-*.js(로직, 단위 테스트 대상)
 seeds/             새 DB에 넣는 기본 공통코드·정책·템플릿
 scripts/           데모·계정 생성·백업 복호화·빌드 보조
-test/              node:test 테스트 (golden/: 생성 스크립트·설정 API 기준 비교 파일)
+test/              node:test 테스트 (golden/: 생성 스크립트·설정 API 기준 비교 파일,
+                   ui/: 화면 로직 단위 테스트, e2e/: 브라우저 테스트)
 ```
 
 - **API 응답 형식**: 성공은 `{ success: true, data }`, 실패는 `{ success: false, code, message, errors?, requestId? }`입니다.
@@ -113,6 +116,12 @@ test/              node:test 테스트 (golden/: 생성 스크립트·설정 API
   - 화면 코드에서는 `fetch` 대신 `src/public/shared/js/api.js`의 `api()`를 씁니다.
 - **CSP**: `script-src 'self'`라서 HTML 안의 인라인 스크립트와 `onclick`은 동작하지 않습니다. 별도 `.js` 파일로 작성하세요.
 - **기능끼리의 의존**: 다른 기능은 그 기능의 `service.ts`만 import합니다. `repository.ts`(SQL)는 같은 기능 안에서만 씁니다.
+- **화면 코드 규칙**
+  - 화면마다 연결부(`<화면>.js`: 요소 찾기·이벤트·API 호출)와 로직(`<화면>-*.js`: 계산·그리기 순수 함수)을 나눕니다. 로직 모듈은 `document`·`window`를 직접 쓰지 않고, **상대 경로로만 import** 합니다(Node 테스트에서 불러오기 위해).
+  - 연결부의 화면 상태는 맨 위 `const state = { ... }` 하나에 모읍니다.
+  - 화면에 보이는 이름·선택 목록은 하드코딩하지 않고 `shared/js/codes.js`(`codeLabel`·`codeList`·`roleLabel`)로 공통코드에서 가져옵니다. 프로그램 동작이 기대는 값(정책 분류 등)은 서버 `src/shared/constants.ts`에 두고, 화면에 필요하면 API로 내려줍니다.
+  - 요소는 `shared/js/dom.js`의 `el()`로 만들고 `innerHTML`은 쓰지 않습니다.
+- **브라우저 테스트**: `npm run test:e2e`는 임시 데모 DB로 OpsBox를 띄워 모든 화면을 열어 보고(페이지·콘솔 오류 없음), 서버 미사용·결과 수집·정책 저장·공통코드 이름 반영을 실제로 눌러 봅니다. Termux는 `chromium-browser`, PC는 설치된 Chrome을 자동으로 찾습니다.
 - **기준 비교 테스트**: `test/golden.test.ts`는 데모 서버의 생성 스크립트와 설정 API 응답을 `test/golden/`과 비교합니다. 동작을 일부러 바꿨을 때만 `node --import tsx scripts/update-golden.ts`로 다시 만들고, 바뀐 줄을 확인한 뒤 커밋하세요.
 - **공통 레이아웃**: 사이드바 등 공통 레이아웃은 `src/public/shared/fragments/layout.html`이고, 서버가 각 화면에 붙여서 내보냅니다.
 
