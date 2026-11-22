@@ -11,7 +11,8 @@ import { buildTrendModel, TREND_SERIES } from './trend-chart-model.js';
  */
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const WIDTH = 720;
+const DEFAULT_WIDTH = 720;
+const MIN_WIDTH = 320;
 const HEIGHT = 240;
 const PADDING = { top: 12, right: 64, bottom: 28, left: 40 };
 
@@ -41,6 +42,8 @@ function spreadLabels(labels, minGap = 12) {
 }
 
 export function renderTrendChart(container, { results, endDate, days, currentFile, compareFile, onSelect }) {
+  // 그래프 폭 = 컨테이너 실제 폭(픽셀) — 휴대폰에서도 축 글자가 줄어들지 않게 (화면 크기가 바뀌면 다시 그림)
+  const WIDTH = Math.max(MIN_WIDTH, Math.round(container.clientWidth || DEFAULT_WIDTH));
   const model = buildTrendModel(results, { endDate, days, width: WIDTH, height: HEIGHT, padding: PADDING });
   if (!model.enough) {
     container.replaceChildren(html('p', 'policy-help', '추세를 그릴 점검 결과가 부족합니다. (선택한 기간 안에 점검 결과가 2건 이상 있어야 합니다)'));
@@ -54,7 +57,7 @@ export function renderTrendChart(container, { results, endDate, days, currentFil
     legend.append(item);
   }
 
-  const chart = svg('svg', { class: 'trend-svg', viewBox: `0 0 ${WIDTH} ${HEIGHT}`, role: 'img', 'aria-label': `최근 ${days}일 CPU·메모리·디스크 사용률 추세` });
+  const chart = svg('svg', { class: 'trend-svg', viewBox: `0 0 ${WIDTH} ${HEIGHT}`, role: 'group', 'aria-label': `최근 ${days}일 CPU·메모리·디스크 사용률 추세 — ←·→로 점검 시점 이동, Enter로 보고서 열기` });
 
   // 눈금·격자 (뒤쪽, 연하게)
   for (const tick of model.yTicks) {
@@ -118,20 +121,35 @@ export function renderTrendChart(container, { results, endDate, days, currentFil
     guide.setAttribute('visibility', 'hidden');
   };
 
+  // 키보드: Tab 정지는 하나(지금 보고서 시점, 없으면 마지막)만 두고 ←·→·Home·End로 시점을 옮깁니다(로빙 tabindex).
+  const currentIndex = model.entries.findIndex((entry) => entry.fileName === currentFile);
+  const tabIndex = currentIndex >= 0 ? currentIndex : model.entries.length - 1;
+  const hits = [];
+  const moveFocus = (from, to) => {
+    const target = Math.min(Math.max(to, 0), hits.length - 1);
+    if (target === from) return;
+    hits[from].setAttribute('tabindex', '-1');
+    hits[target].setAttribute('tabindex', '0');
+    hits[target].focus();
+  };
+
   model.entries.forEach((entry, index) => {
     const prev = model.entries[index - 1]?.x ?? model.left;
     const next = model.entries[index + 1]?.x ?? model.right;
     const from = index === 0 ? model.left : (prev + entry.x) / 2;
     const to = index === model.entries.length - 1 ? model.right : (entry.x + next) / 2;
     const label = `${entry.date} ${TREND_SERIES.map(({ key, label: name }) => `${name} ${percent(entry.values[key])}`).join(', ')} — 이 보고서 열기`;
-    const hit = svg('rect', { class: 'trend-hit', x: from, y: model.top, width: Math.max(to - from, 1), height: model.bottom - model.top, tabindex: '0', role: 'button', 'aria-label': label });
+    const hit = svg('rect', { class: 'trend-hit', x: from, y: model.top, width: Math.max(to - from, 1), height: model.bottom - model.top, tabindex: index === tabIndex ? '0' : '-1', role: 'button', 'aria-label': label });
+    hits.push(hit);
     hit.addEventListener('mouseenter', () => show(entry));
     hit.addEventListener('focus', () => show(entry));
     hit.addEventListener('mouseleave', hide);
     hit.addEventListener('blur', hide);
     hit.addEventListener('click', () => onSelect?.(entry.fileName));
     hit.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(entry.fileName); }
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(entry.fileName); return; }
+      const to = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: hits.length - 1 }[event.key];
+      if (to !== undefined) { event.preventDefault(); moveFocus(index, to); }
     });
     chart.append(hit);
   });

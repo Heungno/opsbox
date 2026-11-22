@@ -80,7 +80,7 @@ test('비교 점검이 기간 밖이면 빈 점 없이 그린다', async () => {
 test('점은 키보드로 고를 수 있고 Enter로 그 보고서를 연다', async () => {
   const { container, selected } = await render();
   const hit = container.find('rect', 'trend-hit')[1];
-  assert.equal(hit.getAttribute('tabindex'), '0');
+  assert.equal(hit.getAttribute('tabindex'), '-1', '지금 보고서가 아닌 시점은 ←·→로 이동 (Tab 정지 아님)');
   assert.match(hit.getAttribute('aria-label') ?? '', /2026-11-18 09:00:00 .*CPU 12%.*메모리 41%.*디스크 62%/);
   hit.dispatch('keydown', { key: 'Enter' });
   hit.dispatch('click');
@@ -118,4 +118,45 @@ test('결과가 1건뿐이면 그래프 대신 안내 문구만 보인다', asyn
 test('사용자 값(파일 이름)은 글자로만 들어가고 HTML로 해석되지 않는다', async () => {
   const { container } = await render({ results: results.map((entry) => ({ ...entry, checkDate: entry.checkDate })), currentFile: '<img src=x onerror=alert(1)>' });
   assert.equal(container.find('img').length, 0);
+});
+
+test('Tab 정지는 하나(지금 보고서 시점)뿐이고 ←/→로 시점을 옮긴다', async () => {
+  const { container } = await render();
+  const hits = container.find('rect', 'trend-hit');
+  assert.deepEqual(hits.map((hit) => hit.getAttribute('tabindex')), ['-1', '-1', '-1', '-1', '0']);
+  let focused = -1;
+  hits.forEach((hit, index) => { (hit as any).focus = () => { focused = index; hit.dispatch('focus'); }; });
+  hits[4].dispatch('keydown', { key: 'ArrowLeft' });
+  assert.equal(focused, 3);
+  assert.equal(hits[3].getAttribute('tabindex'), '0');
+  assert.equal(hits[4].getAttribute('tabindex'), '-1');
+  hits[3].dispatch('keydown', { key: 'ArrowRight' });
+  assert.equal(focused, 4);
+  hits[4].dispatch('keydown', { key: 'Home' });
+  assert.equal(focused, 0);
+  hits[0].dispatch('keydown', { key: 'End' });
+  assert.equal(focused, 4);
+});
+
+test('지금 보고서가 기간 안에 없으면 마지막 시점이 Tab 정지', async () => {
+  const { container } = await render({ currentFile: 'none.json' });
+  assert.equal(container.find('rect', 'trend-hit').at(-1)!.getAttribute('tabindex'), '0');
+});
+
+test('그래프 묶음은 화면 낭독기가 안쪽 버튼을 읽을 수 있게 group 역할', async () => {
+  const { container } = await render();
+  assert.equal(container.find('svg')[0].getAttribute('role'), 'group');
+});
+
+test('그래프 폭은 컨테이너 실제 폭을 따라 글자가 줄지 않는다 (휴대폰 폭)', async () => {
+  const { renderTrendChart } = await import('../src/public/reports/trend-chart.js');
+  const narrow = Object.assign(new FakeElement('div'), { clientWidth: 330 });
+  renderTrendChart(narrow, { results, endDate: '2026-11-21 09:00:00', days: 28, currentFile: 'd5.json', compareFile: '', onSelect() {} });
+  assert.equal(narrow.find('svg')[0].getAttribute('viewBox'), '0 0 330 240');
+  // 폭을 알 수 없으면 기본 720, 너무 좁으면 최소 320
+  const tiny = Object.assign(new FakeElement('div'), { clientWidth: 120 });
+  renderTrendChart(tiny, { results, endDate: '2026-11-21 09:00:00', days: 28, currentFile: 'd5.json', compareFile: '', onSelect() {} });
+  assert.equal(tiny.find('svg')[0].getAttribute('viewBox'), '0 0 320 240');
+  const { container } = await render();
+  assert.equal(container.find('svg')[0].getAttribute('viewBox'), '0 0 720 240');
 });

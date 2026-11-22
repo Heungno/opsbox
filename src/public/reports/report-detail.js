@@ -1,6 +1,6 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
-import { renderTrendChart } from './trend-chart.js?v=20261122-trend';
+import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
 
 await window.opsboxLayoutReady;
 
@@ -11,6 +11,10 @@ document.querySelectorAll('[data-trend-days]').forEach((button) => button.addEve
   document.querySelectorAll('[data-trend-days]').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
   renderTrend();
 }));
+
+// 화면 폭이 바뀌면(휴대폰 회전 등) 그래프를 새 폭으로 다시 그립니다.
+let trendResizeTimer;
+window.addEventListener('resize', () => { clearTimeout(trendResizeTimer); trendResizeTimer = setTimeout(renderTrend, 200); });
 
 function renderTrend() {
   const container = document.getElementById('trend-chart');
