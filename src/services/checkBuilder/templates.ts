@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto';
 
 import { BadRequestError, NotFoundError } from '../../shared/errors';
 import type { Policy, PolicyItem } from '../../types/policy';
-import type { ManagedTemplate } from '../../types/template';
+import type { ManagedTemplate } from '../../features/templates/types';
 import { getPolicies } from '../policyService';
-import { deleteGeneratedTemplate, getTemplates, saveGeneratedTemplate } from '../templateService';
+import { deleteGeneratedTemplate, getTemplates, saveGeneratedTemplate } from '../../features/templates/service';
 import { generateLinuxPart, type BuilderRole } from './linux';
 import { GENERATOR_VERSION } from './literal';
 import type { BuilderOs, BuilderSpec } from './types';

@@ -7,7 +7,7 @@ import { db, readSetting, transaction, writeSetting } from '../src/db/database';
 import { generatedTemplateId, isDetached, regenerateItem, upgradeGeneratedTemplates } from '../src/services/checkBuilder/templates';
 import type { BuilderSpec } from '../src/services/checkBuilder/types';
 import { getPolicies, savePolicy } from '../src/services/policyService';
-import { deleteTemplate, getTemplateHistory, getTemplates, saveTemplate } from '../src/services/templateService';
+import { deleteTemplate, getTemplateHistory, getTemplates, saveTemplate } from '../src/features/templates/service';
 
 /*
  * 점검 만들기: 정책 저장 시 생성 템플릿 만들기·고치기·지우기, 직접 편집 보호, 업그레이드
@@ -104,14 +104,14 @@ test('DB 정책에서도 점검 만들기를 쓸 수 있고, 기본 정책의 DB
 test('생성기 버전이 낮은 고치지 않은 생성 템플릿은 다시 만들고, 직접 편집한 것은 그대로 둔다', () => {
   saveWith([builderItem(ITEM, spec())]);
   const old = template(TEMPLATE_ID)!;
-  const raw = (id: string) => JSON.parse((db.prepare('SELECT data FROM templates WHERE id = ?').get(id) as { data: string }).data);
-  const setRaw = (id: string, value: unknown) => db.prepare('UPDATE templates SET data = ? WHERE id = ?').run(JSON.stringify(value), id);
-  setRaw(TEMPLATE_ID, { ...raw(TEMPLATE_ID), generated: { ...old.generated, generatorVersion: 0 } });
+  // 저장 경로(이력·검증)를 거치지 않고 DB 값만 바꿔 '예전 생성기로 만든 템플릿'을 흉내 냅니다.
+  const setRaw = (id: string, content: string, generated: unknown) => db.prepare('UPDATE templates SET content = ?, generated = ? WHERE id = ?').run(content, JSON.stringify(generated), id);
+  setRaw(TEMPLATE_ID, old.content, { ...old.generated, generatorVersion: 0 });
   assert.deepEqual(upgradeGeneratedTemplates(), [TEMPLATE_ID]);
   assert.equal(template(TEMPLATE_ID)!.generated?.generatorVersion, 1);
 
-  const detached = { ...raw(TEMPLATE_ID), content: `${old.content}\n# 손댐` };
-  setRaw(TEMPLATE_ID, { ...detached, generated: { ...detached.generated, generatorVersion: 0 } });
+  const current = template(TEMPLATE_ID)!;
+  setRaw(TEMPLATE_ID, `${old.content}\n# 손댐`, { ...current.generated, generatorVersion: 0 });
   assert.deepEqual(upgradeGeneratedTemplates(), []);
   assert.match(template(TEMPLATE_ID)!.content, /# 손댐$/);
 });

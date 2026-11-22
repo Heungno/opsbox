@@ -1,4 +1,4 @@
-import type { ManagedTemplate } from '../types/template';
+import type { ManagedTemplate } from '../features/templates/types';
 
 /*
  * DB 제품별 기본 쿼리 템플릿

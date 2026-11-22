@@ -13,7 +13,7 @@ import type { BuilderSpec } from '../src/services/checkBuilder/types';
 import { getPolicies, savePolicy } from '../src/services/policyService';
 import { generateScript } from '../src/services/scriptService';
 import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
-import { saveTemplate } from '../src/services/templateService';
+import { saveTemplate } from '../src/features/templates/service';
 
 /*
  * 점검 만들기: Linux 생성 조각을 실제 bash로 실행해 6가지 유형의 판정을 확인합니다.

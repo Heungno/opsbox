@@ -8,7 +8,7 @@ import { before, test } from 'node:test';
 
 import { createServer, updateCheckConfig } from '../src/services/serverService';
 import { generateScript } from '../src/services/scriptService';
-import { saveTemplate } from '../src/services/templateService';
+import { saveTemplate } from '../src/features/templates/service';
 import { getHealthStatus, parseResultJson } from '../src/services/resultService';
 
 /*

@@ -11,6 +11,12 @@ import { GOLDEN_DIR, collectGolden } from './helpers/golden';
  * 재구성 안전망: 데모 서버의 생성 스크립트와 설정 API 응답이 기준 파일(test/golden)과 같아야 합니다.
  * 기준 파일은 scripts/update-golden.ts 로 만듭니다. 동작을 일부러 바꾼 경우가 아니면 다시 만들지 마세요.
  */
+/** JSON 파일은 키 순서를 무시하고 비교합니다(저장 구조가 바뀌면 키 순서가 달라질 수 있음). 스크립트는 바이트 단위. */
+const sortKeys = (value: unknown): unknown => Array.isArray(value) ? value.map(sortKeys)
+  : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortKeys((value as Record<string, unknown>)[key])]))
+  : value;
+const canonical = (name: string, text: string) => (name.endsWith('.json') ? `${JSON.stringify(sortKeys(JSON.parse(text)), null, 2)}\n` : text);
+
 function listGoldenFiles(dir = GOLDEN_DIR, prefix = ''): string[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => entry.isDirectory()
@@ -24,9 +30,10 @@ test('생성 스크립트와 설정 API 응답이 기준 파일과 같다', asyn
   for (const name of Object.keys(actual)) assert.ok(expectedFiles.includes(name), `기준 파일 없음: ${name}`);
   for (const name of expectedFiles) {
     if (!(name in actual)) continue; // 미사용으로 바뀐 서버의 스크립트·설정은 건너뜀
-    const expected = fs.readFileSync(path.join(GOLDEN_DIR, name), 'utf8');
-    if (actual[name] === expected) continue;
-    const a = actual[name].split('\n'); const e = expected.split('\n');
+    const expected = canonical(name, fs.readFileSync(path.join(GOLDEN_DIR, name), 'utf8'));
+    const got = canonical(name, actual[name]);
+    if (got === expected) continue;
+    const a = got.split('\n'); const e = expected.split('\n');
     const line = a.findIndex((text, index) => text !== e[index]);
     assert.fail(`${name} 다름 (${line + 1}번째 줄)\n  기준: ${e[line]?.slice(0, 300)}\n  실제: ${a[line]?.slice(0, 300)}`);
   }

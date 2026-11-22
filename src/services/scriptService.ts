@@ -1,6 +1,6 @@
 import { BadRequestError, NotFoundError } from '../shared/errors';
 import { getServer, getServerProduct } from './serverService';
-import { getTemplate, getTemplates } from './templateService';
+import { getTemplate, getTemplates } from '../features/templates/service';
 import { assembleWindowsScript } from './windowsScriptService';
 import { assembleLinuxScript } from './linuxScriptService';
 import { resolveQueryTemplate } from './dbQueryDefaults';

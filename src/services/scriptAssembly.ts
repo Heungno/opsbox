@@ -1,6 +1,6 @@
 import { BadRequestError } from '../shared/errors';
 import { Server } from '../types/server';
-import { ManagedTemplate, ScriptPart } from '../types/template';
+import { ManagedTemplate, ScriptPart } from '../features/templates/types';
 import { getServerProduct, getServerRoles } from './serverService';
 import { getCommonCodes } from '../features/common-codes/service';
 import { getPolicies } from './policyService';

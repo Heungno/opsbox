@@ -1,12 +1,12 @@
 import { readCollection, writeCollection } from '../db/database';
 
 import type { CheckConfig, CheckConfigInput, Server, ServerRole, ServerProduct, RolePolicyType, RolePolicySetting, StoredServer } from '../types/server';
-import type { ScriptPart } from '../types/template';
+import type { ScriptPart } from '../features/templates/types';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
 import { NotFoundError, ValidationError } from '../shared/errors';
-import { getTemplate } from './templateService';
+import { getTemplate } from '../features/templates/service';
 import { getCommonCodes } from '../features/common-codes/service';
 import { getPolicies } from './policyService';
 import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from './dbQueryDefaults';

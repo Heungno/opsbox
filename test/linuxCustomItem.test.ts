@@ -9,7 +9,7 @@ import { before, test } from 'node:test';
 import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
 import { generateScript } from '../src/services/scriptService';
 import { getPolicies, savePolicy } from '../src/services/policyService';
-import { saveTemplate } from '../src/services/templateService';
+import { saveTemplate } from '../src/features/templates/service';
 
 /*
  * Linux 기본(BASIC) 사용자 항목: 직접 작성한 조각이 opsbox_role_record BASIC … 으로 남긴 결과가

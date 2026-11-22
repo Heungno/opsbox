@@ -4,7 +4,7 @@ import { scriptRoutes } from './scriptRoutes';
 import { resultRoutes } from './resultRoutes';
 import { dashboardRoutes } from './dashboardRoutes';
 import { reportRoutes } from './reportRoutes';
-import { templateRoutes } from './templateRoutes';
+import { templateRoutes } from '../features/templates/routes';
 import { commonCodeRoutes } from '../features/common-codes/routes';
 import { policyRoutes } from './policyRoutes';
 import { authRoutes } from './authRoutes';

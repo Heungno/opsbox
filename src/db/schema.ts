@@ -30,6 +30,31 @@ const MIGRATIONS: string[] = [
     sort_order INTEGER,
     label TEXT
   );
+
+  CREATE TABLE templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    os TEXT,
+    role TEXT,
+    product TEXT,
+    dbms TEXT,
+    item TEXT,
+    uses_query_template INTEGER,          -- 값이 없던 템플릿은 NULL (응답에 키를 넣지 않음)
+    enabled INTEGER NOT NULL DEFAULT 1,
+    content TEXT NOT NULL,
+    generated TEXT,                       -- 점검 만들기 생성 정보(JSON) 또는 NULL
+    position INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  -- 템플릿 이전 버전. 템플릿을 지워도 남깁니다(지우기 전 내용을 되살릴 수 있게) → 외래키 없음
+  CREATE TABLE template_versions (
+    id TEXT PRIMARY KEY,
+    template_id TEXT NOT NULL,
+    saved_at TEXT NOT NULL,
+    snapshot TEXT NOT NULL
+  );
+  CREATE INDEX idx_template_versions_template ON template_versions (template_id, saved_at DESC);
   `,
 ];
 

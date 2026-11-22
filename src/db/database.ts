@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -28,17 +27,6 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS policies (
     id TEXT PRIMARY KEY,
     position INTEGER NOT NULL,
-    data TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS templates (
-    id TEXT PRIMARY KEY,
-    position INTEGER NOT NULL,
-    data TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS template_history (
-    template_id TEXT PRIMARY KEY,
     data TEXT NOT NULL
   );
 
@@ -98,10 +86,10 @@ db.exec(`
 `);
 
 /*
- * 목록형 데이터 (servers, policies, templates)
+ * 목록형 데이터 (servers, policies)
  * 각 행에 JSON 한 건을 저장하고 position으로 순서를 유지합니다.
  */
-export type CollectionTable = 'servers' | 'policies' | 'templates';
+export type CollectionTable = 'servers' | 'policies';
 
 export function readCollection<T>(table: CollectionTable): T[] {
   const rows = db.prepare(`SELECT data FROM ${table} ORDER BY position, id`).all() as Array<{ data: string }>;
@@ -159,26 +147,6 @@ function seedFromJsonFiles() {
     }
   }
 
-  if (isEmpty('templates')) {
-    const templates = readJsonFile('templates.json');
-    if (Array.isArray(templates) && templates.length) {
-      // 같은 id가 중복된 경우 뒤의 것을 버립니다 (기존 서비스 동작과 동일).
-      const seen = new Set<string>();
-      const unique = templates.filter((template: any) => !seen.has(template.id) && seen.add(template.id));
-      writeCollection('templates', unique, (template: any) => String(template.id));
-      seeded.push(`templates ${unique.length}건`);
-    }
-  }
-
-  if (isEmpty('template_history')) {
-    const history = readJsonFile('template-history.json') as Record<string, unknown[]> | undefined;
-    if (history && typeof history === 'object') {
-      const insert = db.prepare('INSERT INTO template_history (template_id, data) VALUES (?, ?)');
-      transaction(() => Object.entries(history).forEach(([id, versions]) => insert.run(id, JSON.stringify(versions))));
-      if (Object.keys(history).length) seeded.push(`template history ${Object.keys(history).length}건`);
-    }
-  }
-
   if (isEmpty('users')) {
     const parsed = readJsonFile('user.json') as { users?: any[] } | undefined;
     if (Array.isArray(parsed?.users) && parsed.users.length) {
@@ -189,42 +157,6 @@ function seedFromJsonFiles() {
   }
 
   if (seeded.length) logger.info({ dbPath: DB_PATH, seeded }, 'JSON 데이터를 SQLite로 옮겼습니다');
-}
-
-/*
- * 기존 DB 업그레이드 (이미 쓰고 있는 설치본에 새 기본값 추가)
- *
- * 템플릿·정책은 DB가 비어 있을 때만 JSON에서 채우므로, 새 버전의 기본값은 시작할 때 여기서 반영합니다.
- * - addNewBuiltInTemplates: "한 번도 넣은 적 없는" 기본 템플릿만 추가합니다. 넣었던 id는
- *   settings.builtin_template_ids 에 기록해 두어, 사용자가 지운 기본 템플릿을 다시 살리지 않습니다.
- * - upgradeBuiltInTemplates: 예전 기본값 그대로인(고치지 않은) 템플릿만 새 내용으로 바꿉니다.
- * - addLinux…PolicyItems: 기본 정책에 빠진 항목을 한 번만 추가합니다.
- * 사용자가 고친 템플릿·정책은 덮어쓰지 않습니다.
- */
-const BUILTIN_TEMPLATE_IDS_KEY = 'builtin_template_ids';
-/** 이 기록이 생기기 전(이전 버전)에 이미 시드된 것으로 볼 템플릿을 고르는 기준: Linux 조각과 MSSQL 외 DB 쿼리는 새로 추가된 것 */
-const isTemplateAddedLater = (id: string) => id.startsWith('LINUX-PART-') || /^(POSTGRESQL|MARIADB|CUBRID)-QUERY-/.test(id);
-
-function addNewBuiltInTemplates(): string[] {
-  const templates = readJsonFile('templates.json');
-  if (!Array.isArray(templates)) return [];
-  const builtInIds = templates.map((template: any) => String(template.id));
-  const recorded = readSetting<string[]>(BUILTIN_TEMPLATE_IDS_KEY);
-  const alreadyOffered = new Set(recorded ?? builtInIds.filter((id) => !isTemplateAddedLater(id)));
-  const existing = new Set((db.prepare('SELECT id FROM templates').all() as Array<{ id: string }>).map((row) => row.id));
-  const added: string[] = [];
-  transaction(() => {
-    let position = (db.prepare('SELECT COALESCE(MAX(position), -1) AS max FROM templates').get() as { max: number }).max;
-    const insert = db.prepare('INSERT INTO templates (id, position, data) VALUES (?, ?, ?)');
-    for (const template of templates as any[]) {
-      const id = String(template.id);
-      if (alreadyOffered.has(id) || existing.has(id)) continue;
-      insert.run(id, ++position, JSON.stringify(template));
-      added.push(id);
-    }
-  });
-  writeSetting(BUILTIN_TEMPLATE_IDS_KEY, [...new Set([...alreadyOffered, ...builtInIds])]);
-  return added;
 }
 
 /** Linux 기본 점검 정책에 프로세스·디렉터리·파일·포트·HTTP 항목 추가 (한 번만 실행) */
@@ -277,49 +209,11 @@ function addLinuxRolePolicyItems(): string[] {
   return added;
 }
 
-/*
- * 기본 제공 템플릿 내용 갱신: DB의 내용이 예전 기본값과 똑같을 때(사용자가 고치지 않았을 때)만
- * 새 기본값으로 바꿉니다. 고친 템플릿은 건드리지 않습니다.
- */
-const BUILTIN_TEMPLATE_UPGRADES: Array<{ id: string; fromSha256: string[] }> = [
-  // Linux SAVE: v1 → 역할별(WEB·WAS) 결과를 web·was 항목에 기록, v2 → DB 인스턴스 요약을 database 항목에 기록
-  { id: 'LINUX-PART-SAVE', fromSha256: ['4e2dd4c0445999585e6c9acff1cd2841ad78b4fb4fbbee5d7f3c54b294af0d10', '61c46b940ae80ef992865d07a171369f97e26a89e2625a6cb347da4c63378042'] },
-  // Linux DB 실행기: v1 → 쿼리 주석의 상태 규칙(-- @opsbox-status) 지원
-  { id: 'LINUX-PART-DB_QUERY_RUNNER', fromSha256: ['aa9aee18bd039cbdbcafebe80db3c93a2ca20116fbb43d9328aee34ab1e3b1b3'] },
-  // Windows: v1 → PowerShell 3.0 미만 실행 차단 안내, PowerShell 5 전용 ::new()와 -in 연산자 제거(Windows Server 2012 지원)
-  { id: 'WINDOWS-PART-START', fromSha256: ['832f25bdd88dc47239e3be3677b85a1e187a542aa2f5dad2a94b817c0c3a9556'] },
-  { id: 'WINDOWS-PART-WEB_LOG', fromSha256: ['433fe3d3a6939b3413df41e3c5c3211a74b9e9167f3647ac62261e86df308e26'] },
-  { id: 'WINDOWS-PART-WAS_LOG', fromSha256: ['76ec02b0aca7e041c5255b187f229b4dd21ffebc7a4e8d5e9ed9a2d990e1cd43'] },
-  { id: 'WINDOWS-PART-WAS_JVM_HEAP', fromSha256: ['c9de1826f920159a5f0c89ded897e17b2affadc4f00cb44771d7d68b31e12c88'] },
-  { id: 'WINDOWS-PART-DB_QUERY_RUNNER', fromSha256: ['1ee21066af52357ba401fc4b8414835cf781eea081f8291acc36b4b463a117bc'] },
-  // Windows SAVE: v1 → 기본 정책 사용자 항목 상태를 종합 상태에 포함
-  { id: 'WINDOWS-PART-SAVE', fromSha256: ['dbf116bf6886239f3a06a11cc2cbe89a1f05a695fb9caca0407e31c50e4e9c82'] },
-];
-
-function upgradeBuiltInTemplates(): string[] {
-  const seeds = readJsonFile('templates.json');
-  if (!Array.isArray(seeds)) return [];
-  const upgraded: string[] = [];
-  for (const { id, fromSha256 } of BUILTIN_TEMPLATE_UPGRADES) {
-    const seed = seeds.find((template: any) => template.id === id);
-    const row = db.prepare('SELECT data FROM templates WHERE id = ?').get(id) as { data: string } | undefined;
-    if (!seed || !row) continue;
-    const current = JSON.parse(row.data);
-    const hash = createHash('sha256').update(String(current.content ?? '')).digest('hex');
-    if (!fromSha256.includes(hash) || current.content === seed.content) continue;
-    db.prepare('UPDATE templates SET data = ? WHERE id = ?').run(JSON.stringify({ ...current, content: seed.content, updatedAt: seed.updatedAt ?? current.updatedAt }), id);
-    upgraded.push(id);
-  }
-  return upgraded;
-}
-
 export function applyBuiltInUpdates() {
-  const templates = addNewBuiltInTemplates();
-  const upgradedTemplates = upgradeBuiltInTemplates();
   const policyItems = addLinuxBasicPolicyItems();
   const rolePolicyItems = addLinuxRolePolicyItems();
-  if (templates.length || upgradedTemplates.length || policyItems.length || rolePolicyItems.length) {
-    logger.info({ templates, upgradedTemplates, linuxBasicPolicyItems: policyItems, linuxRolePolicyItems: rolePolicyItems }, '새 버전의 기본 템플릿·정책 항목을 반영했습니다');
+  if (policyItems.length || rolePolicyItems.length) {
+    logger.info({ linuxBasicPolicyItems: policyItems, linuxRolePolicyItems: rolePolicyItems }, '새 버전의 기본 템플릿·정책 항목을 반영했습니다');
   }
 }
 

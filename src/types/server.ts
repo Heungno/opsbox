@@ -1,4 +1,4 @@
-import type { ScriptPart } from './template';
+import type { ScriptPart } from '../features/templates/types';
 import type { OperatingSystem, PolicyCategory, PolicyRoleCategory } from './policy';
 import type { CommonCodeValue } from '../features/common-codes/types';
 export type { PolicyCategory } from './policy';

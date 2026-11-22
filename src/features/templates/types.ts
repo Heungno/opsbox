@@ -1,6 +1,6 @@
-import type { ServerRole } from './server';
-import type { CommonCodeValue } from '../features/common-codes/types';
-import type { OperatingSystem } from './policy';
+import type { ServerRole } from '../../types/server';
+import type { CommonCodeValue } from '../common-codes/types';
+import type { OperatingSystem } from '../../types/policy';
 
 export type TemplateKind = CommonCodeValue;
 export type ScriptPart = CommonCodeValue;
