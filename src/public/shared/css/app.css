@@ -3783,3 +3783,15 @@ input[type="radio"] {
 .report-item-body > h4:first-child { margin-top: 0; }
 .report-item-body .server-table { margin: 0; }
 .report-item-queries > h4 { margin: 10px 0 6px; font-size: 12px; color: var(--text-light); }
+
+/* ---- 휴대폰 폭: 표 최소 폭(640px) 때문에 카드 전체(제목·입력칸 포함)가 옆으로 밀리지 않게 ----
+   화면이 좁으면 표 자체를 가로 스크롤 상자로 만들어, 넘칠 때 그 표만 옆으로 밀어 봅니다.
+   인쇄 용지 폭도 900px보다 좁으므로 화면(screen)에만 적용합니다. */
+@media screen and (max-width: 900px) {
+  table {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+  }
+}
