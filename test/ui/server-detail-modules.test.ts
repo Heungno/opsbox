@@ -94,3 +94,8 @@ test('디렉터리 행: 임계값 칸이 비면 값을 보내지 않는다(스�
   assert.deepEqual(directoryFromInputs('/data', '75', '95'), { path: '/data', warningPercent: 75, criticalPercent: 95 });
   assert.deepEqual(directoryFromInputs('/data', '0', ' '), { path: '/data', warningPercent: 0 });
 });
+
+test('정책 탭: 정책 분류 코드를 사용 안 함으로 바꿔도 그 역할 서버의 정책 탭은 남는다(이름은 _labels)', () => {
+  setCodes({ policyCategories: [{ value: 'BASIC', label: '기본' }, { value: 'DB', label: 'DB' }], _labels: { policyCategories: { WEB: '웹' } } });
+  assert.deepEqual(policyRoleTabs(['WEB', 'OTHER']), [{ value: 'BASIC', label: '기본' }, { value: 'WEB', label: '웹' }]);
+});

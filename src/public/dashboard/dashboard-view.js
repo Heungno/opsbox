@@ -17,6 +17,11 @@ export function fleetLabel(total, counts) {
 
 const numberCell = (text) => el('td', 'num', text);
 
+/** data-role이 붙은 요소의 글자를 역할 이름(공통코드)으로 */
+export function applyRoleLabels(elements) {
+  for (const element of elements) element.textContent = roleLabel(element.getAttribute('data-role'));
+}
+
 export function renderRecentChecks(tbody, checks) {
   tbody.replaceChildren(...checks.map((item) => {
     const row = el('tr');

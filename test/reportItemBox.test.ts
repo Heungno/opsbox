@@ -129,3 +129,14 @@ test('표의 상태 열(status·__OPSBOX_STATUS) 값은 상태 이름으로 보�
   assert.deepEqual(first.find('td').map((cell) => cell.textContent), ['x', '경고']);
   assert.deepEqual(second.find('td').map((cell) => cell.textContent), ['정상', 'app']);
 });
+
+test('내용 블록 소제목은 공통코드 resultViews 이름(공통코드에서 바꾼 이름 반영)', async () => {
+  const { setCodes, resetCodes } = await import('../src/public/shared/js/codes.js');
+  setCodes({ resultViews: [{ value: 'TABLE', label: '결과 표' }, { value: 'CONSOLE', label: '콘솔' }] });
+  try {
+    const box = boxes(await render([items[0]]))[0];
+    assert.deepEqual(box.find('h4').map((node) => node.textContent), ['결과 표', '콘솔']);
+  } finally {
+    resetCodes();
+  }
+});

@@ -86,6 +86,7 @@ test('공통코드에서 OTHER 이름을 바꾸면 대시보드·보고서 목�
   await open('/dashboard');
   const dashboard = await text('#recent-checks');
   assert.doesNotMatch(dashboard, /(^| )기타( |$)/, '예전 이름이 남지 않음');
+  assert.match(await text('.fleet-roles'), /기타 장비/, '유형별 서버 수 카드');
   assert.deepEqual(session.errors, []);
 });
 
@@ -97,4 +98,26 @@ test('서버 상세: 임계값을 비워 둔 디렉터리가 있어도 정책을
   assert.match(await session.page.evaluate(() => document.body.innerText), /정책이 저장되었습니다/);
   assert.deepEqual((await call('GET', '/api/servers/DB-02/check-config')).data.directories, [{ path: '/var/lib/pgsql/16/data' }]);
   assert.deepEqual(session.errors, []);
+});
+
+test('서버 상세: 공통코드를 못 불러와도 화면이 멈추지 않는다(값 그대로 표시)', { skip }, async () => {
+  const page = session.page;
+  const failCodes = (request: import('puppeteer-core').HTTPRequest) => {
+    if (new URL(request.url()).pathname === '/api/common-codes') void request.respond({ status: 503, contentType: 'application/json', body: '{"message":"down"}' });
+    else void request.continue();
+  };
+  await page.setRequestInterception(true);
+  page.on('request', failCodes);
+  try {
+    await open('/settings/server-management?id=DB-02', 2500);
+    await page.click('[data-server-tab="policy"]');
+    await settle(500);
+    const tabs = await page.$$eval('[data-policy-role-tab]', (nodes) => nodes.map((node) => node.getAttribute('data-policy-role-tab')));
+    assert.deepEqual(tabs, ['BASIC', 'DB']);
+    assert.match(await text('#server-title'), /DB-02/);
+  } finally {
+    page.off('request', failCodes);
+    await page.setRequestInterception(false);
+  }
+  assert.deepEqual(session.errors.filter((error) => error.startsWith('pageerror')), []);
 });

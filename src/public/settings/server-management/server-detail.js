@@ -1,7 +1,7 @@
 import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
 import { api, apiRequest, downloadFile, loadText, notifyError, showToast } from '/shared/js/api.js';
 import { codeList, loadCodes } from '/shared/js/codes.js';
-import { renderRoleTabs } from './server-list-view.js';
+import { renderRoleTabs, roleChoices } from './server-list-view.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from './server-overview.js';
 import { activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
 import { scriptCommand, scriptDescription } from './server-script-panel.js';
@@ -48,7 +48,7 @@ function getPolicyItemDefinition(itemId) {
 }
 
 function isDbQueryItem(itemId) {
-  return state.commonCodes?.rolePolicies.DB.includes(itemId) || getPolicyItemDefinition(itemId)?.executor?.type === 'SQL_QUERY';
+  return codeList('rolePolicies', 'DB').some((code) => code.value === itemId) || getPolicyItemDefinition(itemId)?.executor?.type === 'SQL_QUERY';
 }
 
 async function init() {
@@ -57,7 +57,7 @@ async function init() {
   state.commonCodes = await loadCodes();
   state.queryPrefixes = await api('/api/scripts/db-query-prefixes').catch(() => ({}));
   state.policies = await api('/api/policies').catch((error) => { notifyError(error, '점검 정책 목록을 불러오지 못했습니다.'); return []; });
-  populateOptions(document.getElementById('server-form-os'), state.commonCodes.operatingSystems);
+  populateOptions(document.getElementById('server-form-os'), codeList('operatingSystems'));
   bindScriptTemplatePicker();
   await loadManagedTemplates();
   bindServerEdit();
@@ -274,12 +274,12 @@ function bindServerEdit() {
   const roleContainer = document.getElementById('server-form-role-products');
   const renderRoleProducts = (selectedRoles = [], selectedProducts = {}) => {
     roleContainer.replaceChildren();
-    state.commonCodes.serverRoles.forEach(({ value: role, label: roleLabel }) => {
+    roleChoices(selectedRoles).forEach(({ value: role, label: roleLabel }) => {
       const row = document.createElement('div'); row.className = 'role-product-row';
       const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
       checkbox.className = 'role-choice-checkbox'; checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;'; label.className = 'role-choice-label';
       label.append(checkbox, document.createTextNode(` ${roleLabel}`)); row.append(label);
-      if (codeList('productsByRole', role).length) { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); (state.commonCodes.productsByRole[role] || []).forEach((name) => select.add(new Option(name, name))); select.value = selectedProducts[role] || ''; row.append(select); }
+      if (codeList('productsByRole', role).length) { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); codeList('productsByRole', role).forEach(({ value, label }) => select.add(new Option(label, value))); select.value = selectedProducts[role] || ''; row.append(select); }
       checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked && row.querySelector('select')) row.querySelector('select').value = ''; }); checkbox.dispatchEvent(new Event('change')); roleContainer.appendChild(row);
     });
   };
@@ -796,7 +796,7 @@ function addPortRow(data = {}) {
 
   const protocol = document.createElement('select');
   protocol.className = 'port-protocol';
-  state.commonCodes.portProtocols.forEach(({ value, label }) => protocol.add(new Option(label, value)));
+  codeList('portProtocols').forEach(({ value, label }) => protocol.add(new Option(label, value)));
   protocol.value = data.protocol ?? 'TCP';
 
   const port = document.createElement('input');
@@ -1036,7 +1036,7 @@ function renderBasicPolicyItems() {
   const container = document.getElementById('basic-policy-items');
   const commonPanel = document.getElementById('common-script-policy');
   if (!container || !commonPanel) return;
-  const builtInIds = new Set(state.commonCodes.scriptItems.map((item) => item.value));
+  const builtInIds = new Set(codeList('scriptItems').map((item) => item.value));
   const policy = getSelectedBasicPolicy();
   const items = policy
     ? policy.items.filter((item) => item.enabled)
@@ -1172,7 +1172,7 @@ function renderRolePolicyGroups(roles, products, isWindows) {
     currentItems.forEach((item) => {
       const assignedPolicy = state.policies.find((entry) => entry.id === state.selectedCatalogPolicyIds[role] && entry.category === role);
       const definition = assignedPolicy?.items?.find((entry) => entry.id === item);
-      const policy = state.commonCodes.scriptItems.find((entry) => entry.value === item) || definition || getPolicyItemDefinition(item);
+      const policy = codeList('scriptItems').find((entry) => entry.value === item) || definition || getPolicyItemDefinition(item);
       const policyLabel = policy?.label || policy?.name || item;
       const row = document.createElement('div'); row.className = 'role-policy-row';
       row.dataset.rolePolicyItem = item;
@@ -1254,7 +1254,7 @@ function getDefaultQueryTemplateId(item) { return defaultQueryTemplateId(state.q
 function resolveQueryTemplateId(item, selectedId) { return resolveQueryTemplate(state.managedTemplates, state.queryPrefixes, state.currentServer?.products?.DB, item, selectedId); }
 
 function getScriptItemLabel(item) {
-  return state.commonCodes.scriptItems.find((entry) => entry.value === item)?.label || item;
+  return codeList('scriptItems').find((entry) => entry.value === item)?.label || item;
 }
 
 function usesQueryTemplate(item) {
@@ -1458,7 +1458,7 @@ function getDefaultScriptTemplateName(item) { return defaultScriptTemplateName(s
 function isDefaultScriptTemplate(template, item) { return isDefaultScript(template, state.currentServer?.os, item); }
 
 function getActiveScriptItems(roles, roleChecks) {
-  return activeScriptItems({ server: state.currentServer, roles, roleChecks, basicPolicy: getSelectedBasicPolicy(), scriptItems: state.commonCodes.scriptItems });
+  return activeScriptItems({ server: state.currentServer, roles, roleChecks, basicPolicy: getSelectedBasicPolicy(), scriptItems: codeList('scriptItems') });
 }
 
 function renderFinalJsonExample(activeItems, roleChecks) {
@@ -1488,7 +1488,7 @@ function renderFinalJsonExample(activeItems, roleChecks) {
   const keys = { PROCESS: 'processes', DIRECTORY: 'directories', FILE_SIZE: 'files', PORT: 'ports', HTTP: 'http', WEB: 'web', WAS: 'was', DATABASE: 'database' };
   activeItems.forEach((item) => { if (shapes[item]) example.checks[keys[item]] = shapes[item]; });
   const basicPolicy = getSelectedBasicPolicy();
-  const builtInIds = new Set(state.commonCodes.scriptItems.map((item) => item.value));
+  const builtInIds = new Set(codeList('scriptItems').map((item) => item.value));
   const customBasicItems = (basicPolicy?.items ?? []).filter((item) => item.enabled && !builtInIds.has(item.id));
   if (customBasicItems.length) {
     example.checks.policyItems = customBasicItems.map((item) => ({

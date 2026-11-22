@@ -16,10 +16,17 @@ export function policyRoleTabs(roles) {
   return policyCategories(roles).filter(({ value }) => value === 'BASIC' || roles.includes(value));
 }
 
-/** 정책 분류 목록. 공통코드를 못 불러왔으면 기본 + 서버 역할 순서(화면이 멈추지 않게) */
-function policyCategories(roles) {
-  const codes = codeList('policyCategories');
-  return codes.length ? codes : [{ value: 'BASIC', label: 'BASIC' }, ...roles.map((role) => ({ value: role, label: role }))];
+/** 정책 분류 (서버 src/shared/constants.ts POLICY_CATEGORIES와 같음). 프로그램 동작이 기대는 값이라 공통코드가 아님 */
+const POLICY_CATEGORIES = ['BASIC', 'WEB', 'WAS', 'DB'];
+
+/**
+ * 정책 분류 목록: 공통코드 policyCategories 순서·이름, 공통코드에 없거나 사용 안 함인 분류는 뒤에.
+ * (공통코드를 못 불러왔거나 분류 코드를 꺼도 정책 탭이 사라지지 않게)
+ */
+function policyCategories() {
+  const ordered = codeList('policyCategories').map(({ value }) => value).filter((value) => POLICY_CATEGORIES.includes(value));
+  const values = [...ordered, ...POLICY_CATEGORIES.filter((value) => !ordered.includes(value))];
+  return values.map((value) => ({ value, label: codeLabel('policyCategories', value) }));
 }
 
 /** DB 제품별 기본 쿼리 템플릿 id (prefixes: 제품 → 접두어) */

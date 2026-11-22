@@ -86,8 +86,15 @@ export function renderServerRows(tbody, servers, { onToggle }) {
  * 등록 폼의 역할·제품 선택. 제품 목록(공통코드 productsByRole)이 있는 역할에만 제품 선택을 둡니다.
  * read()로 { roles, products }를 읽습니다(고른 역할의 제품만).
  */
+/** 역할 선택지: 사용 중인 역할 + 서버가 가진 사용 안 함 역할(이름은 _labels) — 저장할 때 지워지지 않게 */
+export function roleChoices(selectedRoles = []) {
+  const active = codeList('serverRoles');
+  const kept = selectedRoles.filter((role) => !active.some((code) => code.value === role)).map((role) => ({ value: role, label: roleLabel(role) }));
+  return [...active, ...kept];
+}
+
 export function renderRoleProductFields(container, selectedRoles = [], selectedProducts = {}) {
-  const fields = codeList('serverRoles').map(({ value: role, label: roleName }) => {
+  const fields = roleChoices(selectedRoles).map(({ value: role, label: roleName }) => {
     const row = el('div', 'role-product-row');
     const label = el('label', 'role-choice-label');
     const checkbox = el('input', 'role-choice-checkbox');

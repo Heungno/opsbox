@@ -22,3 +22,13 @@ test('대시보드: 상태 분포는 기록 없는 서버를 따로 센다', () 
   assert.deepEqual(fleetCounts({ total: 10, healthy: 5, warning: 2, critical: 1 }), { healthy: 5, warning: 2, critical: 1, unknown: 2 });
   assert.deepEqual(fleetCounts({ total: 1, healthy: 3 }), { healthy: 3, warning: 0, critical: 0, unknown: 0 });
 });
+
+test('대시보드: 유형별 서버 수의 역할 이름은 공통코드', async () => {
+  const { applyRoleLabels } = await import('../../src/public/dashboard/dashboard-view.js');
+  setCodes({ serverRoles: [{ value: 'OTHER', label: '기타 장비' }] });
+  const dt = new FakeElement('dt');
+  dt.setAttribute('data-role', 'OTHER');
+  dt.textContent = '기타';
+  applyRoleLabels([dt]);
+  assert.equal(dt.textContent, '기타 장비');
+});

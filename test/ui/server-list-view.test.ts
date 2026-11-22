@@ -58,3 +58,11 @@ test('서버 폼: 역할마다 제품 선택(제품 목록이 있는 역할만),
   box.find('select')[1].value = 'JEUS';
   assert.deepEqual(fields.read(), { roles: ['WEB', 'WAS'], products: { WEB: 'IIS', WAS: 'JEUS' } });
 });
+
+test('역할 선택: 사용 안 함이 된 역할을 가진 서버는 그 역할 체크가 남아 저장 시 지워지지 않는다', () => {
+  setCodes({ serverRoles: ROLES, productsByRole: {}, _labels: { serverRoles: { LEGACY: '예전 역할' } } });
+  const container = new FakeElement('div');
+  const fields = renderRoleProductFields(container, ['WEB', 'LEGACY']);
+  assert.ok(container.textContent.includes('예전 역할'));
+  assert.deepEqual(fields.read().roles, ['WEB', 'LEGACY']);
+});

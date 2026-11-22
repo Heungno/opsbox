@@ -1,10 +1,11 @@
 import { api } from '/shared/js/api.js';
 import { loadCodes } from '/shared/js/codes.js';
 import { applyStatusLabels } from '/shared/js/status.js';
-import { fleetCounts, fleetLabel, renderRecentChecks } from './dashboard-view.js';
+import { applyRoleLabels, fleetCounts, fleetLabel, renderRecentChecks } from './dashboard-view.js';
 
 await loadCodes(); // 공통코드(역할·상태 이름)를 그리기 전에 불러옴
 applyStatusLabels();
+applyRoleLabels(document.querySelectorAll('[data-role]')); // 유형별 서버 수의 역할 이름(공통코드)
 
 async function init() {
   await loadSummary();

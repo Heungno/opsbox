@@ -11,10 +11,14 @@
  * DOM은 createElement + textContent만 사용합니다.
  */
 
+import { codeLabel } from '../shared/js/codes.js';
 import { statusLabel } from '../shared/js/status.js';
 
 const STATUS_COLUMNS = new Set(['status', '__OPSBOX_STATUS']);
-const VIEW_LABELS = { TABLE: '표', LOG_TABLE: '로그', CONSOLE: '콘솔 결과', METRIC: '측정값', JSON: 'JSON 상세' };
+/** 공통코드 resultViews를 못 불러왔을 때의 기본 이름 */
+const DEFAULT_VIEW_LABELS = { TABLE: '표', LOG_TABLE: '로그', CONSOLE: '콘솔 결과', METRIC: '측정값', JSON: 'JSON 상세' };
+/** 결과 표시 이름: 공통코드 resultViews → 기본 이름 → 값 */
+const viewLabel = (view) => { const label = codeLabel('resultViews', view); return label !== view ? label : DEFAULT_VIEW_LABELS[view] || view; };
 const BADGE_CLASS = { Healthy: 'badge-success', Warning: 'badge-warning', Critical: 'badge-danger', NotCollected: 'badge-muted' };
 
 function el(tag, className, text) {
@@ -127,7 +131,7 @@ function buildBox(item, extra) {
     const views = Array.isArray(detail.queries) ? ['TABLE'] : components.map((component) => component.type).filter((view) => view !== 'SUMMARY');
     views.forEach((view) => {
       const node = renderView(view, item, components, detail, Boolean(message));
-      if (node) blocks.push({ label: VIEW_LABELS[view] || view, nodes: [node] });
+      if (node) blocks.push({ label: viewLabel(view), nodes: [node] });
     });
   }
   if (blocks.length) {
