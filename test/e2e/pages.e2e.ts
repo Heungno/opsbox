@@ -37,6 +37,14 @@ test('모든 화면이 로그인 후 오류 없이 열린다', { skip }, async (
       if (new URL(session.page.url()).pathname === '/login') failures.push(`${url}: 로그인 화면으로 이동함`);
       for (const error of session.errors) failures.push(`${url}: ${error}`);
     }
+    // 서버 상세는 역할마다 그리는 부분이 달라 DB·WEB+WAS·미사용 서버도 엽니다.
+    for (const id of ['DB-01', 'DB-02', 'APP-01', 'BATCH-01']) {
+      const url = `/settings/server-management?id=${id}`;
+      session.errors.length = 0;
+      await session.page.goto(`${app.baseUrl}${url}`, { waitUntil: 'domcontentloaded' });
+      await settle(2000);
+      for (const error of session.errors) failures.push(`${url}: ${error}`);
+    }
     assert.deepEqual(failures, []);
   } finally {
     await session.browser.close();
