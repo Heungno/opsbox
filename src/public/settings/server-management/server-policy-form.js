@@ -87,3 +87,18 @@ export function dbTargetHint(product, isWindows) {
   };
   return hints[product] ?? null;
 }
+
+/**
+ * 디렉터리 점검 행 → 저장 값. 임계값 칸이 비어 있으면 보내지 않습니다(스크립트가 기본값을 씀).
+ * (빈 칸을 0으로 보내면 "경고 ≥ 위험"이 되어 저장할 수 없었음)
+ */
+export function directoryFromInputs(path, warning, critical) {
+  const number = (text) => (String(text ?? '').trim() === '' ? undefined : Number(text));
+  const warningPercent = number(warning);
+  const criticalPercent = number(critical);
+  return {
+    path: String(path ?? '').trim(),
+    ...(warningPercent === undefined ? {} : { warningPercent }),
+    ...(criticalPercent === undefined ? {} : { criticalPercent }),
+  };
+}

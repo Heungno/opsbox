@@ -3,7 +3,7 @@ import { api, apiRequest, downloadFile, loadText, notifyError, showToast } from 
 import { codeList, loadCodes } from '/shared/js/codes.js';
 import { renderRoleTabs } from './server-list-view.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from './server-overview.js';
-import { activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
+import { activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
 import { scriptCommand, scriptDescription } from './server-script-panel.js';
 import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
@@ -734,11 +734,11 @@ function addDirectoryRow(data = {}) {
 }
 
 function getDirectories() {
-  return [...document.querySelectorAll('.directory-row')].map((row) => ({
-    path: row.querySelector('.directory-path').value.trim(),
-    warningPercent: Number(row.querySelector('.directory-warning').value),
-    criticalPercent: Number(row.querySelector('.directory-critical').value),
-  }));
+  return [...document.querySelectorAll('.directory-row')].map((row) => directoryFromInputs(
+    row.querySelector('.directory-path').value,
+    row.querySelector('.directory-warning').value,
+    row.querySelector('.directory-critical').value,
+  ));
 }
 
 function addFileCheckRow(data = {}) {

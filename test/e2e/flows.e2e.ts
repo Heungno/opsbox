@@ -88,3 +88,13 @@ test('공통코드에서 OTHER 이름을 바꾸면 대시보드·보고서 목�
   assert.doesNotMatch(dashboard, /(^| )기타( |$)/, '예전 이름이 남지 않음');
   assert.deepEqual(session.errors, []);
 });
+
+test('서버 상세: 임계값을 비워 둔 디렉터리가 있어도 정책을 저장할 수 있다(데모 서버)', { skip }, async () => {
+  await open('/settings/server-management?id=DB-02', 2500);
+  await session.page.click('[data-server-tab="policy"]');
+  await session.page.click('#btn-save-policy');
+  await settle(1500);
+  assert.match(await session.page.evaluate(() => document.body.innerText), /정책이 저장되었습니다/);
+  assert.deepEqual((await call('GET', '/api/servers/DB-02/check-config')).data.directories, [{ path: '/var/lib/pgsql/16/data' }]);
+  assert.deepEqual(session.errors, []);
+});

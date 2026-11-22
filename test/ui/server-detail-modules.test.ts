@@ -87,3 +87,10 @@ test('공통코드를 못 불러와도 정책 탭에 기본과 서버 역할이 
   resetCodes();
   assert.deepEqual(policyRoleTabs(['WEB']).map((t: any) => t.value), ['BASIC', 'WEB']);
 });
+
+test('디렉터리 행: 임계값 칸이 비면 값을 보내지 않는다(스크립트 기본값 사용), 숫자는 그대로', async () => {
+  const { directoryFromInputs } = await import('../../src/public/settings/server-management/server-policy-form.js');
+  assert.deepEqual(directoryFromInputs(' /data ', '', ''), { path: '/data' });
+  assert.deepEqual(directoryFromInputs('/data', '75', '95'), { path: '/data', warningPercent: 75, criticalPercent: 95 });
+  assert.deepEqual(directoryFromInputs('/data', '0', ' '), { path: '/data', warningPercent: 0 });
+});
