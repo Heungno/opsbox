@@ -20,28 +20,8 @@
       <h1>서버 관리</h1>
       <p>서버 정보를 등록하고 유형별 점검 정책을 관리합니다.</p>
     </header>
-    <section class="card dashboard">
-      <div class="summary-card">
-        <span>Total</span>
-        <strong id="total-count"> 0 </strong>
-      </div>
-      <div class="summary-card">
-        <span>WEB</span>
-        <strong id="web-count"> 0 </strong>
-      </div>
-      <div class="summary-card">
-        <span>WAS</span>
-        <strong id="was-count"> 0 </strong>
-      </div>
-      <div class="summary-card">
-        <span>DB</span>
-        <strong id="db-count"> 0 </strong>
-      </div>
-      <div class="summary-card">
-        <span>기타</span>
-        <strong id="other-count">0</strong>
-      </div>
-    </section>
+    <!-- 요약 카드: 전체 + 역할별(공통코드 serverRoles) -->
+    <section id="server-summary" class="card dashboard"></section>
 
     <!-- Server List -->
     <section class="card">
@@ -53,13 +33,8 @@
           <label class="checkbox-label"><input id="show-inactive" type="checkbox" /> 미사용 포함</label>
         </div>
       </div>
-      <div id="server-role-tabs" class="management-category-tabs server-role-tabs" role="tablist" aria-label="서버 역할">
-        <button type="button" role="tab" data-role="ALL" aria-selected="true">전체 <span>0</span></button>
-        <button type="button" role="tab" data-role="WEB" aria-selected="false">WEB <span>0</span></button>
-        <button type="button" role="tab" data-role="WAS" aria-selected="false">WAS <span>0</span></button>
-        <button type="button" role="tab" data-role="DB" aria-selected="false">DB <span>0</span></button>
-        <button type="button" role="tab" data-role="OTHER" aria-selected="false">기타 <span>0</span></button>
-      </div>
+      <!-- 역할 탭: 전체 + 공통코드 serverRoles -->
+      <div id="server-role-tabs" class="management-category-tabs server-role-tabs" role="tablist" aria-label="서버 역할"></div>
       <table class="server-table">
         <thead>
           <tr>

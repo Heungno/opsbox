@@ -1,223 +1,79 @@
 import { api, loadText, notifyError, showToast } from '/shared/js/api.js';
+import { codeList, loadCodes } from '/shared/js/codes.js';
+import { option } from '/shared/js/dom.js';
+import { filterServers, renderRoleProductFields, renderRoleTabs, renderServerRows, renderSummaryCards, summarizeServers } from './server-list-view.js';
 
+/* 서버 목록 (연결부): 요소 찾기, 이벤트, API 호출. 그리기·계산은 server-list-view.js */
 
-let serverCache = [];
-let serverDialog, serverForm, searchBox, serverList, newButton, roleProductFields;
-let commonCodes;
-let activeRole = 'ALL';
+/** 화면 상태 */
+const state = { servers: [], activeRole: 'ALL', roleFields: null };
+const $ = (id) => document.getElementById(id);
 
-async function initializeServerList() {
-  document.getElementById('server-modal-container').innerHTML = await loadText('/shared/fragments/server-modal.html');
-  commonCodes = await api('/api/common-codes');
-  populateOptions(document.getElementById('server-form-os'), commonCodes.operatingSystems);
-  serverDialog = document.getElementById('server-modal');
-  serverForm = document.getElementById('server-modal-form');
-  roleProductFields = document.getElementById('server-form-role-products');
-  searchBox = document.getElementById('search');
-  serverList = document.getElementById('server-list');
-  newButton = document.getElementById('btn-new');
-  renderRoleProducts(roleProductFields);
-  serverForm.addEventListener('submit', saveServer);
-  document.getElementById('server-modal-close').addEventListener('click', closeServerDialog);
-  document.getElementById('server-modal-cancel').addEventListener('click', closeServerDialog);
-  newButton.addEventListener('click', showNewForm);
-  searchBox?.addEventListener('input', renderServers);
-  document.getElementById('show-inactive')?.addEventListener('change', loadServers);
-  const roleTabs = document.getElementById('server-role-tabs');
+async function init() {
+  $('server-modal-container').innerHTML = await loadText('/shared/fragments/server-modal.html');
+  await loadCodes();
+  $('server-form-os').replaceChildren(...codeList('operatingSystems').map(({ value, label }) => option(value, label)));
+  resetForm();
+  $('server-modal-form').addEventListener('submit', saveServer);
+  $('server-modal-close').addEventListener('click', closeServerDialog);
+  $('server-modal-cancel').addEventListener('click', closeServerDialog);
+  $('btn-new').addEventListener('click', showNewForm);
+  $('search').addEventListener('input', renderServers);
+  $('show-inactive').addEventListener('change', loadServers);
+  const roleTabs = $('server-role-tabs');
   roleTabs.addEventListener('click', (event) => { const tab = event.target.closest('[role="tab"]'); if (tab) setActiveRole(tab.dataset.role); });
   roleTabs.addEventListener('keydown', (event) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     const tabs = [...roleTabs.querySelectorAll('[role="tab"]')];
-    const current = tabs.findIndex((tab) => tab.dataset.role === activeRole);
+    const current = tabs.findIndex((tab) => tab.dataset.role === state.activeRole);
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    event.preventDefault(); tabs[next].focus(); setActiveRole(tabs[next].dataset.role);
+    event.preventDefault();
+    setActiveRole(tabs[next].dataset.role);
+    roleTabs.querySelector(`[data-role="${tabs[next].dataset.role}"]`)?.focus();
   });
   await loadServers();
 }
 
-function setActiveRole(role) { activeRole = role; renderServers(); }
-
-function renderServerRoleTabs(matching) {
-  const counts = { ALL: matching.length, WEB: 0, WAS: 0, DB: 0, OTHER: 0 };
-  matching.forEach((server) => getRoles(server).forEach((role) => { if (Object.hasOwn(counts, role) && role !== 'ALL') counts[role] += 1; }));
-  document.querySelectorAll('#server-role-tabs [role="tab"]').forEach((tab) => {
-    const role = tab.dataset.role;
-    tab.setAttribute('aria-selected', String(role === activeRole));
-    tab.tabIndex = role === activeRole ? 0 : -1;
-    tab.querySelector('span').textContent = counts[role] ?? 0;
-  });
-}
-
-function renderRoleProducts(container, selectedRoles = [], selectedProducts = {}) {
-  if (!container) return;
-  container.replaceChildren();
-  commonCodes.serverRoles.forEach(({ value: role, label: roleLabel }) => {
-    const row = document.createElement('div'); row.className = 'role-product-row';
-    const label = document.createElement('label');
-    const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
-    checkbox.className = 'role-choice-checkbox';
-    checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;';
-    label.className = 'role-choice-label';
-    label.append(checkbox, document.createTextNode(` ${roleLabel}`)); row.appendChild(label);
-    if (role !== 'OTHER') {
-      const select = document.createElement('select'); select.dataset.roleProduct = role;
-      select.add(new Option('제품 선택', '')); (commonCodes.productsByRole[role] || []).forEach((product) => select.add(new Option(product, product)));
-      select.value = selectedProducts[role] || ''; row.appendChild(select);
-    }
-    checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked) { const select = row.querySelector('select'); if (select) select.value = ''; } });
-    checkbox.dispatchEvent(new Event('change')); container.appendChild(row);
-  });
-}
-function populateOptions(select, codes, placeholder) {
-  if (!select) return;
-  select.replaceChildren();
-  if (placeholder) select.add(new Option(placeholder, ''));
-  codes.forEach(({ value, label }) => select.add(new Option(label, value)));
-}
-function getRoleProductSelection(container) {
-  const roles = [...container.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
-  const products = Object.fromEntries([...container.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
-  return { roles, products };
+function setActiveRole(role) {
+  state.activeRole = role;
+  renderServers();
 }
 
 async function loadServers() {
   try {
-    const includeInactive = document.getElementById('show-inactive')?.checked;
-    serverCache = (await api(`/api/servers${includeInactive ? '?includeInactive=1' : ''}`)) || [];
-
-    updateSummary();
-
+    const includeInactive = $('show-inactive').checked;
+    state.servers = (await api(`/api/servers${includeInactive ? '?includeInactive=1' : ''}`)) || [];
+    renderSummaryCards($('server-summary'), summarizeServers(state.servers, codeList('serverRoles')), codeList('serverRoles'));
     renderServers();
   } catch (error) {
     notifyError(error, '서버 목록을 불러오지 못했습니다.');
   }
 }
 
+function renderServers() {
+  const matching = filterServers(state.servers, { keyword: $('search').value });
+  renderRoleTabs($('server-role-tabs'), codeList('serverRoles'), matching, state.activeRole);
+  renderServerRows($('server-list'), filterServers(matching, { role: state.activeRole }), { onToggle: (server) => setServerEnabled(server, server.enabled === false) });
+}
+
 async function saveServer(event) {
   event.preventDefault();
-
   const server = {
-    id: document.getElementById("server-form-id").value.trim(),
-
-    name: document.getElementById("server-form-name").value.trim(),
-
-    ...getRoleProductSelection(roleProductFields),
-
-    os: document.getElementById("server-form-os").value,
-
-    ip: document.getElementById("server-form-ip").value.trim(),
-
-    resultPath: document.getElementById("server-form-result-path").value.trim(),
+    id: $('server-form-id').value.trim(),
+    name: $('server-form-name').value.trim(),
+    ...state.roleFields.read(),
+    os: $('server-form-os').value,
+    ip: $('server-form-ip').value.trim(),
+    resultPath: $('server-form-result-path').value.trim(),
   };
-
   try {
     await api('/api/servers', { method: 'POST', body: server });
-
     closeServerDialog();
     showToast('서버를 등록했습니다.', 'success');
-
     await loadServers();
   } catch (error) {
     notifyError(error, '서버를 등록하지 못했습니다.');
   }
-}
-
-function renderServers() {
-  if (!serverList) {
-    return;
-  }
-
-  const keyword = searchBox?.value?.trim()?.toLowerCase() || "";
-
-  const matching = serverCache.filter((server) => {
-    return (
-      server.id.toLowerCase().includes(keyword) ||
-      server.name.toLowerCase().includes(keyword) ||
-      server.ip.toLowerCase().includes(keyword) ||
-      getRoles(server).join(' ').toLowerCase().includes(keyword)
-      || Object.values(server.products || {}).join(' ').toLowerCase().includes(keyword)
-    );
-  });
-  renderServerRoleTabs(matching);
-  const servers = matching.filter((server) => activeRole === 'ALL' || getRoles(server).includes(activeRole));
-
-  serverList.replaceChildren();
-
-  if (!servers.length) {
-    const emptyRow = document.createElement('tr'); const emptyCell = document.createElement('td');
-    emptyCell.colSpan = 6; emptyCell.className = 'server-list-empty'; emptyCell.textContent = '조건에 맞는 서버가 없습니다.';
-    emptyRow.appendChild(emptyCell); serverList.appendChild(emptyRow); return;
-  }
-
-  servers.forEach((server) => {
-    const tr = document.createElement("tr");
-
-    const idTd = document.createElement("td");
-
-    const link = document.createElement("a");
-
-    link.href = `/settings/server-management/detail?id=${encodeURIComponent(server.id)}`;
-
-    link.textContent = server.id;
-
-    idTd.appendChild(link);
-
-    const nameTd = document.createElement("td");
-
-    nameTd.textContent = server.name;
-
-    const typeTd = document.createElement("td");
-
-    typeTd.textContent = getRoles(server).map((role) => `${getServerTypeLabel(role)}${server.products?.[role] ? ` · ${server.products[role]}` : ''}`).join(' / ');
-
-    const osTd = document.createElement("td");
-
-    osTd.textContent = server.os;
-
-    const ipTd = document.createElement("td");
-
-    ipTd.textContent = server.ip;
-
-    const actionTd = document.createElement("td");
-
-    const detailButton = document.createElement("a");
-    detailButton.textContent = "상세";
-    detailButton.className = "btn btn-small";
-    detailButton.href = `/settings/server-management/detail?id=${encodeURIComponent(server.id)}`;
-
-    // 서버는 지우지 않고 미사용으로 바꿉니다(점검 결과·보고서를 남기고 나중에 다시 쓸 수 있게).
-    const toggleButton = document.createElement("button");
-    toggleButton.type = "button";
-    toggleButton.textContent = server.enabled === false ? "다시 사용" : "미사용";
-    toggleButton.className = server.enabled === false ? "btn btn-primary btn-small" : "btn btn-small";
-    toggleButton.addEventListener("click", () => setServerEnabled(server, server.enabled === false));
-
-    actionTd.appendChild(detailButton);
-
-    actionTd.appendChild(toggleButton);
-
-    if (server.enabled === false) {
-      tr.className = "server-inactive";
-      const badge = document.createElement("span");
-      badge.className = "server-inactive-badge";
-      badge.textContent = "미사용";
-      nameTd.append(" ", badge);
-    }
-
-    tr.appendChild(idTd);
-
-    tr.appendChild(nameTd);
-
-    tr.appendChild(typeTd);
-
-    tr.appendChild(osTd);
-
-    tr.appendChild(ipTd);
-
-    tr.appendChild(actionTd);
-
-    serverList.appendChild(tr);
-  });
 }
 
 async function setServerEnabled(server, enabled) {
@@ -232,48 +88,20 @@ async function setServerEnabled(server, enabled) {
 }
 
 function resetForm() {
-  serverForm?.reset();
-  renderRoleProducts(roleProductFields, ['WEB']);
-  document.getElementById("server-form-result-path").value = "";
+  $('server-modal-form').reset();
+  state.roleFields = renderRoleProductFields($('server-form-role-products'), ['WEB']);
+  $('server-form-result-path').value = '';
 }
 
 function showNewForm() {
   resetForm();
-
-  serverDialog?.showModal();
-  document.getElementById("server-form-id").focus();
+  $('server-modal').showModal();
+  $('server-form-id').focus();
 }
 
 function closeServerDialog() {
-  serverDialog?.close();
+  $('server-modal').close();
   resetForm();
 }
 
-function updateSummary() {
-  // 요약 숫자는 사용 중인 서버만 셉니다(미사용 포함을 켜도 같음).
-  const active = serverCache.filter((s) => s.enabled !== false);
-  const total = active.length;
-
-  const web = active.filter((s) => getRoles(s).includes("WEB")).length;
-
-  const was = active.filter((s) => getRoles(s).includes("WAS")).length;
-
-  const db = active.filter((s) => getRoles(s).includes("DB")).length;
-
-  document.getElementById("total-count").textContent = total;
-
-  document.getElementById("web-count").textContent = web;
-
-  document.getElementById("was-count").textContent = was;
-
-  document.getElementById("db-count").textContent = db;
-  document.getElementById("other-count").textContent = active.filter((s) => getRoles(s).includes("OTHER")).length;
-}
-
-function getRoles(server) { return server.roles ?? []; }
-
-function getServerTypeLabel(type) {
-  return type === "OTHER" ? "기타" : type;
-}
-
-initializeServerList().catch((error) => notifyError(error, '서버 관리 화면을 초기화하지 못했습니다.'));
+init().catch((error) => notifyError(error, '서버 관리 화면을 초기화하지 못했습니다.'));
