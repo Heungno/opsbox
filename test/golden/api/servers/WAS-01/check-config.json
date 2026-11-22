@@ -1,0 +1,77 @@
+{
+  "processes": [
+    {
+      "name": "java"
+    }
+  ],
+  "directories": [
+    {
+      "path": "E:\\jeus\\logs"
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 9736,
+      "protocol": "TCP",
+      "description": "JEUS 관리"
+    },
+    {
+      "port": 8088,
+      "protocol": "TCP",
+      "description": "JEUS HTTP"
+    }
+  ],
+  "httpChecks": [
+    {
+      "name": "업무 API",
+      "url": "http://10.10.2.21:8088/api/health",
+      "expectedStatus": 200
+    }
+  ],
+  "scriptParts": {
+    "HOST_INFO": "WINDOWS-PART-HOST_INFO",
+    "CPU": "WINDOWS-PART-CPU",
+    "MEMORY": "WINDOWS-PART-MEMORY",
+    "UPTIME": "WINDOWS-PART-UPTIME",
+    "WAS_JVM_HEAP": "WINDOWS-PART-WAS_JVM_HEAP",
+    "WAS_THREAD_POOL": "WINDOWS-PART-WAS_THREAD_POOL",
+    "WAS_LONG_RUNNING_THREAD": "WINDOWS-PART-WAS_LONG_RUNNING_THREAD",
+    "WAS_DB_CONNECTION_POOL": "WINDOWS-PART-WAS_DB_CONNECTION_POOL",
+    "WAS_DEPLOYMENT": "WINDOWS-PART-WAS_DEPLOYMENT",
+    "WAS_HEAP_DUMP": "WINDOWS-PART-WAS_HEAP_DUMP",
+    "WAS_STARTUP_SCRIPT": "WINDOWS-PART-WAS_STARTUP_SCRIPT",
+    "WAS_LOG": "WINDOWS-PART-WAS_LOG"
+  },
+  "roleChecks": {
+    "WAS": [
+      "WAS_JVM_HEAP",
+      "WAS_THREAD_POOL",
+      "WAS_LONG_RUNNING_THREAD",
+      "WAS_DB_CONNECTION_POOL",
+      "WAS_DEPLOYMENT",
+      "WAS_HEAP_DUMP",
+      "WAS_STARTUP_SCRIPT",
+      "WAS_LOG"
+    ]
+  },
+  "rolePolicySettings": {
+    "CUSTOM_DEMO_DBPORT": {
+      "inputs": {
+        "targets": "10.10.4.41:1433"
+      }
+    },
+    "WAS_LOG": {
+      "logDirectories": [
+        "E:\\jeus\\logs"
+      ],
+      "periodDays": 7
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default",
+    "WAS": "windows-was-default"
+  }
+}

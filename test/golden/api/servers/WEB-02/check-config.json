@@ -1,0 +1,72 @@
+{
+  "processes": [
+    {
+      "name": "nginx"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/var/log/nginx",
+      "warningPercent": 70,
+      "criticalPercent": 90
+    }
+  ],
+  "fileChecks": [
+    {
+      "path": "/etc/nginx/nginx.conf",
+      "warningSizeMB": 1,
+      "criticalSizeMB": 2
+    }
+  ],
+  "ports": [
+    {
+      "port": 80,
+      "protocol": "TCP",
+      "description": "HTTP"
+    },
+    {
+      "port": 443,
+      "protocol": "TCP",
+      "description": "HTTPS"
+    }
+  ],
+  "httpChecks": [
+    {
+      "name": "포털 메인",
+      "url": "https://portal.example.go.kr/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "상태 확인",
+      "url": "http://127.0.0.1/health",
+      "expectedStatus": 200
+    }
+  ],
+  "scriptParts": {
+    "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
+    "WEB_REQUEST_VOLUME": "LINUX-PART-WEB_REQUEST_VOLUME",
+    "WEB_LOG": "LINUX-PART-WEB_LOG"
+  },
+  "roleChecks": {
+    "WEB": [
+      "WEB_ENGINE_STATUS",
+      "WEB_WAS_CONNECTION",
+      "WEB_REQUEST_VOLUME",
+      "WEB_LOG"
+    ]
+  },
+  "rolePolicySettings": {
+    "WEB_LOG": {
+      "logDirectories": [
+        "/var/log/nginx"
+      ],
+      "periodDays": 7
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default"
+  }
+}

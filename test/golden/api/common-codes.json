@@ -1,0 +1,422 @@
+{
+  "serverRoles": [
+    {
+      "value": "WEB",
+      "label": "WEB"
+    },
+    {
+      "value": "WAS",
+      "label": "WAS"
+    },
+    {
+      "value": "DB",
+      "label": "DB"
+    },
+    {
+      "value": "OTHER",
+      "label": "기타"
+    }
+  ],
+  "operatingSystems": [
+    {
+      "value": "Windows",
+      "label": "Windows"
+    },
+    {
+      "value": "Linux",
+      "label": "Linux"
+    }
+  ],
+  "productsByRole": {
+    "WEB": [
+      "WebtoB",
+      "Apache HTTP Server",
+      "IIS",
+      "Nginx"
+    ],
+    "WAS": [
+      "JEUS",
+      "Apache Tomcat",
+      "JBoss",
+      "Node.js"
+    ],
+    "DB": [
+      "MSSQL",
+      "MariaDB",
+      "CUBRID",
+      "PostgreSQL"
+    ]
+  },
+  "portProtocols": [
+    {
+      "value": "TCP",
+      "label": "TCP"
+    },
+    {
+      "value": "UDP",
+      "label": "UDP"
+    }
+  ],
+  "healthStatuses": [
+    {
+      "value": "Healthy",
+      "label": "정상",
+      "severity": 0
+    },
+    {
+      "value": "Warning",
+      "label": "경고",
+      "severity": 1
+    },
+    {
+      "value": "Critical",
+      "label": "위험",
+      "severity": 2
+    },
+    {
+      "value": "Unknown",
+      "label": "알 수 없음",
+      "severity": 3
+    },
+    {
+      "value": "NotChecked",
+      "label": "미점검",
+      "severity": -1
+    },
+    {
+      "value": "NotCollected",
+      "label": "미수집",
+      "severity": -1
+    }
+  ],
+  "policyCategories": [
+    {
+      "value": "BASIC",
+      "label": "기본"
+    },
+    {
+      "value": "WEB",
+      "label": "WEB"
+    },
+    {
+      "value": "WAS",
+      "label": "WAS"
+    },
+    {
+      "value": "DB",
+      "label": "DB"
+    }
+  ],
+  "policyExecutors": [
+    {
+      "value": "SCRIPT",
+      "label": "스크립트"
+    },
+    {
+      "value": "SQL_QUERY",
+      "label": "DB 쿼리"
+    },
+    {
+      "value": "LOG_ANALYSIS",
+      "label": "로그 분석"
+    },
+    {
+      "value": "CONSOLE_COMMAND",
+      "label": "콘솔 명령"
+    },
+    {
+      "value": "HTTP_CHECK",
+      "label": "HTTP 확인"
+    },
+    {
+      "value": "TCP_CHECK",
+      "label": "TCP 포트 확인"
+    },
+    {
+      "value": "PROCESS_CHECK",
+      "label": "프로세스 확인"
+    },
+    {
+      "value": "FILESYSTEM_CHECK",
+      "label": "파일·디렉터리 확인"
+    },
+    {
+      "value": "CHECK_BUILDER",
+      "label": "점검 만들기"
+    }
+  ],
+  "resultViews": [
+    {
+      "value": "SUMMARY",
+      "label": "상태 요약"
+    },
+    {
+      "value": "METRIC",
+      "label": "측정값"
+    },
+    {
+      "value": "TABLE",
+      "label": "표"
+    },
+    {
+      "value": "LOG_TABLE",
+      "label": "로그 표"
+    },
+    {
+      "value": "CONSOLE",
+      "label": "콘솔"
+    },
+    {
+      "value": "JSON",
+      "label": "JSON 상세"
+    }
+  ],
+  "templateKinds": [
+    {
+      "value": "SCRIPT_PART",
+      "label": "점검 항목 스크립트"
+    },
+    {
+      "value": "QUERY",
+      "label": "DB 쿼리"
+    }
+  ],
+  "scriptItems": [
+    {
+      "value": "START",
+      "label": "실행 준비",
+      "group": "시스템"
+    },
+    {
+      "value": "HOST_INFO",
+      "label": "서버 기본정보",
+      "group": "공통"
+    },
+    {
+      "value": "CPU",
+      "label": "CPU 사용률",
+      "group": "공통"
+    },
+    {
+      "value": "MEMORY",
+      "label": "메모리 사용률",
+      "group": "공통"
+    },
+    {
+      "value": "UPTIME",
+      "label": "가동시간",
+      "group": "공통"
+    },
+    {
+      "value": "DISK",
+      "label": "디스크 사용량",
+      "group": "공통"
+    },
+    {
+      "value": "PROCESS",
+      "label": "프로세스",
+      "group": "공통"
+    },
+    {
+      "value": "DIRECTORY",
+      "label": "디렉터리 사용량",
+      "group": "공통"
+    },
+    {
+      "value": "FILE_SIZE",
+      "label": "파일 크기",
+      "group": "공통"
+    },
+    {
+      "value": "PORT",
+      "label": "포트 리스닝",
+      "group": "공통"
+    },
+    {
+      "value": "HTTP",
+      "label": "HTTP 응답",
+      "group": "WEB/WAS"
+    },
+    {
+      "value": "WEB_ENGINE_STATUS",
+      "label": "WEB 엔진 상태",
+      "group": "WEB",
+      "role": "WEB",
+      "description": "WebtoB wsadmin 등 제품별 관리 명령으로 서버와 서비스 상태를 확인합니다."
+    },
+    {
+      "value": "WEB_WAS_CONNECTION",
+      "label": "WEB-WAS 연동 상태",
+      "group": "WEB",
+      "role": "WEB",
+      "description": "WEB 커넥터와 WAS 대상 연결 상태를 확인합니다."
+    },
+    {
+      "value": "WEB_REQUEST_VOLUME",
+      "label": "사용자 요청 처리량",
+      "group": "WEB",
+      "role": "WEB",
+      "description": "관리 상태 페이지나 제품 명령에서 처리 중인 요청 수를 확인합니다."
+    },
+    {
+      "value": "WEB_LOG",
+      "label": "WEB 로그 상태",
+      "group": "WEB",
+      "role": "WEB",
+      "description": "Access/Error 로그의 신규 오류와 이상 징후를 확인합니다."
+    },
+    {
+      "value": "WAS_JVM_HEAP",
+      "label": "JVM Heap 사용률",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "JVM Heap 사용량과 임계치를 확인합니다."
+    },
+    {
+      "value": "WAS_THREAD_POOL",
+      "label": "Thread Pool 사용률",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "Work Thread Pool 사용률과 최대 설정값을 비교합니다."
+    },
+    {
+      "value": "WAS_LONG_RUNNING_THREAD",
+      "label": "장기 수행 Thread",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "장시간 완료되지 않는 작업 스레드를 확인합니다."
+    },
+    {
+      "value": "WAS_DB_CONNECTION_POOL",
+      "label": "DB Connection Pool 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "DB 연결 풀의 사용량과 연결 상태를 확인합니다."
+    },
+    {
+      "value": "WAS_DEPLOYMENT",
+      "label": "애플리케이션 배포 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "컨테이너와 애플리케이션의 배포·기동 상태를 확인합니다."
+    },
+    {
+      "value": "WAS_HEAP_DUMP",
+      "label": "Heap Dump 파일 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "Heap Dump 생성 여부와 보관 파일을 확인합니다."
+    },
+    {
+      "value": "WAS_STARTUP_SCRIPT",
+      "label": "기동 스크립트 변경 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "서버 기동 스크립트의 기준 대비 변경 여부를 확인합니다."
+    },
+    {
+      "value": "WAS_LOG",
+      "label": "WAS 로그 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "지정한 로그 폴더와 기간을 기준으로 오류 유형별 건수를 집계합니다."
+    },
+    {
+      "value": "DB_INSTANCE_STATUS",
+      "label": "DB 인스턴스·접속 상태",
+      "group": "DB",
+      "role": "DB",
+      "description": "DB 인스턴스 상태와 실제 접속·읽기 질의 가능 여부를 확인합니다."
+    },
+    {
+      "value": "DB_QUERY_RUNNER",
+      "label": "DB 공통 쿼리 실행기",
+      "group": "DB",
+      "role": "DB",
+      "description": "DB 점검 항목에 연결된 SQL 템플릿을 공통 실행기로 실행합니다."
+    },
+    {
+      "value": "DB_PROCESS_LIMIT",
+      "label": "세션·프로세스 사용률",
+      "group": "DB",
+      "role": "DB",
+      "description": "현재 세션·프로세스 수를 설정 한도와 비교합니다."
+    },
+    {
+      "value": "DB_TABLESPACE",
+      "label": "데이터 영역 사용률",
+      "group": "DB",
+      "role": "DB",
+      "description": "테이블스페이스 또는 데이터 파일의 사용률을 확인합니다."
+    },
+    {
+      "value": "DB_BACKUP",
+      "label": "백업 상태",
+      "group": "DB",
+      "role": "DB",
+      "description": "최근 DB 백업의 실행 여부와 성공 상태를 확인합니다."
+    },
+    {
+      "value": "DB_ARCHIVE_MODE",
+      "label": "아카이브 모드 상태",
+      "group": "DB",
+      "role": "DB",
+      "description": "온라인 백업에 필요한 아카이브 설정과 상태를 확인합니다."
+    },
+    {
+      "value": "DB_TRANSACTION_LOG",
+      "label": "트랜잭션 로그 사용률",
+      "group": "DB",
+      "role": "DB",
+      "description": "트랜잭션 로그·아카이브 로그의 사용량과 증가 상태를 확인합니다."
+    },
+    {
+      "value": "DB_REPLICATION",
+      "label": "복제·이중화 상태",
+      "group": "DB",
+      "role": "DB",
+      "description": "복제 지연과 Active-Standby 동기화 상태를 확인합니다."
+    },
+    {
+      "value": "DB_CUSTOM_QUERY",
+      "label": "기타 사용자 쿼리",
+      "group": "DB",
+      "role": "DB",
+      "description": "등록한 MSSQL 쿼리 템플릿을 여러 개 선택해 실행하고 결과를 항목별로 저장합니다."
+    },
+    {
+      "value": "SAVE",
+      "label": "결과 저장",
+      "group": "시스템"
+    }
+  ],
+  "rolePolicies": {
+    "WEB": [
+      "WEB_ENGINE_STATUS",
+      "WEB_WAS_CONNECTION",
+      "WEB_REQUEST_VOLUME",
+      "WEB_LOG"
+    ],
+    "WAS": [
+      "WAS_JVM_HEAP",
+      "WAS_THREAD_POOL",
+      "WAS_LONG_RUNNING_THREAD",
+      "WAS_DB_CONNECTION_POOL",
+      "WAS_DEPLOYMENT",
+      "WAS_HEAP_DUMP",
+      "WAS_STARTUP_SCRIPT",
+      "WAS_LOG"
+    ],
+    "DB": [
+      "DB_INSTANCE_STATUS",
+      "DB_PROCESS_LIMIT",
+      "DB_TABLESPACE",
+      "DB_BACKUP",
+      "DB_ARCHIVE_MODE",
+      "DB_TRANSACTION_LOG",
+      "DB_REPLICATION",
+      "DB_CUSTOM_QUERY"
+    ]
+  },
+  "_codeMeta": {}
+}

@@ -1,0 +1,92 @@
+{
+  "processes": [
+    {
+      "name": "mariadbd"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/var/lib/mysql",
+      "warningPercent": 70,
+      "criticalPercent": 90
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 3306,
+      "protocol": "TCP",
+      "description": "MariaDB"
+    }
+  ],
+  "httpChecks": [],
+  "scriptParts": {},
+  "roleChecks": {
+    "DB": [
+      "DB_INSTANCE_STATUS",
+      "DB_PROCESS_LIMIT",
+      "DB_TABLESPACE",
+      "DB_BACKUP",
+      "DB_ARCHIVE_MODE",
+      "DB_TRANSACTION_LOG",
+      "DB_REPLICATION"
+    ]
+  },
+  "rolePolicySettings": {
+    "DB_INSTANCE_STATUS": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_INSTANCE_STATUS",
+      "dbms": "MSSQL"
+    },
+    "DB_PROCESS_LIMIT": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_PROCESS_LIMIT",
+      "dbms": "MSSQL"
+    },
+    "DB_TABLESPACE": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_TABLESPACE",
+      "dbms": "MSSQL"
+    },
+    "DB_BACKUP": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_BACKUP",
+      "dbms": "MSSQL"
+    },
+    "DB_ARCHIVE_MODE": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_ARCHIVE_MODE",
+      "dbms": "MSSQL"
+    },
+    "DB_TRANSACTION_LOG": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_TRANSACTION_LOG",
+      "dbms": "MSSQL"
+    },
+    "DB_REPLICATION": {
+      "instanceTargets": [
+        "/run/mysqld/mysqld.sock"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_REPLICATION",
+      "dbms": "MSSQL"
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "DB": "linux-db-default"
+  }
+}

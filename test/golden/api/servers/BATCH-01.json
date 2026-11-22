@@ -1,0 +1,37 @@
+{
+  "id": "BATCH-01",
+  "name": "야간 배치 서버",
+  "os": "Linux",
+  "ip": "10.10.5.52",
+  "sharedPath": "/mnt/opsbox",
+  "roles": [
+    "OTHER"
+  ],
+  "products": {},
+  "processes": [
+    {
+      "name": "crond"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/batch/out"
+    }
+  ],
+  "fileChecks": [
+    {
+      "path": "/batch/out/daily_extract.csv",
+      "warningSizeMB": 500,
+      "criticalSizeMB": 1000
+    }
+  ],
+  "ports": [],
+  "httpChecks": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default"
+  },
+  "scriptParts": {},
+  "roleChecks": {},
+  "rolePolicySettings": {},
+  "customQueryTemplateIds": []
+}

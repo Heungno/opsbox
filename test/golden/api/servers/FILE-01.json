@@ -1,0 +1,50 @@
+{
+  "id": "FILE-01",
+  "name": "파일 서버",
+  "os": "Windows",
+  "ip": "10.10.5.51",
+  "sharedPath": "\\\\fileserver\\opsbox",
+  "roles": [
+    "OTHER"
+  ],
+  "products": {},
+  "processes": [
+    {
+      "name": "LanmanServer"
+    }
+  ],
+  "directories": [
+    {
+      "path": "D:\\Share",
+      "warningPercent": 80,
+      "criticalPercent": 95
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 445,
+      "protocol": "TCP",
+      "description": "SMB"
+    }
+  ],
+  "httpChecks": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default"
+  },
+  "scriptParts": {
+    "HOST_INFO": "WINDOWS-PART-HOST_INFO",
+    "CPU": "WINDOWS-PART-CPU",
+    "MEMORY": "WINDOWS-PART-MEMORY",
+    "UPTIME": "WINDOWS-PART-UPTIME"
+  },
+  "roleChecks": {},
+  "rolePolicySettings": {
+    "CUSTOM_DEMO_DBPORT": {
+      "inputs": {
+        "targets": "10.10.4.41:1433"
+      }
+    }
+  },
+  "customQueryTemplateIds": []
+}

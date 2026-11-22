@@ -12,11 +12,6 @@
 import { randomBytes, scryptSync } from 'node:crypto';
 import path from 'node:path';
 
-// 운영 DB 보호: demo 폴더 안의 DB가 아니면 실행하지 않습니다.
-if (!process.env.OPSBOX_DB_PATH?.includes(`${path.sep}demo${path.sep}`)) {
-  console.error('데모 DB 경로가 아닙니다. npm run demo:seed 로 실행하세요. (운영 DB 보호)');
-  process.exit(1);
-}
 
 type Status = 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
 type Role = 'WEB' | 'WAS' | 'DB' | 'OTHER';
@@ -608,7 +603,11 @@ class ResultBuilder {
 
 /* ---------- 실행 ---------- */
 
-async function main() {
+/**
+ * 데모 데이터를 현재 DB(OPSBOX_DB_PATH)에 넣습니다. 테스트(기준 비교)는 results: false로 서버·정책만 만듭니다.
+ */
+export async function seedDemo(options: { results?: boolean } = {}) {
+  const withResults = options.results ?? true;
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
   const { db, readCollection } = await import('../src/db/database');
   const { createServer } = await import('../src/services/serverService');
@@ -657,6 +656,7 @@ async function main() {
     const config = buildScriptConfig(server);
     const definitions: Definitions = { rolePolicies: config.checks.rolePolicies as Definitions['rolePolicies'], policyItems: config.checks.policyItems, basicPolicyItems: config.checks.basicPolicyItems };
 
+    if (!withResults) continue;
     for (let week = 0; week < WEEKS; week++) {
       if (demo.skipWeeks?.includes(week)) continue;
       for (const recheck of demo.recheckWeeks?.includes(week) ? [false, true] : [false]) {
@@ -676,6 +676,17 @@ async function main() {
     }
   }
 
+  return { resultCount, statusCount };
+}
+
+async function main() {
+  // 운영 DB 보호: demo 폴더 안의 DB가 아니면 실행하지 않습니다.
+  if (!process.env.OPSBOX_DB_PATH?.includes(`${path.sep}demo${path.sep}`)) {
+    console.error('데모 DB 경로가 아닙니다. npm run demo:seed 로 실행하세요. (운영 DB 보호)');
+    process.exit(1);
+  }
+  const { resultCount, statusCount } = await seedDemo();
+  const { db } = await import('../src/db/database');
   db.close();
   const statusText = ['Healthy', 'Warning', 'Critical', 'NotCollected'].map((status) => `${status} ${statusCount[status] ?? 0}`).join(', ');
   console.log(`데모 데이터를 만들었습니다: 서버 ${SERVERS.length}대, 점검 결과 ${resultCount}건 (${statusText})`);
@@ -683,7 +694,9 @@ async function main() {
   console.log(`실행: npm run demo:dev → http://localhost:${process.env.OPSBOX_PORT || 3001}  (아이디 ${DEMO_USER} / 비밀번호 ${DEMO_PASSWORD})`);
 }
 
-main().catch((error) => {
-  console.error('데모 데이터 생성 실패:', error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('데모 데이터 생성 실패:', error);
+    process.exit(1);
+  });
+}

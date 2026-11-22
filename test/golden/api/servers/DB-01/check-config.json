@@ -1,0 +1,105 @@
+{
+  "processes": [
+    {
+      "name": "sqlservr"
+    },
+    {
+      "name": "SQLAGENT"
+    }
+  ],
+  "directories": [
+    {
+      "path": "F:\\MSSQL\\Backup",
+      "warningPercent": 75,
+      "criticalPercent": 90
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 1433,
+      "protocol": "TCP",
+      "description": "MSSQL"
+    }
+  ],
+  "httpChecks": [],
+  "scriptParts": {
+    "HOST_INFO": "WINDOWS-PART-HOST_INFO",
+    "CPU": "WINDOWS-PART-CPU",
+    "MEMORY": "WINDOWS-PART-MEMORY",
+    "UPTIME": "WINDOWS-PART-UPTIME"
+  },
+  "roleChecks": {
+    "DB": [
+      "DB_INSTANCE_STATUS",
+      "DB_PROCESS_LIMIT",
+      "DB_TABLESPACE",
+      "DB_BACKUP",
+      "DB_ARCHIVE_MODE",
+      "DB_TRANSACTION_LOG",
+      "DB_REPLICATION"
+    ]
+  },
+  "rolePolicySettings": {
+    "CUSTOM_DEMO_DBPORT": {
+      "inputs": {
+        "targets": "10.10.4.41:1433"
+      }
+    },
+    "DB_INSTANCE_STATUS": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_INSTANCE_STATUS",
+      "dbms": "MSSQL"
+    },
+    "DB_PROCESS_LIMIT": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_PROCESS_LIMIT",
+      "dbms": "MSSQL"
+    },
+    "DB_TABLESPACE": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_TABLESPACE",
+      "dbms": "MSSQL"
+    },
+    "DB_BACKUP": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_BACKUP",
+      "dbms": "MSSQL"
+    },
+    "DB_ARCHIVE_MODE": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_ARCHIVE_MODE",
+      "dbms": "MSSQL"
+    },
+    "DB_TRANSACTION_LOG": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_TRANSACTION_LOG",
+      "dbms": "MSSQL"
+    },
+    "DB_REPLICATION": {
+      "instanceTargets": [
+        "10.10.4.41,1433"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_REPLICATION",
+      "dbms": "MSSQL"
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default",
+    "DB": "windows-db-default"
+  }
+}

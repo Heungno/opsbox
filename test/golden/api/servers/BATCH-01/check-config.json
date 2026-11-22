@@ -1,0 +1,29 @@
+{
+  "processes": [
+    {
+      "name": "crond"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/batch/out"
+    }
+  ],
+  "fileChecks": [
+    {
+      "path": "/batch/out/daily_extract.csv",
+      "warningSizeMB": 500,
+      "criticalSizeMB": 1000
+    }
+  ],
+  "ports": [],
+  "httpChecks": [],
+  "scriptParts": {},
+  "roleChecks": {},
+  "rolePolicySettings": {},
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "processes": [
+    {
+      "name": "LanmanServer"
+    }
+  ],
+  "directories": [
+    {
+      "path": "D:\\Share",
+      "warningPercent": 80,
+      "criticalPercent": 95
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 445,
+      "protocol": "TCP",
+      "description": "SMB"
+    }
+  ],
+  "httpChecks": [],
+  "scriptParts": {
+    "HOST_INFO": "WINDOWS-PART-HOST_INFO",
+    "CPU": "WINDOWS-PART-CPU",
+    "MEMORY": "WINDOWS-PART-MEMORY",
+    "UPTIME": "WINDOWS-PART-UPTIME"
+  },
+  "roleChecks": {},
+  "rolePolicySettings": {
+    "CUSTOM_DEMO_DBPORT": {
+      "inputs": {
+        "targets": "10.10.4.41:1433"
+      }
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default"
+  }
+}

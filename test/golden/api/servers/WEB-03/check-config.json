@@ -1,0 +1,54 @@
+{
+  "processes": [
+    {
+      "name": "httpd"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/var/log/httpd"
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 80,
+      "protocol": "TCP",
+      "description": "HTTP"
+    }
+  ],
+  "httpChecks": [
+    {
+      "name": "업무 포털",
+      "url": "http://intra.example.local/",
+      "expectedStatus": 200
+    }
+  ],
+  "scriptParts": {
+    "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
+    "WEB_REQUEST_VOLUME": "LINUX-PART-WEB_REQUEST_VOLUME",
+    "WEB_LOG": "LINUX-PART-WEB_LOG"
+  },
+  "roleChecks": {
+    "WEB": [
+      "WEB_ENGINE_STATUS",
+      "WEB_WAS_CONNECTION",
+      "WEB_REQUEST_VOLUME",
+      "WEB_LOG"
+    ]
+  },
+  "rolePolicySettings": {
+    "WEB_LOG": {
+      "logDirectories": [
+        "/var/log/httpd"
+      ],
+      "periodDays": 7
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default"
+  }
+}

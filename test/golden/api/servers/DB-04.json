@@ -1,0 +1,111 @@
+{
+  "id": "DB-04",
+  "name": "행정 DB (CUBRID)",
+  "os": "Linux",
+  "ip": "10.10.4.44",
+  "sharedPath": "/mnt/opsbox",
+  "roles": [
+    "DB"
+  ],
+  "products": {
+    "DB": "CUBRID"
+  },
+  "processes": [
+    {
+      "name": "cub_server"
+    },
+    {
+      "name": "cub_master"
+    },
+    {
+      "name": "cub_broker"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/home/cubrid/database"
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 33000,
+      "protocol": "TCP",
+      "description": "CUBRID 브로커"
+    },
+    {
+      "port": 1523,
+      "protocol": "TCP",
+      "description": "CUBRID 마스터"
+    }
+  ],
+  "httpChecks": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "DB": "linux-db-default"
+  },
+  "scriptParts": {},
+  "roleChecks": {
+    "DB": [
+      "DB_INSTANCE_STATUS",
+      "DB_PROCESS_LIMIT",
+      "DB_TABLESPACE",
+      "DB_BACKUP",
+      "DB_ARCHIVE_MODE",
+      "DB_TRANSACTION_LOG",
+      "DB_REPLICATION"
+    ]
+  },
+  "rolePolicySettings": {
+    "DB_INSTANCE_STATUS": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_INSTANCE_STATUS",
+      "dbms": "MSSQL"
+    },
+    "DB_PROCESS_LIMIT": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_PROCESS_LIMIT",
+      "dbms": "MSSQL"
+    },
+    "DB_TABLESPACE": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_TABLESPACE",
+      "dbms": "MSSQL"
+    },
+    "DB_BACKUP": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_BACKUP",
+      "dbms": "MSSQL"
+    },
+    "DB_ARCHIVE_MODE": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_ARCHIVE_MODE",
+      "dbms": "MSSQL"
+    },
+    "DB_TRANSACTION_LOG": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_TRANSACTION_LOG",
+      "dbms": "MSSQL"
+    },
+    "DB_REPLICATION": {
+      "instanceTargets": [
+        "admindb@localhost"
+      ],
+      "queryTemplateId": "WINDOWS-QUERY-DB_REPLICATION",
+      "dbms": "MSSQL"
+    }
+  },
+  "customQueryTemplateIds": []
+}

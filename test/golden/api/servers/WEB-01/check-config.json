@@ -1,0 +1,83 @@
+{
+  "processes": [
+    {
+      "name": "wsm"
+    },
+    {
+      "name": "htl"
+    },
+    {
+      "name": "hth"
+    }
+  ],
+  "directories": [
+    {
+      "path": "D:\\WebtoB\\log",
+      "warningPercent": 70,
+      "criticalPercent": 90
+    }
+  ],
+  "fileChecks": [
+    {
+      "path": "D:\\WebtoB\\config\\http.m",
+      "warningSizeMB": 1,
+      "criticalSizeMB": 5
+    }
+  ],
+  "ports": [
+    {
+      "port": 80,
+      "protocol": "TCP",
+      "description": "HTTP"
+    },
+    {
+      "port": 443,
+      "protocol": "TCP",
+      "description": "HTTPS"
+    }
+  ],
+  "httpChecks": [
+    {
+      "name": "포털 메인",
+      "url": "https://portal.example.go.kr/",
+      "expectedStatus": 200
+    }
+  ],
+  "scriptParts": {
+    "HOST_INFO": "WINDOWS-PART-HOST_INFO",
+    "CPU": "WINDOWS-PART-CPU",
+    "MEMORY": "WINDOWS-PART-MEMORY",
+    "UPTIME": "WINDOWS-PART-UPTIME",
+    "WEB_ENGINE_STATUS": "WINDOWS-PART-WEB_ENGINE_STATUS",
+    "WEB_WAS_CONNECTION": "WINDOWS-PART-WEB_WAS_CONNECTION",
+    "WEB_REQUEST_VOLUME": "WINDOWS-PART-WEB_REQUEST_VOLUME",
+    "WEB_LOG": "WINDOWS-PART-WEB_LOG"
+  },
+  "roleChecks": {
+    "WEB": [
+      "WEB_ENGINE_STATUS",
+      "WEB_WAS_CONNECTION",
+      "WEB_REQUEST_VOLUME",
+      "WEB_LOG"
+    ]
+  },
+  "rolePolicySettings": {
+    "CUSTOM_DEMO_DBPORT": {
+      "inputs": {
+        "targets": "10.10.4.41:1433"
+      }
+    },
+    "WEB_LOG": {
+      "logDirectories": [
+        "D:\\WebtoB\\log"
+      ],
+      "periodDays": 7
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default",
+    "WEB": "windows-web-default"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "processes": [
+    {
+      "name": "nginx"
+    },
+    {
+      "name": "node"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/srv/stat/logs"
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 443,
+      "protocol": "TCP",
+      "description": "HTTPS"
+    },
+    {
+      "port": 3000,
+      "protocol": "TCP",
+      "description": "Node.js 앱"
+    }
+  ],
+  "httpChecks": [
+    {
+      "name": "통계 대시보드",
+      "url": "https://stat.example.go.kr/",
+      "expectedStatus": 200
+    }
+  ],
+  "scriptParts": {
+    "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
+    "WEB_REQUEST_VOLUME": "LINUX-PART-WEB_REQUEST_VOLUME",
+    "WEB_LOG": "LINUX-PART-WEB_LOG",
+    "WAS_THREAD_POOL": "LINUX-PART-WAS_THREAD_POOL",
+    "WAS_LONG_RUNNING_THREAD": "LINUX-PART-WAS_LONG_RUNNING_THREAD",
+    "WAS_DB_CONNECTION_POOL": "LINUX-PART-WAS_DB_CONNECTION_POOL",
+    "WAS_DEPLOYMENT": "LINUX-PART-WAS_DEPLOYMENT",
+    "WAS_HEAP_DUMP": "LINUX-PART-WAS_HEAP_DUMP",
+    "WAS_STARTUP_SCRIPT": "LINUX-PART-WAS_STARTUP_SCRIPT",
+    "WAS_LOG": "LINUX-PART-WAS_LOG"
+  },
+  "roleChecks": {
+    "WEB": [
+      "WEB_ENGINE_STATUS",
+      "WEB_WAS_CONNECTION",
+      "WEB_REQUEST_VOLUME",
+      "WEB_LOG"
+    ],
+    "WAS": [
+      "WAS_JVM_HEAP",
+      "WAS_THREAD_POOL",
+      "WAS_LONG_RUNNING_THREAD",
+      "WAS_DB_CONNECTION_POOL",
+      "WAS_DEPLOYMENT",
+      "WAS_HEAP_DUMP",
+      "WAS_STARTUP_SCRIPT",
+      "WAS_LOG"
+    ]
+  },
+  "rolePolicySettings": {
+    "WEB_LOG": {
+      "logDirectories": [
+        "/var/log/nginx"
+      ],
+      "periodDays": 7
+    },
+    "WAS_LOG": {
+      "logDirectories": [
+        "/srv/stat/logs"
+      ],
+      "periodDays": 7
+    }
+  },
+  "queryTemplateId": "",
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default",
+    "WAS": "linux-was-default"
+  }
+}

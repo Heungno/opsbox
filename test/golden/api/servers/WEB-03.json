@@ -1,0 +1,64 @@
+{
+  "id": "WEB-03",
+  "name": "내부 업무 WEB",
+  "os": "Linux",
+  "ip": "10.10.1.13",
+  "sharedPath": "/mnt/opsbox",
+  "roles": [
+    "WEB"
+  ],
+  "products": {
+    "WEB": "Apache HTTP Server"
+  },
+  "processes": [
+    {
+      "name": "httpd"
+    }
+  ],
+  "directories": [
+    {
+      "path": "/var/log/httpd"
+    }
+  ],
+  "fileChecks": [],
+  "ports": [
+    {
+      "port": 80,
+      "protocol": "TCP",
+      "description": "HTTP"
+    }
+  ],
+  "httpChecks": [
+    {
+      "name": "업무 포털",
+      "url": "http://intra.example.local/",
+      "expectedStatus": 200
+    }
+  ],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default"
+  },
+  "scriptParts": {
+    "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
+    "WEB_REQUEST_VOLUME": "LINUX-PART-WEB_REQUEST_VOLUME",
+    "WEB_LOG": "LINUX-PART-WEB_LOG"
+  },
+  "roleChecks": {
+    "WEB": [
+      "WEB_ENGINE_STATUS",
+      "WEB_WAS_CONNECTION",
+      "WEB_REQUEST_VOLUME",
+      "WEB_LOG"
+    ]
+  },
+  "rolePolicySettings": {
+    "WEB_LOG": {
+      "logDirectories": [
+        "/var/log/httpd"
+      ],
+      "periodDays": 7
+    }
+  },
+  "customQueryTemplateIds": []
+}
