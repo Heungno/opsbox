@@ -271,7 +271,11 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     ],
     OTHER: [],
   };
-  renderChecklist('type-check-list', checkRows[type]);
+  // 요약 행 중 같은 내용의 항목 상자가 있는 행은 빼고(상태가 상자 제목 옆에 나옴), 남은 행만 보여 줍니다.
+  const boxedRoleItems = new Set(rolePolicyItems.map((item) => item.item));
+  const checkRowItem = { 'WebtoB wsadmin': 'WEB_ENGINE_STATUS', 'JVM Heap': 'WAS_JVM_HEAP', 'DB 엔진 접속·상태': 'DB_INSTANCE_STATUS' };
+  const remainingCheckRows = checkRows[type].filter(([label]) => !boxedRoleItems.has(checkRowItem[label]));
+  renderChecklist('type-check-list', remainingCheckRows);
   const legacyLogSection = document.getElementById('log-analysis-results' + reportRoleSuffix);
   if (legacyLogSection) legacyLogSection.closest('.report-subsection').hidden = true;
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
@@ -304,9 +308,9 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     moveInto('DB_INSTANCE_STATUS', [engineSummary, engineTable], 'prepend', 'DB 엔진·데이터베이스', engineSummary?.previousElementSibling);
   }
   renderItemBoxes(document.getElementById('policy-item-output-results' + reportRoleSuffix), rolePolicyItems, { extras: roleExtras });
-  // 항목 상자 제목 옆에 상태가 나오므로, 역할 항목이 있으면 맨 위 '고유 점검' 요약 표는 숨깁니다.
+  // 남은 요약 행이 없으면(모두 항목 상자로 대신) 맨 위 '고유 점검' 요약 표를 숨깁니다.
   const typeCheckTable = document.getElementById('type-check-list' + reportRoleSuffix)?.closest('table');
-  if (typeCheckTable && rolePolicyItems.length) {
+  if (typeCheckTable && rolePolicyItems.length && remainingCheckRows.length === 0) {
     typeCheckTable.hidden = true;
     if (typeCheckTable.previousElementSibling?.tagName === 'H3') typeCheckTable.previousElementSibling.hidden = true;
   }
