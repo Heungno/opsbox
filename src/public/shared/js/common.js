@@ -1,45 +1,16 @@
-import { api, loadText, notifyError } from './api.js';
+import { api, notifyError } from './api.js';
 
-async function applySharedLayout() {
-  let root = document.getElementById('shared-layout-root');
-  let originalContent = null;
-  let pageTemplate = document.getElementById('page-content-template');
-  if (!root) {
-    const currentLayout = document.querySelector('.layout');
-    if (!currentLayout) return;
-    const contentContainer = currentLayout.querySelector('.content > .container');
-    if (!contentContainer) return;
-    originalContent = [...contentContainer.childNodes];
-    root = document.createElement('div');
-    root.id = 'shared-layout-root';
-    currentLayout.replaceWith(root);
-  }
-  root.innerHTML = await loadText('/shared/fragments/layout.html');
-  const page = document.getElementById('page-content');
-  if (!page) return;
-  if (pageTemplate) page.append(pageTemplate.content.cloneNode(true));
-  else if (originalContent) page.append(...originalContent);
-}
-
-async function loadSidebar() {
-  await window.opsboxLayoutReady;
-  const html = await loadText('/shared/fragments/sidebar.html');
-
-  const container = document.getElementById('sidebar-container');
-
-  if (!container) {
-    return;
-  }
-
-  container.innerHTML = html;
-
+/*
+ * 공통 사이드바 동작
+ * 레이아웃·사이드바 HTML, 현재 메뉴 강조, 로그인 사용자 이름은 서버가 화면에 넣어서 보냅니다(src/pages.ts).
+ * 여기서는 브라우저에서만 할 수 있는 일(접힘 상태 복원, 테마, 버튼 동작)만 맡습니다.
+ * module 스크립트는 HTML을 다 읽은 뒤 실행되므로 요소를 바로 찾을 수 있습니다.
+ */
+function initializeSidebar() {
   restoreSidebarState();
-
   initializeSidebarTheme();
-
   bindSidebarToggle();
   bindSettingsMenu();
-  loadCurrentUser();
   document.getElementById('logout-button')?.addEventListener('click', async () => {
     try {
       await api('/api/auth/logout', { method: 'POST' });
@@ -49,26 +20,6 @@ async function loadSidebar() {
     }
     location.replace('/login');
   });
-
-  activateCurrentMenu();
-}
-
-async function loadCurrentUser() {
-  const label = document.getElementById('current-user-name');
-  if (!label) return;
-  try {
-    const user = await api('/api/auth/me');
-    const displayName = user?.displayName || user?.username || '알 수 없음';
-    label.textContent = displayName;
-    label.title = displayName;
-    const avatar = document.getElementById('current-user-avatar');
-    if (avatar) {
-      avatar.textContent = [...displayName][0]?.toUpperCase() || '?';
-      avatar.title = displayName;
-    }
-  } catch {
-    label.textContent = '알 수 없음';
-  }
 }
 
 function initializeSidebarTheme() {
@@ -195,40 +146,4 @@ function restoreSidebarState() {
   }
 }
 
-function activateCurrentMenu() {
-  const path = window.location.pathname;
-
-  let activeMenu = 'dashboard';
-
-  if (path.includes('server')) {
-    activeMenu = 'servers';
-  }
-
-  if (path.includes('report')) {
-    activeMenu = 'reports';
-  }
-  if (path.includes('/settings/script-management') || path.includes('/settings/templates')) activeMenu = 'settings-scripts';
-  if (path.includes('/settings/policy-management')) activeMenu = 'policy-management';
-  if (path.includes('/settings/common-code-management')) activeMenu = 'common-code-management';
-  if (path.includes('/settings/audit-logs')) activeMenu = 'audit-logs';
-
-  document.querySelectorAll('.sidebar-menu a').forEach((link) => {
-    if (link.dataset.menu === activeMenu) {
-      link.classList.add('active');
-    }
-  });
-  const settingsActive = ['servers', 'policy-management', 'settings-scripts', 'common-code-management', 'audit-logs'].includes(activeMenu);
-  const settingsButton = document.getElementById('settings-menu-toggle');
-  const settingsSubmenu = document.getElementById('settings-submenu');
-  if (settingsButton && settingsSubmenu) {
-    settingsButton.classList.toggle('active', settingsActive);
-    settingsButton.setAttribute('aria-expanded', String(settingsActive));
-    settingsSubmenu.hidden = !settingsActive;
-  }
-}
-
-window.opsboxLayoutReady = applySharedLayout();
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadSidebar();
-});
+initializeSidebar();

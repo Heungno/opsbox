@@ -1,6 +1,5 @@
 import { api, notifyError, showToast } from '/shared/js/api.js';
 
-await window.opsboxLayoutReady;
 
 let templates = [];
 let allTemplates = [];

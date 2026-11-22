@@ -1,6 +1,5 @@
 import { api, loadText, notifyError, showToast } from '/shared/js/api.js';
 import { mountCheckBuilderForm, readCheckBuilderSpec } from './check-builder-form.js?v=20261121-builder';
-await window.opsboxLayoutReady;
 
 let categoryNames = {}; let executorNames = {}; let viewNames = {};
 const list = document.getElementById('policy-list');

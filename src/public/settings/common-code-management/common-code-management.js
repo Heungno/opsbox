@@ -1,6 +1,5 @@
 import { api, errorMessage, loadText, notifyError } from '/shared/js/api.js';
 
-await window.opsboxLayoutReady;
 
 const [entryModal, categoryModal, groupModal] = await Promise.all([
   loadText('/shared/fragments/common-code-entry-modal.html'),

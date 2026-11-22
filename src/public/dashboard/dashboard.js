@@ -1,7 +1,6 @@
 import { api } from '/shared/js/api.js';
 import { applyStatusLabels, loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
-await window.opsboxLayoutReady;
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 applyStatusLabels();
 

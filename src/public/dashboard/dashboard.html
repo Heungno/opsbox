@@ -11,76 +11,70 @@
 </head>
 
 <body>
-  <div class="layout">
-    <div id="sidebar-container"></div>
+  <template id="page-content-template">
+    <header class="header">
+      <h1>운영 현황</h1>
+      <p>서버 운영 현황 요약</p>
+    </header>
 
-    <main class="content">
-      <div class="container">
-        <header class="header">
-          <h1>운영 현황</h1>
-          <p>서버 운영 현황 요약</p>
-        </header>
-
-        <section class="fleet-panel" aria-label="서버 상태 요약">
-          <div class="fleet-total">
-            <strong id="total-count">-</strong>
-            <span>등록 서버</span>
-          </div>
-
-          <div class="fleet-health">
-            <div id="fleet-bar" class="fleet-bar" role="img" aria-label="최근 점검 상태 분포">
-              <span class="fleet-seg healthy" data-seg="healthy"></span>
-              <span class="fleet-seg warning" data-seg="warning"></span>
-              <span class="fleet-seg critical" data-seg="critical"></span>
-              <span class="fleet-seg unknown" data-seg="unknown"></span>
-            </div>
-            <dl class="fleet-legend">
-              <div class="fleet-stat healthy"><dt data-status-label="Healthy">Healthy</dt><dd id="healthy-count">-</dd></div>
-              <div class="fleet-stat warning"><dt data-status-label="Warning">Warning</dt><dd id="warning-count">-</dd></div>
-              <div class="fleet-stat critical"><dt data-status-label="Critical">Critical</dt><dd id="critical-count">-</dd></div>
-              <div id="fleet-unknown" class="fleet-stat unknown" hidden><dt>점검 기록 없음</dt><dd id="unknown-count">0</dd></div>
-            </dl>
-          </div>
-
-          <dl class="fleet-roles" aria-label="유형별 서버 수">
-            <div><dt>WEB</dt><dd id="web-count">-</dd></div>
-            <div><dt>WAS</dt><dd id="was-count">-</dd></div>
-            <div><dt>DB</dt><dd id="db-count">-</dd></div>
-            <div><dt>기타</dt><dd id="other-count">-</dd></div>
-          </dl>
-        </section>
-
-        <section class="card">
-          <div class="section-title">
-            <h2>최근 점검 결과</h2>
-
-            <a href="/settings/server-management" class="btn btn-secondary">서버 목록</a>
-          </div>
-
-          <div class="table-scroll">
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th>서버</th>
-                <th>유형</th>
-                <th>점검일시</th>
-                <th>상태</th>
-                <th class="num">CPU</th>
-                <th class="num">MEM</th>
-                <th class="num">DISK</th>
-                <th>리포트</th>
-              </tr>
-            </thead>
-
-            <tbody id="recent-checks"></tbody>
-          </table>
-          </div>
-        </section>
+    <section class="fleet-panel" aria-label="서버 상태 요약">
+      <div class="fleet-total">
+        <strong id="total-count">-</strong>
+        <span>등록 서버</span>
       </div>
-    </main>
-  </div>
-  <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/dashboard/dashboard.js?v=20261122-status2"></script>
+
+      <div class="fleet-health">
+        <div id="fleet-bar" class="fleet-bar" role="img" aria-label="최근 점검 상태 분포">
+          <span class="fleet-seg healthy" data-seg="healthy"></span>
+          <span class="fleet-seg warning" data-seg="warning"></span>
+          <span class="fleet-seg critical" data-seg="critical"></span>
+          <span class="fleet-seg unknown" data-seg="unknown"></span>
+        </div>
+        <dl class="fleet-legend">
+          <div class="fleet-stat healthy"><dt data-status-label="Healthy">Healthy</dt><dd id="healthy-count">-</dd></div>
+          <div class="fleet-stat warning"><dt data-status-label="Warning">Warning</dt><dd id="warning-count">-</dd></div>
+          <div class="fleet-stat critical"><dt data-status-label="Critical">Critical</dt><dd id="critical-count">-</dd></div>
+          <div id="fleet-unknown" class="fleet-stat unknown" hidden><dt>점검 기록 없음</dt><dd id="unknown-count">0</dd></div>
+        </dl>
+      </div>
+
+      <dl class="fleet-roles" aria-label="유형별 서버 수">
+        <div><dt>WEB</dt><dd id="web-count">-</dd></div>
+        <div><dt>WAS</dt><dd id="was-count">-</dd></div>
+        <div><dt>DB</dt><dd id="db-count">-</dd></div>
+        <div><dt>기타</dt><dd id="other-count">-</dd></div>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>최근 점검 결과</h2>
+
+        <a href="/settings/server-management" class="btn btn-secondary">서버 목록</a>
+      </div>
+
+      <div class="table-scroll">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>서버</th>
+            <th>유형</th>
+            <th>점검일시</th>
+            <th>상태</th>
+            <th class="num">CPU</th>
+            <th class="num">MEM</th>
+            <th class="num">DISK</th>
+            <th>리포트</th>
+          </tr>
+        </thead>
+
+        <tbody id="recent-checks"></tbody>
+      </table>
+      </div>
+    </section>
+  </template>
+  <script type="module" src="/shared/js/common.js?v=20261122-layout"></script>
+  <script type="module" src="/dashboard/dashboard.js?v=20261122-layout"></script>
 </body>
 
 </html>

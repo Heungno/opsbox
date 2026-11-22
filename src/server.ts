@@ -1,7 +1,6 @@
 import Fastify, { type FastifyBaseLogger } from 'fastify';
 import fastifyStatic from '@fastify/static';
 
-import path from 'path';
 import { randomUUID } from 'node:crypto';
 
 import { logger } from './logger';
@@ -14,6 +13,7 @@ import { ok } from './utils/http';
 import { readSessionCookie } from './services/authService';
 import { startResultImportScheduler } from './services/resultImportService';
 import { upgradeGeneratedTemplates } from './services/checkBuilder/templates';
+import { PAGE_PATHS, PUBLIC_ROOT, isPageSourceFile, pageRoutes } from './pages';
 
 const app = Fastify({
   loggerInstance: logger as FastifyBaseLogger,
@@ -65,41 +65,27 @@ app.addHook('onRequest', async (request, reply) => {
     if (!request.user) throw new UnauthorizedError('로그인이 필요합니다. 다시 로그인해 주세요.');
     return;
   }
-  const protectedPage = ['/', '/dashboard', '/servers', '/settings/server-management', '/servers/detail', '/settings/server-management/detail', '/reports', '/reports/detail', '/settings/templates', '/settings/script-management', '/settings/policy-management', '/settings/common-code-management', '/settings/audit-logs'].includes(pathname)
+  const protectedPage = PAGE_PATHS.has(pathname)
     || (/\.(html)$/.test(pathname) && /^\/(dashboard|reports|settings)\//.test(pathname));
   if (protectedPage) {
     if (!request.user) return reply.redirect(`/login?next=${encodeURIComponent(request.url)}`);
   }
 });
 
-/* 정적 파일 (화면) */
+/* 정적 파일 (CSS·JS·글꼴·모달 조각). 페이지 원본 HTML은 레이아웃을 끼운 화면 주소로만 엽니다. */
 app.register(fastifyStatic, {
-  root: path.join(process.cwd(), 'src', 'public'),
+  root: PUBLIC_ROOT,
   prefix: '/',
+  allowedPath: (pathname) => !isPageSourceFile(pathname),
 });
 
-/* 화면 경로 */
-app.get('/', async (request, reply) => {
-  return reply.sendFile('dashboard/dashboard.html');
-});
+/* 화면 경로 (공통 레이아웃을 끼워서 보냄: src/pages.ts) */
+app.register(pageRoutes);
 
 app.get('/login', async (_request, reply) => reply.sendFile('login.html'));
-
-app.get('/dashboard', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
-app.get('/servers', async (request, reply) => reply.sendFile('settings/server-management/server-list.html'));
-app.get('/settings/server-management', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
-app.get('/servers/detail', async (request, reply) => reply.sendFile('settings/server-management/server-detail.html'));
 app.get('/settings/server-management/detail', async (request, reply) => reply.redirect(`/settings/server-management${request.url.includes('?') ? request.url.slice(request.url.indexOf('?')) : ''}`));
-app.get('/reports', async (request, reply) => reply.sendFile('reports/report-list.html'));
-app.get('/reports/detail', async (request, reply) => reply.sendFile('reports/report-detail.html'));
-app.get('/settings/templates', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
-app.get('/settings/script-management', async (request, reply) => reply.sendFile('settings/script-management/script-management.html'));
-app.get('/settings/policy-management', async (request, reply) => reply.sendFile('settings/policy-management/policy-management.html'));
-app.get('/settings/common-code-management', async (request, reply) => reply.sendFile('settings/common-code-management/common-code-management.html'));
-app.get('/settings/audit-logs', async (_request, reply) => reply.sendFile('settings/audit-logs/audit-logs.html'));
 
-// 예전 화면 주소(북마크)도 계속 열리도록 연결합니다.
-app.get('/dashboard.html', async (request, reply) => reply.sendFile('dashboard/dashboard.html'));
+// 예전 화면 주소(북마크)도 계속 열리도록 연결합니다. (/dashboard.html은 pages.ts에서 처리)
 app.get('/server', async (request, reply) => reply.redirect('/servers'));
 app.get('/server.html', async (request, reply) => reply.redirect('/servers'));
 app.get('/server-detail.html', async (request, reply) => reply.redirect(`/servers/detail${request.url.slice('/server-detail.html'.length)}`));

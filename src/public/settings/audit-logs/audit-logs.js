@@ -1,6 +1,5 @@
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
 
-await window.opsboxLayoutReady;
 
 const PAGE_SIZE = 50;
 const $ = (id) => document.getElementById(id);

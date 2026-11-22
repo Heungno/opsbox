@@ -11,53 +11,48 @@
 </head>
 
 <body>
-  <div class="layout">
-    <div id="sidebar-container"></div>
-    <main class="content">
-      <div class="container">
-        <header class="header">
-          <h1>점검 보고서 목록</h1>
-          <p>서버 유형을 펼친 뒤 서버별 날짜 이력을 선택해 보고서를 엽니다.</p>
-        </header>
+  <template id="page-content-template">
+    <header class="header">
+      <h1>점검 보고서 목록</h1>
+      <p>서버 유형을 펼친 뒤 서버별 날짜 이력을 선택해 보고서를 엽니다.</p>
+    </header>
 
-        <!-- Search & Filter Card -->
-        <section class="card">
-          <form id="filter-form" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
-            <div class="form-group" style="flex: 1; min-width: 200px;">
-              <label for="filter-server">서버 검색</label>
-              <input id="filter-server" type="text" placeholder="서버 ID 또는 서버명..." />
-            </div>
+    <!-- Search & Filter Card -->
+    <section class="card">
+      <form id="filter-form" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label for="filter-server">서버 검색</label>
+          <input id="filter-server" type="text" placeholder="서버 ID 또는 서버명..." />
+        </div>
 
-            <div class="form-group" style="width: 160px;">
-              <label for="filter-start-date">시작일</label>
-              <input id="filter-start-date" type="date" />
-            </div>
+        <div class="form-group" style="width: 160px;">
+          <label for="filter-start-date">시작일</label>
+          <input id="filter-start-date" type="date" />
+        </div>
 
-            <div class="form-group" style="width: 160px;">
-              <label for="filter-end-date">종료일</label>
-              <input id="filter-end-date" type="date" />
-            </div>
+        <div class="form-group" style="width: 160px;">
+          <label for="filter-end-date">종료일</label>
+          <input id="filter-end-date" type="date" />
+        </div>
 
-            <div style="display: flex; gap: 8px;">
-              <button type="submit" class="btn btn-primary">검색</button>
-              <button type="button" id="btn-reset" class="btn btn-secondary">초기화</button>
-            </div>
-          </form>
-        </section>
+        <div style="display: flex; gap: 8px;">
+          <button type="submit" class="btn btn-primary">검색</button>
+          <button type="button" id="btn-reset" class="btn btn-secondary">초기화</button>
+        </div>
+      </form>
+    </section>
 
-        <!-- Reports List Table Card -->
-        <section class="card">
-          <div class="section-title"><h2>검색 결과 (<span id="report-count">0</span>건)</h2></div>
-          <div id="report-tree" class="report-tree" aria-live="polite">
-            <p class="report-tree-empty">조회중...</p>
-          </div>
-        </section>
+    <!-- Reports List Table Card -->
+    <section class="card">
+      <div class="section-title"><h2>검색 결과 (<span id="report-count">0</span>건)</h2></div>
+      <div id="report-tree" class="report-tree" aria-live="polite">
+        <p class="report-tree-empty">조회중...</p>
       </div>
-    </main>
-  </div>
+    </section>
+  </template>
 
-  <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-list.js?v=20261122-status"></script>
+  <script type="module" src="/shared/js/common.js?v=20261122-layout"></script>
+  <script type="module" src="/reports/report-list.js?v=20261122-layout"></script>
 </body>
 
 </html>

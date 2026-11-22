@@ -1,6 +1,5 @@
 import { api, notifyError } from '/shared/js/api.js';
 import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
-await window.opsboxLayoutReady;
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 
 async function init() {

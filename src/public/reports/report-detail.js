@@ -4,7 +4,6 @@ import { STATUS_MARKS, loadStatusLabels, statusLabel, statusLegend } from '/shar
 import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
 import { renderItemBoxes } from './report-item-box.js?v=20261122-status2';
 
-await window.opsboxLayoutReady;
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 const statusLegendElement = document.getElementById('print-status-legend');
 if (statusLegendElement) statusLegendElement.textContent = statusLegend();

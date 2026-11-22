@@ -34,170 +34,165 @@
 </head>
 
 <body>
-  <div class="layout">
-    <div id="sidebar-container"></div>
-    <main class="content">
-      <div class="container">
-        <section class="print-only print-doc" aria-hidden="true">
-          <div class="print-doc-head">
-            <p class="print-doc-org">정보시스템 정기 예방점검</p>
-            <table class="print-approval">
-              <thead>
-                <tr><th rowspan="2" class="print-approval-label">결<br>재</th><th>담당</th><th>검토</th><th>승인</th></tr>
-              </thead>
-              <tbody>
-                <tr><td></td><td></td><td></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <h1 class="print-doc-title">정기 예방점검 결과 보고</h1>
-          <table class="print-doc-info">
-            <tbody>
-              <tr><th>대상 서버</th><td id="print-server-name">-</td><th>서버 ID</th><td id="print-server-id">-</td></tr>
-              <tr><th>역할 · 제품</th><td id="print-role">-</td><th>IP</th><td id="print-ip">-</td></tr>
-              <tr><th>운영체제</th><td id="print-os" colspan="3">-</td></tr>
-              <tr><th>점검 일시</th><td id="print-check-date">-</td><th>종합 판정</th><td id="print-health">-</td></tr>
-              <tr><th>보고 일자</th><td id="print-report-date">-</td><th>작성자</th><td id="print-author">-</td></tr>
-            </tbody>
-          </table>
-          <p class="print-doc-legend">판정 표기: <span id="print-status-legend">○ 정상 · △ 경고 · × 위험 · － 미수집</span></p>
-        </section>
-
-        <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h1>점검 보고서</h1>
-            <p id="report-title">조회중...</p>
-          </div>
-          <div class="button-area" style="margin-top: 0;">
-            <button type="button" class="btn btn-secondary" id="print-report-button">보고서 인쇄 / PDF</button>
-            <a id="btn-back" href="#" class="btn btn-primary">서버 상세로</a>
-          </div>
-        </header>
-
-        <section class="report-group common-report-group" aria-labelledby="common-report-title">
-        <h2 id="common-report-title" class="report-group-title">공통 점검 결과</h2>
-        <section id="server-info-details" class="card">
-          <h2>서버 정보</h2>
-          <table class="detail-table report-server-info">
-            <tbody>
-              <tr><th>호스트명</th><td id="report-hostname">-</td><th>IP</th><td id="report-ip">-</td></tr>
-              <tr><th>운영체제</th><td id="report-os-name">-</td><th>OS 버전</th><td id="report-os-version">-</td></tr>
-            </tbody>
-          </table>
-        </section>
-        <section class="card">
-          <div class="section-header">
-            <h2>종합 진단 상태</h2>
-          </div>
-          <div id="health-summary"></div>
-        </section>
-
-        <section class="card">
-          <div class="section-header">
-            <h2>자원 사용량 요약</h2>
-            <div class="compare-container" style="display: flex; gap: 8px; align-items: center;">
-              <label for="compare-select" style="font-size: 12px; font-weight: 600;">이전 점검 비교:</label>
-              <select id="compare-select" style="width: 240px; height: 30px; font-size: 12px;">
-                <option value="">비교 안 함</option>
-              </select>
-            </div>
-          </div>
-          <div id="report-result"></div>
-        </section>
-        <section class="card trend-card">
-          <div class="section-header">
-            <h2>자원 사용 추세</h2>
-            <div class="trend-range" role="group" aria-label="추세 기간">
-              <button type="button" class="btn btn-small" data-trend-days="14" aria-pressed="false">2주</button>
-              <button type="button" class="btn btn-small" data-trend-days="28" aria-pressed="true">4주</button>
-              <button type="button" class="btn btn-small" data-trend-days="56" aria-pressed="false">8주</button>
-            </div>
-          </div>
-          <div id="trend-chart"></div>
-        </section>
-        <section id="basic-policy-item-section" class="card" hidden>
-          <h2>점검 항목별 결과</h2>
-          <div id="basic-policy-item-results"></div>
-          <section class="report-subsection" hidden><h3>로그 분석 상세</h3><div id="basic-log-results"></div></section>
-        </section>
-
-        <section id="process-report-details" class="card">
-          <h2>프로세스 점검 결과</h2>
-          <table class="server-table">
-            <thead>
-              <tr>
-                <th>프로세스명</th>
-                <th>상태</th>
-                <th>CPU</th>
-                <th>메모리 (MB)</th>
-                <th>가동 시간</th>
-              </tr>
-            </thead>
-            <tbody id="process-report-list">
-              <tr><td colspan="5">조회중...</td></tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section id="disk-report-details" class="card">
-          <h2>디스크별 사용량</h2>
-          <table class="server-table">
-            <thead><tr><th>디스크 / 마운트</th><th>사용량</th><th>전체 용량</th><th>사용률</th><th>판정</th></tr></thead>
-            <tbody id="disk-report-list"><tr><td colspan="5">조회중...</td></tr></tbody>
-          </table>
-        </section>
-
-        <section id="port-report-details" class="card">
-          <h2>포트 리스닝 점검 결과</h2>
-          <table class="server-table">
-            <thead><tr><th>프로토콜</th><th>포트</th><th>설명</th><th>리스닝 상태</th><th>프로세스</th></tr></thead>
-            <tbody id="port-report-list"><tr><td colspan="5">조회중...</td></tr></tbody>
-          </table>
-        </section>
-        <section id="http-report-details" class="card">
-          <h2>HTTP 응답 점검 결과</h2>
-          <table class="server-table"><thead><tr><th>점검명</th><th>URL</th><th>상태 코드</th><th>응답 시간</th><th>판정</th></tr></thead><tbody id="http-check-report-list"><tr><td colspan="5">조회중...</td></tr></tbody></table>
-        </section>
-        <section id="directory-report-details" class="card">
-          <h2>디렉토리 점검 결과</h2>
-          <table class="server-table">
-            <thead>
-              <tr>
-                <th>디렉토리 경로</th>
-                <th>존재 여부</th>
-                <th>사용량 (GB)</th>
-                <th>전체 (GB)</th>
-                <th>사용률 (%)</th>
-              </tr>
-            </thead>
-            <tbody id="directory-report-list">
-              <tr><td colspan="5">조회중...</td></tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section id="file-report-details" class="card">
-          <h2>특정 파일 크기 점검 결과</h2>
-          <table class="server-table">
-            <thead><tr><th>파일 경로</th><th>존재 여부</th><th>크기 (MB)</th><th>판정</th></tr></thead>
-            <tbody id="file-check-report-list"><tr><td colspan="4">조회중...</td></tr></tbody>
-          </table>
-        </section>
-        </section>
-
-        <section class="report-group role-report-group" aria-labelledby="role-report-title">
-          <h2 id="role-report-title" class="report-group-title">역할별 점검 결과</h2>
-          <div id="type-report-form"></div>
-        </section>
-
-        <section class="print-only print-closing" aria-hidden="true">
-          <p>위와 같이 정기 예방점검 결과를 보고합니다.</p>
-          <p id="print-closing-date">-</p>
-          <p class="print-closing-sign">점검자<span id="print-closing-author">-</span>(서명)</p>
-        </section>
+  <template id="page-content-template">
+    <section class="print-only print-doc" aria-hidden="true">
+      <div class="print-doc-head">
+        <p class="print-doc-org">정보시스템 정기 예방점검</p>
+        <table class="print-approval">
+          <thead>
+            <tr><th rowspan="2" class="print-approval-label">결<br>재</th><th>담당</th><th>검토</th><th>승인</th></tr>
+          </thead>
+          <tbody>
+            <tr><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
       </div>
-    </main>
-  </div>
+      <h1 class="print-doc-title">정기 예방점검 결과 보고</h1>
+      <table class="print-doc-info">
+        <tbody>
+          <tr><th>대상 서버</th><td id="print-server-name">-</td><th>서버 ID</th><td id="print-server-id">-</td></tr>
+          <tr><th>역할 · 제품</th><td id="print-role">-</td><th>IP</th><td id="print-ip">-</td></tr>
+          <tr><th>운영체제</th><td id="print-os" colspan="3">-</td></tr>
+          <tr><th>점검 일시</th><td id="print-check-date">-</td><th>종합 판정</th><td id="print-health">-</td></tr>
+          <tr><th>보고 일자</th><td id="print-report-date">-</td><th>작성자</th><td id="print-author">-</td></tr>
+        </tbody>
+      </table>
+      <p class="print-doc-legend">판정 표기: <span id="print-status-legend">○ 정상 · △ 경고 · × 위험 · － 미수집</span></p>
+    </section>
+
+    <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>점검 보고서</h1>
+        <p id="report-title">조회중...</p>
+      </div>
+      <div class="button-area" style="margin-top: 0;">
+        <button type="button" class="btn btn-secondary" id="print-report-button">보고서 인쇄 / PDF</button>
+        <a id="btn-back" href="#" class="btn btn-primary">서버 상세로</a>
+      </div>
+    </header>
+
+    <section class="report-group common-report-group" aria-labelledby="common-report-title">
+    <h2 id="common-report-title" class="report-group-title">공통 점검 결과</h2>
+    <section id="server-info-details" class="card">
+      <h2>서버 정보</h2>
+      <table class="detail-table report-server-info">
+        <tbody>
+          <tr><th>호스트명</th><td id="report-hostname">-</td><th>IP</th><td id="report-ip">-</td></tr>
+          <tr><th>운영체제</th><td id="report-os-name">-</td><th>OS 버전</th><td id="report-os-version">-</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="card">
+      <div class="section-header">
+        <h2>종합 진단 상태</h2>
+      </div>
+      <div id="health-summary"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>자원 사용량 요약</h2>
+        <div class="compare-container" style="display: flex; gap: 8px; align-items: center;">
+          <label for="compare-select" style="font-size: 12px; font-weight: 600;">이전 점검 비교:</label>
+          <select id="compare-select" style="width: 240px; height: 30px; font-size: 12px;">
+            <option value="">비교 안 함</option>
+          </select>
+        </div>
+      </div>
+      <div id="report-result"></div>
+    </section>
+    <section class="card trend-card">
+      <div class="section-header">
+        <h2>자원 사용 추세</h2>
+        <div class="trend-range" role="group" aria-label="추세 기간">
+          <button type="button" class="btn btn-small" data-trend-days="14" aria-pressed="false">2주</button>
+          <button type="button" class="btn btn-small" data-trend-days="28" aria-pressed="true">4주</button>
+          <button type="button" class="btn btn-small" data-trend-days="56" aria-pressed="false">8주</button>
+        </div>
+      </div>
+      <div id="trend-chart"></div>
+    </section>
+    <section id="basic-policy-item-section" class="card" hidden>
+      <h2>점검 항목별 결과</h2>
+      <div id="basic-policy-item-results"></div>
+      <section class="report-subsection" hidden><h3>로그 분석 상세</h3><div id="basic-log-results"></div></section>
+    </section>
+
+    <section id="process-report-details" class="card">
+      <h2>프로세스 점검 결과</h2>
+      <table class="server-table">
+        <thead>
+          <tr>
+            <th>프로세스명</th>
+            <th>상태</th>
+            <th>CPU</th>
+            <th>메모리 (MB)</th>
+            <th>가동 시간</th>
+          </tr>
+        </thead>
+        <tbody id="process-report-list">
+          <tr><td colspan="5">조회중...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="disk-report-details" class="card">
+      <h2>디스크별 사용량</h2>
+      <table class="server-table">
+        <thead><tr><th>디스크 / 마운트</th><th>사용량</th><th>전체 용량</th><th>사용률</th><th>판정</th></tr></thead>
+        <tbody id="disk-report-list"><tr><td colspan="5">조회중...</td></tr></tbody>
+      </table>
+    </section>
+
+    <section id="port-report-details" class="card">
+      <h2>포트 리스닝 점검 결과</h2>
+      <table class="server-table">
+        <thead><tr><th>프로토콜</th><th>포트</th><th>설명</th><th>리스닝 상태</th><th>프로세스</th></tr></thead>
+        <tbody id="port-report-list"><tr><td colspan="5">조회중...</td></tr></tbody>
+      </table>
+    </section>
+    <section id="http-report-details" class="card">
+      <h2>HTTP 응답 점검 결과</h2>
+      <table class="server-table"><thead><tr><th>점검명</th><th>URL</th><th>상태 코드</th><th>응답 시간</th><th>판정</th></tr></thead><tbody id="http-check-report-list"><tr><td colspan="5">조회중...</td></tr></tbody></table>
+    </section>
+    <section id="directory-report-details" class="card">
+      <h2>디렉토리 점검 결과</h2>
+      <table class="server-table">
+        <thead>
+          <tr>
+            <th>디렉토리 경로</th>
+            <th>존재 여부</th>
+            <th>사용량 (GB)</th>
+            <th>전체 (GB)</th>
+            <th>사용률 (%)</th>
+          </tr>
+        </thead>
+        <tbody id="directory-report-list">
+          <tr><td colspan="5">조회중...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="file-report-details" class="card">
+      <h2>특정 파일 크기 점검 결과</h2>
+      <table class="server-table">
+        <thead><tr><th>파일 경로</th><th>존재 여부</th><th>크기 (MB)</th><th>판정</th></tr></thead>
+        <tbody id="file-check-report-list"><tr><td colspan="4">조회중...</td></tr></tbody>
+      </table>
+    </section>
+    </section>
+
+    <section class="report-group role-report-group" aria-labelledby="role-report-title">
+      <h2 id="role-report-title" class="report-group-title">역할별 점검 결과</h2>
+      <div id="type-report-form"></div>
+    </section>
+
+    <section class="print-only print-closing" aria-hidden="true">
+      <p>위와 같이 정기 예방점검 결과를 보고합니다.</p>
+      <p id="print-closing-date">-</p>
+      <p class="print-closing-sign">점검자<span id="print-closing-author">-</span>(서명)</p>
+    </section>
+  </template>
 
   <template id="report-form-WEB">
     <section class="card type-report-card">
@@ -255,8 +250,8 @@
     </section>
   </template>
 
-  <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261122-status4"></script>
+  <script type="module" src="/shared/js/common.js?v=20261122-layout"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261122-layout"></script>
 </body>
 
 </html>

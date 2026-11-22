@@ -14,75 +14,70 @@
 </head>
 
 <body>
-  <div class="layout">
-    <div id="sidebar-container"></div>
-    <main class="content">
-      <div class="container">
-        <!-- Dashboard -->
-        <header class="header">
-          <h1>서버 관리</h1>
-          <p>서버 정보를 등록하고 유형별 점검 정책을 관리합니다.</p>
-        </header>
-        <section class="card dashboard">
-          <div class="summary-card">
-            <span>Total</span>
-            <strong id="total-count"> 0 </strong>
-          </div>
-          <div class="summary-card">
-            <span>WEB</span>
-            <strong id="web-count"> 0 </strong>
-          </div>
-          <div class="summary-card">
-            <span>WAS</span>
-            <strong id="was-count"> 0 </strong>
-          </div>
-          <div class="summary-card">
-            <span>DB</span>
-            <strong id="db-count"> 0 </strong>
-          </div>
-          <div class="summary-card">
-            <span>기타</span>
-            <strong id="other-count">0</strong>
-          </div>
-        </section>
-
-        <!-- Server List -->
-        <section class="card">
-          <div class="section-title">
-            <h2>서버 목록</h2>
-            <div style="display: flex; gap: 10px; align-items: center">
-              <button type="button" id="btn-new" class="btn btn-primary">신규 서버</button>
-              <input id="search" type="text" placeholder="검색..." />
-            </div>
-          </div>
-          <div id="server-role-tabs" class="management-category-tabs server-role-tabs" role="tablist" aria-label="서버 역할">
-            <button type="button" role="tab" data-role="ALL" aria-selected="true">전체 <span>0</span></button>
-            <button type="button" role="tab" data-role="WEB" aria-selected="false">WEB <span>0</span></button>
-            <button type="button" role="tab" data-role="WAS" aria-selected="false">WAS <span>0</span></button>
-            <button type="button" role="tab" data-role="DB" aria-selected="false">DB <span>0</span></button>
-            <button type="button" role="tab" data-role="OTHER" aria-selected="false">기타 <span>0</span></button>
-          </div>
-          <table class="server-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>이름</th>
-                <th>유형</th>
-                <th>OS</th>
-                <th>IP</th>
-                <th>관리</th>
-              </tr>
-            </thead>
-            <tbody id="server-list"></tbody>
-          </table>
-        </section>
-
-        <div id="server-modal-container"></div>
+  <template id="page-content-template">
+    <!-- Dashboard -->
+    <header class="header">
+      <h1>서버 관리</h1>
+      <p>서버 정보를 등록하고 유형별 점검 정책을 관리합니다.</p>
+    </header>
+    <section class="card dashboard">
+      <div class="summary-card">
+        <span>Total</span>
+        <strong id="total-count"> 0 </strong>
       </div>
-    </main>
-  </div>
-  <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/settings/server-management/server-list.js?v=20261121-api"></script>
+      <div class="summary-card">
+        <span>WEB</span>
+        <strong id="web-count"> 0 </strong>
+      </div>
+      <div class="summary-card">
+        <span>WAS</span>
+        <strong id="was-count"> 0 </strong>
+      </div>
+      <div class="summary-card">
+        <span>DB</span>
+        <strong id="db-count"> 0 </strong>
+      </div>
+      <div class="summary-card">
+        <span>기타</span>
+        <strong id="other-count">0</strong>
+      </div>
+    </section>
+
+    <!-- Server List -->
+    <section class="card">
+      <div class="section-title">
+        <h2>서버 목록</h2>
+        <div style="display: flex; gap: 10px; align-items: center">
+          <button type="button" id="btn-new" class="btn btn-primary">신규 서버</button>
+          <input id="search" type="text" placeholder="검색..." />
+        </div>
+      </div>
+      <div id="server-role-tabs" class="management-category-tabs server-role-tabs" role="tablist" aria-label="서버 역할">
+        <button type="button" role="tab" data-role="ALL" aria-selected="true">전체 <span>0</span></button>
+        <button type="button" role="tab" data-role="WEB" aria-selected="false">WEB <span>0</span></button>
+        <button type="button" role="tab" data-role="WAS" aria-selected="false">WAS <span>0</span></button>
+        <button type="button" role="tab" data-role="DB" aria-selected="false">DB <span>0</span></button>
+        <button type="button" role="tab" data-role="OTHER" aria-selected="false">기타 <span>0</span></button>
+      </div>
+      <table class="server-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>이름</th>
+            <th>유형</th>
+            <th>OS</th>
+            <th>IP</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="server-list"></tbody>
+      </table>
+    </section>
+
+    <div id="server-modal-container"></div>
+  </template>
+  <script type="module" src="/shared/js/common.js?v=20261122-layout"></script>
+  <script type="module" src="/settings/server-management/server-list.js?v=20261122-layout"></script>
 </body>
 
 </html>

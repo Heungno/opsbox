@@ -1,6 +1,5 @@
 import { api, loadText, notifyError, showToast } from '/shared/js/api.js';
 
-await window.opsboxLayoutReady;
 
 let serverCache = [];
 let serverDialog, serverForm, searchBox, serverList, newButton, roleProductFields;

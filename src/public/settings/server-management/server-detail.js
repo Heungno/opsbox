@@ -2,7 +2,6 @@ import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
 import { api, apiRequest, downloadFile, loadText, notifyError, showToast } from '/shared/js/api.js';
 import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
-await window.opsboxLayoutReady;
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 
 const params = new URLSearchParams(window.location.search);
