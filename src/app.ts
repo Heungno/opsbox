@@ -3,7 +3,7 @@ import fastifyStatic from '@fastify/static';
 
 import { randomUUID } from 'node:crypto';
 
-import { routes } from './routes';
+import { apiRoutes } from './features';
 import { readSessionCookie } from './features/auth/service';
 import { UnauthorizedError } from './shared/errors';
 import { registerErrorHandlers } from './shared/error-handler';
@@ -95,7 +95,7 @@ export function buildApp(): FastifyInstance {
   app.get('/report.html', async (request, reply) => reply.redirect(`/reports/detail${request.url.slice('/report.html'.length)}`));
 
   /* API */
-  app.register(routes, {
+  app.register(apiRoutes, {
     prefix: '/api',
   });
 

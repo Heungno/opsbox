@@ -3,7 +3,7 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { db, transaction } from '../src/db/database';
+import { db, transaction } from '../src/db';
 import { getSettingValue as readSetting, setSettingValue } from '../src/features/settings/repository';
 
 const writeSetting = (key: string, value: number) => setSettingValue(key, String(value));

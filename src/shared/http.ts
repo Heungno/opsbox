@@ -1,5 +1,5 @@
 import { BadRequestError } from './errors';
-import type { ApiSuccess } from '../types/api';
+import type { ApiSuccess } from './api-types';
 
 /** 성공 응답 { success: true, data, ...meta } */
 export function ok<T>(data: T): ApiSuccess<T>;

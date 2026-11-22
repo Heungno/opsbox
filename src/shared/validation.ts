@@ -1,6 +1,6 @@
-import type { FieldError } from './api';
+import type { FieldError } from './api-types';
 
-export type { FieldError } from './api';
+export type { FieldError } from './api-types';
 
 export interface ValidationResult<T> {
   valid: boolean;

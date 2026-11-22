@@ -610,7 +610,7 @@ class ResultBuilder {
 export async function seedDemo(options: { results?: boolean } = {}) {
   const withResults = options.results ?? true;
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
-  const { db } = await import('../src/db/database');
+  const { db } = await import('../src/db');
   const { createServer } = await import('../src/features/servers/service');
   const { buildScriptConfig } = await import('../src/features/scripts/assembly');
   const { storeUploadedResult } = await import('../src/features/results/importer');
@@ -691,7 +691,7 @@ async function main() {
     process.exit(1);
   }
   const { resultCount, statusCount } = await seedDemo();
-  const { db } = await import('../src/db/database');
+  const { db } = await import('../src/db');
   db.close();
   const statusText = ['Healthy', 'Warning', 'Critical', 'NotCollected'].map((status) => `${status} ${statusCount[status] ?? 0}`).join(', ');
   console.log(`데모 데이터를 만들었습니다: 서버 ${SERVERS.length}대, 점검 결과 ${resultCount}건 (${statusText})`);

@@ -1,4 +1,4 @@
-import type { FieldError } from '../../../types/api';
+import type { FieldError } from '../../../shared/api-types';
 import type { PolicyInput, PolicyItemResult, ResultComponent } from '../../policies/types';
 import { getPreset } from './presets';
 import { BUILDER_TYPES, LIMITS, type BuilderOs, type BuilderSpec } from './types';

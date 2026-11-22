@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { NotFoundError } from '../../shared/errors';
 import { getAllReports, getReport } from './service';
-import type { ResultFileParams } from '../../types/api';
+import type { ResultFileParams } from '../../shared/api-types';
 import type { ReportListQuery } from './types';
 import { ok } from '../../shared/http';
 

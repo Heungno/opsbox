@@ -4,7 +4,7 @@ import { isDetached } from '../scripts/check-builder/templates';
 
 import { recordAudit } from '../audit/service';
 import { deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from './service';
-import type { IdParams } from '../../types/api';
+import type { IdParams } from '../../shared/api-types';
 import type { ManagedTemplate } from './types';
 import { ok, requireObject } from '../../shared/http';
 

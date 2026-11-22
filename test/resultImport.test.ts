@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { db } from '../src/db/database';
+import { db } from '../src/db';
 import { activateServer, createServer, deactivateServer } from '../src/features/servers/service';
 import { importResults, storeUploadedResult } from '../src/features/results/importer';
 import { decryptBackup } from '../src/features/results/backup-crypto';

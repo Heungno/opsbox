@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { db } from '../src/db/database';
+import { db } from '../src/db';
 import { createServer } from '../src/features/servers/service';
 import { generateScript } from '../src/features/scripts/service';
 import { parseResultJson, getHealthStatus } from '../src/features/results/service';

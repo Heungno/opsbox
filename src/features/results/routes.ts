@@ -4,7 +4,7 @@ import { BadRequestError, NotFoundError } from '../../shared/errors';
 import { recordAudit } from '../audit/service';
 import { getImportStatus, importResults, logImportSummary, storeUploadedResult } from './importer';
 import { getHealthStatus, getLatestResult, getResultByFile, getResults } from './service';
-import type { ResultFileParams, ServerIdParams } from '../../types/api';
+import type { ResultFileParams, ServerIdParams } from '../../shared/api-types';
 import { ok } from '../../shared/http';
 
 // 결과 JSON에는 콘솔 출력·쿼리 결과가 들어갈 수 있어 기본 한도(1MB)보다 넉넉히 둡니다.

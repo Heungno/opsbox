@@ -1,8 +1,8 @@
 {
   "name": "opsbox",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "서버 정기점검 스크립트 생성·결과 수집·보고서",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-runtime-assets.js",
@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "nodemon": "^3.1.14",
     "prettier": "^3.10.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"

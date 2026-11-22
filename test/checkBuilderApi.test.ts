@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, scryptSync } from 'node:crypto';
 import { before, test } from 'node:test';
 
-import { db } from '../src/db/database';
+import { db } from '../src/db';
 import { app } from '../src/server';
 import { isDetached } from '../src/features/scripts/check-builder/templates';
 import { getPolicies, savePolicy } from '../src/features/policies/service';

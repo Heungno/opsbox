@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import type { FastifyInstance } from 'fastify';
 
-import type { SessionUser } from '../types';
+import type { SessionUser } from '../features/auth/types';
 
 /*
  * 화면(페이지) 조립

@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { recordAudit } from '../audit/service';
 import { deletePolicy, getPolicies, savePolicy } from './service';
-import type { IdParams } from '../../types/api';
+import type { IdParams } from '../../shared/api-types';
 import type { PolicyDraft } from './types';
 import { ok, requireObject } from '../../shared/http';
 

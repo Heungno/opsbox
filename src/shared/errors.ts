@@ -1,4 +1,4 @@
-import type { ErrorCode, FieldError } from '../types/api';
+import type { ErrorCode, FieldError } from './api-types';
 
 /*
  * 업무 오류 클래스
