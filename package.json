@@ -10,7 +10,8 @@
     "test": "node --import tsx --test \"test/**/*.test.ts\"",
     "demo:seed": "node scripts/demo.cjs seed",
     "demo:dev": "node scripts/demo.cjs dev",
-    "demo:remove": "node scripts/demo.cjs remove"
+    "demo:remove": "node scripts/demo.cjs remove",
+    "test:e2e": "node --import tsx --test \"test/e2e/**/*.e2e.ts\""
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "prettier": "^3.10.1",
+    "puppeteer-core": "^25.18.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
