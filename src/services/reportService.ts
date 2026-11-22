@@ -1,4 +1,4 @@
-import { getResultByFile, getHealthStatus, getResultSummaries } from './resultService';
+import { getResultByFile, getHealthStatus, getResultSummaries } from '../features/results/service';
 import { getReportFields } from './reportRuleService';
 import { getAllServers, getServerRoles } from '../features/servers/service';
 import type { ReportDetail, ReportListItem, ReportListQuery } from '../types/report';

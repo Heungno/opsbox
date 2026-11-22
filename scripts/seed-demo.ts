@@ -612,8 +612,8 @@ export async function seedDemo(options: { results?: boolean } = {}) {
   const { db } = await import('../src/db/database');
   const { createServer } = await import('../src/features/servers/service');
   const { buildScriptConfig } = await import('../src/services/scriptAssembly');
-  const { storeUploadedResult } = await import('../src/services/resultImportService');
-  const { getHealthStatus, parseResultJson } = await import('../src/services/resultService');
+  const { storeUploadedResult } = await import('../src/features/results/importer');
+  const { getHealthStatus, parseResultJson } = await import('../src/features/results/service');
 
   const { getPolicies, getPolicy, savePolicy } = await import('../src/features/policies/service');
   // 점검 만들기 항목은 화면과 같은 정책 저장 경로로 추가 (생성 템플릿도 함께 만들어짐)

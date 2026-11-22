@@ -2,14 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
-import { db, transaction } from '../db/database';
-import { getAllServers } from '../features/servers/service';
-import { getHealthStatus, parseResultJson } from './resultService';
-import { writeEncryptedBackup } from './backupCrypto';
-import { BadRequestError, ConflictError } from '../shared/errors';
-import { logger } from '../shared/logger';
-import { recordAudit } from './auditService';
-import type { ImportStatus, ImportSummary } from '../types/result';
+import { transaction } from '../../db';
+import { getAllServers, getServer } from '../servers/service';
+import { getHealthStatus, parseResultJson } from './service';
+import { clearImportError, countResults, findBackupPathByHash, hasSameImportError, insertResult, listImportErrors, recordImportError, updateBackupPath } from './repository';
+import { writeEncryptedBackup } from './backup-crypto';
+import { BadRequestError, ConflictError } from '../../shared/errors';
+import { logger } from '../../shared/logger';
+import { recordAudit } from '../../services/auditService';
+import type { ImportStatus, ImportSummary } from './types';
 
 /*
  * 점검 결과 가져오기
@@ -31,6 +32,9 @@ import type { ImportStatus, ImportSummary } from '../types/result';
  * - 화면에서 올린 파일(storeUploadedResult)도 같은 검증·저장·백업 과정을 거칩니다.
  */
 
+/** 점검 스크립트가 쓰는 점검 일시 형식 (정렬·기간 조회가 이 형식에 기대므로 다른 형식은 받지 않음) */
+const CHECK_DATE_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
 const MIN_FILE_AGE_MS = Number(process.env.OPSBOX_IMPORT_MIN_AGE_SECONDS ?? 10) * 1000;
 
 let running = false;
@@ -49,7 +53,8 @@ interface InboxFile {
 /** 여러 서버가 같은 공유 폴더를 쓰면 수신함을 한 번만 읽도록 경로를 모읍니다. */
 function inboxRoots(): string[] {
   const roots = new Set<string>();
-  for (const server of getAllServers()) {
+  // 미사용 서버의 폴더도 읽어, 그 서버의 결과는 '미사용 서버' 오류로 알립니다.
+  for (const server of getAllServers({ includeInactive: true })) {
     if (server.sharedPath?.trim()) roots.add(path.resolve(server.sharedPath.trim(), 'results'));
   }
   return [...roots];
@@ -79,24 +84,13 @@ function listInboxFiles(root: string): InboxFile[] {
   return files.sort((a, b) => a.fileName.localeCompare(b.fileName));
 }
 
-function recordError(sourcePath: string, serverId: string | null, message: string) {
-  const now = new Date().toISOString();
-  db.prepare(`
-    INSERT INTO result_import_errors (source_path, server_id, message, first_seen, last_seen) VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(source_path) DO UPDATE SET message = excluded.message, last_seen = excluded.last_seen
-  `).run(sourcePath, serverId, message, now, now);
-}
-
-function clearError(sourcePath: string) {
-  db.prepare('DELETE FROM result_import_errors WHERE source_path = ?').run(sourcePath);
-}
 
 function numberOrNull(value: unknown) {
   const number = Number(value);
   return value === undefined || value === null || value === '' || !Number.isFinite(number) ? null : number;
 }
 
-/** 결과 파일 안의 서버 ID (schemaVersion 2: server.id, 이전 형식: server) */
+/** 결과 파일 안의 서버 ID (parseResultJson이 server.id를 server로 펼침) */
 function serverIdInResult(parsed: { server?: unknown }): string {
   return typeof parsed.server === 'string' ? parsed.server.trim() : '';
 }
@@ -126,7 +120,10 @@ interface StoredResult {
  */
 function storeResult(content: Buffer, originalName: string, hint: { folderYear?: string; folderServerId?: string } = {}): StoredResult {
   const text = content.toString('utf8');
-  const parsed = parseResultJson(text); // 형식 오류면 여기서 예외
+  const parsed = parseResultJson(text); // JSON 형식 오류면 여기서 예외
+  if (parsed.schemaVersion !== 2) throw new Error('지원하지 않는 결과 형식입니다(schemaVersion 2만 지원). 최신 점검 스크립트로 다시 점검하세요.');
+  if (!CHECK_DATE_PATTERN.test(String(parsed.checkDate ?? ''))) throw new Error(`점검 일시(collectedAt) 형식이 올바르지 않습니다: ${parsed.checkDate ?? ''}`);
+  const checkDate = String(parsed.checkDate);
   const contentServerId = serverIdInResult(parsed);
 
   if (hint.folderServerId && contentServerId && contentServerId !== hint.folderServerId) {
@@ -134,14 +131,14 @@ function storeResult(content: Buffer, originalName: string, hint: { folderYear?:
   }
   const serverId = contentServerId || hint.folderServerId || '';
   if (!serverId) throw new Error('파일에 서버 ID가 없습니다. OpsBox에서 내려받은 점검 스크립트의 결과 파일인지 확인하세요.');
-  if (!getAllServers().some((server) => server.id === serverId)) {
-    throw new Error(`등록되지 않은 서버 ID입니다: ${serverId}. 서버 관리에서 서버를 먼저 등록하세요.`);
-  }
+  const server = getServer(serverId);
+  if (!server) throw new Error(`등록되지 않은 서버 ID입니다: ${serverId}. 서버 관리에서 서버를 먼저 등록하세요.`);
+  if (!server.enabled) throw new Error(`미사용 서버의 결과입니다: ${serverId}. 서버 목록에서 [다시 사용]을 누른 뒤 가져오세요.`);
 
   const fileName = safeFileName(originalName);
-  const year = resultYear(parsed.checkDate, hint.folderYear);
+  const year = resultYear(checkDate, hint.folderYear);
   const hash = createHash('sha256').update(content).digest('hex');
-  const exists = db.prepare('SELECT backup_path FROM check_results WHERE file_hash = ?').get(hash) as { backup_path: string | null } | undefined;
+  const exists = findBackupPathByHash(hash);
 
   // 1) 먼저 암호화 백업을 만들고 (실패하면 원본을 지우지 않음)
   const backupPath = exists?.backup_path && fs.existsSync(exists.backup_path)
@@ -150,36 +147,31 @@ function storeResult(content: Buffer, originalName: string, hint: { folderYear?:
 
   // 2) DB 저장
   if (!exists) {
-    transaction(() => {
-      db.prepare(`
-        INSERT INTO check_results (server_id, file_name, check_date, status, cpu, memory, disk, file_hash, raw_json, backup_path, imported_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        serverId,
-        fileName,
-        parsed.checkDate ? String(parsed.checkDate) : null,
-        getHealthStatus(parsed),
-        numberOrNull(parsed.cpu),
-        numberOrNull(parsed.memory),
-        numberOrNull(parsed.disk),
-        hash,
-        text.replace(/^\uFEFF/, ''),
-        backupPath,
-        new Date().toISOString(),
-      );
-    });
+    transaction(() => insertResult({
+      serverId,
+      fileName,
+      checkDate,
+      hostname: parsed.hostname || null,
+      status: getHealthStatus(parsed),
+      cpu: numberOrNull(parsed.cpu),
+      memory: numberOrNull(parsed.memory),
+      disk: numberOrNull(parsed.disk),
+      fileHash: hash,
+      rawJson: text.replace(/^\uFEFF/, ''),
+      backupPath,
+    }));
   } else if (exists.backup_path !== backupPath) {
-    db.prepare('UPDATE check_results SET backup_path = ? WHERE file_hash = ?').run(backupPath, hash);
+    updateBackupPath(hash, backupPath);
   }
 
-  return { serverId, fileName, checkDate: parsed.checkDate ? String(parsed.checkDate) : null, outcome: exists ? 'duplicate' : 'imported' };
+  return { serverId, fileName, checkDate, outcome: exists ? 'duplicate' : 'imported' };
 }
 
 function importInboxFile(file: InboxFile): StoredResult {
   const stored = storeResult(fs.readFileSync(file.fullPath), file.fileName, file);
   // 3) 수신함의 원본 삭제
   fs.unlinkSync(file.fullPath);
-  clearError(file.fullPath);
+  clearImportError(file.fullPath);
   return stored;
 }
 
@@ -242,10 +234,10 @@ export function importResults(): ImportSummary {
           else summary.duplicates++;
         } catch (error) {
           const message = (error as Error).message;
-          const repeated = Boolean(db.prepare('SELECT 1 FROM result_import_errors WHERE source_path = ? AND message = ?').get(file.fullPath, message));
+          const repeated = hasSameImportError(file.fullPath, message);
           summary.failed++;
           summary.errors.push({ file: file.fullPath, message, repeated });
-          recordError(file.fullPath, file.folderServerId ?? null, message);
+          recordImportError(file.fullPath, file.folderServerId ?? null, message);
         }
       }
     }
@@ -258,9 +250,7 @@ export function importResults(): ImportSummary {
 }
 
 export function getImportStatus(): ImportStatus {
-  const errors = db.prepare('SELECT source_path AS file, server_id AS serverId, message, first_seen AS firstSeen, last_seen AS lastSeen FROM result_import_errors ORDER BY last_seen DESC').all() as unknown as ImportStatus['pendingErrors'];
-  const total = (db.prepare('SELECT COUNT(*) AS count FROM check_results').get() as { count: number }).count;
-  return { running, lastRun: lastSummary ?? null, totalResults: total, pendingErrors: errors };
+  return { running, lastRun: lastSummary ?? null, totalResults: countResults(), pendingErrors: listImportErrors() };
 }
 
 /** 가져오기 결과를 애플리케이션 로그와 감사 로그에 남깁니다. */

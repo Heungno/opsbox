@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { createServer } from '../src/features/servers/service';
-import { storeUploadedResult } from '../src/services/resultImportService';
+import { storeUploadedResult } from '../src/features/results/importer';
 import { getAllReports } from '../src/services/reportService';
 
 createServer({ id: 'WEB-A', name: '웹 A', type: 'WEB', roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.1' } as any);
@@ -26,10 +26,19 @@ function v2(serverId: string, collectedAt: string, status: string, extra: Record
 storeUploadedResult(v2('WEB-A', '2026-11-01 09:00:00', 'Healthy'), 'a1.json');
 storeUploadedResult(v2('WEB-A', '2026-11-15 09:00:00', 'Warning'), 'a2.json');
 storeUploadedResult(v2('DB-B', '2026-11-10 09:00:00', 'Critical'), 'b1.json');
-// 이전 형식(버전 1): server 문자열, checkDate, hostname 최상위
-storeUploadedResult(Buffer.from(JSON.stringify({ server: 'DB-B', checkDate: '2026-11-20 08:00:00', hostname: 'old-host', cpu: 5, memory: 6, disks: [{ usagePercent: 70, status: 'Healthy' }] })), 'b-old.json');
-// 점검 일시가 없는 결과는 목록에서 뺀다
-storeUploadedResult(Buffer.from(JSON.stringify({ server: 'DB-B', hostname: 'no-date' })), 'b-nodate.json');
+storeUploadedResult(Buffer.from(JSON.stringify({
+  schemaVersion: 2,
+  server: { id: 'DB-B', name: 'DB-B', roles: ['WAS'], products: {} },
+  collectedAt: '2026-11-20 08:00:00',
+  host: { hostname: 'old-host' },
+  resources: { cpu: { usagePercent: 5 }, memory: { usagePercent: 6 }, disk: { volumes: [{ usagePercent: 70, status: 'Healthy' }] } },
+  checks: {},
+  summary: { status: 'Healthy' },
+})), 'b-old.json');
+
+test('점검 일시가 없는 결과는 가져오지 않는다(목록에 빈 날짜가 생기지 않음)', () => {
+  assert.throws(() => storeUploadedResult(Buffer.from(JSON.stringify({ schemaVersion: 2, server: { id: 'DB-B' }, host: { hostname: 'no-date' }, checks: {} })), 'b-nodate.json'), /점검 일시\(collectedAt\)/);
+});
 
 test('보고서 목록: 모든 서버의 결과를 최신 점검 순으로, 서버 정보와 요약 수치를 붙여 돌려준다', () => {
   const reports = getAllReports();

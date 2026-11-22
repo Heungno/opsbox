@@ -93,6 +93,33 @@ const MIGRATIONS: string[] = [
     policy_id TEXT NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
     PRIMARY KEY (server_id, category)
   );
+
+  -- 점검 결과. 서버를 미사용으로 바꿔도 남깁니다(보고서·복원용) → server_id에 외래키 없음
+  CREATE TABLE check_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    server_id TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    check_date TEXT NOT NULL,             -- YYYY-MM-DD HH:MM:SS (결과 파일의 collectedAt)
+    hostname TEXT,
+    status TEXT NOT NULL CHECK (status IN ('Healthy', 'Warning', 'Critical', 'NotCollected')),
+    cpu REAL,
+    memory REAL,
+    disk REAL,
+    file_hash TEXT NOT NULL UNIQUE,       -- 원본 SHA-256 (같은 파일은 한 번만)
+    raw_json TEXT NOT NULL,
+    backup_path TEXT,
+    imported_at TEXT NOT NULL
+  );
+  CREATE INDEX idx_check_results_server_date ON check_results (server_id, check_date DESC);
+  CREATE INDEX idx_check_results_server_file ON check_results (server_id, file_name);
+
+  CREATE TABLE result_import_errors (
+    source_path TEXT PRIMARY KEY,
+    server_id TEXT,
+    message TEXT NOT NULL,
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL
+  );
   `,
 ];
 

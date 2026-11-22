@@ -1,4 +1,4 @@
-import type { CommonCodeValue } from '../features/common-codes/types';
+import type { CommonCodeValue } from '../common-codes/types';
 
 export interface ProcessCheckResult {
   name: string;

@@ -8,7 +8,7 @@ import { after, before, test } from 'node:test';
 
 import { createServer } from '../src/features/servers/service';
 import { generateScript } from '../src/services/scriptService';
-import { getHealthStatus, parseResultJson } from '../src/services/resultService';
+import { getHealthStatus, parseResultJson } from '../src/features/results/service';
 
 /*
  * Linux 역할별(WEB·WAS) 점검 조각 테스트

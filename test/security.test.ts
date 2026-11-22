@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { app } from '../src/server';
-import { writeEncryptedBackup } from '../src/services/backupCrypto';
+import { writeEncryptedBackup } from '../src/features/results/backup-crypto';
 import { resetLoginThrottle } from '../src/services/loginThrottle';
 import { createServer } from '../src/features/servers/service';
 

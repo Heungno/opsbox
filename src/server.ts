@@ -1,7 +1,7 @@
 import { buildApp } from './app';
 import { purgeOldAuditLogs } from './services/auditService';
 import { upgradeGeneratedTemplates } from './services/checkBuilder/templates';
-import { startResultImportScheduler } from './services/resultImportService';
+import { startResultImportScheduler } from './features/results/importer';
 import { logger } from './shared/logger';
 
 const app = buildApp();

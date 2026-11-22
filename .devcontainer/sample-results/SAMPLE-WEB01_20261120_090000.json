@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 2,
+  "server": {
+    "id": "SAMPLE-WEB01",
+    "name": "샘플 웹서버",
+    "roles": [
+      "WEB"
+    ],
+    "products": {
+      "WEB": "Nginx"
+    }
+  },
+  "collectedAt": "2026-11-20 09:00:00",
+  "host": {
+    "hostname": "SAMPLE-WEB01",
+    "osName": "Linux",
+    "status": "Healthy"
+  },
+  "resources": {
+    "cpu": {
+      "usagePercent": 35,
+      "status": "Healthy"
+    },
+    "memory": {
+      "usagePercent": 76,
+      "status": "Healthy"
+    },
+    "disk": {
+      "maxUsagePercent": 82,
+      "volumes": [
+        {
+          "device": "/dev/sda1",
+          "mountPoint": "/",
+          "totalGB": 100,
+          "usedGB": 82,
+          "freeGB": 18,
+          "usagePercent": 82,
+          "status": "Warning"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "processes": {
+      "items": [
+        {
+          "name": "nginx",
+          "running": true
+        }
+      ]
+    },
+    "directories": {
+      "items": [
+        {
+          "path": "/logs",
+          "sizeGB": 25,
+          "usagePercent": 50
+        }
+      ]
+    },
+    "ports": {
+      "items": [
+        {
+          "port": 443,
+          "protocol": "TCP",
+          "description": "HTTPS",
+          "listening": true
+        }
+      ]
+    }
+  },
+  "summary": {
+    "status": "Warning"
+  }
+}

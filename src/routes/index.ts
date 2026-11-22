@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { serverRoutes } from '../features/servers/routes';
 import { scriptRoutes } from './scriptRoutes';
-import { resultRoutes } from './resultRoutes';
+import { resultRoutes } from '../features/results/routes';
 import { dashboardRoutes } from './dashboardRoutes';
 import { reportRoutes } from './reportRoutes';
 import { templateRoutes } from '../features/templates/routes';

@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import { db } from '../src/db/database';
 import { createServer } from '../src/features/servers/service';
 import { generateScript } from '../src/services/scriptService';
-import { parseResultJson, getHealthStatus } from '../src/services/resultService';
+import { parseResultJson, getHealthStatus } from '../src/features/results/service';
 
 const isLinux = process.platform === 'linux';
 const shared = makeDir('share');
