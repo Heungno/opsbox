@@ -82,10 +82,17 @@ test('모든 화면이 실제 layout.html·페이지 파일로 조립되고, 원
 });
 
 test('로그인하지 않으면 화면 대신 로그인으로 보낸다', async () => {
-  for (const url of ['/dashboard', '/dashboard.html', '/settings/audit-logs']) {
+  for (const url of ['/dashboard', '/settings/audit-logs']) {
     const response = await app.inject({ method: 'GET', url });
     assert.equal(response.statusCode, 302, url);
     assert.match(String(response.headers.location), /^\/login\?next=/, url);
+  }
+});
+
+test('예전 화면 주소(.html, 옛 경로)는 더 이상 열리지 않는다', async () => {
+  const cookie = sessionCookie(createSession('tester'), false).split(';')[0];
+  for (const url of ['/server', '/server.html', '/server-detail.html?id=WEB-01', '/report-list.html', '/report.html', '/dashboard.html', '/servers/detail?id=WEB-01', '/settings/templates', '/settings/server-management/detail?id=WEB-01']) {
+    assert.equal((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode, 404, url);
   }
 });
 
