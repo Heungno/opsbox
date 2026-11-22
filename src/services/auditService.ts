@@ -15,6 +15,8 @@ export const AUDIT_ACTIONS: AuditActionOption[] = [
   { value: 'LOGIN_SUCCESS', label: '로그인', targetType: 'AUTH' },
   { value: 'LOGIN_FAILURE', label: '로그인 실패', targetType: 'AUTH' },
   { value: 'LOGOUT', label: '로그아웃', targetType: 'AUTH' },
+  { value: 'USER_PROFILE_UPDATE', label: '내 정보 수정', targetType: 'AUTH' },
+  { value: 'USER_PASSWORD_CHANGE', label: '비밀번호 변경', targetType: 'AUTH' },
   { value: 'SERVER_CREATE', label: '서버 등록', targetType: 'SERVER' },
   { value: 'SERVER_UPDATE', label: '서버 정보 수정', targetType: 'SERVER' },
   { value: 'SERVER_DELETE', label: '서버 삭제', targetType: 'SERVER' },

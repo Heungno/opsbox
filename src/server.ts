@@ -60,7 +60,8 @@ app.addHook('onRequest', async (request, reply) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   request.user = readSessionCookie(request.headers.cookie);
   const publicPaths = new Set(['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/me', '/api/health']);
-  if (publicPaths.has(pathname)) return;
+  // /api/auth/me는 로그인 여부 확인(GET)만 공개, 내 정보 수정(PUT)은 로그인 필요
+  if (publicPaths.has(pathname) && !(pathname === '/api/auth/me' && request.method !== 'GET')) return;
   if (pathname.startsWith('/api/')) {
     if (!request.user) throw new UnauthorizedError('로그인이 필요합니다. 다시 로그인해 주세요.');
     return;

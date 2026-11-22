@@ -3,6 +3,8 @@ export type AuditAction =
   | 'LOGIN_SUCCESS'
   | 'LOGIN_FAILURE'
   | 'LOGOUT'
+  | 'USER_PROFILE_UPDATE'
+  | 'USER_PASSWORD_CHANGE'
   | 'SERVER_CREATE'
   | 'SERVER_UPDATE'
   | 'SERVER_DELETE'

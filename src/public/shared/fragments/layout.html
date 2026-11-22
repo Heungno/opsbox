@@ -38,10 +38,12 @@
         </div>
       </nav>
       <div class="sidebar-footer">
-        <div class="sidebar-user-card" title="로그인 사용자">
-          <span id="current-user-avatar" aria-hidden="true">{{user-initial}}</span>
-          <strong id="current-user-name" title="{{user-name}}">{{user-name}}</strong>
-        </div>
+        <a href="/account" data-menu="account" title="내 정보 (이름·비밀번호 변경)">
+          <span class="sidebar-user-card">
+            <span id="current-user-avatar" aria-hidden="true">{{user-initial}}</span>
+            <strong id="current-user-name" title="{{user-name}}">{{user-name}}</strong>
+          </span>
+        </a>
         <button id="logout-button" class="theme-toggle" type="button" title="로그아웃">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10M14 8l4 4-4 4M18 12H9"/></svg><span>로그아웃</span>
         </button>

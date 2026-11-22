@@ -37,6 +37,7 @@ export const PAGES: PageDefinition[] = [
   { paths: ['/settings/policy-management'], file: 'settings/policy-management/policy-management.html', menu: 'policy-management' },
   { paths: ['/settings/common-code-management'], file: 'settings/common-code-management/common-code-management.html', menu: 'common-code-management' },
   { paths: ['/settings/audit-logs'], file: 'settings/audit-logs/audit-logs.html', menu: 'audit-logs' },
+  { paths: ['/account'], file: 'account/account.html', menu: 'account' },
 ];
 
 /** 로그인해야 열 수 있는 화면 주소 */

@@ -34,7 +34,7 @@ npm start          # dist/server.js 실행
 npm test           # 테스트 (bash 스크립트 실행 테스트는 Linux에서만)
 ```
 
-계정 추가: `node scripts/create-user.cjs <아이디>`
+계정 추가: `node scripts/create-user.cjs <아이디>` (비밀번호 12자 이상). 이름과 비밀번호는 각자 화면의 **내 정보**에서 바꿉니다.
 
 `dist/`만 다른 곳으로 옮겨 실행할 때는 `package.json`의 `dependencies`도 함께 준비하고 `node server.js`로 실행합니다.
 

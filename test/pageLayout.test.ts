@@ -5,7 +5,9 @@ import { test } from 'node:test';
 
 import { PAGES, composePage } from '../src/pages';
 import { app } from '../src/server';
-import { createSession, sessionCookie } from '../src/services/authService';
+import { createSession, createUser, sessionCookie } from '../src/services/authService';
+
+createUser('tester', '테스터', 'tester-password-1');
 
 /*
  * 공통 레이아웃(사이드바 + 본문)을 서버에서 끼워 보내는지 확인
@@ -59,7 +61,7 @@ test('본문 template이나 메뉴가 없으면 조용히 깨진 화면 대신 �
 });
 
 test('모든 화면이 실제 layout.html·페이지 파일로 조립되고, 원본 페이지 파일은 바로 열리지 않는다', async () => {
-  const cookie = sessionCookie(createSession('tester', '테스터'), false).split(';')[0];
+  const cookie = sessionCookie(createSession('tester'), false).split(';')[0];
   for (const page of PAGES) {
     for (const url of page.paths) {
       const response = await app.inject({ method: 'GET', url, headers: { cookie } });
@@ -88,7 +90,7 @@ test('로그인하지 않으면 화면 대신 로그인으로 보낸다', async 
 });
 
 test('CSS·JS·모달 조각 같은 정적 파일은 그대로 열린다', async () => {
-  const cookie = sessionCookie(createSession('tester', '테스터'), false).split(';')[0];
+  const cookie = sessionCookie(createSession('tester'), false).split(';')[0];
   for (const url of ['/shared/js/common.js', '/shared/css/app.css', '/shared/fragments/server-modal.html', '/dashboard/dashboard.js']) {
     assert.equal((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode, 200, url);
   }

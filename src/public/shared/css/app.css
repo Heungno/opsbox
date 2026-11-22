@@ -3795,3 +3795,14 @@ input[type="radio"] {
     overflow-x: auto;
   }
 }
+
+/* 내 정보 (사이드바 사용자 칸 → /account) */
+a[data-menu="account"] { display: block; color: inherit; text-decoration: none; border-radius: 9px; }
+a[data-menu="account"]:hover, a[data-menu="account"].active { background: rgba(255,255,255,.1); }
+#sidebar[data-theme="light"] a[data-menu="account"]:hover, #sidebar[data-theme="light"] a[data-menu="account"].active { background: rgba(0,0,0,.06); }
+a[data-menu="account"]:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.account-card { max-width: 560px; }
+.account-form { display: grid; gap: 4px; }
+.account-form input[readonly] { opacity: .75; }
+.account-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.account-error { margin: 0; color: var(--danger, #c62828); font-size: 13px; }

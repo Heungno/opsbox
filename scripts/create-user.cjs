@@ -51,7 +51,7 @@ async function main() {
   }
   const password = await askHidden('비밀번호: ');
   const confirmation = await askHidden('비밀번호 확인: ');
-  if (password.length < 4) throw new Error('비밀번호는 12자 이상이어야 합니다.');
+  if (password.length < 12) throw new Error('비밀번호는 12자 이상이어야 합니다.');
   if (password !== confirmation) throw new Error('비밀번호가 일치하지 않습니다.');
 
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
