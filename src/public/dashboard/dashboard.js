@@ -1,8 +1,9 @@
 import { api } from '/shared/js/api.js';
-import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
+import { applyStatusLabels, loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
 await window.opsboxLayoutReady;
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
+applyStatusLabels();
 
 async function init() {
   await loadSummary();
@@ -43,7 +44,7 @@ function renderFleetBar(data) {
   document.getElementById('fleet-unknown').hidden = counts.unknown === 0;
   document.getElementById('fleet-bar').setAttribute(
     'aria-label',
-    `전체 ${total}대 중 Healthy ${counts.healthy}, Warning ${counts.warning}, Critical ${counts.critical}, 점검 기록 없음 ${counts.unknown}`,
+    `전체 ${total}대 중 ${statusLabel('Healthy')} ${counts.healthy}, ${statusLabel('Warning')} ${counts.warning}, ${statusLabel('Critical')} ${counts.critical}, 점검 기록 없음 ${counts.unknown}`,
   );
 }
 

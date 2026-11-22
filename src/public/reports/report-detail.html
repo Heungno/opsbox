@@ -60,7 +60,7 @@
               <tr><th>보고 일자</th><td id="print-report-date">-</td><th>작성자</th><td id="print-author">-</td></tr>
             </tbody>
           </table>
-          <p class="print-doc-legend">판정 표기: ○ 정상(Healthy) &nbsp; △ 주의(Warning) &nbsp; × 위험(Critical) &nbsp; － 미수집</p>
+          <p class="print-doc-legend">판정 표기: <span id="print-status-legend">○ 정상 · △ 경고 · × 위험 · － 미수집</span></p>
         </section>
 
         <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -256,7 +256,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261122-status3"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261122-status4"></script>
 </body>
 
 </html>

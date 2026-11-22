@@ -45,3 +45,16 @@ export function loadStatusLabels() {
     .catch(() => {});
   return loading;
 }
+
+/** HTML에 적어 둔 이름표(<dt data-status-label="Warning">)를 상태 이름으로 채웁니다. 기본은 문서 전체. */
+export function applyStatusLabels(elements = document.querySelectorAll('[data-status-label]')) {
+  for (const element of elements) element.textContent = statusLabel(element.getAttribute('data-status-label'));
+}
+
+/** 흑백 인쇄용 기호 (보고서 머리글·판정 표기 범례) */
+export const STATUS_MARKS = { Healthy: '○', Warning: '△', Critical: '×', NotCollected: '－' };
+
+/** 판정 표기 범례: '○ 정상 · △ 경고 · × 위험 · － 미수집' */
+export function statusLegend() {
+  return Object.entries(STATUS_MARKS).map(([value, mark]) => `${mark} ${statusLabel(value)}`).join(' · ');
+}

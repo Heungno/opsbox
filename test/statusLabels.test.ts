@@ -35,3 +35,17 @@ test('모르는 값은 그대로, 값이 없으면 미판정', () => {
   assert.equal(statusLabel(undefined), '미판정');
   assert.equal(statusLabel(''), '미판정');
 });
+
+test('HTML의 data-status-label 요소를 상태 이름으로 채운다', async () => {
+  const { applyStatusLabels } = await import('../src/public/shared/js/status.js');
+  const make = (value: string) => ({ textContent: 'Healthy', getAttribute: (name: string) => (name === 'data-status-label' ? value : null) });
+  const elements = [make('Healthy'), make('Warning'), make('Critical')];
+  setStatusLabels([{ value: 'Warning', label: '주의' }]);
+  applyStatusLabels(elements);
+  assert.deepEqual(elements.map((element) => element.textContent), ['정상', '주의', '위험']);
+});
+
+test('판정 표기 범례는 기호와 상태 이름으로 만든다', async () => {
+  const { statusLegend } = await import('../src/public/shared/js/status.js');
+  assert.equal(statusLegend(), '○ 정상 · △ 경고 · × 위험 · － 미수집');
+});

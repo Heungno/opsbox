@@ -1,11 +1,13 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
-import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
+import { STATUS_MARKS, loadStatusLabels, statusLabel, statusLegend } from '/shared/js/status.js';
 import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
 import { renderItemBoxes } from './report-item-box.js?v=20261122-status2';
 
 await window.opsboxLayoutReady;
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
+const statusLegendElement = document.getElementById('print-status-legend');
+if (statusLegendElement) statusLegendElement.textContent = statusLegend();
 
 // 자원 사용 추세 그래프: 기간(일). 기간 버튼과 비교 선택을 바꾸면 다시 그립니다.
 let trendDays = 28;
@@ -617,8 +619,6 @@ function renderServerInfo(data, osInfo) {
 }
 
 // 인쇄용 문서 개요 (화면에서는 숨겨지고 인쇄할 때만 보임)
-// 흑백 인쇄에서도 구분되도록 상태 이름 앞에 붙이는 기호 (이름은 공통코드 healthStatuses)
-const PRINT_HEALTH_MARK = { Healthy: '○', Warning: '△', Critical: '×' };
 
 function setPrintText(id, value) {
   const element = document.getElementById(id);
@@ -646,7 +646,7 @@ function renderPrintHeader(data, health, serverTypes) {
   setPrintText('print-ip', server.ip);
   setPrintText('print-os', getOsInfo(data).label);
   setPrintText('print-check-date', data.checkDate);
-  setPrintText('print-health', [PRINT_HEALTH_MARK[health], statusLabel(health)].filter(Boolean).join(' '));
+  setPrintText('print-health', [STATUS_MARKS[health], statusLabel(health)].filter(Boolean).join(' '));
   updatePrintSigner();
 }
 
