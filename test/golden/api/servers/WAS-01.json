@@ -3,13 +3,6 @@
   "name": "대민 포털 WAS #1",
   "os": "Windows",
   "ip": "10.10.2.21",
-  "sharedPath": "\\\\fileserver\\opsbox",
-  "roles": [
-    "WAS"
-  ],
-  "products": {
-    "WAS": "JEUS"
-  },
   "processes": [
     {
       "name": "java"
@@ -40,9 +33,11 @@
       "expectedStatus": 200
     }
   ],
-  "policyIds": {
-    "BASIC": "windows-basic-default",
-    "WAS": "windows-was-default"
+  "roles": [
+    "WAS"
+  ],
+  "products": {
+    "WAS": "JEUS"
   },
   "scriptParts": {
     "HOST_INFO": "WINDOWS-PART-HOST_INFO",
@@ -83,5 +78,9 @@
       "periodDays": 7
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default",
+    "WAS": "windows-was-default"
+  }
 }

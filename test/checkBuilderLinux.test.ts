@@ -91,7 +91,7 @@ before(async () => {
     saveTemplate({ name: `점검 만들기 · ${id}`, kind: 'SCRIPT_PART', os: 'Linux', item: id, enabled: true, content: generateLinuxPart({ itemId: id, itemName: name ?? id, role: 'BASIC', spec }) } as any);
   };
   Object.keys(items).filter((id) => id !== late).forEach(saveGenerated);
-  createServer({ id: 'LNX-CB', name: '점검 만들기 서버', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.40', sharedPath: '', policyIds: { BASIC: 'linux-basic-default' }, processes: [], directories: [] } as any);
+  createServer({ id: 'LNX-CB', name: '점검 만들기 서버', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.40', policyIds: { BASIC: 'linux-basic-default' }, processes: [], directories: [] } as any);
   const settings = Object.fromEntries(Object.entries(items).filter(([id, entry]) => entry.inputs && id !== late).map(([id, entry]) => [id, { inputs: entry.inputs }]));
   updateCheckConfig('LNX-CB', { ...getServer('LNX-CB'), rolePolicySettings: settings } as any);
   const updated = getPolicies().find((policy) => policy.id === 'linux-basic-default')!;

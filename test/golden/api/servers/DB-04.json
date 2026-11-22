@@ -3,13 +3,6 @@
   "name": "행정 DB (CUBRID)",
   "os": "Linux",
   "ip": "10.10.4.44",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "DB"
-  ],
-  "products": {
-    "DB": "CUBRID"
-  },
   "processes": [
     {
       "name": "cub_server"
@@ -40,9 +33,11 @@
     }
   ],
   "httpChecks": [],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "DB": "linux-db-default"
+  "roles": [
+    "DB"
+  ],
+  "products": {
+    "DB": "CUBRID"
   },
   "scriptParts": {},
   "roleChecks": {
@@ -107,5 +102,9 @@
       "dbms": "MSSQL"
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "DB": "linux-db-default"
+  }
 }

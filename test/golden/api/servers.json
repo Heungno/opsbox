@@ -4,13 +4,6 @@
     "name": "대민 포털 WEB #1",
     "os": "Windows",
     "ip": "10.10.1.11",
-    "sharedPath": "\\\\fileserver\\opsbox",
-    "roles": [
-      "WEB"
-    ],
-    "products": {
-      "WEB": "WebtoB"
-    },
     "processes": [
       {
         "name": "wsm"
@@ -55,9 +48,11 @@
         "expectedStatus": 200
       }
     ],
-    "policyIds": {
-      "BASIC": "windows-basic-default",
-      "WEB": "windows-web-default"
+    "roles": [
+      "WEB"
+    ],
+    "products": {
+      "WEB": "WebtoB"
     },
     "scriptParts": {
       "HOST_INFO": "WINDOWS-PART-HOST_INFO",
@@ -90,20 +85,17 @@
         "periodDays": 7
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "windows-basic-default",
+      "WEB": "windows-web-default"
+    }
   },
   {
     "id": "WEB-02",
     "name": "대민 포털 WEB #2",
     "os": "Linux",
     "ip": "10.10.1.12",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "WEB"
-    ],
-    "products": {
-      "WEB": "Nginx"
-    },
     "processes": [
       {
         "name": "nginx"
@@ -147,9 +139,11 @@
         "expectedStatus": 200
       }
     ],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "WEB": "linux-web-default"
+    "roles": [
+      "WEB"
+    ],
+    "products": {
+      "WEB": "Nginx"
     },
     "scriptParts": {
       "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
@@ -172,20 +166,17 @@
         "periodDays": 7
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "WEB": "linux-web-default"
+    }
   },
   {
     "id": "WEB-03",
     "name": "내부 업무 WEB",
     "os": "Linux",
     "ip": "10.10.1.13",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "WEB"
-    ],
-    "products": {
-      "WEB": "Apache HTTP Server"
-    },
     "processes": [
       {
         "name": "httpd"
@@ -211,9 +202,11 @@
         "expectedStatus": 200
       }
     ],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "WEB": "linux-web-default"
+    "roles": [
+      "WEB"
+    ],
+    "products": {
+      "WEB": "Apache HTTP Server"
     },
     "scriptParts": {
       "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
@@ -236,20 +229,17 @@
         "periodDays": 7
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "WEB": "linux-web-default"
+    }
   },
   {
     "id": "WAS-01",
     "name": "대민 포털 WAS #1",
     "os": "Windows",
     "ip": "10.10.2.21",
-    "sharedPath": "\\\\fileserver\\opsbox",
-    "roles": [
-      "WAS"
-    ],
-    "products": {
-      "WAS": "JEUS"
-    },
     "processes": [
       {
         "name": "java"
@@ -280,9 +270,11 @@
         "expectedStatus": 200
       }
     ],
-    "policyIds": {
-      "BASIC": "windows-basic-default",
-      "WAS": "windows-was-default"
+    "roles": [
+      "WAS"
+    ],
+    "products": {
+      "WAS": "JEUS"
     },
     "scriptParts": {
       "HOST_INFO": "WINDOWS-PART-HOST_INFO",
@@ -323,20 +315,17 @@
         "periodDays": 7
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "windows-basic-default",
+      "WAS": "windows-was-default"
+    }
   },
   {
     "id": "WAS-02",
     "name": "민원 처리 WAS",
     "os": "Linux",
     "ip": "10.10.2.22",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "WAS"
-    ],
-    "products": {
-      "WAS": "Apache Tomcat"
-    },
     "processes": [
       {
         "name": "java"
@@ -367,9 +356,11 @@
         "expectedStatus": 200
       }
     ],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "WAS": "linux-was-default"
+    "roles": [
+      "WAS"
+    ],
+    "products": {
+      "WAS": "Apache Tomcat"
     },
     "scriptParts": {
       "WAS_THREAD_POOL": "LINUX-PART-WAS_THREAD_POOL",
@@ -400,22 +391,17 @@
         "periodDays": 7
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "WAS": "linux-was-default"
+    }
   },
   {
     "id": "APP-01",
     "name": "통계 서비스 (WEB+WAS)",
     "os": "Linux",
     "ip": "10.10.3.31",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "WEB",
-      "WAS"
-    ],
-    "products": {
-      "WEB": "Nginx",
-      "WAS": "Node.js"
-    },
     "processes": [
       {
         "name": "nginx"
@@ -449,10 +435,13 @@
         "expectedStatus": 200
       }
     ],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "WEB": "linux-web-default",
-      "WAS": "linux-was-default"
+    "roles": [
+      "WEB",
+      "WAS"
+    ],
+    "products": {
+      "WEB": "Nginx",
+      "WAS": "Node.js"
     },
     "scriptParts": {
       "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
@@ -498,20 +487,18 @@
         "periodDays": 7
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "WEB": "linux-web-default",
+      "WAS": "linux-was-default"
+    }
   },
   {
     "id": "DB-01",
     "name": "포털 DB (MSSQL)",
     "os": "Windows",
     "ip": "10.10.4.41",
-    "sharedPath": "\\\\fileserver\\opsbox",
-    "roles": [
-      "DB"
-    ],
-    "products": {
-      "DB": "MSSQL"
-    },
     "processes": [
       {
         "name": "sqlservr"
@@ -536,9 +523,11 @@
       }
     ],
     "httpChecks": [],
-    "policyIds": {
-      "BASIC": "windows-basic-default",
-      "DB": "windows-db-default"
+    "roles": [
+      "DB"
+    ],
+    "products": {
+      "DB": "MSSQL"
     },
     "scriptParts": {
       "HOST_INFO": "WINDOWS-PART-HOST_INFO",
@@ -613,20 +602,17 @@
         "dbms": "MSSQL"
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "windows-basic-default",
+      "DB": "windows-db-default"
+    }
   },
   {
     "id": "DB-02",
     "name": "민원 DB (PostgreSQL)",
     "os": "Linux",
     "ip": "10.10.4.42",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "DB"
-    ],
-    "products": {
-      "DB": "PostgreSQL"
-    },
     "processes": [
       {
         "name": "postgres"
@@ -646,9 +632,11 @@
       }
     ],
     "httpChecks": [],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "DB": "linux-db-default"
+    "roles": [
+      "DB"
+    ],
+    "products": {
+      "DB": "PostgreSQL"
     },
     "scriptParts": {},
     "roleChecks": {
@@ -713,20 +701,17 @@
         "dbms": "MSSQL"
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "DB": "linux-db-default"
+    }
   },
   {
     "id": "DB-03",
     "name": "통계 DB (MariaDB)",
     "os": "Linux",
     "ip": "10.10.4.43",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "DB"
-    ],
-    "products": {
-      "DB": "MariaDB"
-    },
     "processes": [
       {
         "name": "mariadbd"
@@ -748,9 +733,11 @@
       }
     ],
     "httpChecks": [],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "DB": "linux-db-default"
+    "roles": [
+      "DB"
+    ],
+    "products": {
+      "DB": "MariaDB"
     },
     "scriptParts": {},
     "roleChecks": {
@@ -815,20 +802,17 @@
         "dbms": "MSSQL"
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "DB": "linux-db-default"
+    }
   },
   {
     "id": "DB-04",
     "name": "행정 DB (CUBRID)",
     "os": "Linux",
     "ip": "10.10.4.44",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "DB"
-    ],
-    "products": {
-      "DB": "CUBRID"
-    },
     "processes": [
       {
         "name": "cub_server"
@@ -859,9 +843,11 @@
       }
     ],
     "httpChecks": [],
-    "policyIds": {
-      "BASIC": "linux-basic-default",
-      "DB": "linux-db-default"
+    "roles": [
+      "DB"
+    ],
+    "products": {
+      "DB": "CUBRID"
     },
     "scriptParts": {},
     "roleChecks": {
@@ -926,18 +912,17 @@
         "dbms": "MSSQL"
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default",
+      "DB": "linux-db-default"
+    }
   },
   {
     "id": "FILE-01",
     "name": "파일 서버",
     "os": "Windows",
     "ip": "10.10.5.51",
-    "sharedPath": "\\\\fileserver\\opsbox",
-    "roles": [
-      "OTHER"
-    ],
-    "products": {},
     "processes": [
       {
         "name": "LanmanServer"
@@ -959,9 +944,10 @@
       }
     ],
     "httpChecks": [],
-    "policyIds": {
-      "BASIC": "windows-basic-default"
-    },
+    "roles": [
+      "OTHER"
+    ],
+    "products": {},
     "scriptParts": {
       "HOST_INFO": "WINDOWS-PART-HOST_INFO",
       "CPU": "WINDOWS-PART-CPU",
@@ -976,18 +962,17 @@
         }
       }
     },
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "windows-basic-default"
+    }
   },
   {
     "id": "BATCH-01",
     "name": "야간 배치 서버",
     "os": "Linux",
     "ip": "10.10.5.52",
-    "sharedPath": "/mnt/opsbox",
-    "roles": [
-      "OTHER"
-    ],
-    "products": {},
+    "resultPath": "/batch/opsbox/results",
     "processes": [
       {
         "name": "crond"
@@ -1007,12 +992,16 @@
     ],
     "ports": [],
     "httpChecks": [],
-    "policyIds": {
-      "BASIC": "linux-basic-default"
-    },
+    "roles": [
+      "OTHER"
+    ],
+    "products": {},
     "scriptParts": {},
     "roleChecks": {},
     "rolePolicySettings": {},
-    "customQueryTemplateIds": []
+    "customQueryTemplateIds": [],
+    "policyIds": {
+      "BASIC": "linux-basic-default"
+    }
   }
 ]

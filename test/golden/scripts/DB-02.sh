@@ -1,9 +1,9 @@
 #!/bin/bash
 # OpsBox 점검 스크립트 (Linux)
 # 사용법: bash <서버ID>.sh [결과 폴더]
-#   결과 폴더를 주면 그곳에 저장합니다. 없으면 공유 폴더의 results 폴더,
-#   그곳에 쓸 수 없으면 이 스크립트가 있는 폴더에 저장합니다.
-#   저장된 파일은 OpsBox 공유 폴더의 results 폴더에 넣거나, 서버 상세 화면의 [결과 파일 올리기]로 올리면 됩니다.
+#   결과 폴더를 주면 그곳에 저장합니다. 없으면 OpsBox에서 정한 결과 저장 경로,
+#   그것도 없거나 쓸 수 없으면 이 스크립트가 있는 폴더에 저장합니다.
+#   OpsBox 수신함이 아닌 곳에 저장됐으면 파일을 수신함에 넣거나, 서버 상세 화면의 [결과 파일 올리기]로 올리면 됩니다.
 # 필요 환경: bash 4.2 이상, coreutils, procps, awk (jq·python 불필요)
 
 # sh 등 다른 셸로 실행해도 bash로 다시 실행합니다.
@@ -18,7 +18,7 @@ umask 022
 
 # ---- OpsBox 설정 (스크립트 생성 시 자동으로 채워짐) ----
 OPSBOX_SERVER_ID='DB-02'
-OPSBOX_SHARED_PATH='/mnt/opsbox'
+OPSBOX_RESULT_DIR='/mnt/opsbox/results'
 OPSBOX_PRODUCT_WEB=''
 OPSBOX_PRODUCT_WAS=''
 OPSBOX_PRODUCT_DB='PostgreSQL'
@@ -179,14 +179,14 @@ opsbox_kb_to_gb() { awk -v n="$1" 'BEGIN { printf "%.2f", n / 1048576 }'; }
 opsbox_bytes_to_gb() { awk -v n="$1" 'BEGIN { printf "%.2f", n / 1073741824 }'; }
 opsbox_bytes_to_mb() { awk -v n="$1" 'BEGIN { printf "%.2f", n / 1048576 }'; }
 
-# 결과 폴더 결정: 인자 → 공유 폴더/results → 스크립트 폴더
+# 결과 폴더 결정: 인자 → OpsBox에서 정한 결과 저장 경로(OPSBOX_RESULT_DIR) → 스크립트 폴더
 opsbox_run_stamp=$(date '+%Y%m%d_%H%M%S')
 opsbox_script_dir=$(cd "$(dirname "$0")" 2>/dev/null && pwd)
 [ -n "$opsbox_script_dir" ] || opsbox_script_dir=$(pwd)
 if [ -n "${1:-}" ]; then
   opsbox_result_dir=$1
-elif [ -n "$OPSBOX_SHARED_PATH" ]; then
-  opsbox_result_dir="${OPSBOX_SHARED_PATH%/}/results"
+elif [ -n "$OPSBOX_RESULT_DIR" ]; then
+  opsbox_result_dir="$OPSBOX_RESULT_DIR"
 else
   opsbox_result_dir=$opsbox_script_dir
 fi
@@ -902,8 +902,8 @@ if [ -z "$saved_path" ]; then
 fi
 opsbox_log "결과 저장 완료: $saved_path"
 opsbox_log "점검 스크립트 정상 종료: $overall_status"
-case "$saved_path" in
-  "${OPSBOX_SHARED_PATH%/}/results/"*) ;;
-  *) opsbox_log '이 파일을 OpsBox 공유 폴더의 results 폴더에 넣거나, OpsBox 서버 상세 화면의 [결과 파일 올리기]로 올리세요.' ;;
-esac
+# 정해진 결과 저장 경로에 저장했으면 OpsBox가 가져갑니다. 그 밖의 곳이면 직접 옮기도록 안내합니다.
+if [ -z "$OPSBOX_RESULT_DIR" ] || [ "${saved_path#"${OPSBOX_RESULT_DIR%/}"/}" = "$saved_path" ]; then
+  opsbox_log '이 파일을 OpsBox 수신함 폴더에 넣거나, OpsBox 서버 상세 화면의 [결과 파일 올리기]로 올리세요.'
+fi
 echo "Result JSON: $saved_path"

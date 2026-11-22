@@ -3,11 +3,7 @@
   "name": "야간 배치 서버",
   "os": "Linux",
   "ip": "10.10.5.52",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "OTHER"
-  ],
-  "products": {},
+  "resultPath": "/batch/opsbox/results",
   "processes": [
     {
       "name": "crond"
@@ -27,11 +23,15 @@
   ],
   "ports": [],
   "httpChecks": [],
-  "policyIds": {
-    "BASIC": "linux-basic-default"
-  },
+  "roles": [
+    "OTHER"
+  ],
+  "products": {},
   "scriptParts": {},
   "roleChecks": {},
   "rolePolicySettings": {},
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default"
+  }
 }

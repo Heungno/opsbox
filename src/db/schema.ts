@@ -72,7 +72,7 @@ const MIGRATIONS: string[] = [
     name TEXT NOT NULL,
     os TEXT NOT NULL,
     ip TEXT NOT NULL,
-    shared_path TEXT NOT NULL DEFAULT '',
+    result_path TEXT,                     -- 이 서버만 다른 결과 저장 경로(대상 서버가 보는 경로), 없으면 OS별 기본값
     enabled INTEGER NOT NULL DEFAULT 1,   -- 0이면 미사용(지우지 않고 보고서는 남김)
     check_config TEXT NOT NULL,           -- 점검 설정(JSON): 프로세스·포트 목록, 항목별 입력값 등
     position INTEGER NOT NULL,
@@ -112,6 +112,12 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX idx_check_results_server_date ON check_results (server_id, check_date DESC);
   CREATE INDEX idx_check_results_server_file ON check_results (server_id, file_name);
+
+  -- 단일 설정 값 (결과 저장 경로 기본값 등). 없으면 기본값을 씁니다.
+  CREATE TABLE settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 
   CREATE TABLE result_import_errors (
     source_path TEXT PRIMARY KEY,

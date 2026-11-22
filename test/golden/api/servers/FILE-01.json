@@ -3,11 +3,6 @@
   "name": "파일 서버",
   "os": "Windows",
   "ip": "10.10.5.51",
-  "sharedPath": "\\\\fileserver\\opsbox",
-  "roles": [
-    "OTHER"
-  ],
-  "products": {},
   "processes": [
     {
       "name": "LanmanServer"
@@ -29,9 +24,10 @@
     }
   ],
   "httpChecks": [],
-  "policyIds": {
-    "BASIC": "windows-basic-default"
-  },
+  "roles": [
+    "OTHER"
+  ],
+  "products": {},
   "scriptParts": {
     "HOST_INFO": "WINDOWS-PART-HOST_INFO",
     "CPU": "WINDOWS-PART-CPU",
@@ -46,5 +42,8 @@
       }
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default"
+  }
 }

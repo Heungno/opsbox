@@ -10,6 +10,7 @@ import { policyRoutes } from '../features/policies/routes';
 import { authRoutes } from './authRoutes';
 import { auditRoutes } from './auditRoutes';
 import { checkBuilderRoutes } from './checkBuilderRoutes';
+import { settingsRoutes } from '../features/settings/routes';
 
 export async function routes(app: FastifyInstance) {
   await app.register(authRoutes);
@@ -23,4 +24,5 @@ export async function routes(app: FastifyInstance) {
   await app.register(policyRoutes);
   await app.register(auditRoutes);
   await app.register(checkBuilderRoutes);
+  await app.register(settingsRoutes);
 }

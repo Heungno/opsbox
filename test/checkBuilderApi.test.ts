@@ -88,7 +88,7 @@ test('원격 포트 대상 목록은 서버 저장 시 호스트:포트 형식�
   const policy = getPolicies().find((entry) => entry.id === 'linux-basic-default')!;
   const itemId = 'CUSTOM_API0000000000002';
   savePolicy({ ...policy, items: [...policy.items, { id: itemId, name: '원격 포트', enabled: true, executor: { type: 'CHECK_BUILDER', options: { builder: { version: 1, type: 'REMOTE_PORT', presetId: null } } }, inputs: [], result: { components: [{ type: 'SUMMARY' }] } }] } as any, policy.id);
-  createServer({ id: 'LNX-TARGET', name: 't', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.60', sharedPath: '', policyIds: { BASIC: 'linux-basic-default' }, processes: [], directories: [] } as any);
+  createServer({ id: 'LNX-TARGET', name: 't', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.60', policyIds: { BASIC: 'linux-basic-default' }, processes: [], directories: [] } as any);
   const save = (targets: string) => updateCheckConfig('LNX-TARGET', { ...getServer('LNX-TARGET'), rolePolicySettings: { [itemId]: { inputs: { targets } } } } as any);
   assert.throws(() => save('db01:70000'), (error: any) => error.errors?.some((entry: any) => entry.field === `rolePolicySettings.${itemId}.inputs.targets` && /db01:70000/.test(entry.message)));
   assert.throws(() => save('no-port'), (error: any) => error.status === 400);

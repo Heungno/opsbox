@@ -52,7 +52,8 @@ export interface Server {
   customQueryTemplateIds?: string[];
   os: OperatingSystem;
   ip: string;
-  sharedPath: string;
+  /** 이 서버만 다른 결과 저장 경로(대상 서버가 보는 경로). 없으면 설정 → 결과 수집의 OS별 기본값 */
+  resultPath?: string;
   /** 미사용 서버는 false (대시보드·스크립트·결과 가져오기에서 빠지고 보고서는 남음) */
   enabled: boolean;
   processes: ProcessCheck[];
@@ -89,7 +90,7 @@ export interface ServerRecord {
   name: string;
   os: OperatingSystem;
   ip: string;
-  sharedPath: string;
+  resultPath: string | null;
   enabled: boolean;
   roles: ServerRole[];
   products: Partial<Record<ServerRole, ServerProduct>>;

@@ -70,7 +70,7 @@ case "$sql" in
 esac`);
 
 const linuxServer = (id: string, product: string, roleChecks: string[], extra: Record<string, unknown> = {}) => createServer({
-  id, name: id, type: 'DB', roles: ['DB'], products: { DB: product }, os: 'Linux', ip: '10.0.0.20', sharedPath: '',
+  id, name: id, type: 'DB', roles: ['DB'], products: { DB: product }, os: 'Linux', ip: '10.0.0.20',
   policyIds: { BASIC: 'linux-basic-default' }, roleChecks: { DB: roleChecks }, processes: [], directories: [], ...extra,
 } as any);
 

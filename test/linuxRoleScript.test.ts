@@ -53,7 +53,7 @@ fs.chmodSync(path.join(fakeJdk, 'jstat'), 0o755);
 
 createServer({
   id: 'LNX-ROLE', name: '역할 서버', type: 'WEB', roles: ['WEB', 'WAS', 'DB'], products: { WEB: 'Nginx', WAS: 'Apache Tomcat', DB: 'PostgreSQL' },
-  os: 'Linux', ip: '10.0.0.10', sharedPath: shared,
+  os: 'Linux', ip: '10.0.0.10', resultPath: path.join(shared, 'results'),
   policyIds: { BASIC: 'linux-basic-default', WEB: 'linux-web-default', WAS: 'linux-was-default', DB: 'linux-db-default' },
   roleChecks: {
     WEB: ['WEB_ENGINE_STATUS', 'WEB_WAS_CONNECTION', 'WEB_REQUEST_VOLUME', 'WEB_LOG'],

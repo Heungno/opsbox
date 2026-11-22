@@ -3,6 +3,7 @@ import { Server } from '../features/servers/types';
 import { ManagedTemplate, ScriptPart } from '../features/templates/types';
 import { getServerProduct, getServerRoles } from '../features/servers/service';
 import { getCommonCodes } from '../features/common-codes/service';
+import { defaultResultPath } from '../features/settings/service';
 import { getPolicies } from '../features/policies/service';
 
 /*
@@ -103,7 +104,8 @@ export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedT
       id: server.id,
       name: server.name,
       ip: server.ip,
-      sharedPath: server.sharedPath,
+      // 결과 저장 폴더(대상 서버가 보는 경로): 서버 지정 → OS별 기본값 → 빈 값(스크립트 폴더)
+      resultDirectory: server.resultPath || defaultResultPath(server.os),
       // 스크립트가 쓰는 대표 역할·제품 (첫 번째 역할)
       type: roles[0],
       product: products[roles[0]],

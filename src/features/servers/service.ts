@@ -4,6 +4,7 @@ import { getPolicies } from '../policies/service';
 import { getTemplate } from '../templates/service';
 import type { ScriptPart } from '../templates/types';
 import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from '../../services/dbQueryDefaults';
+import { resultPathError } from '../settings/service';
 import { resolveServer, toStoredCheckConfig } from './check-plan';
 import { findServerRecord, listServerRecords, saveServerRecord, setServerEnabled } from './repository';
 import type { CheckConfig, CheckConfigInput, RolePolicyType, Server, ServerProduct, ServerRecord, ServerRole } from './types';
@@ -43,7 +44,7 @@ function toRecord(server: Server, enabled: boolean): ServerRecord {
     name: server.name,
     os: server.os,
     ip: server.ip,
-    sharedPath: server.sharedPath ?? '',
+    resultPath: server.resultPath?.trim() || null,
     enabled,
     roles,
     products: Object.fromEntries(roles.filter((role) => server.products?.[role]).map((role) => [role, server.products![role]])),
@@ -101,6 +102,10 @@ function validateServer(server: Partial<Server>, servers: Server[], currentId?: 
       message: `이미 존재하는 서버 ID 입니다. (${server.id})`,
     });
   }
+
+  if (server.resultPath !== undefined && typeof server.resultPath !== 'string') errors.push({ field: 'resultPath', message: '결과 저장 경로는 문자열이어야 합니다.' });
+  const resultPathMessage = resultPathError(server.os ?? '', typeof server.resultPath === 'string' ? server.resultPath.trim() : '');
+  if (resultPathMessage) errors.push({ field: 'resultPath', message: resultPathMessage });
 
   const processValidation = validateProcesses(server.processes ?? []);
 

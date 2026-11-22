@@ -3,13 +3,6 @@
   "name": "내부 업무 WEB",
   "os": "Linux",
   "ip": "10.10.1.13",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "WEB"
-  ],
-  "products": {
-    "WEB": "Apache HTTP Server"
-  },
   "processes": [
     {
       "name": "httpd"
@@ -35,9 +28,11 @@
       "expectedStatus": 200
     }
   ],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "WEB": "linux-web-default"
+  "roles": [
+    "WEB"
+  ],
+  "products": {
+    "WEB": "Apache HTTP Server"
   },
   "scriptParts": {
     "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
@@ -60,5 +55,9 @@
       "periodDays": 7
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default"
+  }
 }

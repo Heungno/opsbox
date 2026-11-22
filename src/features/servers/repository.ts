@@ -4,7 +4,7 @@ import type { ServerRecord, ServerRole, StoredCheckConfig } from './types';
 
 /* 서버 테이블(servers·server_roles·server_policies). 한 서버씩 읽고 씁니다. */
 
-type ServerRow = { id: string; name: string; os: string; ip: string; shared_path: string; enabled: number; check_config: string };
+type ServerRow = { id: string; name: string; os: string; ip: string; result_path: string | null; enabled: number; check_config: string };
 
 function attach(rows: ServerRow[]): ServerRecord[] {
   if (!rows.length) return [];
@@ -17,7 +17,7 @@ function attach(rows: ServerRow[]): ServerRecord[] {
       name: row.name,
       os: row.os,
       ip: row.ip,
-      sharedPath: row.shared_path,
+      resultPath: row.result_path,
       enabled: Boolean(row.enabled),
       roles: roles.map((entry) => entry.role as ServerRole),
       products: Object.fromEntries(roles.filter((entry) => entry.product !== null).map((entry) => [entry.role, entry.product as string])),
@@ -27,7 +27,7 @@ function attach(rows: ServerRow[]): ServerRecord[] {
   });
 }
 
-const SELECT = 'SELECT id, name, os, ip, shared_path, enabled, check_config FROM servers';
+const SELECT = 'SELECT id, name, os, ip, result_path, enabled, check_config FROM servers';
 
 export function listServerRecords(): ServerRecord[] {
   return attach(db.prepare(`${SELECT} ORDER BY position, id`).all() as unknown as ServerRow[]);
@@ -41,10 +41,10 @@ export function findServerRecord(id: string): ServerRecord | undefined {
 export function saveServerRecord(record: ServerRecord) {
   const now = new Date().toISOString();
   transaction(() => {
-    const values = [record.name, record.os, record.ip, record.sharedPath ?? '', record.enabled ? 1 : 0, JSON.stringify(record.checkConfig), now] as const;
-    const updated = db.prepare('UPDATE servers SET name = ?, os = ?, ip = ?, shared_path = ?, enabled = ?, check_config = ?, updated_at = ? WHERE id = ?').run(...values, record.id);
+    const values = [record.name, record.os, record.ip, record.resultPath, record.enabled ? 1 : 0, JSON.stringify(record.checkConfig), now] as const;
+    const updated = db.prepare('UPDATE servers SET name = ?, os = ?, ip = ?, result_path = ?, enabled = ?, check_config = ?, updated_at = ? WHERE id = ?').run(...values, record.id);
     if (!Number(updated.changes)) {
-      db.prepare(`INSERT INTO servers (id, name, os, ip, shared_path, enabled, check_config, updated_at, created_at, position)
+      db.prepare(`INSERT INTO servers (id, name, os, ip, result_path, enabled, check_config, updated_at, created_at, position)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM servers))`).run(record.id, ...values, now);
     }
     db.prepare('DELETE FROM server_roles WHERE server_id = ?').run(record.id);

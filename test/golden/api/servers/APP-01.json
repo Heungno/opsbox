@@ -3,15 +3,6 @@
   "name": "통계 서비스 (WEB+WAS)",
   "os": "Linux",
   "ip": "10.10.3.31",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "WEB",
-    "WAS"
-  ],
-  "products": {
-    "WEB": "Nginx",
-    "WAS": "Node.js"
-  },
   "processes": [
     {
       "name": "nginx"
@@ -45,10 +36,13 @@
       "expectedStatus": 200
     }
   ],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "WEB": "linux-web-default",
-    "WAS": "linux-was-default"
+  "roles": [
+    "WEB",
+    "WAS"
+  ],
+  "products": {
+    "WEB": "Nginx",
+    "WAS": "Node.js"
   },
   "scriptParts": {
     "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
@@ -94,5 +88,10 @@
       "periodDays": 7
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default",
+    "WAS": "linux-was-default"
+  }
 }

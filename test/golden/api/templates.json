@@ -39,64 +39,64 @@
     "id": "CUBRID-QUERY-DB_TABLESPACE",
     "name": "CUBRID 쿼리 · 데이터 영역 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "-- 0번 볼륨(첫 번째 영구 데이터 볼륨)의 남은 섹터 비율입니다. 다른 볼륨은 'OF 1'처럼 번호를 바꾼 쿼리를 추가하세요.\n-- @opsbox-status Critical Num_free_sectors/Num_total_sectors% <= 5\n-- @opsbox-status Warning Num_free_sectors/Num_total_sectors% <= 15\nSHOW VOLUME HEADER OF 0;"
+    "enabled": true,
+    "content": "-- 0번 볼륨(첫 번째 영구 데이터 볼륨)의 남은 섹터 비율입니다. 다른 볼륨은 'OF 1'처럼 번호를 바꾼 쿼리를 추가하세요.\n-- @opsbox-status Critical Num_free_sectors/Num_total_sectors% <= 5\n-- @opsbox-status Warning Num_free_sectors/Num_total_sectors% <= 15\nSHOW VOLUME HEADER OF 0;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "CUBRID-QUERY-DB_BACKUP",
     "name": "CUBRID 쿼리 · 백업 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "-- 로그 헤더의 전체 백업(level 0) 정보입니다. 백업한 적이 없으면 'time: N/A'로 나와 경고로 표시합니다.\n-- 마지막 백업이 얼마나 지났는지는 SQL로 계산할 수 없으니 Backup_info_level0의 시각을 확인하세요.\n-- @opsbox-status Warning Backup_info_level0 ~ N/A\nSHOW LOG HEADER;"
+    "enabled": true,
+    "content": "-- 로그 헤더의 전체 백업(level 0) 정보입니다. 백업한 적이 없으면 'time: N/A'로 나와 경고로 표시합니다.\n-- 마지막 백업이 얼마나 지났는지는 SQL로 계산할 수 없으니 Backup_info_level0의 시각을 확인하세요.\n-- @opsbox-status Warning Backup_info_level0 ~ N/A\nSHOW LOG HEADER;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "CUBRID-QUERY-DB_REPLICATION",
     "name": "CUBRID 쿼리 · 복제·이중화 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "-- HA 서버 상태(Ha_server_state): active·standby는 정상, na는 HA 미사용(미수집), 전환 중·유지보수는 경고, dead는 위험입니다.\n-- @opsbox-status NotCollected Ha_server_state in na\n-- @opsbox-status Warning Ha_server_state in idle,to-be-active,to-be-standby,maintenance\n-- @opsbox-status Critical Ha_server_state in dead\nSHOW LOG HEADER;"
+    "enabled": true,
+    "content": "-- HA 서버 상태(Ha_server_state): active·standby는 정상, na는 HA 미사용(미수집), 전환 중·유지보수는 경고, dead는 위험입니다.\n-- @opsbox-status NotCollected Ha_server_state in na\n-- @opsbox-status Warning Ha_server_state in idle,to-be-active,to-be-standby,maintenance\n-- @opsbox-status Critical Ha_server_state in dead\nSHOW LOG HEADER;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "CUBRID-QUERY-DB_PROCESS_LIMIT",
     "name": "CUBRID 쿼리 · 세션·프로세스 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "-- CUBRID는 최대 접속 수(max_clients)를 SQL로 읽을 수 없어, 서버 작업 스레드(job queue) 사용률로 판단합니다.\n-- @opsbox-status Critical Num_busy_workers/Num_total_workers% >= 90\n-- @opsbox-status Warning Num_busy_workers/Num_total_workers% >= 70\nSHOW JOB QUEUES;"
+    "enabled": true,
+    "content": "-- CUBRID는 최대 접속 수(max_clients)를 SQL로 읽을 수 없어, 서버 작업 스레드(job queue) 사용률로 판단합니다.\n-- @opsbox-status Critical Num_busy_workers/Num_total_workers% >= 90\n-- @opsbox-status Warning Num_busy_workers/Num_total_workers% >= 70\nSHOW JOB QUEUES;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "CUBRID-QUERY-DB_ARCHIVE_MODE",
     "name": "CUBRID 쿼리 · 아카이브 모드 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "-- CUBRID는 활성 로그가 차면 항상 보관(archive) 로그를 만듭니다. Next_archive_num, Last_deleted_archive_num으로 보관 로그 번호를 확인합니다.\nSHOW LOG HEADER;"
+    "enabled": true,
+    "content": "-- CUBRID는 활성 로그가 차면 항상 보관(archive) 로그를 만듭니다. Next_archive_num, Last_deleted_archive_num으로 보관 로그 번호를 확인합니다.\nSHOW LOG HEADER;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "CUBRID-QUERY-DB_TRANSACTION_LOG",
     "name": "CUBRID 쿼리 · 트랜잭션 로그 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "-- 활성 로그 페이지 수(Num_active_log_pages)와 체크포인트 위치(Checkpoint)를 확인합니다.\n-- 로그 크기 한도는 SQL로 읽을 수 없어 상태는 정상으로 표시합니다.\nSHOW LOG HEADER;"
+    "enabled": true,
+    "content": "-- 활성 로그 페이지 수(Num_active_log_pages)와 체크포인트 위치(Checkpoint)를 확인합니다.\n-- 로그 크기 한도는 SQL로 읽을 수 없어 상태는 정상으로 표시합니다.\nSHOW LOG HEADER;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "CUBRID-QUERY-DB_INSTANCE_STATUS",
     "name": "CUBRID 쿼리 · DB 인스턴스·접속 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "CUBRID",
-    "content": "SELECT 'Healthy' AS \"__OPSBOX_STATUS\", VERSION() AS \"version\", 'CUBRID' AS \"edition\", DATABASE() AS \"databaseName\", 'ONLINE' AS \"state\" FROM db_root;"
+    "enabled": true,
+    "content": "SELECT 'Healthy' AS \"__OPSBOX_STATUS\", VERSION() AS \"version\", 'CUBRID' AS \"edition\", DATABASE() AS \"databaseName\", 'ONLINE' AS \"state\" FROM db_root;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "LINUX-PART-SAVE",
@@ -106,8 +106,8 @@
     "item": "SAVE",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "# 항목별 상태 종합 (Windows 스크립트와 같은 규칙)\nopsbox_collection_status() {\n  local statuses=\" $1 \" kind=$2\n  if [ -z \"${1// /}\" ]; then printf 'NotCollected'; return; fi\n  case \"$statuses\" in *' Critical '*|*' Missing '*) printf 'Critical'; return ;; esac\n  case \"$statuses\" in *' Warning '*) printf 'Warning'; return ;; esac\n  case \"$statuses\" in *' NotCollected '*) printf 'NotCollected'; return ;; esac\n  printf 'Healthy'\n}\nprocess_status=$(opsbox_collection_status \"$process_statuses\" process)\ndirectory_status=$(opsbox_collection_status \"$directory_statuses\" directory)\nfile_status=$(opsbox_collection_status \"$file_statuses\" file)\nport_status=$(opsbox_collection_status \"$port_statuses\" port)\nhttp_status=$(opsbox_collection_status \"$http_statuses\" http)\n\nall_statuses=\"$host_info_status $cpu_status $memory_status $uptime_status $disk_status $process_status $directory_status $file_status $port_status $http_status $OPSBOX_ROLE_POLICY_STATUSES\"\ncritical_count=0; warning_count=0; not_collected_count=0; healthy_count=0; status_total=0\nfor s in $all_statuses; do\n  status_total=$((status_total + 1))\n  case \"$s\" in\n    Critical) critical_count=$((critical_count + 1)) ;;\n    Warning) warning_count=$((warning_count + 1)) ;;\n    NotCollected) not_collected_count=$((not_collected_count + 1)) ;;\n    Healthy) healthy_count=$((healthy_count + 1)) ;;\n  esac\ndone\nif [ $critical_count -gt 0 ]; then overall_status=Critical\nelif [ $warning_count -gt 0 ]; then overall_status=Warning\nelif [ $not_collected_count -eq $status_total ]; then overall_status=NotCollected\nelse overall_status=Healthy; fi\n\nopsbox_product_json() { local p=$1; if [ -n \"$p\" ]; then opsbox_json_string \"$p\"; else printf 'null'; fi; }\n\n# 결과 JSON 출력 (here-document를 $( ) 안에 넣지 않아 오래된 bash에서도 안전)\nopsbox_write_result() {\ncat <<OPSBOX_JSON\n{\n  \"schemaVersion\": 2,\n  \"server\": $OPSBOX_SERVER_JSON,\n  \"collectedAt\": $(opsbox_json_string \"$check_date\"),\n  \"host\": {\"hostname\": $(opsbox_json_string \"$host_name\"), \"osName\": $(opsbox_json_string \"$os_name\"), \"osVersion\": $(opsbox_json_string \"$os_version\"), \"uptimeMinutes\": $(opsbox_json_number \"$uptime_minutes\"), \"uptime\": $uptime_parts_json, \"status\": \"$host_info_status\"},\n  \"resources\": {\n    \"cpu\": {\"usagePercent\": $(opsbox_json_number \"$cpu\"), \"status\": \"$cpu_status\"},\n    \"memory\": {\"usagePercent\": $(opsbox_json_number \"$memory\"), \"status\": \"$memory_status\"},\n    \"uptime\": {\"minutes\": $(opsbox_json_number \"$uptime_minutes\"), \"parts\": $uptime_parts_json, \"status\": \"$uptime_status\"},\n    \"disk\": {\"maxUsagePercent\": $(opsbox_json_number \"$disk\"), \"status\": \"$disk_status\", \"volumes\": [$disks_json]}\n  },\n  \"checks\": {\n    \"policyDefinitions\": $OPSBOX_POLICY_DEFINITIONS_JSON,\n    \"processes\": {\"status\": \"$process_status\", \"items\": [$processes_json]},\n    \"directories\": {\"status\": \"$directory_status\", \"items\": [$directories_json]},\n    \"files\": {\"status\": \"$file_status\", \"items\": [$files_json]},\n    \"ports\": {\"status\": \"$port_status\", \"items\": [$ports_json]},\n    \"http\": {\"status\": \"$http_status\", \"items\": [$http_json]},\n    \"web\": {\"status\": \"${web_status:-NotCollected}\", \"product\": $(opsbox_product_json \"$OPSBOX_PRODUCT_WEB\"), \"detail\": ${web_check_json:-null}},\n    \"was\": {\"status\": \"${was_status:-NotCollected}\", \"product\": $(opsbox_product_json \"$OPSBOX_PRODUCT_WAS\"), \"items\": [${was_items_json:-}]},\n    \"database\": {\"status\": \"${database_status:-NotCollected}\", \"product\": $(opsbox_product_json \"$OPSBOX_PRODUCT_DB\"), \"detail\": ${database_check_json:-null}},\n    \"rolePolicies\": $OPSBOX_ROLE_POLICIES_JSON,\n    \"policyItems\": $OPSBOX_BASIC_POLICY_ITEMS_JSON\n  },\n  \"summary\": {\"status\": \"$overall_status\", \"counts\": {\"healthy\": $healthy_count, \"warning\": $warning_count, \"critical\": $critical_count, \"notCollected\": $not_collected_count}}\n}\nOPSBOX_JSON\n}\n\n# 결과 저장: 임시 파일에 쓴 뒤 이름을 바꿔, 가져오기가 쓰는 중인 파일을 읽지 않게 합니다.\nopsbox_save_result() {\n  local dir=$1 target tmp\n  target=\"$dir/$opsbox_result_name\"\n  tmp=\"$dir/.$opsbox_result_name.tmp\"\n  opsbox_write_result > \"$tmp\" 2>/dev/null && mv -f \"$tmp\" \"$target\" 2>/dev/null && { printf '%s' \"$target\"; return 0; }\n  rm -f \"$tmp\" 2>/dev/null\n  return 1\n}\nsaved_path=''\nif [ \"$opsbox_result_dir_ready\" = true ]; then saved_path=$(opsbox_save_result \"$opsbox_result_dir\"); fi\nif [ -z \"$saved_path\" ] && [ \"$opsbox_result_dir\" != \"$opsbox_script_dir\" ]; then\n  opsbox_log \"결과 폴더에 쓸 수 없어 스크립트 폴더에 저장합니다: $opsbox_script_dir\"\n  saved_path=$(opsbox_save_result \"$opsbox_script_dir\")\nfi\nif [ -z \"$saved_path\" ]; then\n  opsbox_log '결과 저장 실패: 쓸 수 있는 폴더가 없습니다. 결과 폴더를 인자로 지정하세요. 예) bash 스크립트.sh /tmp'\n  exit 1\nfi\nopsbox_log \"결과 저장 완료: $saved_path\"\nopsbox_log \"점검 스크립트 정상 종료: $overall_status\"\ncase \"$saved_path\" in\n  \"${OPSBOX_SHARED_PATH%/}/results/\"*) ;;\n  *) opsbox_log '이 파일을 OpsBox 공유 폴더의 results 폴더에 넣거나, OpsBox 서버 상세 화면의 [결과 파일 올리기]로 올리세요.' ;;\nesac\necho \"Result JSON: $saved_path\""
+    "content": "# 항목별 상태 종합 (Windows 스크립트와 같은 규칙)\nopsbox_collection_status() {\n  local statuses=\" $1 \" kind=$2\n  if [ -z \"${1// /}\" ]; then printf 'NotCollected'; return; fi\n  case \"$statuses\" in *' Critical '*|*' Missing '*) printf 'Critical'; return ;; esac\n  case \"$statuses\" in *' Warning '*) printf 'Warning'; return ;; esac\n  case \"$statuses\" in *' NotCollected '*) printf 'NotCollected'; return ;; esac\n  printf 'Healthy'\n}\nprocess_status=$(opsbox_collection_status \"$process_statuses\" process)\ndirectory_status=$(opsbox_collection_status \"$directory_statuses\" directory)\nfile_status=$(opsbox_collection_status \"$file_statuses\" file)\nport_status=$(opsbox_collection_status \"$port_statuses\" port)\nhttp_status=$(opsbox_collection_status \"$http_statuses\" http)\n\nall_statuses=\"$host_info_status $cpu_status $memory_status $uptime_status $disk_status $process_status $directory_status $file_status $port_status $http_status $OPSBOX_ROLE_POLICY_STATUSES\"\ncritical_count=0; warning_count=0; not_collected_count=0; healthy_count=0; status_total=0\nfor s in $all_statuses; do\n  status_total=$((status_total + 1))\n  case \"$s\" in\n    Critical) critical_count=$((critical_count + 1)) ;;\n    Warning) warning_count=$((warning_count + 1)) ;;\n    NotCollected) not_collected_count=$((not_collected_count + 1)) ;;\n    Healthy) healthy_count=$((healthy_count + 1)) ;;\n  esac\ndone\nif [ $critical_count -gt 0 ]; then overall_status=Critical\nelif [ $warning_count -gt 0 ]; then overall_status=Warning\nelif [ $not_collected_count -eq $status_total ]; then overall_status=NotCollected\nelse overall_status=Healthy; fi\n\nopsbox_product_json() { local p=$1; if [ -n \"$p\" ]; then opsbox_json_string \"$p\"; else printf 'null'; fi; }\n\n# 결과 JSON 출력 (here-document를 $( ) 안에 넣지 않아 오래된 bash에서도 안전)\nopsbox_write_result() {\ncat <<OPSBOX_JSON\n{\n  \"schemaVersion\": 2,\n  \"server\": $OPSBOX_SERVER_JSON,\n  \"collectedAt\": $(opsbox_json_string \"$check_date\"),\n  \"host\": {\"hostname\": $(opsbox_json_string \"$host_name\"), \"osName\": $(opsbox_json_string \"$os_name\"), \"osVersion\": $(opsbox_json_string \"$os_version\"), \"uptimeMinutes\": $(opsbox_json_number \"$uptime_minutes\"), \"uptime\": $uptime_parts_json, \"status\": \"$host_info_status\"},\n  \"resources\": {\n    \"cpu\": {\"usagePercent\": $(opsbox_json_number \"$cpu\"), \"status\": \"$cpu_status\"},\n    \"memory\": {\"usagePercent\": $(opsbox_json_number \"$memory\"), \"status\": \"$memory_status\"},\n    \"uptime\": {\"minutes\": $(opsbox_json_number \"$uptime_minutes\"), \"parts\": $uptime_parts_json, \"status\": \"$uptime_status\"},\n    \"disk\": {\"maxUsagePercent\": $(opsbox_json_number \"$disk\"), \"status\": \"$disk_status\", \"volumes\": [$disks_json]}\n  },\n  \"checks\": {\n    \"policyDefinitions\": $OPSBOX_POLICY_DEFINITIONS_JSON,\n    \"processes\": {\"status\": \"$process_status\", \"items\": [$processes_json]},\n    \"directories\": {\"status\": \"$directory_status\", \"items\": [$directories_json]},\n    \"files\": {\"status\": \"$file_status\", \"items\": [$files_json]},\n    \"ports\": {\"status\": \"$port_status\", \"items\": [$ports_json]},\n    \"http\": {\"status\": \"$http_status\", \"items\": [$http_json]},\n    \"web\": {\"status\": \"${web_status:-NotCollected}\", \"product\": $(opsbox_product_json \"$OPSBOX_PRODUCT_WEB\"), \"detail\": ${web_check_json:-null}},\n    \"was\": {\"status\": \"${was_status:-NotCollected}\", \"product\": $(opsbox_product_json \"$OPSBOX_PRODUCT_WAS\"), \"items\": [${was_items_json:-}]},\n    \"database\": {\"status\": \"${database_status:-NotCollected}\", \"product\": $(opsbox_product_json \"$OPSBOX_PRODUCT_DB\"), \"detail\": ${database_check_json:-null}},\n    \"rolePolicies\": $OPSBOX_ROLE_POLICIES_JSON,\n    \"policyItems\": $OPSBOX_BASIC_POLICY_ITEMS_JSON\n  },\n  \"summary\": {\"status\": \"$overall_status\", \"counts\": {\"healthy\": $healthy_count, \"warning\": $warning_count, \"critical\": $critical_count, \"notCollected\": $not_collected_count}}\n}\nOPSBOX_JSON\n}\n\n# 결과 저장: 임시 파일에 쓴 뒤 이름을 바꿔, 가져오기가 쓰는 중인 파일을 읽지 않게 합니다.\nopsbox_save_result() {\n  local dir=$1 target tmp\n  target=\"$dir/$opsbox_result_name\"\n  tmp=\"$dir/.$opsbox_result_name.tmp\"\n  opsbox_write_result > \"$tmp\" 2>/dev/null && mv -f \"$tmp\" \"$target\" 2>/dev/null && { printf '%s' \"$target\"; return 0; }\n  rm -f \"$tmp\" 2>/dev/null\n  return 1\n}\nsaved_path=''\nif [ \"$opsbox_result_dir_ready\" = true ]; then saved_path=$(opsbox_save_result \"$opsbox_result_dir\"); fi\nif [ -z \"$saved_path\" ] && [ \"$opsbox_result_dir\" != \"$opsbox_script_dir\" ]; then\n  opsbox_log \"결과 폴더에 쓸 수 없어 스크립트 폴더에 저장합니다: $opsbox_script_dir\"\n  saved_path=$(opsbox_save_result \"$opsbox_script_dir\")\nfi\nif [ -z \"$saved_path\" ]; then\n  opsbox_log '결과 저장 실패: 쓸 수 있는 폴더가 없습니다. 결과 폴더를 인자로 지정하세요. 예) bash 스크립트.sh /tmp'\n  exit 1\nfi\nopsbox_log \"결과 저장 완료: $saved_path\"\nopsbox_log \"점검 스크립트 정상 종료: $overall_status\"\n# 정해진 결과 저장 경로에 저장했으면 OpsBox가 가져갑니다. 그 밖의 곳이면 직접 옮기도록 안내합니다.\nif [ -z \"$OPSBOX_RESULT_DIR\" ] || [ \"${saved_path#\"${OPSBOX_RESULT_DIR%/}\"/}\" = \"$saved_path\" ]; then\n  opsbox_log '이 파일을 OpsBox 수신함 폴더에 넣거나, OpsBox 서버 상세 화면의 [결과 파일 올리기]로 올리세요.'\nfi\necho \"Result JSON: $saved_path\"",
+    "updatedAt": "2026-11-22T00:00:00.000Z"
   },
   {
     "id": "LINUX-PART-WAS_STARTUP_SCRIPT",
@@ -128,8 +128,8 @@
     "item": "DIRECTORY",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log \"디렉터리 점검 시작: ${#OPSBOX_DIRECTORY_PATHS[@]}개 대상\"\nfor d_index in \"${!OPSBOX_DIRECTORY_PATHS[@]}\"; do\n  d_path=${OPSBOX_DIRECTORY_PATHS[$d_index]}\n  d_warning=${OPSBOX_DIRECTORY_WARNING[$d_index]:-80}\n  d_critical=${OPSBOX_DIRECTORY_CRITICAL[$d_index]:-90}\n  [ -n \"$directories_json\" ] && directories_json+=','\n  if [ -d \"$d_path\" ]; then\n    d_size=$(du -sb -- \"$d_path\" 2>/dev/null | awk '{ print $1 + 0 }')\n    read -r d_total d_used d_free <<< \"$(df -P -k -- \"$d_path\" 2>/dev/null | awk 'NR == 2 { print $2, $3, $4 }')\"\n    d_usage=$(awk -v u=\"${d_used:-0}\" -v f=\"${d_free:-0}\" 'BEGIN { if (u + f > 0) printf \"%.1f\", u / (u + f) * 100 }')\n    d_status=$(opsbox_status_by_percent \"$d_usage\" \"$d_warning\" \"$d_critical\")\n    directories_json+=\"{\\\"path\\\":$(opsbox_json_string \"$d_path\"),\\\"exists\\\":true,\\\"sizeBytes\\\":$(opsbox_json_number \"$d_size\"),\\\"sizeGB\\\":$(opsbox_bytes_to_gb \"${d_size:-0}\"),\\\"usedGB\\\":$(opsbox_kb_to_gb \"${d_used:-0}\"),\\\"freeGB\\\":$(opsbox_kb_to_gb \"${d_free:-0}\"),\\\"totalGB\\\":$(opsbox_kb_to_gb \"${d_total:-0}\"),\\\"usagePercent\\\":$(opsbox_json_number \"$d_usage\"),\\\"status\\\":\\\"$d_status\\\"}\"\n    directory_statuses+=\" $d_status\"\n    opsbox_log \"디렉터리 확인: $d_path (존재=true, 사용률=${d_usage}%)\"\n  else\n    directories_json+=\"{\\\"path\\\":$(opsbox_json_string \"$d_path\"),\\\"exists\\\":false,\\\"sizeBytes\\\":null,\\\"sizeGB\\\":null,\\\"usagePercent\\\":null,\\\"status\\\":\\\"NotCollected\\\",\\\"message\\\":\\\"디렉터리가 없습니다.\\\"}\"\n    directory_statuses+=' Missing'\n    opsbox_log \"디렉터리 확인: $d_path (존재=false)\"\n  fi\ndone"
+    "content": "opsbox_log \"디렉터리 점검 시작: ${#OPSBOX_DIRECTORY_PATHS[@]}개 대상\"\nfor d_index in \"${!OPSBOX_DIRECTORY_PATHS[@]}\"; do\n  d_path=${OPSBOX_DIRECTORY_PATHS[$d_index]}\n  d_warning=${OPSBOX_DIRECTORY_WARNING[$d_index]:-80}\n  d_critical=${OPSBOX_DIRECTORY_CRITICAL[$d_index]:-90}\n  [ -n \"$directories_json\" ] && directories_json+=','\n  if [ -d \"$d_path\" ]; then\n    d_size=$(du -sb -- \"$d_path\" 2>/dev/null | awk '{ print $1 + 0 }')\n    read -r d_total d_used d_free <<< \"$(df -P -k -- \"$d_path\" 2>/dev/null | awk 'NR == 2 { print $2, $3, $4 }')\"\n    d_usage=$(awk -v u=\"${d_used:-0}\" -v f=\"${d_free:-0}\" 'BEGIN { if (u + f > 0) printf \"%.1f\", u / (u + f) * 100 }')\n    d_status=$(opsbox_status_by_percent \"$d_usage\" \"$d_warning\" \"$d_critical\")\n    directories_json+=\"{\\\"path\\\":$(opsbox_json_string \"$d_path\"),\\\"exists\\\":true,\\\"sizeBytes\\\":$(opsbox_json_number \"$d_size\"),\\\"sizeGB\\\":$(opsbox_bytes_to_gb \"${d_size:-0}\"),\\\"usedGB\\\":$(opsbox_kb_to_gb \"${d_used:-0}\"),\\\"freeGB\\\":$(opsbox_kb_to_gb \"${d_free:-0}\"),\\\"totalGB\\\":$(opsbox_kb_to_gb \"${d_total:-0}\"),\\\"usagePercent\\\":$(opsbox_json_number \"$d_usage\"),\\\"status\\\":\\\"$d_status\\\"}\"\n    directory_statuses+=\" $d_status\"\n    opsbox_log \"디렉터리 확인: $d_path (존재=true, 사용률=${d_usage}%)\"\n  else\n    directories_json+=\"{\\\"path\\\":$(opsbox_json_string \"$d_path\"),\\\"exists\\\":false,\\\"sizeBytes\\\":null,\\\"sizeGB\\\":null,\\\"usagePercent\\\":null,\\\"status\\\":\\\"NotCollected\\\",\\\"message\\\":\\\"디렉터리가 없습니다.\\\"}\"\n    directory_statuses+=' Missing'\n    opsbox_log \"디렉터리 확인: $d_path (존재=false)\"\n  fi\ndone",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-DISK",
@@ -139,8 +139,8 @@
     "item": "DISK",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log '디스크 점검 시작'\ndisk_index=0\ndisk_has_warning=false\ndisk_has_critical=false\nwhile IFS='|' read -r d_device d_total d_used d_avail d_usage d_mount; do\n  case \"$d_usage\" in ''|*[!0-9]*) continue ;; esac\n  d_status=$(opsbox_status_by_percent \"$d_usage\" \"$OPSBOX_DISK_WARNING\" \"$OPSBOX_DISK_CRITICAL\")\n  [ \"$d_status\" = Critical ] && disk_has_critical=true\n  [ \"$d_status\" = Warning ] && disk_has_warning=true\n  [ $disk_index -gt 0 ] && disks_json+=','\n  disks_json+=\"{\\\"device\\\":$(opsbox_json_string \"$d_device\"),\\\"mountPoint\\\":$(opsbox_json_string \"$d_mount\"),\\\"volumeName\\\":$(opsbox_json_string \"$d_mount\"),\\\"totalGB\\\":$(opsbox_kb_to_gb \"$d_total\"),\\\"usedGB\\\":$(opsbox_kb_to_gb \"$d_used\"),\\\"freeGB\\\":$(opsbox_kb_to_gb \"$d_avail\"),\\\"usagePercent\\\":$d_usage,\\\"status\\\":\\\"$d_status\\\"}\"\n  if [ -z \"$disk\" ] || [ \"$d_usage\" -gt \"$disk\" ]; then disk=$d_usage; fi\n  disk_index=$((disk_index + 1))\ndone < <(df -P -k -l -x tmpfs -x devtmpfs -x squashfs -x overlay -x iso9660 2>/dev/null | awk 'NR > 1 { mount = $6; for (i = 7; i <= NF; i++) mount = mount \" \" $i; sub(/%$/, \"\", $5); print $1 \"|\" $2 \"|\" $3 \"|\" $4 \"|\" $5 \"|\" mount }')\nif [ $disk_index -eq 0 ]; then disk_status=NotCollected\nelif [ \"$disk_has_critical\" = true ]; then disk_status=Critical\nelif [ \"$disk_has_warning\" = true ]; then disk_status=Warning\nelse disk_status=Healthy; fi\nopsbox_log \"디스크 점검 완료: ${disk_index}개, 최대 사용률 ${disk}%, 상태=$disk_status\""
+    "content": "opsbox_log '디스크 점검 시작'\ndisk_index=0\ndisk_has_warning=false\ndisk_has_critical=false\nwhile IFS='|' read -r d_device d_total d_used d_avail d_usage d_mount; do\n  case \"$d_usage\" in ''|*[!0-9]*) continue ;; esac\n  d_status=$(opsbox_status_by_percent \"$d_usage\" \"$OPSBOX_DISK_WARNING\" \"$OPSBOX_DISK_CRITICAL\")\n  [ \"$d_status\" = Critical ] && disk_has_critical=true\n  [ \"$d_status\" = Warning ] && disk_has_warning=true\n  [ $disk_index -gt 0 ] && disks_json+=','\n  disks_json+=\"{\\\"device\\\":$(opsbox_json_string \"$d_device\"),\\\"mountPoint\\\":$(opsbox_json_string \"$d_mount\"),\\\"volumeName\\\":$(opsbox_json_string \"$d_mount\"),\\\"totalGB\\\":$(opsbox_kb_to_gb \"$d_total\"),\\\"usedGB\\\":$(opsbox_kb_to_gb \"$d_used\"),\\\"freeGB\\\":$(opsbox_kb_to_gb \"$d_avail\"),\\\"usagePercent\\\":$d_usage,\\\"status\\\":\\\"$d_status\\\"}\"\n  if [ -z \"$disk\" ] || [ \"$d_usage\" -gt \"$disk\" ]; then disk=$d_usage; fi\n  disk_index=$((disk_index + 1))\ndone < <(df -P -k -l -x tmpfs -x devtmpfs -x squashfs -x overlay -x iso9660 2>/dev/null | awk 'NR > 1 { mount = $6; for (i = 7; i <= NF; i++) mount = mount \" \" $i; sub(/%$/, \"\", $5); print $1 \"|\" $2 \"|\" $3 \"|\" $4 \"|\" $5 \"|\" mount }')\nif [ $disk_index -eq 0 ]; then disk_status=NotCollected\nelif [ \"$disk_has_critical\" = true ]; then disk_status=Critical\nelif [ \"$disk_has_warning\" = true ]; then disk_status=Warning\nelse disk_status=Healthy; fi\nopsbox_log \"디스크 점검 완료: ${disk_index}개, 최대 사용률 ${disk}%, 상태=$disk_status\"",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-MEMORY",
@@ -150,8 +150,8 @@
     "item": "MEMORY",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log '메모리 점검 시작'\nmemory=$(awk '/^MemTotal:/ { t = $2 } /^MemAvailable:/ { a = $2; has = 1 } /^MemFree:/ { f = $2 } /^Buffers:/ { b = $2 } /^Cached:/ { c = $2 }\n  END { if (!has) a = f + b + c; if (t > 0) printf \"%d\", ((t - a) / t) * 100 + 0.5 }' /proc/meminfo 2>/dev/null)\nif [ -n \"$memory\" ]; then\n  memory_status=$(opsbox_status_by_percent \"$memory\" \"$OPSBOX_MEMORY_WARNING\" \"$OPSBOX_MEMORY_CRITICAL\")\nelse\n  memory_status=NotCollected\n  opsbox_log '메모리 수집 오류: /proc/meminfo를 읽을 수 없습니다.'\nfi\nopsbox_log \"메모리 점검 완료: $memory_status ($memory%)\""
+    "content": "opsbox_log '메모리 점검 시작'\nmemory=$(awk '/^MemTotal:/ { t = $2 } /^MemAvailable:/ { a = $2; has = 1 } /^MemFree:/ { f = $2 } /^Buffers:/ { b = $2 } /^Cached:/ { c = $2 }\n  END { if (!has) a = f + b + c; if (t > 0) printf \"%d\", ((t - a) / t) * 100 + 0.5 }' /proc/meminfo 2>/dev/null)\nif [ -n \"$memory\" ]; then\n  memory_status=$(opsbox_status_by_percent \"$memory\" \"$OPSBOX_MEMORY_WARNING\" \"$OPSBOX_MEMORY_CRITICAL\")\nelse\n  memory_status=NotCollected\n  opsbox_log '메모리 수집 오류: /proc/meminfo를 읽을 수 없습니다.'\nfi\nopsbox_log \"메모리 점검 완료: $memory_status ($memory%)\"",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-WEB_REQUEST_VOLUME",
@@ -172,8 +172,8 @@
     "item": "UPTIME",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log '가동시간 점검 시작'\nuptime_seconds=$(awk '{ printf \"%d\", $1 }' /proc/uptime 2>/dev/null)\nif [ -n \"$uptime_seconds\" ]; then\n  uptime_minutes=$((uptime_seconds / 60))\n  now_epoch=$(date '+%s')\n  # 달력 기준으로 년·월·일·시·분 계산 (부팅 시각 → 현재)\n  read -r by bm bd bh bmin <<< \"$(date -d \"@$((now_epoch - uptime_seconds))\" '+%Y %m %d %H %M')\"\n  read -r ny nm nd nh nmin <<< \"$(date -d \"@$now_epoch\" '+%Y %m %d %H %M')\"\n  by=$((10#$by)); bm=$((10#$bm)); bd=$((10#$bd)); bh=$((10#$bh)); bmin=$((10#$bmin))\n  ny=$((10#$ny)); nm=$((10#$nm)); nd=$((10#$nd)); nh=$((10#$nh)); nmin=$((10#$nmin))\n  um=$((nmin - bmin)); if [ $um -lt 0 ]; then um=$((um + 60)); nh=$((nh - 1)); fi\n  uh=$((nh - bh)); if [ $uh -lt 0 ]; then uh=$((uh + 24)); nd=$((nd - 1)); fi\n  ud=$((nd - bd))\n  if [ $ud -lt 0 ]; then\n    days_in_prev_month=$(date -d \"$(printf '%04d-%02d-01' \"$ny\" \"$nm\") -1 day\" '+%d')\n    ud=$((ud + 10#$days_in_prev_month)); nm=$((nm - 1))\n  fi\n  umo=$((nm - bm)); if [ $umo -lt 0 ]; then umo=$((umo + 12)); ny=$((ny - 1)); fi\n  uy=$((ny - by))\n  uptime_parts_json=\"{\\\"years\\\":$uy,\\\"months\\\":$umo,\\\"days\\\":$ud,\\\"hours\\\":$uh,\\\"minutes\\\":$um}\"\n  uptime_status=Healthy\n  opsbox_log \"가동시간 점검 완료: $uptime_status (${uy}년 ${umo}개월 ${ud}일 ${uh}시간 ${um}분)\"\nelse\n  uptime_status=NotCollected\n  opsbox_log '가동시간 수집 오류: /proc/uptime을 읽을 수 없습니다.'\nfi"
+    "content": "opsbox_log '가동시간 점검 시작'\nuptime_seconds=$(awk '{ printf \"%d\", $1 }' /proc/uptime 2>/dev/null)\nif [ -n \"$uptime_seconds\" ]; then\n  uptime_minutes=$((uptime_seconds / 60))\n  now_epoch=$(date '+%s')\n  # 달력 기준으로 년·월·일·시·분 계산 (부팅 시각 → 현재)\n  read -r by bm bd bh bmin <<< \"$(date -d \"@$((now_epoch - uptime_seconds))\" '+%Y %m %d %H %M')\"\n  read -r ny nm nd nh nmin <<< \"$(date -d \"@$now_epoch\" '+%Y %m %d %H %M')\"\n  by=$((10#$by)); bm=$((10#$bm)); bd=$((10#$bd)); bh=$((10#$bh)); bmin=$((10#$bmin))\n  ny=$((10#$ny)); nm=$((10#$nm)); nd=$((10#$nd)); nh=$((10#$nh)); nmin=$((10#$nmin))\n  um=$((nmin - bmin)); if [ $um -lt 0 ]; then um=$((um + 60)); nh=$((nh - 1)); fi\n  uh=$((nh - bh)); if [ $uh -lt 0 ]; then uh=$((uh + 24)); nd=$((nd - 1)); fi\n  ud=$((nd - bd))\n  if [ $ud -lt 0 ]; then\n    days_in_prev_month=$(date -d \"$(printf '%04d-%02d-01' \"$ny\" \"$nm\") -1 day\" '+%d')\n    ud=$((ud + 10#$days_in_prev_month)); nm=$((nm - 1))\n  fi\n  umo=$((nm - bm)); if [ $umo -lt 0 ]; then umo=$((umo + 12)); ny=$((ny - 1)); fi\n  uy=$((ny - by))\n  uptime_parts_json=\"{\\\"years\\\":$uy,\\\"months\\\":$umo,\\\"days\\\":$ud,\\\"hours\\\":$uh,\\\"minutes\\\":$um}\"\n  uptime_status=Healthy\n  opsbox_log \"가동시간 점검 완료: $uptime_status (${uy}년 ${umo}개월 ${ud}일 ${uh}시간 ${um}분)\"\nelse\n  uptime_status=NotCollected\n  opsbox_log '가동시간 수집 오류: /proc/uptime을 읽을 수 없습니다.'\nfi",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-HOST_INFO",
@@ -183,8 +183,8 @@
     "item": "HOST_INFO",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log '서버 기본정보 점검 시작'\nif [ -r /etc/os-release ]; then\n  os_name=$(. /etc/os-release 2>/dev/null; printf '%s' \"${PRETTY_NAME:-${NAME:-Linux} ${VERSION:-}}\")\n  os_version=$(. /etc/os-release 2>/dev/null; printf '%s' \"${VERSION_ID:-}\")\nelif [ -r /etc/redhat-release ]; then\n  os_name=$(head -n 1 /etc/redhat-release)\n  os_version=$(sed -n 's/.*release \\([0-9.]*\\).*/\\1/p' /etc/redhat-release | head -n 1)\nelse\n  os_name=$(uname -s)\nfi\nkernel_version=$(uname -r 2>/dev/null)\nif [ -n \"$kernel_version\" ]; then os_version=\"${os_version:+$os_version, }kernel $kernel_version\"; fi\nif [ -n \"$os_name\" ]; then host_info_status=Healthy; fi\nopsbox_log \"서버 기본정보 점검 완료: $host_info_status ($os_name / $os_version)\""
+    "content": "opsbox_log '서버 기본정보 점검 시작'\nif [ -r /etc/os-release ]; then\n  os_name=$(. /etc/os-release 2>/dev/null; printf '%s' \"${PRETTY_NAME:-${NAME:-Linux} ${VERSION:-}}\")\n  os_version=$(. /etc/os-release 2>/dev/null; printf '%s' \"${VERSION_ID:-}\")\nelif [ -r /etc/redhat-release ]; then\n  os_name=$(head -n 1 /etc/redhat-release)\n  os_version=$(sed -n 's/.*release \\([0-9.]*\\).*/\\1/p' /etc/redhat-release | head -n 1)\nelse\n  os_name=$(uname -s)\nfi\nkernel_version=$(uname -r 2>/dev/null)\nif [ -n \"$kernel_version\" ]; then os_version=\"${os_version:+$os_version, }kernel $kernel_version\"; fi\nif [ -n \"$os_name\" ]; then host_info_status=Healthy; fi\nopsbox_log \"서버 기본정보 점검 완료: $host_info_status ($os_name / $os_version)\"",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-START",
@@ -194,8 +194,8 @@
     "item": "START",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "#!/bin/bash\n# OpsBox 점검 스크립트 (Linux)\n# 사용법: bash <서버ID>.sh [결과 폴더]\n#   결과 폴더를 주면 그곳에 저장합니다. 없으면 공유 폴더의 results 폴더,\n#   그곳에 쓸 수 없으면 이 스크립트가 있는 폴더에 저장합니다.\n#   저장된 파일은 OpsBox 공유 폴더의 results 폴더에 넣거나, 서버 상세 화면의 [결과 파일 올리기]로 올리면 됩니다.\n# 필요 환경: bash 4.2 이상, coreutils, procps, awk (jq·python 불필요)\n\n# sh 등 다른 셸로 실행해도 bash로 다시 실행합니다.\nif [ -z \"${BASH_VERSION:-}\" ]; then exec bash \"$0\" \"$@\"; fi\nif [ \"${BASH_VERSINFO[0]}\" -lt 4 ] || { [ \"${BASH_VERSINFO[0]}\" -eq 4 ] && [ \"${BASH_VERSINFO[1]}\" -lt 2 ]; }; then\n  echo \"bash 4.2 이상이 필요합니다. 현재: $BASH_VERSION\" >&2\n  exit 1\nfi\n\nexport LC_ALL=C\numask 022\n\n@@CONFIG_BASH@@\n\nopsbox_log() { printf '[%s] %s\\n' \"$(date '+%Y-%m-%d %H:%M:%S')\" \"$*\"; }\n\n# JSON 문자열 (\"...\" 포함) 출력: 역슬래시·따옴표·제어문자 처리\nopsbox_json_string() {\n  local s\n  s=$(printf '%s' \"$1\" | tr -d '\\000-\\010\\013\\014\\016-\\037')\n  s=${s//\\\\/\\\\\\\\}\n  s=${s//\\\"/\\\\\\\"}\n  s=${s//$'\\n'/\\\\n}\n  s=${s//$'\\r'/\\\\r}\n  s=${s//$'\\t'/\\\\t}\n  printf '\"%s\"' \"$s\"\n}\n\n# 숫자면 그대로, 아니면 null\nopsbox_json_number() {\n  case \"$1\" in\n    ''|*[!0-9.-]*|*.*.*|-|.) printf 'null' ;;\n    *) printf '%s' \"$1\" ;;\n  esac\n}\n\nopsbox_json_bool() { if [ \"$1\" = \"true\" ]; then printf 'true'; else printf 'false'; fi; }\n\n# 사용률 → 상태 (값 경고기준 위험기준)\nopsbox_status_by_percent() {\n  awk -v v=\"$1\" -v w=\"$2\" -v c=\"$3\" 'BEGIN { if (v == \"\") { print \"NotCollected\" } else if (v + 0 >= c + 0) { print \"Critical\" } else if (v + 0 >= w + 0) { print \"Warning\" } else { print \"Healthy\" } }'\n}\n\n# 바이트/킬로바이트 → GB (소수 2자리)\nopsbox_kb_to_gb() { awk -v n=\"$1\" 'BEGIN { printf \"%.2f\", n / 1048576 }'; }\nopsbox_bytes_to_gb() { awk -v n=\"$1\" 'BEGIN { printf \"%.2f\", n / 1073741824 }'; }\nopsbox_bytes_to_mb() { awk -v n=\"$1\" 'BEGIN { printf \"%.2f\", n / 1048576 }'; }\n\n# 결과 폴더 결정: 인자 → 공유 폴더/results → 스크립트 폴더\nopsbox_run_stamp=$(date '+%Y%m%d_%H%M%S')\nopsbox_script_dir=$(cd \"$(dirname \"$0\")\" 2>/dev/null && pwd)\n[ -n \"$opsbox_script_dir\" ] || opsbox_script_dir=$(pwd)\nif [ -n \"${1:-}\" ]; then\n  opsbox_result_dir=$1\nelif [ -n \"$OPSBOX_SHARED_PATH\" ]; then\n  opsbox_result_dir=\"${OPSBOX_SHARED_PATH%/}/results\"\nelse\n  opsbox_result_dir=$opsbox_script_dir\nfi\nopsbox_result_dir_ready=false\nif mkdir -p \"$opsbox_result_dir\" 2>/dev/null && [ -w \"$opsbox_result_dir\" ]; then opsbox_result_dir_ready=true; fi\nopsbox_result_name=\"${OPSBOX_SERVER_ID}_${opsbox_run_stamp}.json\"\n\nopsbox_log '점검 스크립트 시작'\nopsbox_log \"결과 폴더: $opsbox_result_dir (쓰기 가능=$opsbox_result_dir_ready)\"\n\nhost_name=$(hostname 2>/dev/null || uname -n)\nos_name=''\nos_version=''\ncheck_date=$(date '+%Y-%m-%d %H:%M:%S')\nhost_info_status=NotCollected\nuptime_minutes=''\nuptime_parts_json=null\nuptime_status=NotCollected\ncpu=''\ncpu_status=NotCollected\nmemory=''\nmemory_status=NotCollected\ndisk=''\ndisk_status=NotCollected\ndisks_json=''\nprocesses_json=''\nprocess_statuses=''\ndirectories_json=''\ndirectory_statuses=''\nfiles_json=''\nfile_statuses=''\nports_json=''\nport_statuses=''\nhttp_json=''\nhttp_statuses=''"
+    "content": "#!/bin/bash\n# OpsBox 점검 스크립트 (Linux)\n# 사용법: bash <서버ID>.sh [결과 폴더]\n#   결과 폴더를 주면 그곳에 저장합니다. 없으면 OpsBox에서 정한 결과 저장 경로,\n#   그것도 없거나 쓸 수 없으면 이 스크립트가 있는 폴더에 저장합니다.\n#   OpsBox 수신함이 아닌 곳에 저장됐으면 파일을 수신함에 넣거나, 서버 상세 화면의 [결과 파일 올리기]로 올리면 됩니다.\n# 필요 환경: bash 4.2 이상, coreutils, procps, awk (jq·python 불필요)\n\n# sh 등 다른 셸로 실행해도 bash로 다시 실행합니다.\nif [ -z \"${BASH_VERSION:-}\" ]; then exec bash \"$0\" \"$@\"; fi\nif [ \"${BASH_VERSINFO[0]}\" -lt 4 ] || { [ \"${BASH_VERSINFO[0]}\" -eq 4 ] && [ \"${BASH_VERSINFO[1]}\" -lt 2 ]; }; then\n  echo \"bash 4.2 이상이 필요합니다. 현재: $BASH_VERSION\" >&2\n  exit 1\nfi\n\nexport LC_ALL=C\numask 022\n\n@@CONFIG_BASH@@\n\nopsbox_log() { printf '[%s] %s\\n' \"$(date '+%Y-%m-%d %H:%M:%S')\" \"$*\"; }\n\n# JSON 문자열 (\"...\" 포함) 출력: 역슬래시·따옴표·제어문자 처리\nopsbox_json_string() {\n  local s\n  s=$(printf '%s' \"$1\" | tr -d '\\000-\\010\\013\\014\\016-\\037')\n  s=${s//\\\\/\\\\\\\\}\n  s=${s//\\\"/\\\\\\\"}\n  s=${s//$'\\n'/\\\\n}\n  s=${s//$'\\r'/\\\\r}\n  s=${s//$'\\t'/\\\\t}\n  printf '\"%s\"' \"$s\"\n}\n\n# 숫자면 그대로, 아니면 null\nopsbox_json_number() {\n  case \"$1\" in\n    ''|*[!0-9.-]*|*.*.*|-|.) printf 'null' ;;\n    *) printf '%s' \"$1\" ;;\n  esac\n}\n\nopsbox_json_bool() { if [ \"$1\" = \"true\" ]; then printf 'true'; else printf 'false'; fi; }\n\n# 사용률 → 상태 (값 경고기준 위험기준)\nopsbox_status_by_percent() {\n  awk -v v=\"$1\" -v w=\"$2\" -v c=\"$3\" 'BEGIN { if (v == \"\") { print \"NotCollected\" } else if (v + 0 >= c + 0) { print \"Critical\" } else if (v + 0 >= w + 0) { print \"Warning\" } else { print \"Healthy\" } }'\n}\n\n# 바이트/킬로바이트 → GB (소수 2자리)\nopsbox_kb_to_gb() { awk -v n=\"$1\" 'BEGIN { printf \"%.2f\", n / 1048576 }'; }\nopsbox_bytes_to_gb() { awk -v n=\"$1\" 'BEGIN { printf \"%.2f\", n / 1073741824 }'; }\nopsbox_bytes_to_mb() { awk -v n=\"$1\" 'BEGIN { printf \"%.2f\", n / 1048576 }'; }\n\n# 결과 폴더 결정: 인자 → OpsBox에서 정한 결과 저장 경로(OPSBOX_RESULT_DIR) → 스크립트 폴더\nopsbox_run_stamp=$(date '+%Y%m%d_%H%M%S')\nopsbox_script_dir=$(cd \"$(dirname \"$0\")\" 2>/dev/null && pwd)\n[ -n \"$opsbox_script_dir\" ] || opsbox_script_dir=$(pwd)\nif [ -n \"${1:-}\" ]; then\n  opsbox_result_dir=$1\nelif [ -n \"$OPSBOX_RESULT_DIR\" ]; then\n  opsbox_result_dir=\"$OPSBOX_RESULT_DIR\"\nelse\n  opsbox_result_dir=$opsbox_script_dir\nfi\nopsbox_result_dir_ready=false\nif mkdir -p \"$opsbox_result_dir\" 2>/dev/null && [ -w \"$opsbox_result_dir\" ]; then opsbox_result_dir_ready=true; fi\nopsbox_result_name=\"${OPSBOX_SERVER_ID}_${opsbox_run_stamp}.json\"\n\nopsbox_log '점검 스크립트 시작'\nopsbox_log \"결과 폴더: $opsbox_result_dir (쓰기 가능=$opsbox_result_dir_ready)\"\n\nhost_name=$(hostname 2>/dev/null || uname -n)\nos_name=''\nos_version=''\ncheck_date=$(date '+%Y-%m-%d %H:%M:%S')\nhost_info_status=NotCollected\nuptime_minutes=''\nuptime_parts_json=null\nuptime_status=NotCollected\ncpu=''\ncpu_status=NotCollected\nmemory=''\nmemory_status=NotCollected\ndisk=''\ndisk_status=NotCollected\ndisks_json=''\nprocesses_json=''\nprocess_statuses=''\ndirectories_json=''\ndirectory_statuses=''\nfiles_json=''\nfile_statuses=''\nports_json=''\nport_statuses=''\nhttp_json=''\nhttp_statuses=''",
+    "updatedAt": "2026-11-22T00:00:00.000Z"
   },
   {
     "id": "LINUX-PART-WAS_DEPLOYMENT",
@@ -227,8 +227,8 @@
     "item": "FILE_SIZE",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log \"파일 크기 점검 시작: ${#OPSBOX_FILE_PATHS[@]}개 대상\"\nfor f_index in \"${!OPSBOX_FILE_PATHS[@]}\"; do\n  f_path=${OPSBOX_FILE_PATHS[$f_index]}\n  f_warning=${OPSBOX_FILE_WARNING_MB[$f_index]}\n  f_critical=${OPSBOX_FILE_CRITICAL_MB[$f_index]}\n  [ -n \"$files_json\" ] && files_json+=','\n  if [ -f \"$f_path\" ]; then\n    f_bytes=$(stat -c %s -- \"$f_path\" 2>/dev/null || wc -c < \"$f_path\")\n    f_status=$(awk -v n=\"$f_bytes\" -v w=\"$f_warning\" -v c=\"$f_critical\" 'BEGIN { if (n >= c * 1048576) print \"Critical\"; else if (n >= w * 1048576) print \"Warning\"; else print \"Healthy\" }')\n    files_json+=\"{\\\"path\\\":$(opsbox_json_string \"$f_path\"),\\\"exists\\\":true,\\\"sizeBytes\\\":$(opsbox_json_number \"$f_bytes\"),\\\"sizeMB\\\":$(opsbox_bytes_to_mb \"$f_bytes\"),\\\"status\\\":\\\"$f_status\\\"}\"\n  else\n    f_status=Critical\n    files_json+=\"{\\\"path\\\":$(opsbox_json_string \"$f_path\"),\\\"exists\\\":false,\\\"sizeBytes\\\":null,\\\"sizeMB\\\":null,\\\"status\\\":\\\"Critical\\\",\\\"message\\\":\\\"파일이 없습니다.\\\"}\"\n  fi\n  file_statuses+=\" $f_status\"\n  opsbox_log \"파일 확인: $f_path (상태=$f_status)\"\ndone"
+    "content": "opsbox_log \"파일 크기 점검 시작: ${#OPSBOX_FILE_PATHS[@]}개 대상\"\nfor f_index in \"${!OPSBOX_FILE_PATHS[@]}\"; do\n  f_path=${OPSBOX_FILE_PATHS[$f_index]}\n  f_warning=${OPSBOX_FILE_WARNING_MB[$f_index]}\n  f_critical=${OPSBOX_FILE_CRITICAL_MB[$f_index]}\n  [ -n \"$files_json\" ] && files_json+=','\n  if [ -f \"$f_path\" ]; then\n    f_bytes=$(stat -c %s -- \"$f_path\" 2>/dev/null || wc -c < \"$f_path\")\n    f_status=$(awk -v n=\"$f_bytes\" -v w=\"$f_warning\" -v c=\"$f_critical\" 'BEGIN { if (n >= c * 1048576) print \"Critical\"; else if (n >= w * 1048576) print \"Warning\"; else print \"Healthy\" }')\n    files_json+=\"{\\\"path\\\":$(opsbox_json_string \"$f_path\"),\\\"exists\\\":true,\\\"sizeBytes\\\":$(opsbox_json_number \"$f_bytes\"),\\\"sizeMB\\\":$(opsbox_bytes_to_mb \"$f_bytes\"),\\\"status\\\":\\\"$f_status\\\"}\"\n  else\n    f_status=Critical\n    files_json+=\"{\\\"path\\\":$(opsbox_json_string \"$f_path\"),\\\"exists\\\":false,\\\"sizeBytes\\\":null,\\\"sizeMB\\\":null,\\\"status\\\":\\\"Critical\\\",\\\"message\\\":\\\"파일이 없습니다.\\\"}\"\n  fi\n  file_statuses+=\" $f_status\"\n  opsbox_log \"파일 확인: $f_path (상태=$f_status)\"\ndone",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-PORT",
@@ -238,8 +238,8 @@
     "item": "PORT",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log \"포트 점검 시작: ${#OPSBOX_PORT_NUMBERS[@]}개 대상\"\n# /proc/net 에서 LISTEN(TCP) 또는 바인딩(UDP) 상태를 확인합니다. (ss·netstat 없이도 동작)\nopsbox_port_listening() {\n  local hex_port files file\n  printf -v hex_port '%04X' \"$1\"\n  if [ \"$2\" = UDP ]; then files='/proc/net/udp /proc/net/udp6'; else files='/proc/net/tcp /proc/net/tcp6'; fi\n  for file in $files; do\n    [ -r \"$file\" ] || continue\n    if awk -v p=\"$hex_port\" -v proto=\"$2\" 'NR > 1 { n = split($2, a, \":\"); if (toupper(a[n]) == p && (proto == \"UDP\" || $4 == \"0A\")) found = 1 } END { exit !found }' \"$file\"; then return 0; fi\n  done\n  return 1\n}\nfor port_index in \"${!OPSBOX_PORT_NUMBERS[@]}\"; do\n  port_number=${OPSBOX_PORT_NUMBERS[$port_index]}\n  port_protocol=${OPSBOX_PORT_PROTOCOLS[$port_index]:-TCP}\n  port_description=${OPSBOX_PORT_DESCRIPTIONS[$port_index]}\n  port_process=''\n  if opsbox_port_listening \"$port_number\" \"$port_protocol\"; then\n    port_listening=true\n    port_statuses+=' Healthy'\n    # 프로세스 이름은 ss가 있고 권한이 있을 때만 확인됩니다.\n    if command -v ss >/dev/null 2>&1; then\n      if [ \"$port_protocol\" = UDP ]; then ss_flags=-lnup; else ss_flags=-lntp; fi\n      port_process=$(ss $ss_flags 2>/dev/null | awk -v p=\":$port_number\" '$0 ~ p\"[ \\t]\" && match($0, /users:\\(\\(\"[^\"]+\"/) { s = substr($0, RSTART + 9, RLENGTH - 10); print s; exit }')\n    fi\n  else\n    port_listening=false\n    port_statuses+=' Critical'\n  fi\n  [ -n \"$ports_json\" ] && ports_json+=','\n  if [ -n \"$port_process\" ]; then port_process_json=$(opsbox_json_string \"$port_process\"); else port_process_json=null; fi\n  ports_json+=\"{\\\"port\\\":$port_number,\\\"protocol\\\":\\\"$port_protocol\\\",\\\"description\\\":$(opsbox_json_string \"$port_description\"),\\\"listening\\\":$port_listening,\\\"processName\\\":$port_process_json}\"\n  opsbox_log \"포트 확인: $port_protocol/$port_number (수신=$port_listening)\"\ndone"
+    "content": "opsbox_log \"포트 점검 시작: ${#OPSBOX_PORT_NUMBERS[@]}개 대상\"\n# /proc/net 에서 LISTEN(TCP) 또는 바인딩(UDP) 상태를 확인합니다. (ss·netstat 없이도 동작)\nopsbox_port_listening() {\n  local hex_port files file\n  printf -v hex_port '%04X' \"$1\"\n  if [ \"$2\" = UDP ]; then files='/proc/net/udp /proc/net/udp6'; else files='/proc/net/tcp /proc/net/tcp6'; fi\n  for file in $files; do\n    [ -r \"$file\" ] || continue\n    if awk -v p=\"$hex_port\" -v proto=\"$2\" 'NR > 1 { n = split($2, a, \":\"); if (toupper(a[n]) == p && (proto == \"UDP\" || $4 == \"0A\")) found = 1 } END { exit !found }' \"$file\"; then return 0; fi\n  done\n  return 1\n}\nfor port_index in \"${!OPSBOX_PORT_NUMBERS[@]}\"; do\n  port_number=${OPSBOX_PORT_NUMBERS[$port_index]}\n  port_protocol=${OPSBOX_PORT_PROTOCOLS[$port_index]:-TCP}\n  port_description=${OPSBOX_PORT_DESCRIPTIONS[$port_index]}\n  port_process=''\n  if opsbox_port_listening \"$port_number\" \"$port_protocol\"; then\n    port_listening=true\n    port_statuses+=' Healthy'\n    # 프로세스 이름은 ss가 있고 권한이 있을 때만 확인됩니다.\n    if command -v ss >/dev/null 2>&1; then\n      if [ \"$port_protocol\" = UDP ]; then ss_flags=-lnup; else ss_flags=-lntp; fi\n      port_process=$(ss $ss_flags 2>/dev/null | awk -v p=\":$port_number\" '$0 ~ p\"[ \\t]\" && match($0, /users:\\(\\(\"[^\"]+\"/) { s = substr($0, RSTART + 9, RLENGTH - 10); print s; exit }')\n    fi\n  else\n    port_listening=false\n    port_statuses+=' Critical'\n  fi\n  [ -n \"$ports_json\" ] && ports_json+=','\n  if [ -n \"$port_process\" ]; then port_process_json=$(opsbox_json_string \"$port_process\"); else port_process_json=null; fi\n  ports_json+=\"{\\\"port\\\":$port_number,\\\"protocol\\\":\\\"$port_protocol\\\",\\\"description\\\":$(opsbox_json_string \"$port_description\"),\\\"listening\\\":$port_listening,\\\"processName\\\":$port_process_json}\"\n  opsbox_log \"포트 확인: $port_protocol/$port_number (수신=$port_listening)\"\ndone",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-PROCESS",
@@ -249,8 +249,8 @@
     "item": "PROCESS",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log \"프로세스 점검 시작: ${#OPSBOX_PROCESS_NAMES[@]}개 대상\"\nfor p_index in \"${!OPSBOX_PROCESS_NAMES[@]}\"; do\n  p_name=${OPSBOX_PROCESS_NAMES[$p_index]}\n  # 프로세스 이름(comm)은 커널에서 15자까지만 보관되므로 앞 15자로도 찾아봅니다.\n  p_pid=$(pgrep -o -x -- \"$p_name\" 2>/dev/null || pgrep -o -x -- \"${p_name:0:15}\" 2>/dev/null)\n  [ -n \"$processes_json\" ] && processes_json+=','\n  if [ -n \"$p_pid\" ]; then\n    read -r p_rss p_etimes p_time <<< \"$(ps -o rss=,etimes=,time= -p \"$p_pid\" 2>/dev/null)\"\n    p_cpu_seconds=$(awk -v t=\"$p_time\" 'BEGIN { n = split(t, d, \"-\"); hms = d[n]; days = (n > 1) ? d[1] : 0; m = split(hms, x, \":\"); s = 0; for (i = 1; i <= m; i++) s = s * 60 + x[i]; print days * 86400 + s }')\n    processes_json+=\"{\\\"name\\\":$(opsbox_json_string \"$p_name\"),\\\"processId\\\":$p_pid,\\\"running\\\":true,\\\"cpuSeconds\\\":$(opsbox_json_number \"$p_cpu_seconds\"),\\\"memoryMB\\\":$(opsbox_json_number \"$(awk -v n=\"$p_rss\" 'BEGIN { printf \"%.2f\", n / 1024 }')\"),\\\"uptimeMinutes\\\":$(opsbox_json_number \"$(( ${p_etimes:-0} / 60 ))\"),\\\"status\\\":\\\"Healthy\\\"}\"\n    process_statuses+=' Healthy'\n  else\n    processes_json+=\"{\\\"name\\\":$(opsbox_json_string \"$p_name\"),\\\"running\\\":false,\\\"cpuSeconds\\\":0,\\\"memoryMB\\\":0,\\\"uptimeMinutes\\\":0,\\\"status\\\":\\\"Critical\\\"}\"\n    process_statuses+=' Critical'\n  fi\n  opsbox_log \"프로세스 확인: $p_name (PID=${p_pid:-없음})\"\ndone\nopsbox_log '프로세스 점검 완료'"
+    "content": "opsbox_log \"프로세스 점검 시작: ${#OPSBOX_PROCESS_NAMES[@]}개 대상\"\nfor p_index in \"${!OPSBOX_PROCESS_NAMES[@]}\"; do\n  p_name=${OPSBOX_PROCESS_NAMES[$p_index]}\n  # 프로세스 이름(comm)은 커널에서 15자까지만 보관되므로 앞 15자로도 찾아봅니다.\n  p_pid=$(pgrep -o -x -- \"$p_name\" 2>/dev/null || pgrep -o -x -- \"${p_name:0:15}\" 2>/dev/null)\n  [ -n \"$processes_json\" ] && processes_json+=','\n  if [ -n \"$p_pid\" ]; then\n    read -r p_rss p_etimes p_time <<< \"$(ps -o rss=,etimes=,time= -p \"$p_pid\" 2>/dev/null)\"\n    p_cpu_seconds=$(awk -v t=\"$p_time\" 'BEGIN { n = split(t, d, \"-\"); hms = d[n]; days = (n > 1) ? d[1] : 0; m = split(hms, x, \":\"); s = 0; for (i = 1; i <= m; i++) s = s * 60 + x[i]; print days * 86400 + s }')\n    processes_json+=\"{\\\"name\\\":$(opsbox_json_string \"$p_name\"),\\\"processId\\\":$p_pid,\\\"running\\\":true,\\\"cpuSeconds\\\":$(opsbox_json_number \"$p_cpu_seconds\"),\\\"memoryMB\\\":$(opsbox_json_number \"$(awk -v n=\"$p_rss\" 'BEGIN { printf \"%.2f\", n / 1024 }')\"),\\\"uptimeMinutes\\\":$(opsbox_json_number \"$(( ${p_etimes:-0} / 60 ))\"),\\\"status\\\":\\\"Healthy\\\"}\"\n    process_statuses+=' Healthy'\n  else\n    processes_json+=\"{\\\"name\\\":$(opsbox_json_string \"$p_name\"),\\\"running\\\":false,\\\"cpuSeconds\\\":0,\\\"memoryMB\\\":0,\\\"uptimeMinutes\\\":0,\\\"status\\\":\\\"Critical\\\"}\"\n    process_statuses+=' Critical'\n  fi\n  opsbox_log \"프로세스 확인: $p_name (PID=${p_pid:-없음})\"\ndone\nopsbox_log '프로세스 점검 완료'",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-CPU",
@@ -260,8 +260,8 @@
     "item": "CPU",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log 'CPU 점검 시작'\nopsbox_cpu_sample() { awk '/^cpu / { idle = $5 + $6; total = 0; for (i = 2; i <= NF; i++) total += $i; print total, idle }' /proc/stat 2>/dev/null; }\ncpu_before=$(opsbox_cpu_sample)\nsleep 1\ncpu_after=$(opsbox_cpu_sample)\nif [ -n \"$cpu_before\" ] && [ -n \"$cpu_after\" ]; then\n  cpu=$(awk -v b=\"$cpu_before\" -v a=\"$cpu_after\" 'BEGIN { split(b, x, \" \"); split(a, y, \" \"); t = y[1] - x[1]; i = y[2] - x[2]; if (t > 0) printf \"%d\", ((t - i) / t) * 100 + 0.5; }')\nfi\nif [ -n \"$cpu\" ]; then\n  cpu_status=$(opsbox_status_by_percent \"$cpu\" \"$OPSBOX_CPU_WARNING\" \"$OPSBOX_CPU_CRITICAL\")\nelse\n  cpu_status=NotCollected\n  opsbox_log 'CPU 수집 오류: /proc/stat을 읽을 수 없습니다.'\nfi\nopsbox_log \"CPU 점검 완료: $cpu_status ($cpu%)\""
+    "content": "opsbox_log 'CPU 점검 시작'\nopsbox_cpu_sample() { awk '/^cpu / { idle = $5 + $6; total = 0; for (i = 2; i <= NF; i++) total += $i; print total, idle }' /proc/stat 2>/dev/null; }\ncpu_before=$(opsbox_cpu_sample)\nsleep 1\ncpu_after=$(opsbox_cpu_sample)\nif [ -n \"$cpu_before\" ] && [ -n \"$cpu_after\" ]; then\n  cpu=$(awk -v b=\"$cpu_before\" -v a=\"$cpu_after\" 'BEGIN { split(b, x, \" \"); split(a, y, \" \"); t = y[1] - x[1]; i = y[2] - x[2]; if (t > 0) printf \"%d\", ((t - i) / t) * 100 + 0.5; }')\nfi\nif [ -n \"$cpu\" ]; then\n  cpu_status=$(opsbox_status_by_percent \"$cpu\" \"$OPSBOX_CPU_WARNING\" \"$OPSBOX_CPU_CRITICAL\")\nelse\n  cpu_status=NotCollected\n  opsbox_log 'CPU 수집 오류: /proc/stat을 읽을 수 없습니다.'\nfi\nopsbox_log \"CPU 점검 완료: $cpu_status ($cpu%)\"",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-DB_QUERY_RUNNER",
@@ -304,8 +304,8 @@
     "item": "HTTP",
     "usesQueryTemplate": false,
     "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00Z",
-    "content": "opsbox_log \"HTTP 점검 시작: ${#OPSBOX_HTTP_URLS[@]}개 대상\"\nfor h_index in \"${!OPSBOX_HTTP_URLS[@]}\"; do\n  h_name=${OPSBOX_HTTP_NAMES[$h_index]}\n  h_url=${OPSBOX_HTTP_URLS[$h_index]}\n  h_expected=${OPSBOX_HTTP_EXPECTED[$h_index]:-200}\n  h_code=''\n  h_ms=''\n  h_error=''\n  if command -v curl >/dev/null 2>&1; then\n    h_output=$(curl -s -o /dev/null --max-time 10 -w '%{http_code} %{time_total}' -- \"$h_url\" 2>&1)\n    h_exit=$?\n    read -r h_code h_time <<< \"$h_output\"\n    h_ms=$(awk -v t=\"$h_time\" 'BEGIN { printf \"%d\", t * 1000 }')\n    if [ \"$h_code\" = 000 ]; then h_code=''; h_error=\"연결 실패 (curl 종료 코드 $h_exit)\"; fi\n  else\n    h_error='curl 명령이 없어 HTTP 점검을 할 수 없습니다.'\n  fi\n  if [ -n \"$h_code\" ] && [ \"$h_code\" = \"$h_expected\" ]; then h_success=true; http_statuses+=' Healthy'; else h_success=false; http_statuses+=' Critical'; fi\n  [ -n \"$http_json\" ] && http_json+=','\n  if [ -n \"$h_error\" ]; then h_error_json=$(opsbox_json_string \"$h_error\"); else h_error_json=null; fi\n  http_json+=\"{\\\"name\\\":$(opsbox_json_string \"$h_name\"),\\\"url\\\":$(opsbox_json_string \"$h_url\"),\\\"expectedStatus\\\":$(opsbox_json_number \"$h_expected\"),\\\"statusCode\\\":$(opsbox_json_number \"$h_code\"),\\\"responseTimeMs\\\":$(opsbox_json_number \"$h_ms\"),\\\"success\\\":$h_success,\\\"error\\\":$h_error_json}\"\n  opsbox_log \"HTTP 확인: $h_name (성공=$h_success, 상태=${h_code:-없음})\"\ndone"
+    "content": "opsbox_log \"HTTP 점검 시작: ${#OPSBOX_HTTP_URLS[@]}개 대상\"\nfor h_index in \"${!OPSBOX_HTTP_URLS[@]}\"; do\n  h_name=${OPSBOX_HTTP_NAMES[$h_index]}\n  h_url=${OPSBOX_HTTP_URLS[$h_index]}\n  h_expected=${OPSBOX_HTTP_EXPECTED[$h_index]:-200}\n  h_code=''\n  h_ms=''\n  h_error=''\n  if command -v curl >/dev/null 2>&1; then\n    h_output=$(curl -s -o /dev/null --max-time 10 -w '%{http_code} %{time_total}' -- \"$h_url\" 2>&1)\n    h_exit=$?\n    read -r h_code h_time <<< \"$h_output\"\n    h_ms=$(awk -v t=\"$h_time\" 'BEGIN { printf \"%d\", t * 1000 }')\n    if [ \"$h_code\" = 000 ]; then h_code=''; h_error=\"연결 실패 (curl 종료 코드 $h_exit)\"; fi\n  else\n    h_error='curl 명령이 없어 HTTP 점검을 할 수 없습니다.'\n  fi\n  if [ -n \"$h_code\" ] && [ \"$h_code\" = \"$h_expected\" ]; then h_success=true; http_statuses+=' Healthy'; else h_success=false; http_statuses+=' Critical'; fi\n  [ -n \"$http_json\" ] && http_json+=','\n  if [ -n \"$h_error\" ]; then h_error_json=$(opsbox_json_string \"$h_error\"); else h_error_json=null; fi\n  http_json+=\"{\\\"name\\\":$(opsbox_json_string \"$h_name\"),\\\"url\\\":$(opsbox_json_string \"$h_url\"),\\\"expectedStatus\\\":$(opsbox_json_number \"$h_expected\"),\\\"statusCode\\\":$(opsbox_json_number \"$h_code\"),\\\"responseTimeMs\\\":$(opsbox_json_number \"$h_ms\"),\\\"success\\\":$h_success,\\\"error\\\":$h_error_json}\"\n  opsbox_log \"HTTP 확인: $h_name (성공=$h_success, 상태=${h_code:-없음})\"\ndone",
+    "updatedAt": "2026-11-21T00:00:00Z"
   },
   {
     "id": "LINUX-PART-WAS_JVM_HEAP",
@@ -376,191 +376,191 @@
     "id": "MARIADB-QUERY-DB_TABLESPACE",
     "name": "MariaDB 쿼리 · 데이터 영역 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "-- MariaDB(InnoDB)는 데이터베이스별 정해진 용량이 없어 사용량과 여유 공간(DATA_FREE)만 표시합니다.\nSELECT 'Healthy' AS __OPSBOX_STATUS, TABLE_SCHEMA AS databaseName,\n  ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1048576, 2) AS usedMB,\n  ROUND(SUM(DATA_FREE) / 1048576, 2) AS freeMB\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema') AND TABLE_TYPE = 'BASE TABLE'\nGROUP BY TABLE_SCHEMA\nORDER BY TABLE_SCHEMA;"
+    "enabled": true,
+    "content": "-- MariaDB(InnoDB)는 데이터베이스별 정해진 용량이 없어 사용량과 여유 공간(DATA_FREE)만 표시합니다.\nSELECT 'Healthy' AS __OPSBOX_STATUS, TABLE_SCHEMA AS databaseName,\n  ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1048576, 2) AS usedMB,\n  ROUND(SUM(DATA_FREE) / 1048576, 2) AS freeMB\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema') AND TABLE_TYPE = 'BASE TABLE'\nGROUP BY TABLE_SCHEMA\nORDER BY TABLE_SCHEMA;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "MARIADB-QUERY-DB_BACKUP",
     "name": "MariaDB 쿼리 · 백업 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "-- MariaDB는 백업 기록을 DB 안에 남기지 않아 쿼리로 확인할 수 없습니다.\nSELECT 'NotCollected' AS __OPSBOX_STATUS,\n  'MariaDB는 백업 기록을 DB 안에 남기지 않습니다. 백업 도구(mariabackup, mysqldump 등)의 로그나 결과 파일로 확인하세요.' AS message;"
+    "enabled": true,
+    "content": "-- MariaDB는 백업 기록을 DB 안에 남기지 않아 쿼리로 확인할 수 없습니다.\nSELECT 'NotCollected' AS __OPSBOX_STATUS,\n  'MariaDB는 백업 기록을 DB 안에 남기지 않습니다. 백업 도구(mariabackup, mysqldump 등)의 로그나 결과 파일로 확인하세요.' AS message;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "MARIADB-QUERY-DB_REPLICATION",
     "name": "MariaDB 쿼리 · 복제·이중화 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "-- 복제 스레드 실행 수(대기 서버)와 연결된 대기 서버 수(주 서버)로 판단합니다.\nSELECT CASE WHEN r.running > 0 OR c.connected > 0 THEN 'Healthy' ELSE 'NotCollected' END AS __OPSBOX_STATUS,\n  CASE WHEN r.running > 0 THEN 'REPLICA' WHEN c.connected > 0 THEN 'PRIMARY' ELSE 'NONE' END AS role,\n  r.running AS runningReplicaThreads, c.connected AS connectedReplicas,\n  CASE WHEN r.running = 0 AND c.connected = 0 THEN '실행 중인 복제가 없습니다. 복제를 쓰는 서버라면 SHOW SLAVE STATUS로 중지 여부를 확인하세요.' END AS message\nFROM (SELECT COALESCE(MAX(CASE WHEN VARIABLE_NAME = 'SLAVES_RUNNING' THEN CAST(VARIABLE_VALUE AS UNSIGNED) END), 0) AS running FROM information_schema.GLOBAL_STATUS) r,\n     (SELECT COALESCE(MAX(CASE WHEN VARIABLE_NAME = 'SLAVES_CONNECTED' THEN CAST(VARIABLE_VALUE AS UNSIGNED) END), 0) AS connected FROM information_schema.GLOBAL_STATUS) c;"
+    "enabled": true,
+    "content": "-- 복제 스레드 실행 수(대기 서버)와 연결된 대기 서버 수(주 서버)로 판단합니다.\nSELECT CASE WHEN r.running > 0 OR c.connected > 0 THEN 'Healthy' ELSE 'NotCollected' END AS __OPSBOX_STATUS,\n  CASE WHEN r.running > 0 THEN 'REPLICA' WHEN c.connected > 0 THEN 'PRIMARY' ELSE 'NONE' END AS role,\n  r.running AS runningReplicaThreads, c.connected AS connectedReplicas,\n  CASE WHEN r.running = 0 AND c.connected = 0 THEN '실행 중인 복제가 없습니다. 복제를 쓰는 서버라면 SHOW SLAVE STATUS로 중지 여부를 확인하세요.' END AS message\nFROM (SELECT COALESCE(MAX(CASE WHEN VARIABLE_NAME = 'SLAVES_RUNNING' THEN CAST(VARIABLE_VALUE AS UNSIGNED) END), 0) AS running FROM information_schema.GLOBAL_STATUS) r,\n     (SELECT COALESCE(MAX(CASE WHEN VARIABLE_NAME = 'SLAVES_CONNECTED' THEN CAST(VARIABLE_VALUE AS UNSIGNED) END), 0) AS connected FROM information_schema.GLOBAL_STATUS) c;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "MARIADB-QUERY-DB_PROCESS_LIMIT",
     "name": "MariaDB 쿼리 · 세션·프로세스 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "SELECT CASE WHEN u.pct >= 90 THEN 'Critical' WHEN u.pct >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  u.sessions AS current_user_sessions, u.max_conn AS configured_max_connections, u.pct AS usage_percent\nFROM (\n  SELECT CAST(g.VARIABLE_VALUE AS UNSIGNED) AS sessions, @@max_connections AS max_conn,\n         ROUND(100 * CAST(g.VARIABLE_VALUE AS UNSIGNED) / @@max_connections, 2) AS pct\n  FROM information_schema.GLOBAL_STATUS g\n  WHERE g.VARIABLE_NAME = 'THREADS_CONNECTED'\n) u;"
+    "enabled": true,
+    "content": "SELECT CASE WHEN u.pct >= 90 THEN 'Critical' WHEN u.pct >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  u.sessions AS current_user_sessions, u.max_conn AS configured_max_connections, u.pct AS usage_percent\nFROM (\n  SELECT CAST(g.VARIABLE_VALUE AS UNSIGNED) AS sessions, @@max_connections AS max_conn,\n         ROUND(100 * CAST(g.VARIABLE_VALUE AS UNSIGNED) / @@max_connections, 2) AS pct\n  FROM information_schema.GLOBAL_STATUS g\n  WHERE g.VARIABLE_NAME = 'THREADS_CONNECTED'\n) u;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "MARIADB-QUERY-DB_ARCHIVE_MODE",
     "name": "MariaDB 쿼리 · 아카이브 모드 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "-- 바이너리 로그(binlog) 사용 여부. 꺼져 있으면 시점 복구가 불가능해 경고로 표시합니다.\nSELECT CASE WHEN @@log_bin = 1 THEN 'Healthy' ELSE 'Warning' END AS __OPSBOX_STATUS,\n  IF(@@log_bin = 1, 'ON', 'OFF') AS binaryLog,\n  @@binlog_format AS binlogFormat,\n  (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'EXPIRE_LOGS_DAYS') AS expireLogsDays,\n  (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'BINLOG_EXPIRE_LOGS_SECONDS') AS binlogExpireLogsSeconds;"
+    "enabled": true,
+    "content": "-- 바이너리 로그(binlog) 사용 여부. 꺼져 있으면 시점 복구가 불가능해 경고로 표시합니다.\nSELECT CASE WHEN @@log_bin = 1 THEN 'Healthy' ELSE 'Warning' END AS __OPSBOX_STATUS,\n  IF(@@log_bin = 1, 'ON', 'OFF') AS binaryLog,\n  @@binlog_format AS binlogFormat,\n  (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'EXPIRE_LOGS_DAYS') AS expireLogsDays,\n  (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'BINLOG_EXPIRE_LOGS_SECONDS') AS binlogExpireLogsSeconds;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "MARIADB-QUERY-DB_TRANSACTION_LOG",
     "name": "MariaDB 쿼리 · 트랜잭션 로그 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "-- InnoDB 체크포인트 나이(아직 디스크에 반영되지 않은 redo 로그 양)를 최대치와 비교합니다.\nSELECT CASE WHEN x.pct IS NULL THEN 'NotCollected' WHEN x.pct >= 90 THEN 'Critical' WHEN x.pct >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  x.age_mb AS checkpointAgeMB, x.max_mb AS checkpointMaxAgeMB, x.pct AS usagePercent\nFROM (\n  SELECT ROUND(a.v / 1048576, 2) AS age_mb, ROUND(m.v / 1048576, 2) AS max_mb, ROUND(100 * a.v / NULLIF(m.v, 0), 2) AS pct\n  FROM (SELECT MAX(CASE WHEN VARIABLE_NAME = 'INNODB_CHECKPOINT_AGE' THEN CAST(VARIABLE_VALUE AS UNSIGNED) END) AS v FROM information_schema.GLOBAL_STATUS) a,\n       (SELECT COALESCE(\n          (SELECT CAST(VARIABLE_VALUE AS UNSIGNED) FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'INNODB_CHECKPOINT_MAX_AGE'),\n          (SELECT CAST(VARIABLE_VALUE AS UNSIGNED) FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'INNODB_LOG_FILE_SIZE')\n            * COALESCE((SELECT CAST(VARIABLE_VALUE AS UNSIGNED) FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'INNODB_LOG_FILES_IN_GROUP'), 1)\n        ) AS v) m\n) x;"
+    "enabled": true,
+    "content": "-- InnoDB 체크포인트 나이(아직 디스크에 반영되지 않은 redo 로그 양)를 최대치와 비교합니다.\nSELECT CASE WHEN x.pct IS NULL THEN 'NotCollected' WHEN x.pct >= 90 THEN 'Critical' WHEN x.pct >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  x.age_mb AS checkpointAgeMB, x.max_mb AS checkpointMaxAgeMB, x.pct AS usagePercent\nFROM (\n  SELECT ROUND(a.v / 1048576, 2) AS age_mb, ROUND(m.v / 1048576, 2) AS max_mb, ROUND(100 * a.v / NULLIF(m.v, 0), 2) AS pct\n  FROM (SELECT MAX(CASE WHEN VARIABLE_NAME = 'INNODB_CHECKPOINT_AGE' THEN CAST(VARIABLE_VALUE AS UNSIGNED) END) AS v FROM information_schema.GLOBAL_STATUS) a,\n       (SELECT COALESCE(\n          (SELECT CAST(VARIABLE_VALUE AS UNSIGNED) FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME = 'INNODB_CHECKPOINT_MAX_AGE'),\n          (SELECT CAST(VARIABLE_VALUE AS UNSIGNED) FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'INNODB_LOG_FILE_SIZE')\n            * COALESCE((SELECT CAST(VARIABLE_VALUE AS UNSIGNED) FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME = 'INNODB_LOG_FILES_IN_GROUP'), 1)\n        ) AS v) m\n) x;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "MARIADB-QUERY-DB_INSTANCE_STATUS",
     "name": "MariaDB 쿼리 · DB 인스턴스·접속 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "MariaDB",
-    "content": "SELECT 'Healthy' AS __OPSBOX_STATUS, @@hostname AS serverName, VERSION() AS version, @@version_comment AS edition,\n  s.SCHEMA_NAME AS databaseName, 'ONLINE' AS state, IF(@@log_bin = 1, 'BINLOG ON', 'BINLOG OFF') AS recoveryModel,\n  ROUND(COALESCE(SUM(t.DATA_LENGTH + t.INDEX_LENGTH), 0) / 1048576, 2) AS dataSizeMB\nFROM information_schema.SCHEMATA s\nLEFT JOIN information_schema.TABLES t ON t.TABLE_SCHEMA = s.SCHEMA_NAME\nGROUP BY s.SCHEMA_NAME\nORDER BY s.SCHEMA_NAME;"
+    "enabled": true,
+    "content": "SELECT 'Healthy' AS __OPSBOX_STATUS, @@hostname AS serverName, VERSION() AS version, @@version_comment AS edition,\n  s.SCHEMA_NAME AS databaseName, 'ONLINE' AS state, IF(@@log_bin = 1, 'BINLOG ON', 'BINLOG OFF') AS recoveryModel,\n  ROUND(COALESCE(SUM(t.DATA_LENGTH + t.INDEX_LENGTH), 0) / 1048576, 2) AS dataSizeMB\nFROM information_schema.SCHEMATA s\nLEFT JOIN information_schema.TABLES t ON t.TABLE_SCHEMA = s.SCHEMA_NAME\nGROUP BY s.SCHEMA_NAME\nORDER BY s.SCHEMA_NAME;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_TABLESPACE",
     "name": "MSSQL 쿼리 · 데이터 영역 사용률",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "usesQueryTemplate": false,
     "enabled": true,
     "content": "SET NOCOUNT ON;\nCREATE TABLE #space (databaseName sysname, allocatedMB decimal(18,2), usedMB decimal(18,2));\nDECLARE @database sysname, @sql nvarchar(max);\nDECLARE db_cursor CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND database_id > 4;\nOPEN db_cursor; FETCH NEXT FROM db_cursor INTO @database;\nWHILE @@FETCH_STATUS = 0 BEGIN\n  SET @sql = N'USE ' + QUOTENAME(@database) + N'; INSERT INTO #space SELECT DB_NAME(), CAST(SUM(size) * 8.0 / 1024 AS decimal(18,2)), CAST(SUM(FILEPROPERTY(name, ''SpaceUsed'')) * 8.0 / 1024 AS decimal(18,2)) FROM sys.database_files WHERE type = 0;';\n  EXEC sys.sp_executesql @sql; FETCH NEXT FROM db_cursor INTO @database;\nEND; CLOSE db_cursor; DEALLOCATE db_cursor;\nSELECT CASE WHEN allocatedMB > 0 AND usedMB * 100.0 / allocatedMB >= 90 THEN 'Critical' WHEN allocatedMB > 0 AND usedMB * 100.0 / allocatedMB >= 80 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  databaseName, allocatedMB, usedMB, CAST(CASE WHEN allocatedMB > 0 THEN usedMB * 100.0 / allocatedMB ELSE 0 END AS decimal(6,2)) AS usagePercent\nFROM #space ORDER BY databaseName;",
-    "updatedAt": "2026-11-20T05:22:57.549Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-20T05:22:57.549Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_BACKUP",
     "name": "MSSQL 쿼리 · 백업 상태",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "enabled": true,
     "content": "SET NOCOUNT ON;\nSELECT CASE WHEN MAX(b.backup_finish_date) IS NULL OR DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 336 THEN 'Critical' WHEN DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 168 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  d.name AS databaseName, ISNULL(CONVERT(varchar(19), MAX(b.backup_finish_date), 120), 'NONE') AS lastFullBackup, ISNULL(DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()), -1) AS backupAgeHours\nFROM sys.databases d LEFT JOIN msdb.dbo.backupset b ON b.database_name = d.name AND b.type = 'D'\nWHERE d.state_desc = 'ONLINE' GROUP BY d.name ORDER BY d.name;",
-    "updatedAt": "2026-11-20T05:13:26.817Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-20T05:13:26.817Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_REPLICATION",
     "name": "MSSQL 쿼리 · 복제·이중화 상태",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "enabled": true,
     "content": "SET NOCOUNT ON;\nIF DB_ID(N'distribution') IS NOT NULL\nBEGIN\n  EXEC [distribution].sys.sp_replmonitorhelpsubscription;\nEND\nELSE\nBEGIN\n  SELECT N'distribution 데이터베이스가 없어 복제 구독 상태를 조회할 수 없습니다.' AS message;\nEND;",
-    "updatedAt": "2026-11-20T00:00:00.000Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-20T00:00:00.000Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_PROCESS_LIMIT",
     "name": "MSSQL 쿼리 · 세션·프로세스 사용률",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "enabled": true,
     "content": "SET NOCOUNT ON;\nDECLARE @max_user_connections int = (SELECT CONVERT(int, value_in_use) FROM sys.configurations WHERE name = 'user connections');\nDECLARE @current_user_sessions int = (SELECT COUNT(*) FROM sys.dm_exec_sessions WHERE is_user_process = 1);\nSELECT CASE WHEN @max_user_connections > 0 AND 100.0 * @current_user_sessions / @max_user_connections >= 90 THEN 'Critical' WHEN @max_user_connections > 0 AND 100.0 * @current_user_sessions / @max_user_connections >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  @current_user_sessions AS current_user_sessions, @max_user_connections AS configured_max_connections,\n  CASE WHEN @max_user_connections = 0 THEN NULL ELSE CAST(100.0 * @current_user_sessions / @max_user_connections AS decimal(6,2)) END AS usage_percent;",
-    "updatedAt": "2026-11-20T00:00:00.000Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-20T00:00:00.000Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_ARCHIVE_MODE",
     "name": "MSSQL 쿼리 · 아카이브 모드 상태",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "enabled": true,
     "content": "SET NOCOUNT ON;\nSELECT CASE WHEN d.recovery_model_desc = 'SIMPLE' THEN 'Warning' WHEN MAX(b.backup_finish_date) IS NULL THEN 'Warning' WHEN DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()) >= 24 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  d.name AS databaseName, d.recovery_model_desc AS recoveryModel, ISNULL(DATEDIFF(hour, MAX(b.backup_finish_date), GETDATE()), -1) AS lastLogBackupAgeHours\nFROM sys.databases d LEFT JOIN msdb.dbo.backupset b ON b.database_name = d.name AND b.type = 'L'\nWHERE d.state_desc = 'ONLINE' GROUP BY d.name, d.recovery_model_desc ORDER BY d.name;",
-    "updatedAt": "2026-11-20T00:00:00Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-20T00:00:00Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_TRANSACTION_LOG",
     "name": "MSSQL 쿼리 · 트랜잭션 로그 사용률",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "enabled": true,
     "content": "SET NOCOUNT ON;\nCREATE TABLE #logspace (databaseName sysname, logSizeMB float, usagePercent float, status int);\nINSERT INTO #logspace EXEC ('DBCC SQLPERF(LOGSPACE)');\nSELECT CASE WHEN usagePercent >= 90 THEN 'Critical' WHEN usagePercent >= 70 THEN 'Warning' ELSE 'Healthy' END AS __OPSBOX_STATUS,\n  databaseName, CAST(logSizeMB AS decimal(18,2)) AS logSizeMB, CAST(usagePercent AS decimal(6,2)) AS usagePercent\nFROM #logspace ORDER BY databaseName;",
-    "updatedAt": "2026-11-19T00:00:00Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-19T00:00:00Z"
   },
   {
     "id": "WINDOWS-QUERY-DB_INSTANCE_STATUS",
     "name": "MSSQL 쿼리 · DB 인스턴스·접속 상태",
     "kind": "QUERY",
+    "dbms": "MSSQL",
     "enabled": true,
     "content": "SET NOCOUNT ON;\nSELECT CASE WHEN d.state_desc = 'ONLINE' THEN 'Healthy' ELSE 'Critical' END AS __OPSBOX_STATUS,\n  CONVERT(nvarchar(256), SERVERPROPERTY('ServerName')) AS serverName,\n  CONVERT(nvarchar(64), SERVERPROPERTY('ProductVersion')) AS version,\n  CONVERT(nvarchar(256), SERVERPROPERTY('Edition')) AS edition,\n  d.name AS databaseName, d.state_desc AS state, d.recovery_model_desc AS recoveryModel,\n  CAST(SUM(CASE WHEN mf.type = 0 THEN mf.size ELSE 0 END) * 8.0 / 1024 AS decimal(18,2)) AS dataSizeMB\nFROM sys.databases d LEFT JOIN sys.master_files mf ON mf.database_id = d.database_id\nGROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc ORDER BY d.name;",
-    "updatedAt": "2026-11-20T00:00:00Z",
-    "dbms": "MSSQL"
+    "updatedAt": "2026-11-20T00:00:00Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_TABLESPACE",
     "name": "PostgreSQL 쿼리 · 데이터 영역 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "-- PostgreSQL 테이블스페이스는 정해진 용량이 없어 사용량만 표시합니다. (디스크 여유는 기본 점검의 디스크 항목에서 확인)\nSELECT 'Healthy' AS \"__OPSBOX_STATUS\",\n  t.spcname AS \"tablespaceName\",\n  CASE WHEN t.spcname = 'pg_default' OR has_tablespace_privilege(t.oid, 'CREATE') OR pg_has_role('pg_read_all_stats', 'MEMBER')\n       THEN round(pg_tablespace_size(t.oid) / 1048576.0, 2) END AS \"usedMB\",\n  COALESCE(NULLIF(pg_tablespace_location(t.oid), ''), '(data_directory)') AS \"location\"\nFROM pg_tablespace t\nORDER BY t.spcname;"
+    "enabled": true,
+    "content": "-- PostgreSQL 테이블스페이스는 정해진 용량이 없어 사용량만 표시합니다. (디스크 여유는 기본 점검의 디스크 항목에서 확인)\nSELECT 'Healthy' AS \"__OPSBOX_STATUS\",\n  t.spcname AS \"tablespaceName\",\n  CASE WHEN t.spcname = 'pg_default' OR has_tablespace_privilege(t.oid, 'CREATE') OR pg_has_role('pg_read_all_stats', 'MEMBER')\n       THEN round(pg_tablespace_size(t.oid) / 1048576.0, 2) END AS \"usedMB\",\n  COALESCE(NULLIF(pg_tablespace_location(t.oid), ''), '(data_directory)') AS \"location\"\nFROM pg_tablespace t\nORDER BY t.spcname;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_BACKUP",
     "name": "PostgreSQL 쿼리 · 백업 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "-- PostgreSQL은 백업 기록을 DB 안에 남기지 않아 쿼리로 확인할 수 없습니다.\nSELECT 'NotCollected' AS \"__OPSBOX_STATUS\",\n  'PostgreSQL은 백업 기록을 DB 안에 남기지 않습니다. 백업 도구(pg_dump, pgBackRest 등)의 로그나 결과 파일로 확인하세요.' AS \"message\";"
+    "enabled": true,
+    "content": "-- PostgreSQL은 백업 기록을 DB 안에 남기지 않아 쿼리로 확인할 수 없습니다.\nSELECT 'NotCollected' AS \"__OPSBOX_STATUS\",\n  'PostgreSQL은 백업 기록을 DB 안에 남기지 않습니다. 백업 도구(pg_dump, pgBackRest 등)의 로그나 결과 파일로 확인하세요.' AS \"message\";",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_REPLICATION",
     "name": "PostgreSQL 쿼리 · 복제·이중화 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "-- 주 서버: 연결된 대기 서버별 상태와 재생 지연 / 대기 서버: WAL 수신 상태와 재생 지연\nSELECT CASE WHEN r.state <> 'streaming' THEN 'Warning'\n            WHEN COALESCE(EXTRACT(EPOCH FROM r.replay_lag), 0) >= 300 THEN 'Warning'\n            ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  'PRIMARY' AS \"role\", COALESCE(r.application_name, '') AS \"peer\", COALESCE(host(r.client_addr), 'local') AS \"peerAddress\",\n  r.state AS \"state\", round(EXTRACT(EPOCH FROM r.replay_lag)::numeric, 1) AS \"lagSeconds\", NULL::text AS \"message\"\nFROM pg_stat_replication r\nUNION ALL\nSELECT CASE WHEN NOT EXISTS (SELECT 1 FROM pg_stat_wal_receiver WHERE status = 'streaming') THEN 'Critical'\n            WHEN l.lag >= 300 THEN 'Warning'\n            ELSE 'Healthy' END,\n  'STANDBY', '', '', (SELECT status FROM pg_stat_wal_receiver LIMIT 1), l.lag, NULL::text\nFROM (SELECT round(CASE WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0\n                        ELSE COALESCE(EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()), 0) END::numeric, 1) AS lag) l\nWHERE pg_is_in_recovery()\nUNION ALL\nSELECT 'NotCollected', 'PRIMARY', '', '', NULL, NULL, '연결된 대기(복제) 서버가 없습니다. 단독으로 운영하는 서버면 정상입니다.'\nWHERE NOT pg_is_in_recovery() AND NOT EXISTS (SELECT 1 FROM pg_stat_replication);"
+    "enabled": true,
+    "content": "-- 주 서버: 연결된 대기 서버별 상태와 재생 지연 / 대기 서버: WAL 수신 상태와 재생 지연\nSELECT CASE WHEN r.state <> 'streaming' THEN 'Warning'\n            WHEN COALESCE(EXTRACT(EPOCH FROM r.replay_lag), 0) >= 300 THEN 'Warning'\n            ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  'PRIMARY' AS \"role\", COALESCE(r.application_name, '') AS \"peer\", COALESCE(host(r.client_addr), 'local') AS \"peerAddress\",\n  r.state AS \"state\", round(EXTRACT(EPOCH FROM r.replay_lag)::numeric, 1) AS \"lagSeconds\", NULL::text AS \"message\"\nFROM pg_stat_replication r\nUNION ALL\nSELECT CASE WHEN NOT EXISTS (SELECT 1 FROM pg_stat_wal_receiver WHERE status = 'streaming') THEN 'Critical'\n            WHEN l.lag >= 300 THEN 'Warning'\n            ELSE 'Healthy' END,\n  'STANDBY', '', '', (SELECT status FROM pg_stat_wal_receiver LIMIT 1), l.lag, NULL::text\nFROM (SELECT round(CASE WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0\n                        ELSE COALESCE(EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp()), 0) END::numeric, 1) AS lag) l\nWHERE pg_is_in_recovery()\nUNION ALL\nSELECT 'NotCollected', 'PRIMARY', '', '', NULL, NULL, '연결된 대기(복제) 서버가 없습니다. 단독으로 운영하는 서버면 정상입니다.'\nWHERE NOT pg_is_in_recovery() AND NOT EXISTS (SELECT 1 FROM pg_stat_replication);",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_PROCESS_LIMIT",
     "name": "PostgreSQL 쿼리 · 세션·프로세스 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "SELECT CASE WHEN u.pct >= 90 THEN 'Critical' WHEN u.pct >= 70 THEN 'Warning' ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  u.sessions AS current_user_sessions, u.max_conn AS configured_max_connections, u.pct AS usage_percent\nFROM (\n  SELECT s.sessions, m.max_conn, round(100.0 * s.sessions / NULLIF(m.max_conn, 0), 2) AS pct\n  FROM (SELECT count(*) AS sessions FROM pg_stat_activity WHERE backend_type = 'client backend') s,\n       (SELECT current_setting('max_connections')::int - current_setting('superuser_reserved_connections')::int AS max_conn) m\n) u;"
+    "enabled": true,
+    "content": "SELECT CASE WHEN u.pct >= 90 THEN 'Critical' WHEN u.pct >= 70 THEN 'Warning' ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  u.sessions AS current_user_sessions, u.max_conn AS configured_max_connections, u.pct AS usage_percent\nFROM (\n  SELECT s.sessions, m.max_conn, round(100.0 * s.sessions / NULLIF(m.max_conn, 0), 2) AS pct\n  FROM (SELECT count(*) AS sessions FROM pg_stat_activity WHERE backend_type = 'client backend') s,\n       (SELECT current_setting('max_connections')::int - current_setting('superuser_reserved_connections')::int AS max_conn) m\n) u;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_ARCHIVE_MODE",
     "name": "PostgreSQL 쿼리 · 아카이브 모드 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "SELECT CASE WHEN current_setting('archive_mode') = 'off' THEN 'Warning'\n            WHEN a.last_failed_time IS NOT NULL AND (a.last_archived_time IS NULL OR a.last_failed_time > a.last_archived_time) THEN 'Warning'\n            ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  current_setting('archive_mode') AS \"archiveMode\",\n  a.archived_count AS \"archivedCount\",\n  a.failed_count AS \"failedCount\",\n  to_char(a.last_archived_time, 'YYYY-MM-DD HH24:MI:SS') AS \"lastArchivedAt\",\n  to_char(a.last_failed_time, 'YYYY-MM-DD HH24:MI:SS') AS \"lastFailedAt\"\nFROM pg_stat_archiver a;"
+    "enabled": true,
+    "content": "SELECT CASE WHEN current_setting('archive_mode') = 'off' THEN 'Warning'\n            WHEN a.last_failed_time IS NOT NULL AND (a.last_archived_time IS NULL OR a.last_failed_time > a.last_archived_time) THEN 'Warning'\n            ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  current_setting('archive_mode') AS \"archiveMode\",\n  a.archived_count AS \"archivedCount\",\n  a.failed_count AS \"failedCount\",\n  to_char(a.last_archived_time, 'YYYY-MM-DD HH24:MI:SS') AS \"lastArchivedAt\",\n  to_char(a.last_failed_time, 'YYYY-MM-DD HH24:MI:SS') AS \"lastFailedAt\"\nFROM pg_stat_archiver a;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_TRANSACTION_LOG",
     "name": "PostgreSQL 쿼리 · 트랜잭션 로그 사용률",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "-- WAL 폴더 크기를 max_wal_size와 비교합니다. (pg_ls_waldir는 superuser 또는 pg_monitor 권한 필요)\nSELECT CASE WHEN w.pct >= 150 THEN 'Critical' WHEN w.pct >= 100 THEN 'Warning' ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  w.wal_mb AS \"walSizeMB\", w.max_mb AS \"maxWalSizeMB\", w.pct AS \"usagePercent\"\nFROM (\n  SELECT round(sum(size) / 1048576.0, 2) AS wal_mb,\n         round(pg_size_bytes(current_setting('max_wal_size')) / 1048576.0, 2) AS max_mb,\n         round(100.0 * sum(size) / pg_size_bytes(current_setting('max_wal_size')), 2) AS pct\n  FROM pg_ls_waldir()\n) w;"
+    "enabled": true,
+    "content": "-- WAL 폴더 크기를 max_wal_size와 비교합니다. (pg_ls_waldir는 superuser 또는 pg_monitor 권한 필요)\nSELECT CASE WHEN w.pct >= 150 THEN 'Critical' WHEN w.pct >= 100 THEN 'Warning' ELSE 'Healthy' END AS \"__OPSBOX_STATUS\",\n  w.wal_mb AS \"walSizeMB\", w.max_mb AS \"maxWalSizeMB\", w.pct AS \"usagePercent\"\nFROM (\n  SELECT round(sum(size) / 1048576.0, 2) AS wal_mb,\n         round(pg_size_bytes(current_setting('max_wal_size')) / 1048576.0, 2) AS max_mb,\n         round(100.0 * sum(size) / pg_size_bytes(current_setting('max_wal_size')), 2) AS pct\n  FROM pg_ls_waldir()\n) w;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "POSTGRESQL-QUERY-DB_INSTANCE_STATUS",
     "name": "PostgreSQL 쿼리 · DB 인스턴스·접속 상태",
     "kind": "QUERY",
-    "enabled": true,
-    "updatedAt": "2026-11-21T00:00:00.000Z",
     "dbms": "PostgreSQL",
-    "content": "SELECT CASE WHEN d.datallowconn THEN 'Healthy' ELSE 'Warning' END AS \"__OPSBOX_STATUS\",\n  COALESCE(NULLIF(current_setting('cluster_name'), ''), host(inet_server_addr()), 'local') AS \"serverName\",\n  current_setting('server_version') AS \"version\",\n  'PostgreSQL' AS \"edition\",\n  d.datname AS \"databaseName\",\n  CASE WHEN d.datallowconn THEN 'ONLINE' ELSE 'NO CONNECT' END AS \"state\",\n  CASE WHEN pg_is_in_recovery() THEN 'STANDBY' ELSE 'PRIMARY' END AS \"recoveryModel\",\n  CASE WHEN has_database_privilege(d.datname, 'CONNECT') THEN round(pg_database_size(d.oid) / 1048576.0, 2) END AS \"dataSizeMB\"\nFROM pg_database d\nWHERE NOT d.datistemplate\nORDER BY d.datname;"
+    "enabled": true,
+    "content": "SELECT CASE WHEN d.datallowconn THEN 'Healthy' ELSE 'Warning' END AS \"__OPSBOX_STATUS\",\n  COALESCE(NULLIF(current_setting('cluster_name'), ''), host(inet_server_addr()), 'local') AS \"serverName\",\n  current_setting('server_version') AS \"version\",\n  'PostgreSQL' AS \"edition\",\n  d.datname AS \"databaseName\",\n  CASE WHEN d.datallowconn THEN 'ONLINE' ELSE 'NO CONNECT' END AS \"state\",\n  CASE WHEN pg_is_in_recovery() THEN 'STANDBY' ELSE 'PRIMARY' END AS \"recoveryModel\",\n  CASE WHEN has_database_privilege(d.datname, 'CONNECT') THEN round(pg_database_size(d.oid) / 1048576.0, 2) END AS \"dataSizeMB\"\nFROM pg_database d\nWHERE NOT d.datistemplate\nORDER BY d.datname;",
+    "updatedAt": "2026-11-21T00:00:00.000Z"
   },
   {
     "id": "WINDOWS-PART-SAVE",
@@ -658,8 +658,8 @@
     "item": "START",
     "usesQueryTemplate": false,
     "enabled": true,
-    "content": "param([string]$ResultDirectory)\n\n# 지원 범위: Windows Server 2012 이상, Windows PowerShell 3.0 이상(5.1 권장)\nif ($PSVersionTable.PSVersion.Major -lt 3) {\n  Write-Host \"[OpsBox] 이 점검 스크립트는 Windows PowerShell 3.0 이상이 필요합니다. 현재 버전: $($PSVersionTable.PSVersion)\"\n  Write-Host '[OpsBox] Windows Management Framework를 업데이트한 뒤 다시 실행하세요. 결과 파일은 만들지 않았습니다.'\n  exit 1\n}\n\n$ErrorActionPreference = 'Continue'\n$configJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('@@CONFIG_BASE64@@'))\n$opsboxConfig = ConvertFrom-Json -InputObject $configJson -ErrorAction Stop\n$opsboxRunStamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'\n$opsboxResultDirectory = if ([string]::IsNullOrWhiteSpace($ResultDirectory)) { Join-Path (Join-Path (Join-Path $opsboxConfig.server.sharedPath 'results') (Get-Date -Format 'yyyy')) $opsboxConfig.server.id } else { $ResultDirectory.Trim() }\n$opsboxResultPath = Join-Path $opsboxResultDirectory \"$opsboxRunStamp.json\"\n$opsboxResultDirectoryReady = $true\ntry { New-Item -ItemType Directory -Path $opsboxResultDirectory -Force -ErrorAction Stop | Out-Null } catch { $opsboxResultDirectoryReady = $false }\nfunction Write-OpsBoxLog {\n  param([string]$Message)\n  $logLine = \"[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $Message\"\n  Write-Host $logLine\n}\n\nWrite-OpsBoxLog '점검 스크립트 시작'\nWrite-OpsBoxLog \"결과 폴더: $opsboxResultDirectory (접근 가능=$opsboxResultDirectoryReady)\"\n$hostname = $env:COMPUTERNAME\n$osName = $null\n$osVersion = $null\n$checkDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'\n$hostInfoStatus = 'NotCollected'\n$uptimeMinutes = $null\n$uptimeParts = $null\n$uptimeStatus = 'NotCollected'\n$cpu = $null\n$cpuStatus = 'NotCollected'\n$memory = $null\n$memoryStatus = 'NotCollected'\n$disk = $null\n$diskStatus = 'NotCollected'\n$disks = @()\n$processes = @()\n$directories = @()\n$fileChecks = @()\n$portChecks = @()\n$httpChecks = @()\n$wasChecks = @()\n$webCheck = $null\n$databaseChecks = $null\n$rolePolicyResults = @()\n",
-    "updatedAt": "2026-11-18T00:00:00Z"
+    "content": "param([string]$ResultDirectory)\n\n# 지원 범위: Windows Server 2012 이상, Windows PowerShell 3.0 이상(5.1 권장)\nif ($PSVersionTable.PSVersion.Major -lt 3) {\n  Write-Host \"[OpsBox] 이 점검 스크립트는 Windows PowerShell 3.0 이상이 필요합니다. 현재 버전: $($PSVersionTable.PSVersion)\"\n  Write-Host '[OpsBox] Windows Management Framework를 업데이트한 뒤 다시 실행하세요. 결과 파일은 만들지 않았습니다.'\n  exit 1\n}\n\n$ErrorActionPreference = 'Continue'\n$configJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('@@CONFIG_BASE64@@'))\n$opsboxConfig = ConvertFrom-Json -InputObject $configJson -ErrorAction Stop\n$opsboxRunStamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'\n# 결과 폴더: 매개변수 → OpsBox에서 정한 결과 저장 경로 → 스크립트 폴더 (하위 폴더를 만들지 않고 바로 아래에 저장)\n$opsboxResultDirectory = if (-not [string]::IsNullOrWhiteSpace($ResultDirectory)) { $ResultDirectory.Trim() } elseif (-not [string]::IsNullOrWhiteSpace([string]$opsboxConfig.server.resultDirectory)) { [string]$opsboxConfig.server.resultDirectory } else { $PSScriptRoot }\n$opsboxResultPath = Join-Path $opsboxResultDirectory \"$($opsboxConfig.server.id)_$opsboxRunStamp.json\"\n$opsboxResultDirectoryReady = $true\ntry { New-Item -ItemType Directory -Path $opsboxResultDirectory -Force -ErrorAction Stop | Out-Null } catch { $opsboxResultDirectoryReady = $false }\nfunction Write-OpsBoxLog {\n  param([string]$Message)\n  $logLine = \"[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $Message\"\n  Write-Host $logLine\n}\n\nWrite-OpsBoxLog '점검 스크립트 시작'\nWrite-OpsBoxLog \"결과 폴더: $opsboxResultDirectory (접근 가능=$opsboxResultDirectoryReady)\"\n$hostname = $env:COMPUTERNAME\n$osName = $null\n$osVersion = $null\n$checkDate = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'\n$hostInfoStatus = 'NotCollected'\n$uptimeMinutes = $null\n$uptimeParts = $null\n$uptimeStatus = 'NotCollected'\n$cpu = $null\n$cpuStatus = 'NotCollected'\n$memory = $null\n$memoryStatus = 'NotCollected'\n$disk = $null\n$diskStatus = 'NotCollected'\n$disks = @()\n$processes = @()\n$directories = @()\n$fileChecks = @()\n$portChecks = @()\n$httpChecks = @()\n$wasChecks = @()\n$webCheck = $null\n$databaseChecks = $null\n$rolePolicyResults = @()\n",
+    "updatedAt": "2026-11-22T00:00:00.000Z"
   },
   {
     "id": "WINDOWS-PART-WAS_DEPLOYMENT",

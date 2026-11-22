@@ -3,13 +3,6 @@
   "name": "대민 포털 WEB #2",
   "os": "Linux",
   "ip": "10.10.1.12",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "WEB"
-  ],
-  "products": {
-    "WEB": "Nginx"
-  },
   "processes": [
     {
       "name": "nginx"
@@ -53,9 +46,11 @@
       "expectedStatus": 200
     }
   ],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "WEB": "linux-web-default"
+  "roles": [
+    "WEB"
+  ],
+  "products": {
+    "WEB": "Nginx"
   },
   "scriptParts": {
     "WEB_WAS_CONNECTION": "LINUX-PART-WEB_WAS_CONNECTION",
@@ -78,5 +73,9 @@
       "periodDays": 7
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WEB": "linux-web-default"
+  }
 }

@@ -3,13 +3,6 @@
   "name": "통계 DB (MariaDB)",
   "os": "Linux",
   "ip": "10.10.4.43",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "DB"
-  ],
-  "products": {
-    "DB": "MariaDB"
-  },
   "processes": [
     {
       "name": "mariadbd"
@@ -31,9 +24,11 @@
     }
   ],
   "httpChecks": [],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "DB": "linux-db-default"
+  "roles": [
+    "DB"
+  ],
+  "products": {
+    "DB": "MariaDB"
   },
   "scriptParts": {},
   "roleChecks": {
@@ -98,5 +93,9 @@
       "dbms": "MSSQL"
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "DB": "linux-db-default"
+  }
 }

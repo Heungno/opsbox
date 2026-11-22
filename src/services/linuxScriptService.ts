@@ -176,14 +176,14 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
     role: 'BASIC', item, name, result, executorType, status: 'NotCollected', message: BASIC_NOT_COLLECTED_MESSAGE,
   }));
 
-  // 공유 폴더는 Linux에서 쓸 수 있는 경로(/로 시작)일 때만 기본 결과 폴더로 씁니다.
+  // 결과 저장 폴더는 Linux 경로(/로 시작)일 때만 씁니다. 없으면 스크립트 폴더에 저장합니다.
   // (\\NAS\share 같은 Windows 경로는 Linux 서버에서 바로 쓸 수 없음)
-  const sharedPath = server.sharedPath?.startsWith('/') ? server.sharedPath : '';
+  const resultDirectory = config.server.resultDirectory?.startsWith('/') ? config.server.resultDirectory : '';
 
   return [
     '# ---- OpsBox 설정 (스크립트 생성 시 자동으로 채워짐) ----',
     scalar('OPSBOX_SERVER_ID', server.id),
-    scalar('OPSBOX_SHARED_PATH', sharedPath),
+    scalar('OPSBOX_RESULT_DIR', resultDirectory),
     scalar('OPSBOX_PRODUCT_WEB', products.WEB ?? ''),
     scalar('OPSBOX_PRODUCT_WAS', products.WAS ?? ''),
     scalar('OPSBOX_PRODUCT_DB', products.DB ?? ''),

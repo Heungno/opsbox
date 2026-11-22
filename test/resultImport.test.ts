@@ -10,12 +10,12 @@ import { activateServer, createServer, deactivateServer } from '../src/features/
 import { importResults, storeUploadedResult } from '../src/features/results/importer';
 import { decryptBackup } from '../src/features/results/backup-crypto';
 
-const shared = makeDir('share');
-const inbox = path.join(shared, 'results');
-fs.mkdirSync(inbox);
+// 수신함: OPSBOX_RESULT_INBOX (가져오기를 실행할 때 읽음)
+const inbox = makeDir('inbox');
+process.env.OPSBOX_RESULT_INBOX = inbox;
 
 for (const id of ['SRV-A', 'SRV-B']) {
-  createServer({ id, name: id, type: 'WEB', roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.1', sharedPath: shared } as any);
+  createServer({ id, name: id, roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.1' } as any);
 }
 
 function result(serverId: string, collectedAt: string, extra: Record<string, unknown> = {}) {
@@ -34,7 +34,7 @@ function rows() {
   return db.prepare('SELECT server_id, file_name, check_date, backup_path FROM check_results ORDER BY id').all() as Array<Record<string, string>>;
 }
 
-test('수신함 바로 아래 파일은 파일 안의 서버 ID로 가져오고, 백업은 점검 연도/서버 폴더로 정리한다', () => {
+test('수신함의 파일은 파일 안의 서버 ID로 가져오고, 백업은 점검 연도/서버 폴더로 정리한다', () => {
   fs.writeFileSync(path.join(inbox, 'anything.json'), result('SRV-A', '2025-12-31 23:00:00'));
   const summary = importResults();
   assert.equal(summary.imported, 1);
@@ -45,25 +45,6 @@ test('수신함 바로 아래 파일은 파일 안의 서버 ID로 가져오고,
   assert.equal(row.backup_path, path.join(TEST_ROOT, 'backup', '2025', 'SRV-A', 'anything.json.enc'));
   assert.equal(JSON.parse(decryptBackup(fs.readFileSync(row.backup_path)).toString()).server.id, 'SRV-A');
   assert.equal(fs.existsSync(path.join(inbox, 'anything.json')), false, '가져온 원본은 지운다');
-});
-
-test('이전 방식 폴더(results/<연도>/<서버ID>/)도 읽는다', () => {
-  const legacy = path.join(inbox, '2026', 'SRV-B');
-  fs.mkdirSync(legacy, { recursive: true });
-  fs.writeFileSync(path.join(legacy, 'b.json'), result('SRV-B', '2026-01-02 03:04:05'));
-  assert.equal(importResults().imported, 1);
-  assert.equal(rows().at(-1)?.server_id, 'SRV-B');
-});
-
-test('폴더 이름과 파일 안의 서버 ID가 다르면 가져오지 않고 원본을 남긴다', () => {
-  const wrong = path.join(inbox, '2026', 'SRV-B');
-  fs.writeFileSync(path.join(wrong, 'wrong.json'), result('SRV-A', '2026-02-02 00:00:00'));
-  const summary = importResults();
-  assert.equal(summary.imported, 0);
-  assert.equal(summary.failed, 1);
-  assert.match(summary.errors[0].message, /폴더\(SRV-B\)와 다릅니다/);
-  assert.ok(fs.existsSync(path.join(wrong, 'wrong.json')));
-  fs.rmSync(path.join(wrong, 'wrong.json'));
 });
 
 test('등록되지 않은 서버나 서버 ID 없는 파일은 가져오지 않는다', () => {

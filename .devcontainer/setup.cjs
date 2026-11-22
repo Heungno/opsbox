@@ -11,10 +11,10 @@ const seededMarker = path.join(sharePath, '.seeded');
 // 테스트 계정·샘플 서버 (OpsBox 서비스로 만듦)
 fs.mkdirSync(sharePath, { recursive: true });
 const tsxCli = path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-const seed = spawnSync(process.execPath, [tsxCli, path.join(__dirname, 'seed.ts'), sharePath], { cwd: root, stdio: 'inherit' });
+const seed = spawnSync(process.execPath, [tsxCli, path.join(__dirname, 'seed.ts')], { cwd: root, stdio: 'inherit' });
 if (seed.status !== 0) process.exit(seed.status ?? 1);
 
-// 샘플 점검 결과를 공유 폴더의 results/ 에 한 번만 복사합니다.
+// 샘플 점검 결과를 수신함(.devcontainer/sample-share/results, devcontainer.json의 OPSBOX_RESULT_INBOX)에 한 번만 복사합니다.
 // OpsBox가 가져가면(DB 저장 + 암호화 백업) 원본은 지워지므로 Git 추적 폴더와 분리합니다.
 if (!fs.existsSync(seededMarker) && fs.existsSync(sampleResults)) {
   fs.cpSync(sampleResults, path.join(sharePath, 'results'), { recursive: true, preserveTimestamps: true });

@@ -22,6 +22,7 @@ export const AUDIT_ACTIONS: AuditActionOption[] = [
   { value: 'SERVER_DEACTIVATE', label: '서버 미사용', targetType: 'SERVER' },
   { value: 'SERVER_ACTIVATE', label: '서버 다시 사용', targetType: 'SERVER' },
   { value: 'SERVER_CHECK_CONFIG_UPDATE', label: '서버 점검 정책 저장', targetType: 'SERVER' },
+  { value: 'SETTINGS_UPDATE', label: '설정 변경', targetType: 'SETTINGS' },
   { value: 'POLICY_CREATE', label: '점검 정책 추가', targetType: 'POLICY' },
   { value: 'POLICY_UPDATE', label: '점검 정책 수정', targetType: 'POLICY' },
   { value: 'POLICY_DELETE', label: '점검 정책 삭제', targetType: 'POLICY' },

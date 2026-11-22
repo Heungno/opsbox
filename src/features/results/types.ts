@@ -165,6 +165,8 @@ export interface PendingImportError {
 
 export interface ImportStatus {
   running: boolean;
+  /** 수신함 폴더 (OPSBOX_RESULT_INBOX) */
+  inboxes: string[];
   lastRun: ImportSummary | null;
   totalResults: number;
   pendingErrors: PendingImportError[];

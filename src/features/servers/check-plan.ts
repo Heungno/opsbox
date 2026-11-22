@@ -52,7 +52,7 @@ export function resolveServer(record: ServerRecord, context: PlanContext): Serve
     name: record.name,
     os: record.os,
     ip: record.ip,
-    sharedPath: record.sharedPath,
+    ...(record.resultPath ? { resultPath: record.resultPath } : {}),
     enabled: record.enabled,
     processes: stored.processes ?? [],
     directories: stored.directories ?? [],

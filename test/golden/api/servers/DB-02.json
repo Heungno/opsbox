@@ -3,13 +3,6 @@
   "name": "민원 DB (PostgreSQL)",
   "os": "Linux",
   "ip": "10.10.4.42",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "DB"
-  ],
-  "products": {
-    "DB": "PostgreSQL"
-  },
   "processes": [
     {
       "name": "postgres"
@@ -29,9 +22,11 @@
     }
   ],
   "httpChecks": [],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "DB": "linux-db-default"
+  "roles": [
+    "DB"
+  ],
+  "products": {
+    "DB": "PostgreSQL"
   },
   "scriptParts": {},
   "roleChecks": {
@@ -96,5 +91,9 @@
       "dbms": "MSSQL"
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "DB": "linux-db-default"
+  }
 }

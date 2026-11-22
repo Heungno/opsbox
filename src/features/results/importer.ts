@@ -3,7 +3,8 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 
 import { transaction } from '../../db';
-import { getAllServers, getServer } from '../servers/service';
+import { getServer } from '../servers/service';
+import { getInboxDirs } from '../settings/service';
 import { getHealthStatus, parseResultJson } from './service';
 import { clearImportError, countResults, findBackupPathByHash, hasSameImportError, insertResult, listImportErrors, recordImportError, updateBackupPath } from './repository';
 import { writeEncryptedBackup } from './backup-crypto';
@@ -15,11 +16,9 @@ import type { ImportStatus, ImportSummary } from './types';
 /*
  * 점검 결과 가져오기
  *
- * 공유 폴더의 <sharedPath>/results/ 는 "수신함"입니다.
- *   - 그 아래 어디에 있든(.json) 파일을 찾고, 파일 안의 서버 ID로 어느 서버 결과인지 정합니다.
- *     점검자는 파일을 results/ 에 그냥 넣으면 됩니다.
- *   - 예전 구조 results/<연도>/<서버ID>/ 도 그대로 읽습니다. 이때 폴더의 서버 ID와
- *     파일 안의 서버 ID가 다르면 잘못 넣은 것으로 보고 가져오지 않습니다.
+ * 수신함은 OPSBOX_RESULT_INBOX(여러 개는 ; 구분, 기본 data/inbox)의 폴더입니다.
+ *   - 각 수신함 바로 아래의 .json 파일만 읽습니다(하위 폴더는 읽지 않음).
+ *   - 어느 서버의 결과인지는 파일 안의 서버 ID로 정합니다.
  *
  * 가져온 파일은
  *   1) DB(check_results)에 저장하고
@@ -40,50 +39,19 @@ const MIN_FILE_AGE_MS = Number(process.env.OPSBOX_IMPORT_MIN_AGE_SECONDS ?? 10) 
 let running = false;
 let lastSummary: ImportSummary | undefined;
 
-const MAX_SCAN_DEPTH = 3; // results/ → <연도>/ → <서버ID>/
-
 interface InboxFile {
   fullPath: string;
   fileName: string;
-  /** 예전 구조(results/<연도>/<서버ID>/)에 있을 때의 폴더 정보 */
-  folderYear?: string;
-  folderServerId?: string;
 }
 
-/** 여러 서버가 같은 공유 폴더를 쓰면 수신함을 한 번만 읽도록 경로를 모읍니다. */
-function inboxRoots(): string[] {
-  const roots = new Set<string>();
-  // 미사용 서버의 폴더도 읽어, 그 서버의 결과는 '미사용 서버' 오류로 알립니다.
-  for (const server of getAllServers({ includeInactive: true })) {
-    if (server.sharedPath?.trim()) roots.add(path.resolve(server.sharedPath.trim(), 'results'));
-  }
-  return [...roots];
-}
-
+/** 수신함 바로 아래의 .json 파일 (수신함 폴더가 없으면 만듭니다) */
 function listInboxFiles(root: string): InboxFile[] {
-  if (!fs.existsSync(root)) return [];
-  const files: InboxFile[] = [];
-  const walk = (folder: string, parts: string[]) => {
-    for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
-      if (entry.name.startsWith('.')) continue;
-      const fullPath = path.join(folder, entry.name);
-      if (entry.isDirectory() && parts.length < MAX_SCAN_DEPTH - 1) {
-        walk(fullPath, [...parts, entry.name]);
-      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
-        const legacy = parts.length === 2 && /^\d{4}$/.test(parts[0]);
-        files.push({
-          fullPath,
-          fileName: entry.name,
-          folderYear: legacy ? parts[0] : undefined,
-          folderServerId: legacy ? parts[1] : undefined,
-        });
-      }
-    }
-  };
-  walk(root, []);
-  return files.sort((a, b) => a.fileName.localeCompare(b.fileName));
+  fs.mkdirSync(root, { recursive: true });
+  return fs.readdirSync(root, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && !entry.name.startsWith('.') && entry.name.toLowerCase().endsWith('.json'))
+    .map((entry) => ({ fullPath: path.join(root, entry.name), fileName: entry.name }))
+    .sort((x, y) => x.fileName.localeCompare(y.fileName));
 }
-
 
 function numberOrNull(value: unknown) {
   const number = Number(value);
@@ -96,9 +64,8 @@ function serverIdInResult(parsed: { server?: unknown }): string {
 }
 
 /** 백업 폴더의 연도는 파일 안의 점검 일시에서 정합니다. */
-function resultYear(checkDate: unknown, fallback?: string): string {
-  const match = /^(\d{4})/.exec(String(checkDate ?? ''));
-  return match?.[1] ?? fallback ?? String(new Date().getFullYear());
+function resultYear(checkDate: string): string {
+  return checkDate.slice(0, 4);
 }
 
 /** 경로 구분자 등을 제거해 백업·DB에 안전하게 쓸 파일 이름으로 만듭니다. */
@@ -110,15 +77,15 @@ function safeFileName(fileName: string): string {
 interface StoredResult {
   serverId: string;
   fileName: string;
-  checkDate: string | null;
+  checkDate: string;
   outcome: 'imported' | 'duplicate';
 }
 
 /**
  * 결과 한 건을 검증해 DB에 저장하고 암호화 백업을 만듭니다. (원본 삭제는 호출한 쪽에서)
- * 서버를 알 수 없거나 폴더와 내용이 맞지 않으면 예외를 던집니다.
+ * 서버를 알 수 없으면 예외를 던집니다. fallbackServerId: 파일에 서버 ID가 없을 때 쓸 ID(서버 화면에서 올린 경우)
  */
-function storeResult(content: Buffer, originalName: string, hint: { folderYear?: string; folderServerId?: string } = {}): StoredResult {
+function storeResult(content: Buffer, originalName: string, fallbackServerId?: string): StoredResult {
   const text = content.toString('utf8');
   const parsed = parseResultJson(text); // JSON 형식 오류면 여기서 예외
   if (parsed.schemaVersion !== 2) throw new Error('지원하지 않는 결과 형식입니다(schemaVersion 2만 지원). 최신 점검 스크립트로 다시 점검하세요.');
@@ -126,17 +93,14 @@ function storeResult(content: Buffer, originalName: string, hint: { folderYear?:
   const checkDate = String(parsed.checkDate);
   const contentServerId = serverIdInResult(parsed);
 
-  if (hint.folderServerId && contentServerId && contentServerId !== hint.folderServerId) {
-    throw new Error(`파일 안의 서버 ID(${contentServerId})가 폴더(${hint.folderServerId})와 다릅니다. 올바른 서버의 결과인지 확인하세요.`);
-  }
-  const serverId = contentServerId || hint.folderServerId || '';
+  const serverId = contentServerId || fallbackServerId || '';
   if (!serverId) throw new Error('파일에 서버 ID가 없습니다. OpsBox에서 내려받은 점검 스크립트의 결과 파일인지 확인하세요.');
   const server = getServer(serverId);
   if (!server) throw new Error(`등록되지 않은 서버 ID입니다: ${serverId}. 서버 관리에서 서버를 먼저 등록하세요.`);
   if (!server.enabled) throw new Error(`미사용 서버의 결과입니다: ${serverId}. 서버 목록에서 [다시 사용]을 누른 뒤 가져오세요.`);
 
   const fileName = safeFileName(originalName);
-  const year = resultYear(checkDate, hint.folderYear);
+  const year = resultYear(checkDate);
   const hash = createHash('sha256').update(content).digest('hex');
   const exists = findBackupPathByHash(hash);
 
@@ -168,7 +132,7 @@ function storeResult(content: Buffer, originalName: string, hint: { folderYear?:
 }
 
 function importInboxFile(file: InboxFile): StoredResult {
-  const stored = storeResult(fs.readFileSync(file.fullPath), file.fileName, file);
+  const stored = storeResult(fs.readFileSync(file.fullPath), file.fileName);
   // 3) 수신함의 원본 삭제
   fs.unlinkSync(file.fullPath);
   clearImportError(file.fullPath);
@@ -190,7 +154,7 @@ export function storeUploadedResult(content: Buffer, originalName: string, expec
         throw new Error(`이 파일은 ${contentServerId} 서버의 결과입니다. ${expectedServerId} 서버 화면에서는 올릴 수 없습니다.`);
       }
     }
-    stored = storeResult(content, originalName, { folderServerId: expectedServerId });
+    stored = storeResult(content, originalName, expectedServerId);
   } catch (error) {
     if (error instanceof SyntaxError) throw new BadRequestError('JSON 형식이 아닙니다. OpsBox 점검 스크립트가 만든 결과 파일인지 확인하세요.');
     if (error instanceof BadRequestError) throw error;
@@ -213,13 +177,13 @@ export function importResults(): ImportSummary {
     errors: [],
   };
   try {
-    for (const root of inboxRoots()) {
+    for (const root of getInboxDirs()) {
       let files: InboxFile[] = [];
       try {
         files = listInboxFiles(root);
       } catch (error) {
         summary.failed++;
-        summary.errors.push({ file: root, message: `공유 폴더를 읽을 수 없습니다: ${(error as Error).message}` });
+        summary.errors.push({ file: root, message: `수신함 폴더를 읽을 수 없습니다: ${(error as Error).message}` });
         continue;
       }
       for (const file of files) {
@@ -237,7 +201,7 @@ export function importResults(): ImportSummary {
           const repeated = hasSameImportError(file.fullPath, message);
           summary.failed++;
           summary.errors.push({ file: file.fullPath, message, repeated });
-          recordImportError(file.fullPath, file.folderServerId ?? null, message);
+          recordImportError(file.fullPath, null, message);
         }
       }
     }
@@ -250,7 +214,7 @@ export function importResults(): ImportSummary {
 }
 
 export function getImportStatus(): ImportStatus {
-  return { running, lastRun: lastSummary ?? null, totalResults: countResults(), pendingErrors: listImportErrors() };
+  return { running, inboxes: getInboxDirs(), lastRun: lastSummary ?? null, totalResults: countResults(), pendingErrors: listImportErrors() };
 }
 
 /** 가져오기 결과를 애플리케이션 로그와 감사 로그에 남깁니다. */

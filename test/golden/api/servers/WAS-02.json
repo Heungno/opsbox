@@ -3,13 +3,6 @@
   "name": "민원 처리 WAS",
   "os": "Linux",
   "ip": "10.10.2.22",
-  "sharedPath": "/mnt/opsbox",
-  "roles": [
-    "WAS"
-  ],
-  "products": {
-    "WAS": "Apache Tomcat"
-  },
   "processes": [
     {
       "name": "java"
@@ -40,9 +33,11 @@
       "expectedStatus": 200
     }
   ],
-  "policyIds": {
-    "BASIC": "linux-basic-default",
-    "WAS": "linux-was-default"
+  "roles": [
+    "WAS"
+  ],
+  "products": {
+    "WAS": "Apache Tomcat"
   },
   "scriptParts": {
     "WAS_THREAD_POOL": "LINUX-PART-WAS_THREAD_POOL",
@@ -73,5 +68,9 @@
       "periodDays": 7
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "linux-basic-default",
+    "WAS": "linux-was-default"
+  }
 }

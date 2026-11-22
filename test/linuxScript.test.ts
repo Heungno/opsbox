@@ -18,7 +18,7 @@ const scriptDir = makeDir('scripts');
 const marker = path.join(TEST_ROOT, 'injected');
 
 createServer({
-  id: 'LNX-01', name: '리눅스 서버', type: 'WEB', roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', sharedPath: shared,
+  id: 'LNX-01', name: '리눅스 서버', type: 'WEB', roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', resultPath: path.join(shared, 'results'),
   policyIds: { BASIC: 'linux-basic-default' }, roleChecks: { WEB: ['WEB_ENGINE_STATUS'] },
   processes: [{ name: 'node' }, { name: "no-such-proc's" }, { name: `$(touch ${marker})` }],
   directories: [{ path: os.tmpdir() }, { path: '/no/such dir' }],
@@ -52,7 +52,7 @@ test('생성된 스크립트는 bash로 시작하고 문법 오류가 없다', {
   execFileSync('bash', ['-n', scriptPath]);
 });
 
-test('bash로 실행하면 공유 폴더 results에 OpsBox가 읽을 수 있는 결과를 저장한다', { skip: !isLinux }, () => {
+test('bash로 실행하면 결과 저장 경로에 OpsBox가 읽을 수 있는 결과를 저장한다', { skip: !isLinux }, () => {
   const { saved, json } = runScript('bash');
   assert.equal(path.dirname(saved), path.join(shared, 'results'));
   assert.match(path.basename(saved), /^LNX-01_\d{8}_\d{6}\.json$/);

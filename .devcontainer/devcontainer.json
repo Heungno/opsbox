@@ -2,17 +2,31 @@
   "name": "OpsBox 테스트",
   "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    }
   },
   "postCreateCommand": "npm install && node .devcontainer/setup.cjs",
   "postAttachCommand": {
     "opsbox": "git pull --ff-only || true; npm install --no-audit --no-fund >/dev/null; node .devcontainer/setup.cjs; npm run dev"
   },
-  "forwardPorts": [3000],
+  "remoteEnv": {
+    "OPSBOX_RESULT_INBOX": ".devcontainer/sample-share/results"
+  },
+  "forwardPorts": [
+    3000
+  ],
   "portsAttributes": {
-    "3000": { "label": "OpsBox", "onAutoForward": "openBrowser" }
+    "3000": {
+      "label": "OpsBox",
+      "onAutoForward": "openBrowser"
+    }
   },
   "customizations": {
-    "codespaces": { "openFiles": [".devcontainer/README.md"] }
+    "codespaces": {
+      "openFiles": [
+        ".devcontainer/README.md"
+      ]
+    }
   }
 }

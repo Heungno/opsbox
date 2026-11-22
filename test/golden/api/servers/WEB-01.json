@@ -3,13 +3,6 @@
   "name": "대민 포털 WEB #1",
   "os": "Windows",
   "ip": "10.10.1.11",
-  "sharedPath": "\\\\fileserver\\opsbox",
-  "roles": [
-    "WEB"
-  ],
-  "products": {
-    "WEB": "WebtoB"
-  },
   "processes": [
     {
       "name": "wsm"
@@ -54,9 +47,11 @@
       "expectedStatus": 200
     }
   ],
-  "policyIds": {
-    "BASIC": "windows-basic-default",
-    "WEB": "windows-web-default"
+  "roles": [
+    "WEB"
+  ],
+  "products": {
+    "WEB": "WebtoB"
   },
   "scriptParts": {
     "HOST_INFO": "WINDOWS-PART-HOST_INFO",
@@ -89,5 +84,9 @@
       "periodDays": 7
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default",
+    "WEB": "windows-web-default"
+  }
 }

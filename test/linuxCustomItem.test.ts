@@ -44,7 +44,7 @@ saveTemplate({
 saveTemplate({ name: '기록하지 않는 조각', kind: 'SCRIPT_PART', os: 'Linux', item: SILENT, enabled: true, content: 'opsbox_log "아무것도 기록하지 않음"' } as any);
 
 createServer({
-  id: 'LNX-CUSTOM', name: '사용자 항목 서버', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.30', sharedPath: '',
+  id: 'LNX-CUSTOM', name: '사용자 항목 서버', type: 'OTHER', roles: ['OTHER'], os: 'Linux', ip: '10.0.0.30',
   policyIds: { BASIC: 'linux-basic-default' }, processes: [], directories: [],
 } as any);
 // 서버 상세의 점검 설정 저장과 같은 경로로 서버별 입력을 저장

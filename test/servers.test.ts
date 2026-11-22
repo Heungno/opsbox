@@ -10,7 +10,7 @@ import { deletePolicy, savePolicy } from '../src/features/policies/service';
 import { activateServer, createServer, deactivateServer, getAllServers, getCheckConfig, getServer, updateCheckConfig } from '../src/features/servers/service';
 import { generateScript } from '../src/services/scriptService';
 
-const webServer = (id: string) => ({ id, name: id, roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', sharedPath: '', processes: [], directories: [] } as any);
+const webServer = (id: string) => ({ id, name: id, roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', processes: [], directories: [] } as any);
 
 let cookie = '';
 before(async () => {

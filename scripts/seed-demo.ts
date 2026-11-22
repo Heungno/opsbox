@@ -65,7 +65,8 @@ interface DemoServer {
   ip: string;
   roles: Role[];
   products: Partial<Record<Role, string>>;
-  sharedPath?: string;
+  /** 이 서버만 다른 결과 저장 경로 (없으면 OS별 기본값) */
+  resultPath?: string;
   processes: { name: string }[];
   directories: { path: string; warningPercent?: number; criticalPercent?: number }[];
   fileChecks: { path: string; warningSizeMB: number; criticalSizeMB: number }[];
@@ -84,7 +85,7 @@ interface DemoServer {
 const SERVERS: DemoServer[] = [
   {
     id: 'WEB-01', name: '대민 포털 WEB #1', os: 'Windows', osName: 'Microsoft Windows Server 2019 Standard', osVersion: '10.0.17763', ip: '10.10.1.11',
-    roles: ['WEB'], products: { WEB: 'WebtoB' }, sharedPath: '\\\\fileserver\\opsbox',
+    roles: ['WEB'], products: { WEB: 'WebtoB' },
     processes: [{ name: 'wsm' }, { name: 'htl' }, { name: 'hth' }], directories: [{ path: 'D:\\WebtoB\\log', warningPercent: 70, criticalPercent: 90 }],
     fileChecks: [{ path: 'D:\\WebtoB\\config\\http.m', warningSizeMB: 1, criticalSizeMB: 5 }],
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }, { port: 443, protocol: 'TCP', description: 'HTTPS' }],
@@ -99,7 +100,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'WEB-02', name: '대민 포털 WEB #2', os: 'Linux', osName: 'Rocky Linux', osVersion: '9.4 (Blue Onyx)', ip: '10.10.1.12',
-    roles: ['WEB'], products: { WEB: 'Nginx' }, sharedPath: '/mnt/opsbox',
+    roles: ['WEB'], products: { WEB: 'Nginx' },
     processes: [{ name: 'nginx' }], directories: [{ path: '/var/log/nginx', warningPercent: 70, criticalPercent: 90 }],
     fileChecks: [{ path: '/etc/nginx/nginx.conf', warningSizeMB: 1, criticalSizeMB: 2 }],
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }, { port: 443, protocol: 'TCP', description: 'HTTPS' }],
@@ -114,7 +115,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'WEB-03', name: '내부 업무 WEB', os: 'Linux', osName: 'Red Hat Enterprise Linux', osVersion: '8.10 (Ootpa)', ip: '10.10.1.13',
-    roles: ['WEB'], products: { WEB: 'Apache HTTP Server' }, sharedPath: '/mnt/opsbox',
+    roles: ['WEB'], products: { WEB: 'Apache HTTP Server' },
     processes: [{ name: 'httpd' }], directories: [{ path: '/var/log/httpd' }], fileChecks: [],
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }], httpChecks: [{ name: '업무 포털', url: 'http://intra.example.local/', expectedStatus: 200 }],
     logDirectories: { WEB_LOG: ['/var/log/httpd'] },
@@ -122,7 +123,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'WAS-01', name: '대민 포털 WAS #1', os: 'Windows', osName: 'Microsoft Windows Server 2022 Standard', osVersion: '10.0.20348', ip: '10.10.2.21',
-    roles: ['WAS'], products: { WAS: 'JEUS' }, sharedPath: '\\\\fileserver\\opsbox',
+    roles: ['WAS'], products: { WAS: 'JEUS' },
     processes: [{ name: 'java' }], directories: [{ path: 'E:\\jeus\\logs' }], fileChecks: [],
     ports: [{ port: 9736, protocol: 'TCP', description: 'JEUS 관리' }, { port: 8088, protocol: 'TCP', description: 'JEUS HTTP' }],
     httpChecks: [{ name: '업무 API', url: 'http://10.10.2.21:8088/api/health', expectedStatus: 200 }],
@@ -133,7 +134,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'WAS-02', name: '민원 처리 WAS', os: 'Linux', osName: 'Rocky Linux', osVersion: '9.4 (Blue Onyx)', ip: '10.10.2.22',
-    roles: ['WAS'], products: { WAS: 'Apache Tomcat' }, sharedPath: '/mnt/opsbox',
+    roles: ['WAS'], products: { WAS: 'Apache Tomcat' },
     processes: [{ name: 'java' }], directories: [{ path: '/opt/tomcat/logs' }], fileChecks: [],
     ports: [{ port: 8080, protocol: 'TCP', description: 'Tomcat HTTP' }, { port: 8005, protocol: 'TCP', description: 'Tomcat 종료 포트' }],
     httpChecks: [{ name: '민원 API', url: 'http://10.10.2.22:8080/minwon/health', expectedStatus: 200 }],
@@ -148,7 +149,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'APP-01', name: '통계 서비스 (WEB+WAS)', os: 'Linux', osName: 'Ubuntu', osVersion: '22.04.4 LTS (Jammy Jellyfish)', ip: '10.10.3.31',
-    roles: ['WEB', 'WAS'], products: { WEB: 'Nginx', WAS: 'Node.js' }, sharedPath: '/mnt/opsbox',
+    roles: ['WEB', 'WAS'], products: { WEB: 'Nginx', WAS: 'Node.js' },
     processes: [{ name: 'nginx' }, { name: 'node' }], directories: [{ path: '/srv/stat/logs' }], fileChecks: [],
     ports: [{ port: 443, protocol: 'TCP', description: 'HTTPS' }, { port: 3000, protocol: 'TCP', description: 'Node.js 앱' }],
     httpChecks: [{ name: '통계 대시보드', url: 'https://stat.example.go.kr/', expectedStatus: 200 }],
@@ -161,7 +162,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'DB-01', name: '포털 DB (MSSQL)', os: 'Windows', osName: 'Microsoft Windows Server 2019 Datacenter', osVersion: '10.0.17763', ip: '10.10.4.41',
-    roles: ['DB'], products: { DB: 'MSSQL' }, sharedPath: '\\\\fileserver\\opsbox',
+    roles: ['DB'], products: { DB: 'MSSQL' },
     processes: [{ name: 'sqlservr' }, { name: 'SQLAGENT' }], directories: [{ path: 'F:\\MSSQL\\Backup', warningPercent: 75, criticalPercent: 90 }], fileChecks: [],
     ports: [{ port: 1433, protocol: 'TCP', description: 'MSSQL' }], httpChecks: [],
     dbTargets: ['10.10.4.41,1433'],
@@ -174,7 +175,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'DB-02', name: '민원 DB (PostgreSQL)', os: 'Linux', osName: 'Rocky Linux', osVersion: '9.4 (Blue Onyx)', ip: '10.10.4.42',
-    roles: ['DB'], products: { DB: 'PostgreSQL' }, sharedPath: '/mnt/opsbox',
+    roles: ['DB'], products: { DB: 'PostgreSQL' },
     processes: [{ name: 'postgres' }], directories: [{ path: '/var/lib/pgsql/16/data' }], fileChecks: [],
     ports: [{ port: 5432, protocol: 'TCP', description: 'PostgreSQL' }], httpChecks: [],
     dbTargets: ['localhost:5432/minwon'],
@@ -184,7 +185,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'DB-03', name: '통계 DB (MariaDB)', os: 'Linux', osName: 'Ubuntu', osVersion: '22.04.4 LTS (Jammy Jellyfish)', ip: '10.10.4.43',
-    roles: ['DB'], products: { DB: 'MariaDB' }, sharedPath: '/mnt/opsbox',
+    roles: ['DB'], products: { DB: 'MariaDB' },
     processes: [{ name: 'mariadbd' }], directories: [{ path: '/var/lib/mysql', warningPercent: 70, criticalPercent: 90 }], fileChecks: [],
     ports: [{ port: 3306, protocol: 'TCP', description: 'MariaDB' }], httpChecks: [],
     dbTargets: ['/run/mysqld/mysqld.sock'],
@@ -193,7 +194,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'DB-04', name: '행정 DB (CUBRID)', os: 'Linux', osName: 'CentOS Linux', osVersion: '7.9.2009 (Core)', ip: '10.10.4.44',
-    roles: ['DB'], products: { DB: 'CUBRID' }, sharedPath: '/mnt/opsbox',
+    roles: ['DB'], products: { DB: 'CUBRID' },
     processes: [{ name: 'cub_server' }, { name: 'cub_master' }, { name: 'cub_broker' }], directories: [{ path: '/home/cubrid/database' }], fileChecks: [],
     ports: [{ port: 33000, protocol: 'TCP', description: 'CUBRID 브로커' }, { port: 1523, protocol: 'TCP', description: 'CUBRID 마스터' }], httpChecks: [],
     dbTargets: ['admindb@localhost'],
@@ -205,7 +206,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'FILE-01', name: '파일 서버', os: 'Windows', osName: 'Microsoft Windows Server 2016 Standard', osVersion: '10.0.14393', ip: '10.10.5.51',
-    roles: ['OTHER'], products: {}, sharedPath: '\\\\fileserver\\opsbox',
+    roles: ['OTHER'], products: {},
     processes: [{ name: 'LanmanServer' }], directories: [{ path: 'D:\\Share', warningPercent: 80, criticalPercent: 95 }], fileChecks: [],
     ports: [{ port: 445, protocol: 'TCP', description: 'SMB' }], httpChecks: [],
     base: { cpu: 6, memory: 35, volumes: [{ mount: 'C:', totalGB: 100, usedPercent: 63 }, { mount: 'D:', totalGB: 4000, usedPercent: 64, growthPerDay: 0.016 }] },
@@ -214,7 +215,7 @@ const SERVERS: DemoServer[] = [
   },
   {
     id: 'BATCH-01', name: '야간 배치 서버', os: 'Linux', osName: 'Rocky Linux', osVersion: '8.9 (Green Obsidian)', ip: '10.10.5.52',
-    roles: ['OTHER'], products: {}, sharedPath: '/mnt/opsbox',
+    roles: ['OTHER'], products: {}, resultPath: '/batch/opsbox/results',
     processes: [{ name: 'crond' }], directories: [{ path: '/batch/out' }],
     fileChecks: [{ path: '/batch/out/daily_extract.csv', warningSizeMB: 500, criticalSizeMB: 1000 }],
     ports: [], httpChecks: [],
@@ -615,6 +616,10 @@ export async function seedDemo(options: { results?: boolean } = {}) {
   const { storeUploadedResult } = await import('../src/features/results/importer');
   const { getHealthStatus, parseResultJson } = await import('../src/features/results/service');
 
+  const { saveResultPathSettings } = await import('../src/features/settings/service');
+  // 결과 저장 경로 기본값 (점검 대상 서버가 보는 공유 폴더)
+  saveResultPathSettings({ windows: '\\\\fileserver\\opsbox\\results', linux: '/mnt/opsbox/results' });
+
   const { getPolicies, getPolicy, savePolicy } = await import('../src/features/policies/service');
   // 점검 만들기 항목은 화면과 같은 정책 저장 경로로 추가 (생성 템플릿도 함께 만들어짐)
   for (const { policyId, item } of DEMO_BUILDER_ITEMS) {
@@ -649,7 +654,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
     if (demo.os === 'Windows') rolePolicySettings[PORT_ITEM] = { inputs: { targets: DB_PORT_TARGET } };
 
     const server = createServer({
-      id: demo.id, name: demo.name, roles: demo.roles, products: demo.products, os: demo.os, ip: demo.ip, sharedPath: demo.sharedPath ?? '',
+      id: demo.id, name: demo.name, roles: demo.roles, products: demo.products, os: demo.os, ip: demo.ip, resultPath: demo.resultPath,
       policyIds, roleChecks, rolePolicySettings,
       processes: demo.processes, directories: demo.directories, fileChecks: demo.fileChecks, ports: demo.ports, httpChecks: demo.httpChecks,
     } as any);
@@ -667,7 +672,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
         demo.scenario?.({ ...ctx, recheck }, builder);
         const json = builder.build(definitions);
         const content = `${JSON.stringify(json, null, 2)}\n`;
-        const fileName = demo.os === 'Windows' ? `${fileStamp(date)}-000.json` : `${demo.id}_${fileStamp(date)}.json`;
+        const fileName = `${demo.id}_${fileStamp(date)}.json`;
         storeUploadedResult(Buffer.from(content, 'utf8'), fileName, demo.id);
         const status = getHealthStatus(parseResultJson(content));
         statusCount[status] = (statusCount[status] ?? 0) + 1;

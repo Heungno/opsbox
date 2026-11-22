@@ -40,7 +40,7 @@ const windowsDb = getPolicies().find((policy) => policy.id === 'windows-db-defau
 savePolicy({ ...windowsDb, items: [...windowsDb.items, builderItem(WIN_ITEM, 'MSSQL 설정 백업')] } as any, windowsDb.id);
 
 const server = (id: string, os: 'Linux' | 'Windows', product: string, policyId: string) => createServer({
-  id, name: id, type: 'DB', roles: ['DB'], products: { DB: product }, os, ip: '10.0.0.50', sharedPath: '',
+  id, name: id, type: 'DB', roles: ['DB'], products: { DB: product }, os, ip: '10.0.0.50',
   policyIds: { BASIC: `${os.toLowerCase()}-basic-default`, DB: policyId }, processes: [], directories: [],
 } as any);
 server('LNX-DBCB', 'Linux', 'PostgreSQL', 'linux-db-default');

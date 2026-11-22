@@ -3,13 +3,6 @@
   "name": "포털 DB (MSSQL)",
   "os": "Windows",
   "ip": "10.10.4.41",
-  "sharedPath": "\\\\fileserver\\opsbox",
-  "roles": [
-    "DB"
-  ],
-  "products": {
-    "DB": "MSSQL"
-  },
   "processes": [
     {
       "name": "sqlservr"
@@ -34,9 +27,11 @@
     }
   ],
   "httpChecks": [],
-  "policyIds": {
-    "BASIC": "windows-basic-default",
-    "DB": "windows-db-default"
+  "roles": [
+    "DB"
+  ],
+  "products": {
+    "DB": "MSSQL"
   },
   "scriptParts": {
     "HOST_INFO": "WINDOWS-PART-HOST_INFO",
@@ -111,5 +106,9 @@
       "dbms": "MSSQL"
     }
   },
-  "customQueryTemplateIds": []
+  "customQueryTemplateIds": [],
+  "policyIds": {
+    "BASIC": "windows-basic-default",
+    "DB": "windows-db-default"
+  }
 }

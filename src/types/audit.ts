@@ -10,6 +10,7 @@ export type AuditAction =
   | 'SERVER_DEACTIVATE'
   | 'SERVER_ACTIVATE'
   | 'SERVER_CHECK_CONFIG_UPDATE'
+  | 'SETTINGS_UPDATE'
   | 'POLICY_CREATE'
   | 'POLICY_UPDATE'
   | 'POLICY_DELETE'
@@ -22,7 +23,7 @@ export type AuditAction =
   | 'RESULT_UPLOAD'
   | 'SCRIPT_DOWNLOAD';
 
-export type AuditTargetType = 'AUTH' | 'SERVER' | 'POLICY' | 'TEMPLATE' | 'COMMON_CODE' | 'RESULT' | 'SCRIPT';
+export type AuditTargetType = 'AUTH' | 'SERVER' | 'POLICY' | 'TEMPLATE' | 'COMMON_CODE' | 'RESULT' | 'SCRIPT' | 'SETTINGS';
 
 /** 바뀐 항목 한 건 (값이 길면 요약 문자열로 저장) */
 export interface AuditChange {

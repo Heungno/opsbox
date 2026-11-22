@@ -3,7 +3,10 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { db, readSetting, transaction, writeSetting } from '../src/db/database';
+import { db, transaction } from '../src/db/database';
+import { getSettingValue as readSetting, setSettingValue } from '../src/features/settings/repository';
+
+const writeSetting = (key: string, value: number) => setSettingValue(key, String(value));
 import { generatedTemplateId, isDetached, regenerateItem, upgradeGeneratedTemplates } from '../src/services/checkBuilder/templates';
 import type { BuilderSpec } from '../src/services/checkBuilder/types';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
@@ -30,7 +33,7 @@ test('트랜잭션은 중첩해 쓸 수 있고 안쪽 실패는 바깥까지 되
   }), /rollback/);
   assert.equal(readSetting('nested_test'), undefined);
   transaction(() => transaction(() => writeSetting('nested_test', 3)));
-  assert.equal(readSetting('nested_test'), 3);
+  assert.equal(readSetting('nested_test'), '3');
 });
 
 test('점검 만들기 항목을 저장하면 정책 OS용 생성 템플릿을 만들고 항목에 연결한다', () => {
@@ -120,9 +123,9 @@ test('트랜잭션 확정이 실패해도 다음 트랜잭션은 정상으로 �
   // 안에서 트랜잭션을 먼저 끝내 바깥 COMMIT이 실패하게 함
   assert.throws(() => transaction(() => { db.exec('COMMIT'); }));
   transaction(() => writeSetting('after_commit_failure', 1));
-  assert.equal(readSetting('after_commit_failure'), 1);
+  assert.equal(readSetting('after_commit_failure'), '1');
   transaction(() => transaction(() => writeSetting('after_commit_failure', 2)));
-  assert.equal(readSetting('after_commit_failure'), 2);
+  assert.equal(readSetting('after_commit_failure'), '2');
 });
 
 test('직접 편집한 생성 조각을 항목 삭제로 지우면 편집 내용을 스크립트 이력에 남긴다', () => {
