@@ -6,7 +6,7 @@ import { recordAudit } from '../services/auditService';
 import { deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from '../services/templateService';
 import type { IdParams } from '../types/api';
 import type { ManagedTemplate } from '../types/template';
-import { ok, requireObject } from '../utils/http';
+import { ok, requireObject } from '../shared/http';
 
 /** 변경 전 상태 (이후 저장에서 같은 객체가 바뀌지 않도록 복사) */
 const snapshot = (id: string) => structuredClone(getTemplate(id));

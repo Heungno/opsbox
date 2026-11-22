@@ -1,4 +1,4 @@
-import { TooManyRequestsError } from '../errors';
+import { TooManyRequestsError } from '../shared/errors';
 
 /*
  * 로그인 실패 제한 (메모리 보관, 재시작하면 초기화)

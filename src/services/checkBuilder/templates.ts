@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { BadRequestError, NotFoundError } from '../../errors';
+import { BadRequestError, NotFoundError } from '../../shared/errors';
 import type { Policy, PolicyItem } from '../../types/policy';
 import type { ManagedTemplate } from '../../types/template';
 import { getPolicies } from '../policyService';

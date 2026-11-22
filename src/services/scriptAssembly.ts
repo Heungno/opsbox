@@ -1,4 +1,4 @@
-import { BadRequestError } from '../errors';
+import { BadRequestError } from '../shared/errors';
 import { Server } from '../types/server';
 import { ManagedTemplate, ScriptPart } from '../types/template';
 import { getServerProduct, getServerRoles } from './serverService';

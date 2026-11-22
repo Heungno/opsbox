@@ -3,7 +3,7 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { PAGES, composePage } from '../src/pages';
+import { PAGES, composePage } from '../src/shared/pages';
 import { app } from '../src/server';
 import { createSession, createUser, sessionCookie } from '../src/services/authService';
 

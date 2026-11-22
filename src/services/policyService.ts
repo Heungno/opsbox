@@ -1,6 +1,6 @@
 import { readCollection, transaction, writeCollection } from '../db/database';
 import { randomUUID } from 'crypto';
-import { NotFoundError, ValidationError } from '../errors';
+import { NotFoundError, ValidationError } from '../shared/errors';
 import type { ExecutorType, Policy, PolicyCategory, PolicyDraft, PolicyItem, ResultView } from '../types/policy';
 import { getCommonCodes, getCommonCodeValues } from './commonCodeService';
 import { builderInputs, builderResult, validateBuilderSpec } from './checkBuilder/spec';

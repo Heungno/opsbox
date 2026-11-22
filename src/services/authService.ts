@@ -1,5 +1,5 @@
 import { db } from '../db/database';
-import { ValidationError } from '../errors';
+import { ValidationError } from '../shared/errors';
 import type { SessionUser, UserRecord } from '../types/auth';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 

@@ -4,7 +4,7 @@ import { recordAudit } from '../services/auditService';
 import { getCommonCodes, getRawCommonCodes, saveCommonCodes } from '../services/commonCodeService';
 import type { AuditChange } from '../types/audit';
 import type { CommonCodes } from '../types/commonCode';
-import { ok, requireObject } from '../utils/http';
+import { ok, requireObject } from '../shared/http';
 
 /** 공통코드는 분류별로 추가·삭제·변경된 코드를 정리해 남깁니다. */
 function diffCommonCodes(before: CommonCodes, after: CommonCodes): AuditChange[] {

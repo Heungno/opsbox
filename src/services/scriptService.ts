@@ -1,4 +1,4 @@
-import { BadRequestError, NotFoundError } from '../errors';
+import { BadRequestError, NotFoundError } from '../shared/errors';
 import { getServer, getServerProduct } from './serverService';
 import { getTemplate, getTemplates } from './templateService';
 import { assembleWindowsScript } from './windowsScriptService';

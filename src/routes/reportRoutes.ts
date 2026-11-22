@@ -1,10 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 
-import { NotFoundError } from '../errors';
+import { NotFoundError } from '../shared/errors';
 import { getAllReports, getReport } from '../services/reportService';
 import type { ResultFileParams } from '../types/api';
 import type { ReportListQuery } from '../types/report';
-import { ok } from '../utils/http';
+import { ok } from '../shared/http';
 
 export async function reportRoutes(app: FastifyInstance) {
   app.get<{ Querystring: ReportListQuery }>('/reports', async (request) => {

@@ -1,6 +1,6 @@
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
-import { AppError } from '../errors';
+import { AppError } from './errors';
 import type { ApiFailure, ErrorCode, FieldError } from '../types/api';
 
 /*

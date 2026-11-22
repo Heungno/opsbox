@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { gunzipSync, gzipSync } from 'node:zlib';
 
-import { logger } from '../logger';
+import { logger } from '../shared/logger';
 
 /*
  * 점검 결과 원본 JSON 백업 암호화

@@ -1,30 +1,23 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 
-import { logger } from '../logger';
+import { logger } from '../shared/logger';
+import { DB_PATH, db, transaction } from './connection';
+
+export { DB_PATH, db, transaction };
 
 /*
- * OpsBox SQLite 저장소
+ * OpsBox 테이블·시드 (재구성 중: 기능별로 src/db/schema.ts·seed.ts로 옮겨 가는 중)
  *
- * - DB 파일: OPSBOX_DB_PATH 또는 data/opsbox.db
- * - 처음 실행 시(테이블이 비어 있을 때) 기존 data/*.json 파일을 DB로 옮깁니다.
- *   이후에는 DB가 원본이며 JSON 파일은 초기값(시드)으로만 쓰입니다.
+ * - 테이블이 비어 있으면 seeds/*.json 으로 채웁니다.
  */
 
+const SEED_DIR = path.join(process.cwd(), 'seeds');
+/** Codespaces 설정(.devcontainer/setup.cjs)이 만드는 servers.json·user.json (재구성 중 임시, Task 7에서 정리) */
 const DATA_DIR = path.join(process.cwd(), 'data');
-export const DB_PATH = process.env.OPSBOX_DB_PATH || path.join(DATA_DIR, 'opsbox.db');
-
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-
-export const db = new DatabaseSync(DB_PATH);
 
 db.exec(`
-  PRAGMA journal_mode = WAL;
-  PRAGMA busy_timeout = 5000;
-  PRAGMA foreign_keys = ON;
-
   CREATE TABLE IF NOT EXISTS servers (
     id TEXT PRIMARY KEY,
     position INTEGER NOT NULL,
@@ -103,35 +96,6 @@ db.exec(`
   );
 `);
 
-/**
- * 트랜잭션. 안에서 다시 부르면(예: 정책 저장 + 템플릿 동기화) SAVEPOINT로 처리해
- * 안쪽이 실패하면 그 부분만, 바깥이 실패하면 전체가 되돌아갑니다.
- */
-let transactionDepth = 0;
-export function transaction<T>(fn: () => T): T {
-  const depth = transactionDepth;
-  const savepoint = `sp_${depth}`;
-  db.exec(depth === 0 ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
-  transactionDepth = depth + 1;
-  let result: T;
-  try {
-    result = fn();
-  } catch (error) {
-    transactionDepth = depth;
-    try { db.exec(depth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`); } catch { /* 이미 끝난 트랜잭션 */ }
-    throw error;
-  }
-  // 깊이는 확정 성공 여부와 관계없이 한 번만 되돌립니다(확정 실패 뒤에도 다음 트랜잭션을 쓸 수 있게).
-  transactionDepth = depth;
-  try {
-    db.exec(depth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
-  } catch (error) {
-    if (depth === 0 && db.isTransaction) { try { db.exec('ROLLBACK'); } catch { /* 되돌릴 수 없으면 그대로 오류 전달 */ } }
-    throw error;
-  }
-  return result;
-}
-
 /*
  * 목록형 데이터 (servers, policies, templates)
  * 각 행에 JSON 한 건을 저장하고 position으로 순서를 유지합니다.
@@ -165,7 +129,7 @@ export function writeSetting(key: string, value: unknown) {
  * 기존 JSON 파일 → DB 최초 이관
  */
 function readJsonFile(fileName: string): unknown {
-  const file = path.join(DATA_DIR, fileName);
+  const file = path.join(['servers.json', 'user.json'].includes(fileName) ? DATA_DIR : SEED_DIR, fileName);
   if (!fs.existsSync(file)) return undefined;
   return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^﻿/, ''));
 }

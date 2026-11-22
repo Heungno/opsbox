@@ -4,7 +4,7 @@ import { recordAudit } from '../services/auditService';
 import { deletePolicy, getPolicies, savePolicy } from '../services/policyService';
 import type { IdParams } from '../types/api';
 import type { PolicyDraft } from '../types/policy';
-import { ok, requireObject } from '../utils/http';
+import { ok, requireObject } from '../shared/http';
 
 const findPolicy = (id: string) => getPolicies().find((policy) => policy.id === id);
 

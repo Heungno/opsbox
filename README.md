@@ -2,7 +2,7 @@
 
 사내 서버(WEB·WAS·DB·기타) 정기 예방점검 관리 시스템입니다. 서버별 점검 스크립트를 만들어 내려받고, 서버에서 실행한 결과 JSON을 모아 대시보드와 보고서로 보여 줍니다. 외부 CDN·웹폰트 없이 폐쇄망에서 동작합니다.
 
-사용 방법은 [사용자 가이드](doc/USER_GUIDE.md), 테이블 구조와 백업·복구는 [DB 문서](doc/DATABASE.md), 점검 기준 원문은 [예방점검 매뉴얼](doc/INFORMATION_SYSTEM_PREVENTIVE_CHECK_MANUAL.md)에 있습니다.
+사용 방법은 [사용자 가이드](docs/USER_GUIDE.md), 테이블 구조와 백업·복구는 [DB 문서](docs/DATABASE.md), 점검 기준 원문은 [예방점검 매뉴얼](docs/INFORMATION_SYSTEM_PREVENTIVE_CHECK_MANUAL.md)에 있습니다.
 
 ## 주요 기능
 

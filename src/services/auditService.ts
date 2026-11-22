@@ -1,7 +1,7 @@
 import type { FastifyRequest } from 'fastify';
 
 import { db } from '../db/database';
-import { logger } from '../logger';
+import { logger } from '../shared/logger';
 import type { AuditAction, AuditActionOption, AuditChange, AuditLogEntry, AuditLogPage, AuditLogQuery, AuditTargetType } from '../types/audit';
 
 /*

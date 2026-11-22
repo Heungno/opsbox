@@ -5,7 +5,7 @@ import type { ScriptPart } from '../types/template';
 
 import { validateProcesses, validateDirectories, validateFileChecks, validatePorts, validateHttpChecks } from './serverValidation';
 
-import { NotFoundError, ValidationError } from '../errors';
+import { NotFoundError, ValidationError } from '../shared/errors';
 import { getTemplate } from './templateService';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { BadRequestError, ValidationError } from '../errors';
+import { BadRequestError, ValidationError } from '../shared/errors';
 import { recordAudit } from '../services/auditService';
 import { generateLinuxPart, type BuilderRole } from '../services/checkBuilder/linux';
 import { presetsFor } from '../services/checkBuilder/presets';
@@ -9,7 +9,7 @@ import { regenerateItem } from '../services/checkBuilder/templates';
 import type { BuilderOs, BuilderSpec } from '../services/checkBuilder/types';
 import { generateWindowsPart } from '../services/checkBuilder/windows';
 import { getPolicies } from '../services/policyService';
-import { ok, requireObject } from '../utils/http';
+import { ok, requireObject } from '../shared/http';
 
 /*
  * 점검 만들기 API

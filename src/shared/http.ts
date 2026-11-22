@@ -1,4 +1,4 @@
-import { BadRequestError } from '../errors';
+import { BadRequestError } from './errors';
 import type { ApiSuccess } from '../types/api';
 
 /** 성공 응답 { success: true, data, ...meta } */

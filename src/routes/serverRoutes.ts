@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
-import { NotFoundError, ValidationError } from '../errors';
+import { NotFoundError, ValidationError } from '../shared/errors';
 import { recordAudit } from '../services/auditService';
 import { createServer, deleteServer, getAllServers, getCheckConfig, getServer, updateCheckConfig, updateServer } from '../services/serverService';
 import type { IdParams } from '../types/api';
 import type { CheckConfigInput, Server } from '../types/server';
-import { ok, requireObject } from '../utils/http';
+import { ok, requireObject } from '../shared/http';
 
 const LIST_FIELDS = ['processes', 'directories', 'fileChecks', 'ports', 'httpChecks', 'customQueryTemplateIds'] as const;
 const MAP_FIELDS = ['scriptParts', 'roleChecks', 'rolePolicySettings', 'policyIds'] as const;

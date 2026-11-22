@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
-import { BadRequestError, NotFoundError } from '../errors';
+import { BadRequestError, NotFoundError } from '../shared/errors';
 import { recordAudit } from '../services/auditService';
 import { getImportStatus, importResults, logImportSummary, storeUploadedResult } from '../services/resultImportService';
 import { getHealthStatus, getLatestResult, getResultByFile, getResults } from '../services/resultService';
 import type { ResultFileParams, ServerIdParams } from '../types/api';
-import { ok } from '../utils/http';
+import { ok } from '../shared/http';
 
 // 결과 JSON에는 콘솔 출력·쿼리 결과가 들어갈 수 있어 기본 한도(1MB)보다 넉넉히 둡니다.
 const UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024;

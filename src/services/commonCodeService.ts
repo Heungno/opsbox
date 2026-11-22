@@ -1,5 +1,5 @@
 import { readSetting, writeSetting } from '../db/database';
-import { BadRequestError } from '../errors';
+import { BadRequestError } from '../shared/errors';
 import type { CommonCodes } from '../types/commonCode';
 
 const REQUIRED_SYSTEM_SCRIPT_CODES = ['START', 'SAVE'];
@@ -14,7 +14,7 @@ export function getCommonCodeValues(category: keyof CommonCodes): string[] {
 
 export function getRawCommonCodes(): CommonCodes {
   const codes = readSetting<CommonCodes>('common_codes');
-  if (!codes) throw new Error('공통코드 데이터가 없습니다. data/common-codes.json 초기 파일을 확인하세요.');
+  if (!codes) throw new Error('공통코드 데이터가 없습니다. seeds/common-codes.json 기본값 파일을 확인하세요.');
   return codes;
 }
 

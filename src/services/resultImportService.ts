@@ -6,8 +6,8 @@ import { db, transaction } from '../db/database';
 import { getAllServers } from './serverService';
 import { getHealthStatus, parseResultJson } from './resultService';
 import { writeEncryptedBackup } from './backupCrypto';
-import { BadRequestError, ConflictError } from '../errors';
-import { logger } from '../logger';
+import { BadRequestError, ConflictError } from '../shared/errors';
+import { logger } from '../shared/logger';
 import { recordAudit } from './auditService';
 import type { ImportStatus, ImportSummary } from '../types/result';
 

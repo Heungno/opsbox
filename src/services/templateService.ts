@@ -1,6 +1,6 @@
 import { db, readCollection, transaction, writeCollection } from '../db/database';
 import { ManagedTemplate, ScriptPart, TemplateVersion } from '../types/template';
-import { ConflictError, NotFoundError, ValidationError } from '../errors';
+import { ConflictError, NotFoundError, ValidationError } from '../shared/errors';
 import { getCommonCodes } from './commonCodeService';
 import { getPolicies } from './policyService';
 

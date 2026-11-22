@@ -12,13 +12,7 @@ function copyDirectory(sourceRelativePath, destinationRelativePath) {
 }
 
 copyDirectory('src/public', 'src/public');
-const dataDestination = path.join(distRoot, 'data');
-fs.mkdirSync(dataDestination, { recursive: true });
-for (const fileName of ['common-codes.json', 'templates.json', 'policy.json']) {
-  const source = path.join(projectRoot, 'data', fileName);
-  const destination = path.join(dataDestination, fileName);
-  fs.copyFileSync(source, destination);
-}
+copyDirectory('seeds', 'seeds');
 
 console.log('빌드 산출물: dist');
-console.log('포함 항목: 서버 코드, 화면 파일, 공통 코드·템플릿·점검 정책 JSON 초기 데이터 (첫 실행 시 SQLite로 이관)');
+console.log('포함 항목: 서버 코드, 화면 파일, 기본 공통코드·템플릿·점검 정책 (seeds/, 빈 DB에 처음 넣는 값)');
