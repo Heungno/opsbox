@@ -36,6 +36,7 @@ export const PAGES: PageDefinition[] = [
   { paths: ['/settings/script-management', '/settings/templates'], file: 'settings/script-management/script-management.html', menu: 'settings-scripts' },
   { paths: ['/settings/policy-management'], file: 'settings/policy-management/policy-management.html', menu: 'policy-management' },
   { paths: ['/settings/common-code-management'], file: 'settings/common-code-management/common-code-management.html', menu: 'common-code-management' },
+  { paths: ['/settings/result-collection'], file: 'settings/result-collection/result-collection.html', menu: 'result-collection' },
   { paths: ['/settings/audit-logs'], file: 'settings/audit-logs/audit-logs.html', menu: 'audit-logs' },
   { paths: ['/account'], file: 'account/account.html', menu: 'account' },
 ];

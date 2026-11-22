@@ -83,6 +83,7 @@ async function init() {
     event.preventDefault(); tabs[next].focus(); activeServerPickerRole = tabs[next].dataset.role; renderServerPicker();
   });
   document.getElementById('server-list-refresh')?.addEventListener('click', loadServerPicker);
+  document.getElementById('btn-activate-server')?.addEventListener('click', activateCurrentServer);
   document.getElementById('policy-section').addEventListener('input', () => { policyDirty = true; });
   document.getElementById('policy-section').addEventListener('change', () => { policyDirty = true; });
   document.getElementById('policy-section').addEventListener('click', (event) => {
@@ -104,8 +105,9 @@ async function init() {
   await loadServerPicker();
 }
 
+// 미사용 서버도 목록에 보여 줍니다(상세에서 [다시 사용]을 누를 수 있게).
 async function loadServerPicker() {
-  serverCache = (await api('/api/servers')) || [];
+  serverCache = (await api('/api/servers?includeInactive=1')) || [];
   renderServerPicker();
   if (!serverCache.length) {
     document.getElementById('server-title').textContent = '등록된 서버가 없습니다.';
@@ -134,7 +136,7 @@ function renderServerPicker() {
   list.replaceChildren();
   for (const server of filtered) {
     const item = document.createElement('div'); item.className = `template-list-item${server.id === serverId ? ' is-selected' : ''}`; item.setAttribute('role', 'button'); item.tabIndex = 0;
-    const info = document.createElement('div'); const name = document.createElement('strong'); name.textContent = server.name; const meta = document.createElement('small'); meta.textContent = `${server.id} · ${server.ip} · ${server.os}`; info.append(name, meta); item.append(info);
+    const info = document.createElement('div'); const name = document.createElement('strong'); name.textContent = server.name; const meta = document.createElement('small'); meta.textContent = `${server.id} · ${server.ip} · ${server.os}${server.enabled === false ? ' · 미사용' : ''}`; info.append(name, meta); item.append(info);
     item.addEventListener('click', () => selectServer(server.id)); item.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectServer(server.id); }); list.append(item);
   }
   const empty = document.getElementById('server-picker-empty');
@@ -142,7 +144,23 @@ function renderServerPicker() {
   empty.textContent = serverCache.length ? '조건에 맞는 서버가 없습니다.' : '등록된 서버가 없습니다.';
 }
 
-function getServerRoles(server) { return server.roles?.length ? server.roles : [server.type]; }
+function getServerRoles(server) { return server.roles ?? []; }
+
+/** 정책에서 사용하는 점검 항목 id (사용 중인 항목만) */
+function policyCheckIds(policy) { return (policy?.items ?? []).filter((item) => item.enabled !== false).map((item) => item.id); }
+
+async function activateCurrentServer() {
+  try {
+    await api(`/api/servers/${encodeURIComponent(currentServer.id)}/activate`, { method: 'POST' });
+    showToast(`${currentServer.id} 서버를 다시 사용합니다.`, 'success');
+    serverCache = (await api('/api/servers?includeInactive=1')) || serverCache;
+    renderServerPicker();
+    currentServer = null;
+    await loadServer();
+  } catch (error) {
+    notifyError(error, '서버를 다시 사용하지 못했습니다.');
+  }
+}
 
 async function selectServer(id) {
   if (id === serverId && currentServer) return;
@@ -182,16 +200,14 @@ function renderServerInfo(server) {
   document.getElementById('server-title').textContent = `${server.id} - ${server.name}`;
   document.getElementById('server-id').textContent = server.id;
   document.getElementById('server-name').textContent = server.name;
-  const roles = server.roles?.length ? server.roles : [server.type];
+  const roles = server.roles ?? [];
   renderPolicyRoleTabs(roles);
-  document.getElementById('server-product').textContent = roles.map((role) => `${role}: ${server.products?.[role] || (server.type === role ? server.product : '') || '미지정'}`).join(' · ');
+  document.getElementById('server-product').textContent = roles.map((role) => `${role}: ${server.products?.[role] || '미지정'}`).join(' · ');
   const httpPolicy = document.getElementById('http-check-policy');
   if (httpPolicy) httpPolicy.hidden = !roles.some((role) => role === 'WEB' || role === 'WAS');
   document.getElementById('server-ip').textContent = server.ip;
-  document.getElementById('server-shared-path').textContent = server.sharedPath;
-  document.getElementById('server-script-path').textContent = joinSharedPath(server.sharedPath, 'scripts');
-  // 결과 수신함: results 폴더에 파일을 넣으면 파일 안의 서버 ID로 가져옵니다.
-  document.getElementById('server-result-path').textContent = joinSharedPath(server.sharedPath, 'results');
+  renderResultPaths(server);
+  document.getElementById('server-inactive-banner').hidden = server.enabled !== false;
   [
     ['btn-add-directory', addDirectoryRow],
     ['btn-add-file-check', addFileCheckRow],
@@ -287,10 +303,10 @@ function bindServerEdit() {
     document.getElementById('server-id-group').hidden = true;
     document.getElementById('server-form-id').required = false;
     document.getElementById('server-form-name').value = currentServer.name;
-    renderRoleProducts(currentServer.roles?.length ? currentServer.roles : [currentServer.type], currentServer.products || { [currentServer.type]: currentServer.product });
+    renderRoleProducts(currentServer.roles ?? [], currentServer.products || {});
     document.getElementById('server-form-os').value = currentServer.os;
     document.getElementById('server-form-ip').value = currentServer.ip;
-    document.getElementById('server-form-shared-path').value = currentServer.sharedPath || '';
+    document.getElementById('server-form-result-path').value = currentServer.resultPath || '';
     dialog.showModal();
   });
   document.getElementById('server-modal-close').addEventListener('click', closeDialog);
@@ -308,10 +324,10 @@ function bindServerEdit() {
         // 수정할 때는 ID를 보내지 않습니다 (ID 변경 불가, 입력칸도 숨김).
         ...(creating ? { id: document.getElementById('server-form-id').value.trim() } : {}),
         name: document.getElementById('server-form-name').value.trim(),
-        roles, products, type: roles[0], product: products[roles[0]],
+        roles, products,
         os: document.getElementById('server-form-os').value,
         ip: document.getElementById('server-form-ip').value.trim(),
-        sharedPath: document.getElementById('server-form-shared-path').value.trim(),
+        resultPath: document.getElementById('server-form-result-path').value.trim(),
       };
       await api(creating ? '/api/servers' : `/api/servers/${encodeURIComponent(currentServer.id)}`, { method: creating ? 'POST' : 'PUT', body: data });
       serverInfoDirty = false;
@@ -345,8 +361,8 @@ function loadScripts(server) {
   const desc = document.createElement('div');
   desc.className = 'script-desc';
   desc.textContent = server.os === 'Windows'
-    ? '정책에 연결된 점검 스크립트를 조립합니다. 실행 명령의 $resultDirectory에 경로를 입력하면 그곳에 저장하고, 비워 두면 서버정보의 공유 경로를 사용합니다.'
-    : '스크립트 파일이 있는 폴더에서 bash로 실행하세요. 결과 폴더를 지정하면 그곳에, 지정하지 않거나 쓸 수 없으면 스크립트 폴더에 결과 JSON을 저장합니다. 저장된 파일은 공유 폴더의 results 폴더에 넣거나 [결과 파일 올리기]로 올리세요.';
+    ? '정책에 연결된 점검 스크립트를 조립합니다. 실행 명령의 $resultDirectory에 경로를 입력하면 그곳에 저장하고, 비워 두면 기본 정보의 결과 저장 경로를 사용합니다. 수신함이 아닌 곳에 저장됐으면 파일을 수신함에 넣거나 [결과 파일 올리기]로 올리세요.'
+    : '스크립트 파일이 있는 폴더에서 bash로 실행하세요. 결과 폴더를 인자로 주면 그곳에, 없으면 기본 정보의 결과 저장 경로에, 그것도 없거나 쓸 수 없으면 스크립트 폴더에 결과 JSON을 저장합니다. 수신함이 아닌 곳에 저장됐으면 파일을 수신함에 넣거나 [결과 파일 올리기]로 올리세요.';
 
   const commandTitle = document.createElement('div');
   commandTitle.className = 'command-title';
@@ -361,7 +377,7 @@ function loadScripts(server) {
   const scriptFilter = quotePowerShell(`${server.id}*.ps1`);
   const command = server.os.toLowerCase() === 'windows'
     ? `$resultDirectory = ''; $script = Get-ChildItem -File -Filter ${scriptFilter} | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not $script) { throw '점검 스크립트를 찾을 수 없습니다. 스크립트 폴더에서 실행하세요.' }; $scriptArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script); if (-not [string]::IsNullOrWhiteSpace($resultDirectory)) { $scriptArgs += @('-ResultDirectory', $resultDirectory) }; powershell.exe @scriptArgs`
-    : `# 결과를 스크립트 폴더에 저장\nbash ${linuxScriptPath}\n\n# 공유 폴더가 마운트되어 있으면 그 안의 results 폴더를 지정 (예: /mnt/opsbox/results)\nbash ${linuxScriptPath} /mnt/opsbox/results`;
+    : `# 결과를 기본 정보의 결과 저장 경로(없으면 스크립트 폴더)에 저장\nbash ${linuxScriptPath}\n\n# 결과 폴더를 직접 지정 (예: /mnt/opsbox/results)\nbash ${linuxScriptPath} /mnt/opsbox/results`;
 
   const commandBox = document.createElement('pre');
   commandBox.className = 'command-box';
@@ -386,7 +402,8 @@ function loadScripts(server) {
     alert('실행 명령어가 복사되었습니다.');
   };
 
-  buttons.appendChild(downloadButton);
+  // 미사용 서버는 스크립트를 내려받을 수 없습니다(서버도 거부).
+  if (server.enabled !== false) buttons.appendChild(downloadButton);
   buttons.appendChild(copyButton);
 
   card.appendChild(title);
@@ -498,11 +515,28 @@ function renderLatestResult(result, health) {
   renderHealthSummary(health);
 }
 
-// 공유 폴더 경로 표기(\\NAS\share 또는 /mnt/share)에 맞는 구분자로 붙입니다.
-function joinSharedPath(base, child) {
-  if (!base) return '-';
-  const separator = base.includes('\\') || !base.includes('/') ? '\\' : '/';
-  return `${base.replace(/[\\/]+$/, '')}${separator}${child}`;
+/* 결과 저장 경로(대상 서버가 보는 경로)와 OpsBox 수신함. 우선순위: 서버 지정 → OS별 기본값 → 스크립트 폴더 */
+let resultPathSettings;
+async function loadResultPathSettings() {
+  resultPathSettings ??= await api('/api/settings/result-paths').catch(() => ({ windows: '', linux: '', inboxes: [] }));
+  return resultPathSettings;
+}
+
+function effectiveResultPath(server, settings) {
+  if (server.resultPath) return { path: server.resultPath, source: '이 서버만 지정' };
+  const fallback = server.os === 'Windows' ? settings.windows : server.os === 'Linux' ? settings.linux : '';
+  if (fallback) return { path: fallback, source: `${server.os} 기본값` };
+  return { path: '', source: '스크립트가 있는 폴더에 저장 (설정 → 결과 수집에서 기본값을 정할 수 있습니다)' };
+}
+
+async function renderResultPaths(server) {
+  const settings = await loadResultPathSettings();
+  const { path, source } = effectiveResultPath(server, settings);
+  const cell = document.getElementById('server-result-path');
+  cell.replaceChildren();
+  if (path) { const code = document.createElement('code'); code.textContent = path; cell.append(code, ' '); }
+  const note = document.createElement('small'); note.textContent = path ? `(${source})` : source; cell.append(note);
+  document.getElementById('server-inbox-path').textContent = settings.inboxes.join(' · ') || '-';
 }
 
 // 점검자가 내려받은 결과 파일 올리기 (여러 개 선택 가능)
@@ -666,7 +700,7 @@ async function loadPolicy(serverId) {
   selectedRoleChecks = config.roleChecks ?? currentServer?.roleChecks ?? {};
   selectedCatalogPolicyIds = config.policyIds ?? currentServer?.policyIds ?? {};
   selectedScriptParts = config.scriptParts ?? currentServer?.scriptParts ?? {};
-  const applicableCategories = ['BASIC', ...(currentServer?.roles ?? [currentServer?.type]).filter((role) => ['WEB', 'WAS', 'DB'].includes(role))];
+  const applicableCategories = ['BASIC', ...(currentServer?.roles ?? []).filter((role) => ['WEB', 'WAS', 'DB'].includes(role))];
   applicableCategories.forEach((category) => {
     const currentId = selectedCatalogPolicyIds[category];
     const currentPolicy = policies.find((item) => item.id === currentId && item.os === currentServer?.os && item.category === category);
@@ -676,8 +710,8 @@ async function loadPolicy(serverId) {
   for (const [category, policyId] of Object.entries(selectedCatalogPolicyIds)) {
     const policy = policies.find((item) => item.id === policyId);
     if (!policy || policy.os !== currentServer?.os) continue;
-    if (category === 'BASIC') selectedBasicPolicyChecks = policy.checks;
-    else if (['WEB', 'WAS', 'DB'].includes(category)) selectedRoleChecks[category] = policy.checks;
+    if (category === 'BASIC') selectedBasicPolicyChecks = policyCheckIds(policy);
+    else if (['WEB', 'WAS', 'DB'].includes(category)) selectedRoleChecks[category] = policyCheckIds(policy);
   }
   const basicPolicy = getSelectedBasicPolicy();
   basicPolicy?.items.filter((item) => item.enabled).forEach((item) => {
@@ -1002,8 +1036,8 @@ function focusPolicyValidationError(error) {
 
 function renderPolicyScriptControls(selectedParts = {}, queryTemplateId = '', roleChecks = selectedRoleChecks) {
   if (!currentServer) return;
-  const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
-  const products = currentServer.products || { [currentServer.type]: currentServer.product };
+  const roles = currentServer.roles ?? [];
+  const products = currentServer.products || {};
   selectedScriptParts = Object.fromEntries(Object.entries(selectedParts).filter(([item]) => !isDbQueryItem(item)));
   selectedRoleChecks = structuredClone(roleChecks || {});
   selectedRoleChecks.DB = (selectedRoleChecks.DB ?? []).filter((item) => item !== 'DB_CUSTOM_QUERY');
@@ -1144,7 +1178,7 @@ function applyCatalogPolicy(category) {
   const policy = policies.find((item) => item.id === select.value);
   if (!policy) { alert('적용할 정책을 선택하세요.'); return; }
   if (category === 'BASIC') {
-    selectedBasicPolicyChecks = policy.checks;
+    selectedBasicPolicyChecks = policyCheckIds(policy);
     selectedCatalogPolicyIds.BASIC = policy.id;
     policy.items?.forEach((item) => {
       if (item.executor?.type !== 'SQL_QUERY') selectedScriptParts[item.id] = item.executor?.templateId || getDefaultScriptTemplate(item.id)?.id || selectedScriptParts[item.id];
@@ -1153,13 +1187,13 @@ function applyCatalogPolicy(category) {
     return;
   }
   selectedCatalogPolicyIds[category] = policy.id;
-  selectedRoleChecks[category] = [...policy.checks];
+  selectedRoleChecks[category] = policyCheckIds(policy);
   policy.items?.forEach((item) => {
     if (item.executor?.type === 'SQL_QUERY') selectedRolePolicySettings[item.id] = { ...(selectedRolePolicySettings[item.id] || {}), queryTemplateId: item.executor.templateId || '', dbms: item.executor.dbms };
     else if (item.executor?.templateId) selectedScriptParts[item.id] = item.executor.templateId;
   });
-  renderRolePolicyGroups(currentServer.roles?.length ? currentServer.roles : [currentServer.type], currentServer.products || {}, currentServer.os === 'Windows');
-  renderFinalJsonExample(getActiveScriptItems(currentServer.roles?.length ? currentServer.roles : [currentServer.type], selectedRoleChecks), selectedRoleChecks);
+  renderRolePolicyGroups(currentServer.roles ?? [], currentServer.products || {}, currentServer.os === 'Windows');
+  renderFinalJsonExample(getActiveScriptItems(currentServer.roles ?? [], selectedRoleChecks), selectedRoleChecks);
 }
 
 document.getElementById('basic-policy-apply')?.addEventListener('click', () => applyCatalogPolicy('BASIC'));
@@ -1441,7 +1475,7 @@ function populateScriptTemplatePicker(item) {
 }
 
 function getServerDbms() {
-  const product = currentServer?.products?.DB || (currentServer?.type === 'DB' ? currentServer.product : '');
+  const product = currentServer?.products?.DB || '';
   return String(product || '').trim().toLocaleUpperCase();
 }
 
@@ -1521,7 +1555,7 @@ function getActiveScriptItems(roles, roleChecks) {
 }
 
 function renderFinalJsonExample(activeItems, roleChecks) {
-  const roles = currentServer.roles?.length ? currentServer.roles : [currentServer.type];
+  const roles = currentServer.roles ?? [];
   const example = {
     schemaVersion: 2,
     server: { id: currentServer.id, name: currentServer.name, roles, products: currentServer.products || {} },

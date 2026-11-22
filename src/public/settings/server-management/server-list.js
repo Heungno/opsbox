@@ -22,6 +22,7 @@ async function initializeServerList() {
   document.getElementById('server-modal-cancel').addEventListener('click', closeServerDialog);
   newButton.addEventListener('click', showNewForm);
   searchBox?.addEventListener('input', renderServers);
+  document.getElementById('show-inactive')?.addEventListener('change', loadServers);
   const roleTabs = document.getElementById('server-role-tabs');
   roleTabs.addEventListener('click', (event) => { const tab = event.target.closest('[role="tab"]'); if (tab) setActiveRole(tab.dataset.role); });
   roleTabs.addEventListener('keydown', (event) => {
@@ -76,12 +77,13 @@ function populateOptions(select, codes, placeholder) {
 function getRoleProductSelection(container) {
   const roles = [...container.querySelectorAll('input[type=checkbox]:checked')].map((input) => input.value);
   const products = Object.fromEntries([...container.querySelectorAll('select[data-role-product]')].filter((select) => roles.includes(select.dataset.roleProduct) && select.value).map((select) => [select.dataset.roleProduct, select.value]));
-  return { roles, products, type: roles[0], product: products[roles[0]] };
+  return { roles, products };
 }
 
 async function loadServers() {
   try {
-    serverCache = (await api('/api/servers')) || [];
+    const includeInactive = document.getElementById('show-inactive')?.checked;
+    serverCache = (await api(`/api/servers${includeInactive ? '?includeInactive=1' : ''}`)) || [];
 
     updateSummary();
 
@@ -105,7 +107,7 @@ async function saveServer(event) {
 
     ip: document.getElementById("server-form-ip").value.trim(),
 
-    sharedPath: document.getElementById("server-form-shared-path").value.trim(),
+    resultPath: document.getElementById("server-form-result-path").value.trim(),
   };
 
   try {
@@ -183,17 +185,24 @@ function renderServers() {
     detailButton.className = "btn btn-small";
     detailButton.href = `/settings/server-management/detail?id=${encodeURIComponent(server.id)}`;
 
-    const deleteButton = document.createElement("button");
-
-    deleteButton.textContent = "삭제";
-
-    deleteButton.className = "btn btn-danger btn-small";
-
-    deleteButton.addEventListener("click", () => removeServer(server.id));
+    // 서버는 지우지 않고 미사용으로 바꿉니다(점검 결과·보고서를 남기고 나중에 다시 쓸 수 있게).
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.textContent = server.enabled === false ? "다시 사용" : "미사용";
+    toggleButton.className = server.enabled === false ? "btn btn-primary btn-small" : "btn btn-small";
+    toggleButton.addEventListener("click", () => setServerEnabled(server, server.enabled === false));
 
     actionTd.appendChild(detailButton);
 
-    actionTd.appendChild(deleteButton);
+    actionTd.appendChild(toggleButton);
+
+    if (server.enabled === false) {
+      tr.className = "server-inactive";
+      const badge = document.createElement("span");
+      badge.className = "server-inactive-badge";
+      badge.textContent = "미사용";
+      nameTd.append(" ", badge);
+    }
 
     tr.appendChild(idTd);
 
@@ -211,26 +220,21 @@ function renderServers() {
   });
 }
 
-async function removeServer(id) {
-  const confirmed = confirm(`${id} 서버를 삭제하시겠습니까?`);
-
-  if (!confirmed) {
-    return;
-  }
-
+async function setServerEnabled(server, enabled) {
+  if (!enabled && !confirm(`${server.id} 서버를 미사용으로 바꿀까요?\n미사용으로 바꾸면 대시보드와 스크립트 내려받기에서 빠집니다. 점검 결과와 보고서는 그대로 남습니다.`)) return;
   try {
-    await api(`/api/servers/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    showToast(`${id} 서버를 삭제했습니다.`, 'success');
+    await api(`/api/servers/${encodeURIComponent(server.id)}/${enabled ? 'activate' : 'deactivate'}`, { method: 'POST' });
+    showToast(enabled ? `${server.id} 서버를 다시 사용합니다.` : `${server.id} 서버를 미사용으로 바꿨습니다.`, 'success');
     await loadServers();
   } catch (error) {
-    notifyError(error, '서버를 삭제하지 못했습니다.');
+    notifyError(error, enabled ? '서버를 다시 사용하지 못했습니다.' : '서버를 미사용으로 바꾸지 못했습니다.');
   }
 }
 
 function resetForm() {
   serverForm?.reset();
   renderRoleProducts(roleProductFields, ['WEB']);
-  document.getElementById("server-form-shared-path").value = "";
+  document.getElementById("server-form-result-path").value = "";
 }
 
 function showNewForm() {
@@ -246,13 +250,15 @@ function closeServerDialog() {
 }
 
 function updateSummary() {
-  const total = serverCache.length;
+  // 요약 숫자는 사용 중인 서버만 셉니다(미사용 포함을 켜도 같음).
+  const active = serverCache.filter((s) => s.enabled !== false);
+  const total = active.length;
 
-  const web = serverCache.filter((s) => getRoles(s).includes("WEB")).length;
+  const web = active.filter((s) => getRoles(s).includes("WEB")).length;
 
-  const was = serverCache.filter((s) => getRoles(s).includes("WAS")).length;
+  const was = active.filter((s) => getRoles(s).includes("WAS")).length;
 
-  const db = serverCache.filter((s) => getRoles(s).includes("DB")).length;
+  const db = active.filter((s) => getRoles(s).includes("DB")).length;
 
   document.getElementById("total-count").textContent = total;
 
@@ -261,10 +267,10 @@ function updateSummary() {
   document.getElementById("was-count").textContent = was;
 
   document.getElementById("db-count").textContent = db;
-  document.getElementById("other-count").textContent = serverCache.filter((s) => getRoles(s).includes("OTHER")).length;
+  document.getElementById("other-count").textContent = active.filter((s) => getRoles(s).includes("OTHER")).length;
 }
 
-function getRoles(server) { return server.roles?.length ? server.roles : [server.type]; }
+function getRoles(server) { return server.roles ?? []; }
 
 function getServerTypeLabel(type) {
   return type === "OTHER" ? "기타" : type;

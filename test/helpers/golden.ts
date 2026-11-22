@@ -48,13 +48,14 @@ export async function collectGolden(): Promise<Record<string, string>> {
   const get = await prepare();
   const files: Record<string, string> = {};
 
-  const servers: any[] = (await get('/api/servers')).data;
+  // 미사용 서버도 설정 응답은 비교하고, 스크립트는 내려받을 수 없으므로 사용 중인 서버만
+  const servers: any[] = (await get('/api/servers?includeInactive=1')).data;
   files['api/servers.json'] = json(servers.map((server) => omit(server, SERVER_IGNORED)));
   for (const server of servers) {
     const id = encodeURIComponent(server.id);
     files[`api/servers/${server.id}.json`] = json(omit((await get(`/api/servers/${id}`)).data, SERVER_IGNORED));
     files[`api/servers/${server.id}/check-config.json`] = json((await get(`/api/servers/${id}/check-config`)).data);
-    files[`scripts/${server.id}.${server.os === 'Windows' ? 'ps1' : 'sh'}`] = (await get(`/api/scripts/generate/${id}`)).body;
+    if (server.enabled !== false) files[`scripts/${server.id}.${server.os === 'Windows' ? 'ps1' : 'sh'}`] = (await get(`/api/scripts/generate/${id}`)).body;
   }
   files['api/policies.json'] = json((await get('/api/policies')).data.map((policy: any) => omit(policy, POLICY_IGNORED)));
   files['api/templates.json'] = json((await get('/api/templates')).data.map((template: any) => (template.generated ? { ...template, updatedAt: '<생성 시각>' } : template)));

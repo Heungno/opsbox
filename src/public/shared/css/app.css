@@ -2030,6 +2030,7 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 .icon-script { --icon-color: #9654c8; --icon-bg: #f3eafd; }
 .icon-codes { --icon-color: #c04778; --icon-bg: #fbeaf1; }
 .icon-audit { --icon-color: #4f6a8a; --icon-bg: #e9eef5; }
+.icon-inbox { --icon-color: #2f7d6d; --icon-bg: #e4f4ef; }
 #sidebar[data-theme="dark"] .menu-icon { --icon-bg: rgba(255,255,255,.08); }
 #sidebar[data-theme="dark"] .icon-dashboard { --icon-color: #83baff; }
 #sidebar[data-theme="dark"] .icon-reports { --icon-color: #c3a8ff; }
@@ -2039,6 +2040,7 @@ fieldset.form-group legend { margin-bottom: 8px; font-weight: 600; }
 #sidebar[data-theme="dark"] .icon-script { --icon-color: #d0a0f2; }
 #sidebar[data-theme="dark"] .icon-codes { --icon-color: #f19aba; }
 #sidebar[data-theme="dark"] .icon-audit { --icon-color: #a9bcd4; }
+#sidebar[data-theme="dark"] .icon-inbox { --icon-color: #8ad3c2; }
 
 /* Keep sidebar icon tiles consistent across primary and nested navigation. */
 .sidebar-menu .menu-icon {
@@ -3806,3 +3808,16 @@ a[data-menu="account"]:focus-visible { outline: 2px solid currentColor; outline-
 .account-form input[readonly] { opacity: .75; }
 .account-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .account-error { margin: 0; color: var(--danger, #c62828); font-size: 13px; }
+
+/* 결과 수집: 수신함 목록 */
+.result-path-list { margin: 8px 0 12px; padding-left: 20px; }
+.result-path-list code { word-break: break-all; }
+
+/* 서버 미사용 */
+.server-inactive td { color: var(--text-light); }
+.server-inactive-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.server-inactive-banner p { margin: 0; }
+.checkbox-label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 14px; }
+.checkbox-label input[type="checkbox"] { width: auto; height: auto; margin: 0; padding: 0; border: 0; box-shadow: none; }
+.section-title .btn { white-space: nowrap; }
+.server-inactive-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--surface-muted); color: var(--text-light); vertical-align: middle; }

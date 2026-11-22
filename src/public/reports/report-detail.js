@@ -75,10 +75,10 @@ async function loadHistoryAndReport(serverId, fileName) {
     const server = await api(`/api/servers/${encodeURIComponent(serverId)}`).catch(() => null);
     if (server) {
       currentServer = server;
-      currentServerType = server.type || '';
-      currentServerTypes = server.roles?.length ? server.roles : [server.type];
-      currentServerProduct = server.product || '';
-      currentServerProducts = server.products || { [server.type]: server.product };
+      currentServerTypes = server.roles ?? [];
+      currentServerType = currentServerTypes[0] || '';
+      currentServerProducts = server.products || {};
+      currentServerProduct = currentServerProducts[currentServerType] || '';
       currentServerOS = server.os || '';
     }
     // 1. 비교용 이전 점검 결과 목록
@@ -634,7 +634,7 @@ function renderPrintHeader(data, health, serverTypes) {
   const roles = serverTypes
     .map((role) => {
       const label = role === 'OTHER' ? '기타' : role;
-      const product = products[role] || (role === server.type ? server.product : '');
+      const product = products[role] || '';
       return product ? `${label} (${product})` : label;
     })
     .join(', ');

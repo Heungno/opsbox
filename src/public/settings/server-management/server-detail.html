@@ -29,6 +29,10 @@
       <p id="server-picker-empty" class="policy-help" hidden>등록된 서버가 없습니다.</p>
     </section>
     <div class="server-editor-column">
+    <section id="server-inactive-banner" class="card server-inactive-banner" hidden>
+      <p><strong>미사용 서버입니다.</strong> 대시보드·스크립트 내려받기·결과 가져오기에서 빠지고, 점검 결과와 보고서는 남아 있습니다.</p>
+      <button id="btn-activate-server" type="button" class="btn btn-primary btn-small">다시 사용</button>
+    </section>
     <nav class="server-detail-tabs" role="tablist" aria-label="서버 상세 메뉴">
       <button type="button" role="tab" data-server-tab="overview" aria-selected="true">개요</button>
       <button type="button" role="tab" data-server-tab="policy" aria-selected="false">점검 정책</button>
@@ -69,16 +73,12 @@
               <td id="server-ip"></td>
             </tr>
             <tr>
-              <th>공용 폴더</th>
-              <td id="server-shared-path"></td>
-            </tr>
-            <tr>
-              <th>스크립트 경로</th>
-              <td id="server-script-path"></td>
-            </tr>
-            <tr>
-              <th>결과 경로</th>
+              <th>결과 저장 경로</th>
               <td id="server-result-path"></td>
+            </tr>
+            <tr>
+              <th>OpsBox 수신함</th>
+              <td id="server-inbox-path"></td>
             </tr>
           </tbody>
         </table>

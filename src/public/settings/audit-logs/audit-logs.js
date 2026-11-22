@@ -9,7 +9,7 @@ let actionLabels = {};
 let page = 1;
 let total = 0;
 
-const TARGET_LABELS = { AUTH: '로그인', SERVER: '서버', POLICY: '점검 정책', TEMPLATE: '템플릿', COMMON_CODE: '공통코드', RESULT: '점검 결과', SCRIPT: '스크립트' };
+const TARGET_LABELS = { AUTH: '로그인', SERVER: '서버', POLICY: '점검 정책', TEMPLATE: '템플릿', COMMON_CODE: '공통코드', RESULT: '점검 결과', SCRIPT: '스크립트', SETTINGS: '설정' };
 const ACTION_TONE = { LOGIN_FAILURE: 'badge-danger', SERVER_DELETE: 'badge-danger', POLICY_DELETE: 'badge-danger', TEMPLATE_DELETE: 'badge-danger', LOGIN_SUCCESS: 'badge-muted', LOGOUT: 'badge-muted' };
 
 function localDate(date) {
