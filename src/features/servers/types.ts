@@ -1,7 +1,7 @@
-import type { ScriptPart } from '../features/templates/types';
-import type { OperatingSystem, PolicyCategory, PolicyRoleCategory } from '../features/policies/types';
-import type { CommonCodeValue } from '../features/common-codes/types';
-export type { PolicyCategory } from '../features/policies/types';
+import type { ScriptPart } from '../templates/types';
+import type { OperatingSystem, PolicyCategory, PolicyRoleCategory } from '../policies/types';
+import type { CommonCodeValue } from '../common-codes/types';
+export type { PolicyCategory } from '../policies/types';
 
 export interface ProcessCheck {
   name: string;
@@ -17,10 +17,6 @@ export interface FileCheck {
   path: string;
   warningSizeMB: number;
   criticalSizeMB: number;
-}
-
-export interface ServerPolicy {
-  minUptimeMinutes: number;
 }
 
 export interface PortCheck {
@@ -46,9 +42,6 @@ export interface RolePolicySetting {
 export interface Server {
   id: string;
   name: string;
-  /** `type`·`product`는 역할이 하나였던 예전 서버 데이터와의 호환용입니다. 새 코드는 roles·products를 씁니다. */
-  type: ServerRole;
-  product?: ServerProduct;
   roles?: ServerRole[];
   products?: Partial<Record<ServerRole, ServerProduct>>;
   scriptParts?: Partial<Record<ScriptPart, string>>;
@@ -59,8 +52,9 @@ export interface Server {
   customQueryTemplateIds?: string[];
   os: OperatingSystem;
   ip: string;
-  policy?: ServerPolicy;
   sharedPath: string;
+  /** 미사용 서버는 false (대시보드·스크립트·결과 가져오기에서 빠지고 보고서는 남음) */
+  enabled: boolean;
   processes: ProcessCheck[];
   directories: DirectoryCheck[];
   fileChecks?: FileCheck[];
@@ -86,17 +80,19 @@ export interface CheckConfig {
 
 export type CheckConfigInput = Partial<CheckConfig>;
 
-type ScriptPartMap = Partial<Record<ScriptPart, string>>;
-type RoleSettings = Partial<Record<ScriptPart, RolePolicySetting>>;
+/** check_config 열에 저장하는 점검 설정 (화면에서 저장한 값) */
+export type StoredCheckConfig = Omit<CheckConfig, 'queryTemplateId'> & { queryTemplateId?: string };
 
-/** DB(servers.data)에 저장하는 서버 구조 (기본정보 / 역할 / 정책 영역으로 나눔) */
-export interface StoredServer {
-  basicInfo: Pick<Server, 'id' | 'name' | 'os' | 'ip' | 'sharedPath'>;
-  roles: { selected: ServerRole[]; products: Server['products'] };
-  policy: {
-    basic: Pick<Server, 'processes' | 'directories' | 'fileChecks' | 'ports' | 'httpChecks' | 'policy' | 'queryTemplateId' | 'policyIds'> & { scriptParts: ScriptPartMap; settings?: RoleSettings };
-    web: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap };
-    was: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap };
-    db: { checks: ScriptPart[]; settings: RoleSettings; scriptParts: ScriptPartMap; customQueryTemplateIds: string[] };
-  };
+/** servers·server_roles·server_policies 행을 모은 저장 형태 */
+export interface ServerRecord {
+  id: string;
+  name: string;
+  os: OperatingSystem;
+  ip: string;
+  sharedPath: string;
+  enabled: boolean;
+  roles: ServerRole[];
+  products: Partial<Record<ServerRole, ServerProduct>>;
+  policyIds: Partial<Record<PolicyCategory, string>>;
+  checkConfig: StoredCheckConfig;
 }

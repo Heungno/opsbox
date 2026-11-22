@@ -1,4 +1,4 @@
-import type { ServerRole } from '../../types/server';
+import type { ServerRole } from '../servers/types';
 import type { CommonCodeValue } from '../common-codes/types';
 import type { OperatingSystem } from '../policies/types';
 

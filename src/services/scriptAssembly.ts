@@ -1,7 +1,7 @@
 import { BadRequestError } from '../shared/errors';
-import { Server } from '../types/server';
+import { Server } from '../features/servers/types';
 import { ManagedTemplate, ScriptPart } from '../features/templates/types';
-import { getServerProduct, getServerRoles } from './serverService';
+import { getServerProduct, getServerRoles } from '../features/servers/service';
 import { getCommonCodes } from '../features/common-codes/service';
 import { getPolicies } from '../features/policies/service';
 
@@ -104,8 +104,9 @@ export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedT
       name: server.name,
       ip: server.ip,
       sharedPath: server.sharedPath,
-      type: server.type,
-      product: server.product ?? products[server.type],
+      // 스크립트가 쓰는 대표 역할·제품 (첫 번째 역할)
+      type: roles[0],
+      product: products[roles[0]],
       roles,
       products,
     },

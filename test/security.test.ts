@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { app } from '../src/server';
 import { writeEncryptedBackup } from '../src/services/backupCrypto';
 import { resetLoginThrottle } from '../src/services/loginThrottle';
-import { createServer } from '../src/services/serverService';
+import { createServer } from '../src/features/servers/service';
 
 /*
  * 웹 보안 점검 후속 조치 확인

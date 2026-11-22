@@ -1,6 +1,6 @@
 import { getResultByFile, getHealthStatus, getResultSummaries } from './resultService';
 import { getReportFields } from './reportRuleService';
-import { getAllServers, getServerRoles } from './serverService';
+import { getAllServers, getServerRoles } from '../features/servers/service';
 import type { ReportDetail, ReportListItem, ReportListQuery } from '../types/report';
 
 export function getAllReports(filter?: ReportListQuery): ReportListItem[] {
@@ -23,7 +23,7 @@ export function getAllReports(filter?: ReportListQuery): ReportListItem[] {
     reports.push({
       serverId: server.id,
       serverName: server.name,
-      serverType: server.type,
+      serverType: getServerRoles(server)[0],
       serverTypes: getServerRoles(server),
       products: server.products,
       os: server.os,

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import { db } from '../src/db/database';
-import { createServer } from '../src/services/serverService';
+import { createServer } from '../src/features/servers/service';
 import { importResults, storeUploadedResult } from '../src/services/resultImportService';
 import { decryptBackup } from '../src/services/backupCrypto';
 

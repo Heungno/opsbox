@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 
-import { createServer } from '../src/services/serverService';
+import { createServer } from '../src/features/servers/service';
 import { generateScript } from '../src/services/scriptService';
 import { getHealthStatus, parseResultJson } from '../src/services/resultService';
 

@@ -3,7 +3,7 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createServer } from '../src/services/serverService';
+import { createServer } from '../src/features/servers/service';
 import { storeUploadedResult } from '../src/services/resultImportService';
 import { getAllReports } from '../src/services/reportService';
 

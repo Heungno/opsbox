@@ -610,7 +610,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
   const withResults = options.results ?? true;
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
   const { db } = await import('../src/db/database');
-  const { createServer } = await import('../src/services/serverService');
+  const { createServer } = await import('../src/features/servers/service');
   const { buildScriptConfig } = await import('../src/services/scriptAssembly');
   const { storeUploadedResult } = await import('../src/services/resultImportService');
   const { getHealthStatus, parseResultJson } = await import('../src/services/resultService');
@@ -649,7 +649,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
     if (demo.os === 'Windows') rolePolicySettings[PORT_ITEM] = { inputs: { targets: DB_PORT_TARGET } };
 
     const server = createServer({
-      id: demo.id, name: demo.name, type: demo.roles[0], roles: demo.roles, products: demo.products, os: demo.os, ip: demo.ip, sharedPath: demo.sharedPath ?? '',
+      id: demo.id, name: demo.name, roles: demo.roles, products: demo.products, os: demo.os, ip: demo.ip, sharedPath: demo.sharedPath ?? '',
       policyIds, roleChecks, rolePolicySettings,
       processes: demo.processes, directories: demo.directories, fileChecks: demo.fileChecks, ports: demo.ports, httpChecks: demo.httpChecks,
     } as any);

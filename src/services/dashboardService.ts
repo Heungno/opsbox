@@ -1,4 +1,4 @@
-import { getAllServers, getServerRoles } from './serverService';
+import { getAllServers, getServerRoles } from '../features/servers/service';
 
 import { getLatestResult, getHealthStatus } from './resultService';
 import type { DashboardSummary, RecentCheck } from '../types/report';
@@ -74,7 +74,7 @@ export function getRecentChecks(): RecentCheck[] {
 
       serverName: server.name,
 
-      serverType: server.type,
+      serverType: getServerRoles(server)[0],
       serverTypes: getServerRoles(server),
 
       fileName: latest.fileName,

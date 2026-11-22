@@ -1,4 +1,4 @@
-import { Server } from '../types/server';
+import { Server } from '../features/servers/types';
 import { ManagedTemplate } from '../features/templates/types';
 import { buildScriptConfig, ScriptConfig, selectScriptParts } from './scriptAssembly';
 

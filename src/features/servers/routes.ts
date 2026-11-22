@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
-import { NotFoundError, ValidationError } from '../shared/errors';
-import { recordAudit } from '../services/auditService';
-import { createServer, deleteServer, getAllServers, getCheckConfig, getServer, updateCheckConfig, updateServer } from '../services/serverService';
-import type { IdParams } from '../types/api';
-import type { CheckConfigInput, Server } from '../types/server';
-import { ok, requireObject } from '../shared/http';
+import { NotFoundError, ValidationError } from '../../shared/errors';
+import { recordAudit } from '../../services/auditService';
+import { activateServer, createServer, deactivateServer, getAllServers, getCheckConfig, getServer, updateCheckConfig, updateServer } from './service';
+import type { IdParams } from '../../types/api';
+import type { CheckConfigInput, Server } from './types';
+import { ok, requireObject } from '../../shared/http';
 
 const LIST_FIELDS = ['processes', 'directories', 'fileChecks', 'ports', 'httpChecks', 'customQueryTemplateIds'] as const;
 const MAP_FIELDS = ['scriptParts', 'roleChecks', 'rolePolicySettings', 'policyIds'] as const;
@@ -21,7 +21,8 @@ function assertCheckConfigShape(body: CheckConfigInput) {
 }
 
 export async function serverRoutes(app: FastifyInstance) {
-  app.get('/servers', async () => ok(getAllServers()));
+  // 기본은 사용 중인 서버만. ?includeInactive=1 이면 미사용 서버도 함께
+  app.get<{ Querystring: { includeInactive?: string } }>('/servers', async (request) => ok(getAllServers({ includeInactive: ['1', 'true'].includes(String(request.query.includeInactive ?? '')) })));
 
   app.get<{ Params: IdParams }>('/servers/:id', async (request) => {
     const server = getServer(request.params.id);
@@ -42,11 +43,19 @@ export async function serverRoutes(app: FastifyInstance) {
     return ok(updated);
   });
 
-  app.delete<{ Params: IdParams }>('/servers/:id', async (request) => {
+  // 미사용 / 다시 사용 (서버는 지우지 않습니다: 점검 결과와 보고서를 남기고 나중에 되살릴 수 있게)
+  app.post<{ Params: IdParams }>('/servers/:id/deactivate', async (request) => {
     const before = getServer(request.params.id);
-    deleteServer(request.params.id);
-    recordAudit(request, { action: 'SERVER_DELETE', targetId: request.params.id, summary: `서버 삭제: ${before?.name ?? ''} (${request.params.id})`, before, after: {} });
-    return ok(null);
+    const updated = deactivateServer(request.params.id);
+    recordAudit(request, { action: 'SERVER_DEACTIVATE', targetId: updated.id, summary: `서버 미사용: ${updated.name} (${updated.id})`, before, after: updated });
+    return ok(updated);
+  });
+
+  app.post<{ Params: IdParams }>('/servers/:id/activate', async (request) => {
+    const before = getServer(request.params.id);
+    const updated = activateServer(request.params.id);
+    recordAudit(request, { action: 'SERVER_ACTIVATE', targetId: updated.id, summary: `서버 다시 사용: ${updated.name} (${updated.id})`, before, after: updated });
+    return ok(updated);
   });
 
   app.get<{ Params: IdParams }>('/servers/:id/check-config', async (request) => ok(getCheckConfig(request.params.id)));

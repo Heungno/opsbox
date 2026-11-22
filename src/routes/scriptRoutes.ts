@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { recordAudit } from '../services/auditService';
 import { generateScript } from '../services/scriptService';
-import { getServer } from '../services/serverService';
+import { getServer } from '../features/servers/service';
 import type { ServerIdParams } from '../types/api';
 
 export async function scriptRoutes(app: FastifyInstance) {

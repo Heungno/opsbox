@@ -66,6 +66,33 @@ const MIGRATIONS: string[] = [
     position INTEGER NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE servers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    os TEXT NOT NULL,
+    ip TEXT NOT NULL,
+    shared_path TEXT NOT NULL DEFAULT '',
+    enabled INTEGER NOT NULL DEFAULT 1,   -- 0이면 미사용(지우지 않고 보고서는 남김)
+    check_config TEXT NOT NULL,           -- 점검 설정(JSON): 프로세스·포트 목록, 항목별 입력값 등
+    position INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE server_roles (
+    server_id TEXT NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    product TEXT,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (server_id, role)
+  );
+  -- 정책을 지우면 그 정책을 쓰던 서버의 할당만 풀립니다.
+  CREATE TABLE server_policies (
+    server_id TEXT NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+    category TEXT NOT NULL CHECK (category IN ('BASIC', 'WEB', 'WAS', 'DB')),
+    policy_id TEXT NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
+    PRIMARY KEY (server_id, category)
+  );
   `,
 ];
 

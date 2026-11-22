@@ -1,5 +1,5 @@
-import { DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from '../types/server';
-import type { FieldError, ValidationResult } from '../types/validation';
+import { DirectoryCheck, FileCheck, HttpCheck, PortCheck, ProcessCheck } from './types';
+import type { FieldError, ValidationResult } from '../../types/validation';
 
 export function validateProcesses(processes: ProcessCheck[]): ValidationResult<ProcessCheck[]> {
   const errors: FieldError[] = [];

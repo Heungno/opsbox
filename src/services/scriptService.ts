@@ -1,5 +1,5 @@
 import { BadRequestError, NotFoundError } from '../shared/errors';
-import { getServer, getServerProduct } from './serverService';
+import { getServer, getServerProduct } from '../features/servers/service';
 import { getTemplate, getTemplates } from '../features/templates/service';
 import { assembleWindowsScript } from './windowsScriptService';
 import { assembleLinuxScript } from './linuxScriptService';

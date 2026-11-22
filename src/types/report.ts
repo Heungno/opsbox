@@ -1,4 +1,4 @@
-import type { ServerProduct, ServerRole } from './server';
+import type { ServerProduct, ServerRole } from '../features/servers/types';
 import type { CheckStatus } from './result';
 
 export interface DashboardSummary {

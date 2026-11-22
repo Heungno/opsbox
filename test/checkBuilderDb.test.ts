@@ -9,7 +9,7 @@ import { before, test } from 'node:test';
 import type { BuilderSpec } from '../src/services/checkBuilder/types';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { generateScript } from '../src/services/scriptService';
-import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
+import { createServer, getServer, updateCheckConfig } from '../src/features/servers/service';
 
 /*
  * 점검 만들기: DB 정책 항목도 스크립트에 조립되고, DB 쿼리 실행기는 SQL 항목만 받는다.

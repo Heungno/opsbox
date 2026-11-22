@@ -18,12 +18,6 @@ const SEED_DIR = path.join(process.cwd(), 'seeds');
 const DATA_DIR = path.join(process.cwd(), 'data');
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS servers (
-    id TEXT PRIMARY KEY,
-    position INTEGER NOT NULL,
-    data TEXT NOT NULL
-  );
-
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     data TEXT NOT NULL
@@ -79,25 +73,6 @@ db.exec(`
   );
 `);
 
-/*
- * 목록형 데이터 (servers)
- * 각 행에 JSON 한 건을 저장하고 position으로 순서를 유지합니다.
- */
-export type CollectionTable = 'servers';
-
-export function readCollection<T>(table: CollectionTable): T[] {
-  const rows = db.prepare(`SELECT data FROM ${table} ORDER BY position, id`).all() as Array<{ data: string }>;
-  return rows.map((row) => JSON.parse(row.data) as T);
-}
-
-export function writeCollection<T>(table: CollectionTable, items: T[], idOf: (item: T) => string) {
-  transaction(() => {
-    db.prepare(`DELETE FROM ${table}`).run();
-    const insert = db.prepare(`INSERT INTO ${table} (id, position, data) VALUES (?, ?, ?)`);
-    items.forEach((item, index) => insert.run(idOf(item), index, JSON.stringify(item)));
-  });
-}
-
 /* 단일 문서형 데이터 (공통코드 등) */
 export function readSetting<T>(key: string): T | undefined {
   const row = db.prepare('SELECT data FROM settings WHERE key = ?').get(key) as { data: string } | undefined;
@@ -123,14 +98,6 @@ function isEmpty(table: string) {
 
 function seedFromJsonFiles() {
   const seeded: string[] = [];
-
-  if (isEmpty('servers')) {
-    const servers = readJsonFile('servers.json');
-    if (Array.isArray(servers) && servers.length) {
-      writeCollection('servers', servers, (server: any) => String(server.basicInfo?.id ?? server.id));
-      seeded.push(`servers ${servers.length}건`);
-    }
-  }
 
   if (isEmpty('users')) {
     const parsed = readJsonFile('user.json') as { users?: any[] } | undefined;

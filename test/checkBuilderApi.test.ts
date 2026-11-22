@@ -9,7 +9,7 @@ import { app } from '../src/server';
 import { isDetached } from '../src/services/checkBuilder/templates';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { getTemplate, saveTemplate } from '../src/features/templates/service';
-import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
+import { createServer, getServer, updateCheckConfig } from '../src/features/servers/service';
 
 /*
  * 점검 만들기 API: 준비된 점검 목록, 생성될 스크립트 미리보기, 폼 기준 다시 만들기

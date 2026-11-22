@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { before, test } from 'node:test';
 
-import { createServer, updateCheckConfig } from '../src/services/serverService';
+import { createServer, updateCheckConfig } from '../src/features/servers/service';
 import { generateScript } from '../src/services/scriptService';
 import { saveTemplate } from '../src/features/templates/service';
 import { getHealthStatus, parseResultJson } from '../src/services/resultService';

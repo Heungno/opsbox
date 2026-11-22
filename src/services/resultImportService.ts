@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 
 import { db, transaction } from '../db/database';
-import { getAllServers } from './serverService';
+import { getAllServers } from '../features/servers/service';
 import { getHealthStatus, parseResultJson } from './resultService';
 import { writeEncryptedBackup } from './backupCrypto';
 import { BadRequestError, ConflictError } from '../shared/errors';
