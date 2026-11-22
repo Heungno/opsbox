@@ -86,3 +86,37 @@ test('DB 쿼리 결과(queries)는 쿼리별 소제목과 표로', async () => {
   assert.match(box.find('h4')[0].textContent, /PostgreSQL 쿼리 · localhost/);
   assert.equal(box.find('td').map((cell) => cell.textContent).join(','), 'app,ONLINE');
 });
+
+test('쿼리 결과(queries)는 표시 방식(로그 표·JSON 등)과 관계없이 쿼리 표로 한 번만 그린다', async () => {
+  const queries = [{ target: 'db01', columns: ['databaseName', 'usagePercent'], rows: [['PORTAL', '12']] }];
+  const log = { item: 'DB_TRANSACTION_LOG', name: '트랜잭션 로그', status: 'Healthy', result: { components: [{ type: 'SUMMARY' }, { type: 'LOG_TABLE' }] }, detail: { queries } };
+  const json = { item: 'DB_REPLICATION', name: '복제', status: 'NotCollected', result: { components: [{ type: 'SUMMARY' }, { type: 'TABLE' }, { type: 'JSON' }] }, detail: { queries } };
+  for (const box of boxes(await render([log, json]))) {
+    assert.equal(box.find('pre').length, 0, 'JSON 원문 없음');
+    assert.equal(box.find('table').length, 1, '쿼리 표 한 번');
+    assert.equal(box.find('td').map((cell) => cell.textContent).join(','), 'PORTAL,12');
+    assert.doesNotMatch(box.textContent, /표시할 로그 데이터가 없습니다/);
+  }
+});
+
+test('측정값은 숫자만 보여 주고, 숫자가 없으면 그 칸을 만들지 않는다', async () => {
+  const metric = { item: 'WEB_REQUEST_VOLUME', name: '요청 처리량', status: 'NotCollected', message: '수집 설정이 없습니다.', result: { components: [{ type: 'SUMMARY' }, { type: 'METRIC' }] }, detail: { product: 'WebtoB', status: 'NotCollected', message: '수집 설정이 없습니다.' } };
+  const box = boxes(await render([metric]))[0];
+  assert.doesNotMatch(box.textContent, /product|WebtoB/);
+  assert.equal(box.find('div', 'report-item-body').length, 0);
+});
+
+test('결과가 비어 있고 안내 메시지가 있으면 "데이터 없음" 칸을 덧붙이지 않는다', async () => {
+  const empty = { item: 'WEB_WAS_CONNECTION', name: '연동 상태', status: 'NotCollected', result: { components: [{ type: 'SUMMARY' }, { type: 'TABLE' }] }, detail: { message: '대상이 설정되지 않았습니다.' } };
+  const box = boxes(await render([empty]))[0];
+  assert.match(box.textContent, /대상이 설정되지 않았습니다/);
+  assert.doesNotMatch(box.textContent, /표시할 행 데이터가 없습니다/);
+  // 메시지가 없으면 빈 결과 안내는 그대로
+  const bare = boxes(await render([{ ...empty, detail: {} }]))[0];
+  assert.match(bare.textContent, /표시할 행 데이터가 없습니다/);
+});
+
+test('열 이름이 설정되지 않은 쿼리 표의 상태 열은 "상태"로 보인다', async () => {
+  const item = { item: 'X', name: 'x', status: 'Healthy', result: { components: [{ type: 'SUMMARY' }, { type: 'LOG_TABLE' }] }, detail: { queries: [{ target: 't', columns: ['__OPSBOX_STATUS', 'logSizeMB'], rows: [['Healthy', '10']] }] } };
+  assert.deepEqual(boxes(await render([item]))[0].find('th').map((cell) => cell.textContent), ['상태', 'logSizeMB']);
+});

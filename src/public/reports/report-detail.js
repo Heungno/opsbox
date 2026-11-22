@@ -1,7 +1,7 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
 import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
-import { renderItemBoxes } from './report-item-box.js?v=20261122-boxes';
+import { renderItemBoxes } from './report-item-box.js?v=20261122-boxes3';
 
 await window.opsboxLayoutReady;
 
@@ -272,7 +272,6 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     OTHER: [],
   };
   renderChecklist('type-check-list', checkRows[type]);
-  renderPolicyItemOutputs(rolePolicyItems);
   const legacyLogSection = document.getElementById('log-analysis-results' + reportRoleSuffix);
   if (legacyLogSection) legacyLogSection.closest('.report-subsection').hidden = true;
   if (type === 'WAS') renderWasHeapRows(data.wasChecks);
@@ -280,6 +279,36 @@ function renderTypeReportForm(serverTypes, data, productMap) {
     renderDatabaseChecks(data.databaseChecks, product);
     document.getElementById('db-query-results' + reportRoleSuffix).hidden = true;
     document.getElementById('db-query-results' + reportRoleSuffix).previousElementSibling.hidden = true;
+  }
+
+  // 항목 상자: 역할 전용 상세(WebtoB 결과·JVM Heap 표·DB 엔진 상세)는 해당 항목 상자 안으로 옮깁니다.
+  const roleItemIds = new Set(rolePolicyItems.map((item) => item.item));
+  const roleExtras = {};
+  const moveInto = (itemId, nodes, mode, label, headingToHide) => {
+    if (!roleItemIds.has(itemId) || nodes.some((node) => !node)) return;
+    roleExtras[itemId] = { nodes, mode, label };
+    if (headingToHide) headingToHide.hidden = true;
+  };
+  if (type === 'WEB' && product === 'WebtoB' && data.webtobCheck) {
+    const details = document.getElementById('webtob-report-details' + reportRoleSuffix);
+    moveInto('WEB_ENGINE_STATUS', [document.getElementById('webtob-check-output' + reportRoleSuffix)], 'replace');
+    if (roleItemIds.has('WEB_ENGINE_STATUS') && details) details.hidden = true;
+  }
+  if (type === 'WAS') {
+    const heapTable = document.getElementById('was-heap-list' + reportRoleSuffix)?.closest('table');
+    moveInto('WAS_JVM_HEAP', [heapTable], 'replace', 'JVM Heap', heapTable?.previousElementSibling);
+  }
+  if (type === 'DB') {
+    const engineTable = document.getElementById('database-check-list' + reportRoleSuffix)?.closest('table');
+    const engineSummary = document.getElementById('database-check-summary' + reportRoleSuffix);
+    moveInto('DB_INSTANCE_STATUS', [engineSummary, engineTable], 'prepend', 'DB 엔진·데이터베이스', engineSummary?.previousElementSibling);
+  }
+  renderItemBoxes(document.getElementById('policy-item-output-results' + reportRoleSuffix), rolePolicyItems, { extras: roleExtras });
+  // 항목 상자 제목 옆에 상태가 나오므로, 역할 항목이 있으면 맨 위 '고유 점검' 요약 표는 숨깁니다.
+  const typeCheckTable = document.getElementById('type-check-list' + reportRoleSuffix)?.closest('table');
+  if (typeCheckTable && rolePolicyItems.length) {
+    typeCheckTable.hidden = true;
+    if (typeCheckTable.previousElementSibling?.tagName === 'H3') typeCheckTable.previousElementSibling.hidden = true;
   }
 
   const pendingRows = {
@@ -316,117 +345,6 @@ function renderTypeReportForm(serverTypes, data, productMap) {
   if (pendingRows[type]) renderPendingChecklist('type-pending-list', pendingRows[type]);
   }
   reportRoleSuffix = '';
-}
-
-function renderLogAnalysisTables(items, targetId = 'log-analysis-results' + reportRoleSuffix) {
-  const container = document.getElementById(targetId);
-  if (!container) return;
-  container.replaceChildren();
-  const logItems = (items || []).filter((item) => (['WEB_LOG', 'WAS_LOG'].includes(item.item) || item.executorType === 'LOG_ANALYSIS') && (item.result?.components?.some((component) => component.type === 'LOG_TABLE') ?? ['WEB_LOG', 'WAS_LOG'].includes(item.item)));
-  container.closest('.report-subsection').hidden = logItems.length === 0;
-  logItems.forEach((item) => {
-    const detail = item.detail || {};
-    const summary = document.createElement('p'); summary.className = 'policy-help';
-    const categories = detail.categories || {};
-    summary.textContent = `최근 ${detail.periodDays ?? 7}일 · 검색 ${detail.checkedFileCount ?? 0}개 파일 · 발견 ${detail.matchedLineCount ?? 0}건 · Fatal ${categories.fatal ?? 0} · Error ${categories.errorException ?? 0} · Warning ${categories.warning ?? 0} · HTTP 5xx ${categories.http5xx ?? 0} · HTTP 4xx ${categories.http4xx ?? 0}`;
-    container.append(summary);
-    if (detail.message) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = detail.message; container.append(message); }
-    const scroll = document.createElement('div'); scroll.className = 'table-scroll';
-    const table = document.createElement('table'); table.className = 'server-table';
-    const configuredColumns = item.result?.components?.find((component) => component.type === 'LOG_TABLE')?.columns;
-    const columns = configuredColumns?.length ? configuredColumns : [{ key: 'timestamp', label: '시각' }, { key: 'severity', label: '심각도' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
-    const head = document.createElement('thead'); const headRow = document.createElement('tr');
-    columns.forEach((column) => { const th = document.createElement('th'); th.textContent = column.label; headRow.append(th); });
-    head.append(headRow); table.append(head);
-    const body = document.createElement('tbody');
-    const samples = Array.isArray(detail.samples) ? detail.samples : [];
-    samples.forEach((sample) => {
-      const text = String(sample.text || '');
-      const severity = /\b(FATAL|CRITICAL|EMERGENCY)\b/i.test(text) ? '치명' : /\b(ERROR|ERR|EXCEPTION|SEVERE)\b/i.test(text) ? '오류' : /\b(WARN|WARNING)\b/i.test(text) ? '경고' : /\b5\d\d\b/.test(text) ? 'HTTP 5xx' : /\b4\d\d\b/.test(text) ? 'HTTP 4xx' : '확인';
-      const row = document.createElement('tr');
-      const values = { timestamp: sample.timestamp || '-', severity, path: sample.path || '-', message: text, text };
-      columns.forEach((column) => { const td = document.createElement('td'); td.textContent = String(values[column.key] ?? sample[column.key] ?? ''); row.append(td); });
-      body.append(row);
-    });
-    if (!samples.length) { const row = document.createElement('tr'); const cell = document.createElement('td'); cell.colSpan = columns.length; cell.textContent = detail.status === 'NotCollected' ? (detail.message || '로그를 수집하지 못했습니다.') : '표시할 로그가 없습니다.'; row.append(cell); body.append(row); }
-    table.append(body); scroll.append(table); container.append(scroll);
-  });
-}
-
-function renderPolicyItemOutputs(items, targetId = 'policy-item-output-results' + reportRoleSuffix) {
-  const container = document.getElementById(targetId);
-  if (!container) return;
-  container.replaceChildren();
-  (items || []).forEach((item) => {
-    const components = item.result?.components || [];
-    const views = components.map((component) => component.type);
-    const detail = item.detail || {};
-    views.filter((view) => view !== 'SUMMARY').forEach((view) => {
-      const section = document.createElement('section'); section.className = 'report-subsection';
-      const labels = { METRIC: '측정값', TABLE: '표', CONSOLE: '콘솔 결과', JSON: 'JSON 상세' };
-      const heading = document.createElement('h3'); heading.textContent = `${item.name || item.item} · ${labels[view] || view}`; section.append(heading);
-      if (view === 'LOG_TABLE') {
-        const configuredColumns = components.find((component) => component.type === 'LOG_TABLE')?.columns || [];
-        const samples = Array.isArray(detail.samples) ? detail.samples : [];
-        const columns = configuredColumns.length ? configuredColumns : [{ key: 'timestamp', label: '시각' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
-        const rows = samples.map((sample) => ({ ...sample, message: sample.text || sample.message }));
-        const table = document.createElement('table'); table.className = 'server-table';
-        const head = document.createElement('thead'); const headerRow = document.createElement('tr'); columns.forEach((column) => { const th = document.createElement('th'); th.textContent = column.label || column.key; headerRow.append(th); }); head.append(headerRow);
-        const body = document.createElement('tbody');
-        if (!rows.length) { const row = document.createElement('tr'); const cell = document.createElement('td'); cell.colSpan = columns.length; cell.textContent = detail.message || '표시할 로그 데이터가 없습니다.'; row.append(cell); body.append(row); }
-        else rows.forEach((values) => { const row = document.createElement('tr'); columns.forEach((column) => { const cell = document.createElement('td'); cell.textContent = String(values[column.key] ?? ''); row.append(cell); }); body.append(row); });
-        table.append(head, body); section.append(table);
-      } else if (view === 'TABLE') {
-        const configuredColumns = components.find((component) => component.type === 'TABLE')?.columns || [];
-        const queryResults = Array.isArray(detail.queries) ? detail.queries : null;
-        const rows = Array.isArray(detail.rows) ? detail.rows : [];
-        const columns = Array.isArray(detail.columns) && detail.columns.length ? detail.columns : configuredColumns.length ? configuredColumns : (rows[0] && !Array.isArray(rows[0]) ? Object.keys(rows[0]).map((key) => ({ key, label: key })) : []);
-        if ((!columns.length || !rows.length) && !queryResults) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = '표시할 행 데이터가 없습니다.'; section.append(message); }
-        else if (!queryResults) {
-          const scroll = document.createElement('div'); scroll.className = 'table-scroll'; const table = document.createElement('table'); table.className = 'server-table';
-          const head = document.createElement('thead'); const headRow = document.createElement('tr');
-          columns.forEach((column, index) => { const th = document.createElement('th'); th.textContent = column.label || configuredColumns[index]?.label || String(column.key || column); headRow.append(th); }); head.append(headRow);
-          const body = document.createElement('tbody'); rows.forEach((values) => { const row = document.createElement('tr'); columns.forEach((column, index) => { const key = column.key || column; const cell = document.createElement('td'); const value = Array.isArray(values) ? values[index] : values?.[key]; cell.textContent = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value); row.append(cell); }); body.append(row); });
-          table.append(head, body); scroll.append(table); section.append(scroll);
-        }
-        if (queryResults) queryResults.forEach((query) => {
-          const querySection = document.createElement('section'); querySection.className = 'report-subsection';
-          const title = document.createElement('h4'); title.textContent = [query.name, query.target].filter(Boolean).join(' · ') || item.name || item.item; querySection.append(title);
-          if (query.message) { const message = document.createElement('p'); message.className = 'policy-help'; message.textContent = query.message; querySection.append(message); }
-          const queryColumns = configuredColumns.length ? configuredColumns : (query.columns || []).map((key) => ({ key, label: key }));
-          const queryRows = query.rows || [];
-          if (queryColumns.length && queryRows.length) {
-            const queryTable = document.createElement('table'); queryTable.className = 'server-table';
-            const queryHead = document.createElement('thead'); const queryHeaderRow = document.createElement('tr'); queryColumns.forEach((column) => { const th = document.createElement('th'); th.textContent = column.label || column.key; queryHeaderRow.append(th); }); queryHead.append(queryHeaderRow);
-            const queryBody = document.createElement('tbody'); queryRows.forEach((values) => { const row = document.createElement('tr'); queryColumns.forEach((column, index) => { const cell = document.createElement('td'); const value = Array.isArray(values) ? values[index] : values?.[column.key]; cell.textContent = value == null ? '' : String(value); row.append(cell); }); queryBody.append(row); }); queryTable.append(queryHead, queryBody); querySection.append(queryTable);
-          } else { const empty = document.createElement('p'); empty.className = 'policy-help'; empty.textContent = '표시할 행 데이터가 없습니다.'; querySection.append(empty); }
-          section.append(querySection);
-        });
-      } else if (view === 'CONSOLE') {
-        const output = detail.output || detail.console?.stdout || detail.command || detail.message || '콘솔 출력이 없습니다.';
-        const pre = document.createElement('pre'); pre.className = 'webtob-console-output'; pre.textContent = String(output); section.append(pre);
-      } else if (view === 'METRIC') {
-        const values = detail.metrics || Object.fromEntries(Object.entries(detail).filter(([key, value]) => key !== 'status' && ['number', 'string'].includes(typeof value)));
-        const table = document.createElement('table'); table.className = 'server-table';
-        const body = document.createElement('tbody');
-        Object.entries(values).forEach(([key, value]) => { const row = document.createElement('tr'); const name = document.createElement('th'); name.textContent = key; const cell = document.createElement('td'); cell.textContent = String(value); row.append(name, cell); body.append(row); });
-        table.append(body); section.append(table);
-      } else {
-        const pre = document.createElement('pre'); pre.className = 'webtob-console-output'; pre.textContent = JSON.stringify(detail, null, 2); section.append(pre);
-      }
-      container.append(section);
-    });
-    if (views.includes('SUMMARY')) {
-      const section = document.createElement('section'); section.className = 'report-subsection';
-      const heading = document.createElement('h3'); heading.textContent = `${item.name || item.item} · 요약`; section.append(heading);
-      const status = item.status || detail.status || 'NotCollected';
-      const badge = document.createElement('span'); badge.className = `server-badge ${status === 'Healthy' ? 'badge-success' : status === 'Warning' ? 'badge-warning' : 'badge-danger'}`; badge.textContent = status;
-      const summary = document.createElement('p'); summary.append(badge);
-      const message = item.message || detail.message;
-      if (message) summary.append(document.createTextNode(` ${message}`));
-      section.append(summary); container.append(section);
-    }
-  });
 }
 
 function summarizeRolePolicyDetail(item) {

@@ -42,8 +42,10 @@ function buildTable(columns, rows, valueOf) {
 }
 
 const emptyNote = (text) => el('p', 'policy-help', text);
+/** 빈 결과: 항목 안내 메시지가 이미 있으면 칸을 만들지 않음(null) */
+const emptyOrNull = (hasMessage, text) => (hasMessage ? null : emptyNote(text));
 
-function renderTableView(item, components, detail) {
+function renderTableView(item, components, detail, hasMessage) {
   const configuredColumns = components.find((component) => component.type === 'TABLE')?.columns || [];
   const queries = Array.isArray(detail.queries) ? detail.queries : null;
   if (queries) {
@@ -51,7 +53,7 @@ function renderTableView(item, components, detail) {
     queries.forEach((query) => {
       wrap.append(el('h4', null, [query.name, query.target].filter(Boolean).join(' · ') || item.name || item.item));
       if (query.message) wrap.append(emptyNote(query.message));
-      const columns = configuredColumns.length ? configuredColumns : (query.columns || []).map((key) => ({ key, label: key }));
+      const columns = configuredColumns.length ? configuredColumns : (query.columns || []).map((key) => ({ key, label: key === '__OPSBOX_STATUS' ? '상태' : key }));
       const rows = query.rows || [];
       wrap.append(columns.length && rows.length
         ? buildTable(columns, rows, (values, column, index) => (Array.isArray(values) ? values[index] : values?.[column.key]))
@@ -63,20 +65,22 @@ function renderTableView(item, components, detail) {
   const columns = Array.isArray(detail.columns) && detail.columns.length ? detail.columns
     : configuredColumns.length ? configuredColumns
       : (rows[0] && !Array.isArray(rows[0]) ? Object.keys(rows[0]).map((key) => ({ key, label: key })) : []);
-  if (!columns.length || !rows.length) return emptyNote('표시할 행 데이터가 없습니다.');
+  if (!columns.length || !rows.length) return emptyOrNull(hasMessage, '표시할 행 데이터가 없습니다.');
   return buildTable(columns, rows, (values, column, index) => (Array.isArray(values) ? values[index] : values?.[column.key || column]));
 }
 
-function renderLogView(components, detail) {
+function renderLogView(components, detail, hasMessage) {
   const configured = components.find((component) => component.type === 'LOG_TABLE')?.columns || [];
   const columns = configured.length ? configured : [{ key: 'timestamp', label: '시각' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
   const rows = (Array.isArray(detail.samples) ? detail.samples : []).map((sample) => ({ ...sample, message: sample.text || sample.message }));
-  if (!rows.length) return emptyNote(detail.message || '표시할 로그 데이터가 없습니다.');
+  if (!rows.length) return emptyOrNull(hasMessage, '표시할 로그 데이터가 없습니다.');
   return buildTable(columns, rows, (values, column) => values[column.key]);
 }
 
 function renderMetricView(detail) {
-  const values = detail.metrics || Object.fromEntries(Object.entries(detail).filter(([key, value]) => key !== 'status' && key !== 'message' && ['number', 'string'].includes(typeof value)));
+  // 측정값은 숫자만 (product 같은 글자 필드는 제외), 없으면 칸을 만들지 않음
+  const values = detail.metrics || Object.fromEntries(Object.entries(detail).filter(([, value]) => typeof value === 'number' && Number.isFinite(value)));
+  if (!Object.keys(values).length) return null;
   const table = el('table', 'server-table');
   const body = el('tbody');
   Object.entries(values).forEach(([key, value]) => {
@@ -88,9 +92,9 @@ function renderMetricView(detail) {
   return table;
 }
 
-function renderView(view, item, components, detail) {
-  if (view === 'TABLE') return renderTableView(item, components, detail);
-  if (view === 'LOG_TABLE') return renderLogView(components, detail);
+function renderView(view, item, components, detail, hasMessage) {
+  if (view === 'TABLE') return renderTableView(item, components, detail, hasMessage);
+  if (view === 'LOG_TABLE') return renderLogView(components, detail, hasMessage);
   if (view === 'CONSOLE') return el('pre', 'webtob-console-output', String(detail.output || detail.console?.stdout || detail.command || detail.message || '콘솔 출력이 없습니다.'));
   if (view === 'METRIC') return renderMetricView(detail);
   return el('pre', 'webtob-console-output', JSON.stringify(detail, null, 2));
@@ -112,8 +116,12 @@ function buildBox(item, extra) {
   const blocks = [];
   if (extra?.nodes?.length) blocks.push({ label: extra.label || '상세', nodes: extra.nodes });
   if (extra?.mode !== 'replace') {
-    components.map((component) => component.type).filter((view) => view !== 'SUMMARY')
-      .forEach((view) => blocks.push({ label: VIEW_LABELS[view] || view, nodes: [renderView(view, item, components, detail)] }));
+    // 쿼리 결과가 있으면 표시 방식(로그 표·JSON 등)과 관계없이 쿼리 표 한 번 (예: DB_TRANSACTION_LOG 가 로그 표로 분류된 경우)
+    const views = Array.isArray(detail.queries) ? ['TABLE'] : components.map((component) => component.type).filter((view) => view !== 'SUMMARY');
+    views.forEach((view) => {
+      const node = renderView(view, item, components, detail, Boolean(message));
+      if (node) blocks.push({ label: VIEW_LABELS[view] || view, nodes: [node] });
+    });
   }
   if (blocks.length) {
     const body = el('div', 'report-item-body');
