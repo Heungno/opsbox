@@ -67,7 +67,6 @@ export function renderTrendChart(container, { results, endDate, days, currentFil
   // 기준선 (주의·위험): 상태 색 대신 회색 점선 + 글자
   for (const line of model.thresholds) {
     chart.append(svg('line', { class: 'trend-threshold', x1: model.left, x2: model.right, y1: line.y, y2: line.y }));
-    chart.append(svg('text', { class: 'trend-threshold-label', x: model.left + 4, y: line.y - 4 }, `${line.label} ${line.value}%`));
   }
 
   // 세로 안내선 (값 상자와 함께)
@@ -86,6 +85,10 @@ export function renderTrendChart(container, { results, endDate, days, currentFil
     }
     const last = series.points[series.points.length - 1];
     if (last) endLabels.push({ label: series.label, key: series.key, x: last.x, y: last.y + 4 });
+  }
+  // 기준선 글자는 데이터 선 위에 그려(배경색 테두리) 선이 지나가도 읽히게 합니다.
+  for (const line of model.thresholds) {
+    chart.append(svg('text', { class: 'trend-threshold-label', x: model.left + 4, y: line.y - 4 }, `${line.label} ${line.value}%`));
   }
   for (const label of spreadLabels(endLabels)) {
     chart.append(svg('text', { class: `trend-end-label trend-${label.key}-label`, x: label.x + 8, y: label.y }, label.label));

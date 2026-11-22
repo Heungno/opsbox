@@ -3737,7 +3737,9 @@ input[type="radio"] {
 :root[data-theme="dark"] { --trend-cpu: #3987e5; --trend-memory: #d95926; --trend-disk: #199e70; }
 .trend-card .section-header { flex-wrap: wrap; gap: 8px; }
 .trend-range { display: flex; gap: 4px; }
-.trend-range .btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+/* 테마별 일반 버튼 규칙(:root[data-theme] .btn:not(...))보다 우선하도록 구체적으로 지정 */
+:root .trend-range .btn[aria-pressed="true"]:not(.btn-primary):not(.btn-danger),
+:root[data-theme] .trend-range .btn[aria-pressed="true"]:not(.btn-primary):not(.btn-danger) { background: var(--petrol, var(--primary)); border-color: var(--petrol, var(--primary)); color: #fff; }
 .trend-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 8px; padding: 0; list-style: none; font-size: 13px; color: var(--text); }
 .trend-legend-item, .trend-tooltip-row { display: inline-flex; align-items: center; gap: 6px; }
 .trend-swatch { display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: currentColor; }
@@ -3749,6 +3751,7 @@ input[type="radio"] {
 .trend-grid { stroke: var(--border); stroke-width: 1; }
 .trend-axis { fill: var(--text-light); font-size: 11px; }
 .trend-threshold { stroke: var(--text-light); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.7; }
+.trend-threshold-label, .trend-end-label { paint-order: stroke; stroke: var(--card-bg); stroke-width: 4px; stroke-linejoin: round; }
 .trend-threshold-label { fill: var(--text-light); font-size: 11px; }
 .trend-guide { stroke: var(--text-light); stroke-width: 1; opacity: 0.6; }
 .trend-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }

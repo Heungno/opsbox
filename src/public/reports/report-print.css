@@ -69,6 +69,11 @@
     display: none !important;
   }
 
+  /* 인쇄 양식의 검은 테두리 색 대신 연한 격자 */
+  .trend-grid {
+    stroke: #d0d0d0 !important;
+  }
+
   :root {
     --print-serif: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
     --print-sans: "맑은 고딕", "Malgun Gothic", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
