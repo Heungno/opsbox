@@ -84,5 +84,11 @@ export function buildTrendModel(results, { endDate, days, width = 720, height = 
   const yTicks = [0, 25, 50, 75, 100].map((value) => ({ y: yOf(value), label: `${value}%` }));
   const thresholds = THRESHOLDS.map(({ value, label }) => ({ y: yOf(value), value, label }));
 
-  return { enough, start, end, width, height, left, right, top, bottom, series, xTicks, yTicks, thresholds };
+  // 점검 시점별 묶음 (값 상자·클릭 대상): 값이 하나라도 있는 결과만
+  const entries = withValues.map(({ entry, time }) => ({
+    x: xOf(time), date: entry.checkDate, fileName: entry.fileName,
+    values: Object.fromEntries(TREND_SERIES.map(({ key }) => [key, isValue(entry[key]) ? entry[key] : null])),
+  }));
+
+  return { enough, start, end, width, height, left, right, top, bottom, series, entries, xTicks, yTicks, thresholds };
 }

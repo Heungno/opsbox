@@ -1,7 +1,30 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
+import { renderTrendChart } from './trend-chart.js?v=20261122-trend';
 
 await window.opsboxLayoutReady;
+
+// 자원 사용 추세 그래프: 기간(일). 기간 버튼과 비교 선택을 바꾸면 다시 그립니다.
+let trendDays = 28;
+document.querySelectorAll('[data-trend-days]').forEach((button) => button.addEventListener('click', () => {
+  trendDays = Number(button.dataset.trendDays);
+  document.querySelectorAll('[data-trend-days]').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+  renderTrend();
+}));
+
+function renderTrend() {
+  const container = document.getElementById('trend-chart');
+  if (!container || !currentReportData) return;
+  const serverId = new URLSearchParams(location.search).get('serverId') || '';
+  renderTrendChart(container, {
+    results: historyResults,
+    endDate: currentReportData.data.checkDate,
+    days: trendDays,
+    currentFile: selectedCurrentFile,
+    compareFile: document.getElementById('compare-select')?.value || '',
+    onSelect: (fileName) => { location.href = `/reports/detail?serverId=${encodeURIComponent(serverId)}&file=${encodeURIComponent(fileName)}`; },
+  });
+}
 
 // CSP에서 인라인 이벤트(onclick)를 막으므로 여기서 연결합니다.
 document.getElementById('print-report-button')?.addEventListener('click', () => window.print());
@@ -126,6 +149,7 @@ function renderReport() {
   renderHealth(health);
   renderPrintHeader(data, health, serverTypes);
   renderMetrics(data, compareData);
+  renderTrend();
   const capturedPolicyDefinitions = data.checks?.policyDefinitions || {};
   const collectedBasicItems = data.checks?.policyItems || [];
   const collectedIds = new Set(collectedBasicItems.map((item) => item.item));

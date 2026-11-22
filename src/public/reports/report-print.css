@@ -56,7 +56,17 @@
     --badge-bg: #ffffff;
     --badge-fg: #000000;
     --badge-border: #000000;
+    --trend-cpu: #2a78d6;
+    --trend-memory: #eb6834;
+    --trend-disk: #1baf7a;
     background: #fff !important;
+  }
+
+  /* 추세 그래프: 기간 버튼·값 상자는 인쇄하지 않음 */
+  .trend-range,
+  .trend-tooltip,
+  .trend-guide {
+    display: none !important;
   }
 
   :root {

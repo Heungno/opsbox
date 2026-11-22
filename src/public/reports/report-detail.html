@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light dark" />
   <title>OpsBox | 점검 보고서 상세</title>
   <script src="/shared/js/theme-init.js?v=20261121-system"></script>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261121-scheme" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261122-trend" />
   <style>
     .diff-badge {
       display: inline-block;
@@ -30,7 +30,7 @@
       color: var(--text-light);
     }
   </style>
-  <link rel="stylesheet" href="/reports/report-print.css?v=20261121-print2" />
+  <link rel="stylesheet" href="/reports/report-print.css?v=20261122-trend" />
 </head>
 
 <body>
@@ -103,6 +103,17 @@
             </div>
           </div>
           <div id="report-result"></div>
+        </section>
+        <section class="card trend-card">
+          <div class="section-header">
+            <h2>자원 사용 추세</h2>
+            <div class="trend-range" role="group" aria-label="추세 기간">
+              <button type="button" class="btn btn-small" data-trend-days="14" aria-pressed="false">2주</button>
+              <button type="button" class="btn btn-small" data-trend-days="28" aria-pressed="true">4주</button>
+              <button type="button" class="btn btn-small" data-trend-days="56" aria-pressed="false">8주</button>
+            </div>
+          </div>
+          <div id="trend-chart"></div>
         </section>
         <section id="basic-policy-item-section" class="card" hidden>
           <h2>기본 정책 사용자 항목</h2>
@@ -245,7 +256,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261121-audit"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261121-os"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261122-trend"></script>
 </body>
 
 </html>

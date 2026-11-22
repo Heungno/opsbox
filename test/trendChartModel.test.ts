@@ -80,3 +80,11 @@ test('x 눈금은 기간에 맞는 간격과 MM/DD 라벨', () => {
   const two = buildTrendModel([result('2026-11-08 09:00:00', 1, 1, 1), result(END, 2, 2, 2)], options(14));
   assert.ok(two.xTicks.length >= 6 && two.xTicks.length <= 8, String(two.xTicks.length));
 });
+
+test('점검 시점별 묶음(entries)에 x·일시·파일·세 값을 담는다', () => {
+  const model = buildTrendModel([result('2026-11-20 09:00:00', 1, null, 3, 'a.json'), result(END, 4, 5, 6, 'b.json')], options(14));
+  assert.equal(model.entries.length, 2);
+  assert.deepEqual(model.entries[0].values, { cpu: 1, memory: null, disk: 3 });
+  assert.equal(model.entries[1].fileName, 'b.json');
+  assert.equal(model.entries[1].x, series(model, 'cpu').points[1].x);
+});
