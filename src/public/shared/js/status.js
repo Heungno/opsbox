@@ -37,12 +37,10 @@ export function resetStatusLabels() {
   loading = undefined;
 }
 
-/** 공통코드에서 상태 이름을 한 번 불러옵니다. 실패해도 기본 이름으로 계속합니다. */
+/** 공통코드에서 상태 이름을 한 번 불러옵니다(codes.js와 같은 요청). 실패해도 기본 이름으로 계속합니다. */
 export function loadStatusLabels() {
-  loading ??= import('./api.js')
-    .then(({ api }) => api('/api/common-codes'))
-    .then((codes) => setStatusLabels(codes?.healthStatuses))
-    .catch(() => {});
+  // codes.js가 이 파일을 import 하므로, 순환을 피하려고 여기서는 동적으로 불러옵니다.
+  loading ??= import('./codes.js').then(({ loadCodes }) => loadCodes()).catch(() => {});
   return loading;
 }
 
