@@ -1,13 +1,9 @@
 import { api, notifyError, showToast } from '/shared/js/api.js';
+import { customScriptItems, filterTemplates, generatedNoteText, groupCounts, renderTemplateList, templateGroup } from './script-view.js';
 
 
-let templates = [];
-let allTemplates = [];
-let editingId = '';
-let hasUnsavedChanges = false;
-let pendingTemplate = null;
-let commonCodes = null;
-let activeGroup = 'ALL';
+/** 화면 상태 */
+const state = { templates: [], allTemplates: [], editingId: '', hasUnsavedChanges: false, pendingTemplate: null, commonCodes: null, activeGroup: 'ALL' };
 
 const form = document.getElementById('template-form');
 const kind = document.getElementById('template-kind');
@@ -28,27 +24,27 @@ document.getElementById('template-group-tabs').addEventListener('click', (event)
 document.getElementById('template-group-tabs').addEventListener('keydown', (event) => {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
   const tabs = [...document.querySelectorAll('#template-group-tabs [role="tab"]')];
-  const current = tabs.findIndex((tab) => tab.dataset.group === activeGroup);
+  const current = tabs.findIndex((tab) => tab.dataset.group === state.activeGroup);
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
   event.preventDefault(); tabs[next].focus(); setActiveGroup(tabs[next].dataset.group);
 });
 document.getElementById('btn-template-history').addEventListener('click', showTemplateHistory);
 document.getElementById('template-history-close').addEventListener('click', () => document.getElementById('template-history-dialog').close());
 document.getElementById('btn-template-reset').addEventListener('click', () => {
-  if (hasUnsavedChanges && !confirm('현재 템플릿에 저장하지 않은 변경사항이 있습니다. 저장하지 않고 새 템플릿을 작성할까요?')) return;
+  if (state.hasUnsavedChanges && !confirm('현재 템플릿에 저장하지 않은 변경사항이 있습니다. 저장하지 않고 새 템플릿을 작성할까요?')) return;
   resetForm();
 });
 form.addEventListener('submit', saveTemplate);
-form.addEventListener('input', () => { hasUnsavedChanges = true; });
-form.addEventListener('change', () => { hasUnsavedChanges = true; });
+form.addEventListener('input', () => { state.hasUnsavedChanges = true; });
+form.addEventListener('change', () => { state.hasUnsavedChanges = true; });
 document.getElementById('unsaved-template-save-open').addEventListener('click', async () => {
-  if (await persistTemplate()) { document.getElementById('unsaved-template-dialog').close(); openTemplate(pendingTemplate); }
+  if (await persistTemplate()) { document.getElementById('unsaved-template-dialog').close(); openTemplate(state.pendingTemplate); }
 });
 document.getElementById('unsaved-template-discard-open').addEventListener('click', () => {
-  document.getElementById('unsaved-template-dialog').close(); hasUnsavedChanges = false; openTemplate(pendingTemplate);
+  document.getElementById('unsaved-template-dialog').close(); state.hasUnsavedChanges = false; openTemplate(state.pendingTemplate);
 });
 document.getElementById('unsaved-template-continue').addEventListener('click', () => {
-  document.getElementById('unsaved-template-dialog').close(); pendingTemplate = null;
+  document.getElementById('unsaved-template-dialog').close(); state.pendingTemplate = null;
 });
 editor.addEventListener('input', renderHighlightedTemplate);
 editor.addEventListener('scroll', () => {
@@ -107,33 +103,30 @@ function renderHighlightedTemplate() {
 }
 
 function updateFormMode() {
-  const script = kind.value === 'SCRIPT' || kind.value === 'SCRIPT_PART';
   const part = kind.value === 'SCRIPT_PART';
-  if (commonCodes) {
+  const script = part;
+  if (state.commonCodes) {
     const itemSelect = document.getElementById('template-item');
     const previousItem = itemSelect.value;
     const itemCodes = kind.value === 'QUERY'
-      ? commonCodes.scriptItems.filter((entry) => entry.role === 'DB' && entry.value !== 'DB_QUERY_RUNNER')
-      : commonCodes.scriptItems;
+      ? state.commonCodes.scriptItems.filter((entry) => entry.role === 'DB' && entry.value !== 'DB_QUERY_RUNNER')
+      : state.commonCodes.scriptItems;
     populateCodeSelect(itemSelect, itemCodes);
     if (itemCodes.some((entry) => entry.value === previousItem)) itemSelect.value = previousItem;
   }
   document.querySelectorAll('.template-script-option').forEach((node) => node.hidden = !script);
   document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part);
   document.querySelectorAll('.template-query-dbms-option').forEach((node) => node.hidden = kind.value !== 'QUERY');
-  document.querySelectorAll('.template-target-option').forEach((node) => node.hidden = kind.value !== 'SCRIPT');
   const linuxOption = document.querySelector('#template-os option[value="Linux"]');
   if (linuxOption) linuxOption.disabled = part;
   if (part && document.getElementById('template-os').value !== 'Windows') document.getElementById('template-os').value = 'Windows';
-  const selectedItem = commonCodes?.scriptItems.find((entry) => entry.value === document.getElementById('template-item').value);
+  const selectedItem = state.commonCodes?.scriptItems.find((entry) => entry.value === document.getElementById('template-item').value);
   document.querySelectorAll('.template-query-option').forEach((node) => { node.hidden = !(part && selectedItem?.value === 'DB_QUERY_RUNNER'); });
   help.textContent = part
     ? '점검 항목별 스크립트는 서버 정책에서 선택한 항목만 다운로드 시 조립됩니다. 각 항목은 자기 점검 결과만 수집하고, 최종 JSON 예시는 오른쪽에 표시됩니다. 실행 준비 항목의 @@CONFIG_BASE64@@ 토큰은 지우지 마세요.'
-    : kind.value === 'SCRIPT'
-      ? '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.'
-      : kind.value === 'QUERY'
-        ? '선택한 DBMS에서 실행할 SQL입니다. 점검 항목과 분리해 여러 항목에서 재사용할 수 있습니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
-        : '전체 스크립트 템플릿은 항목별 조립을 대체하는 고급 사용자 지정 기능입니다. 일반적인 수정은 점검 항목 스크립트 템플릿을 사용하세요.';
+    : kind.value === 'QUERY'
+      ? '선택한 DBMS에서 실행할 SQL입니다. 점검 항목과 분리해 여러 항목에서 재사용할 수 있습니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
+      : '';
   renderHighlightedTemplate();
   renderOutputExample();
 }
@@ -162,7 +155,7 @@ function renderOutputExample() {
   let example;
   if (kind.value === 'SCRIPT_PART') {
     const item = document.getElementById('template-item').value;
-    const definition = commonCodes?.scriptItems.find((entry) => entry.value === item);
+    const definition = state.commonCodes?.scriptItems.find((entry) => entry.value === item);
     example = examples[item] || (definition?.role ? {
       checks: { rolePolicies: { [definition.role]: { status: 'Healthy', items: [{ item, name: definition.label, status: 'Healthy', detail: { sample: true } }] } } },
     } : {});
@@ -173,104 +166,85 @@ function renderOutputExample() {
 }
 
 async function loadTemplates() {
-  if (!commonCodes) {
-    commonCodes = await api('/api/common-codes');
+  if (!state.commonCodes) {
+    state.commonCodes = await api('/api/common-codes');
     const policies = await api('/api/policies').catch((error) => { notifyError(error, '점검 정책 목록을 불러오지 못했습니다.'); return null; });
-    if (policies) {
-      const custom = new Map();
-      policies.forEach((policy) => (policy.items || []).filter((item) => item.id.startsWith('CUSTOM_')).forEach((item) => {
-        if (!custom.has(item.id)) custom.set(item.id, { value: item.id, label: `${item.name} · ${policy.category}`, group: policy.category, role: ['WEB', 'WAS', 'DB'].includes(policy.category) ? policy.category : undefined, description: `${policy.os} 정책 항목` });
-      }));
-      commonCodes.scriptItems.push(...custom.values());
-    }
-    populateCodeSelect(document.getElementById('template-kind'), commonCodes.templateKinds);
-    populateCodeSelect(document.getElementById('template-os'), commonCodes.operatingSystems);
-    populateCodeSelect(document.getElementById('template-item'), commonCodes.scriptItems);
-    populateCodeSelect(document.getElementById('template-role'), commonCodes.serverRoles, '모든 역할');
-    populateCodeSelect(document.getElementById('template-dbms'), commonCodes.productsByRole.DB);
-    populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...commonCodes.templateKinds]);
-    populateCodeSelect(document.getElementById('template-os-filter'), [{ value: '', label: '전체 OS' }, ...commonCodes.operatingSystems]);
+    if (policies) state.commonCodes.scriptItems.push(...customScriptItems(policies));
+    populateCodeSelect(document.getElementById('template-kind'), state.commonCodes.templateKinds);
+    populateCodeSelect(document.getElementById('template-os'), state.commonCodes.operatingSystems);
+    populateCodeSelect(document.getElementById('template-item'), state.commonCodes.scriptItems);
+    populateCodeSelect(document.getElementById('template-dbms'), state.commonCodes.productsByRole.DB);
+    populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...state.commonCodes.templateKinds]);
+    populateCodeSelect(document.getElementById('template-os-filter'), [{ value: '', label: '전체 OS' }, ...state.commonCodes.operatingSystems]);
     updateTemplateItemFilter();
     updateFormMode();
   }
   const requestedKind = new URLSearchParams(location.search).get('kind');
-  if (requestedKind && commonCodes.templateKinds.some((entry) => entry.value === requestedKind)) {
+  if (requestedKind && state.commonCodes.templateKinds.some((entry) => entry.value === requestedKind)) {
     document.getElementById('template-filter').value = requestedKind;
     kind.value = requestedKind;
     updateFormMode();
   }
-  allTemplates = (await api('/api/templates')) || [];
+  state.allTemplates = (await api('/api/templates')) || [];
   const requestedParams = new URLSearchParams(location.search);
   const requestedItem = requestedParams.get('item');
   const requestedId = requestedParams.get('id');
   if (requestedItem) {
     kind.value = 'SCRIPT_PART';
     document.getElementById('template-item').value = requestedItem;
-    const definition = commonCodes.scriptItems.find((entry) => entry.value === requestedItem);
-    activeGroup = definition?.role || (['START', 'SAVE'].includes(requestedItem) ? 'SYSTEM' : 'COMMON');
+    const definition = state.commonCodes.scriptItems.find((entry) => entry.value === requestedItem);
+    state.activeGroup = definition?.role || (['START', 'SAVE'].includes(requestedItem) ? 'SYSTEM' : 'COMMON');
     updateTemplateItemFilter();
     document.getElementById('template-item-filter').value = requestedItem;
     updateFormMode();
   }
   applyTemplateFilters();
   if (requestedId) {
-    const selected = allTemplates.find((item) => item.id === requestedId);
+    const selected = state.allTemplates.find((item) => item.id === requestedId);
     if (selected) {
       openTemplate(selected);
     }
   }
 }
 
-function getTemplateGroup(template) {
-  if (template.kind === 'QUERY') return 'DB';
-  if (['WEB', 'WAS', 'DB'].includes(template.role)) return template.role;
-  if (template.kind === 'SCRIPT') return 'SYSTEM';
-  const definition = commonCodes.scriptItems.find((entry) => entry.value === template.item);
-  if (definition?.role) return definition.role;
-  return ['START', 'SAVE'].includes(template.item) ? 'SYSTEM' : 'COMMON';
-}
+function getTemplateGroup(template) { return templateGroup(template, state.commonCodes.scriptItems); }
 
 function updateTemplateItemFilter() {
-  if (!commonCodes) return;
-  const items = commonCodes.scriptItems.filter((entry) => activeGroup === 'ALL' || getTemplateGroup({ kind: 'SCRIPT_PART', item: entry.value, role: entry.role }) === activeGroup);
+  if (!state.commonCodes) return;
+  const items = state.commonCodes.scriptItems.filter((entry) => state.activeGroup === 'ALL' || getTemplateGroup({ kind: 'SCRIPT_PART', item: entry.value, role: entry.role }) === state.activeGroup);
   populateCodeSelect(document.getElementById('template-item-filter'), [{ value: '', label: '전체 항목' }, ...items]);
 }
 
 function setActiveGroup(group) {
-  activeGroup = group;
+  state.activeGroup = group;
   updateTemplateItemFilter();
   applyTemplateFilters();
 }
 
+function currentFilters() {
+  return {
+    kind: document.getElementById('template-filter').value,
+    os: document.getElementById('template-os-filter').value,
+    group: state.activeGroup,
+    item: document.getElementById('template-item-filter').value,
+  };
+}
+
 function renderGroupTabs() {
-  const kindFilter = document.getElementById('template-filter').value;
-  const osFilter = document.getElementById('template-os-filter').value;
-  const candidates = allTemplates.filter((template) => {
-    const templateOs = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
-    return (!kindFilter || template.kind === kindFilter) && (!osFilter || templateOs === osFilter);
-  });
-  document.querySelectorAll('#template-group-tabs [role="tab"]').forEach((tab) => {
+  const tabs = [...document.querySelectorAll('#template-group-tabs [role="tab"]')];
+  const counts = groupCounts(state.allTemplates, currentFilters(), state.commonCodes.scriptItems, tabs.map((tab) => tab.dataset.group));
+  for (const tab of tabs) {
     const group = tab.dataset.group;
-    const count = group === 'ALL' ? candidates.length : candidates.filter((template) => getTemplateGroup(template) === group).length;
-    tab.setAttribute('aria-selected', String(group === activeGroup));
-    tab.tabIndex = group === activeGroup ? 0 : -1;
-    tab.querySelector('span').textContent = count;
-  });
+    tab.setAttribute('aria-selected', String(group === state.activeGroup));
+    tab.tabIndex = group === state.activeGroup ? 0 : -1;
+    tab.querySelector('span').textContent = counts[group];
+  }
 }
 
 function applyTemplateFilters() {
-  if (!commonCodes) return;
-  const kindFilter = document.getElementById('template-filter').value;
-  const osFilter = document.getElementById('template-os-filter').value;
-  const itemFilter = document.getElementById('template-item-filter').value;
+  if (!state.commonCodes) return;
   renderGroupTabs();
-  templates = allTemplates.filter((template) => {
-    const templateOs = template.os || (template.kind === 'QUERY' ? 'Windows' : '');
-    return (!kindFilter || template.kind === kindFilter)
-      && (!osFilter || templateOs === osFilter)
-      && (activeGroup === 'ALL' || getTemplateGroup(template) === activeGroup)
-      && (!itemFilter || template.kind === 'QUERY' || template.item === itemFilter);
-  });
+  state.templates = filterTemplates(state.allTemplates, currentFilters(), state.commonCodes.scriptItems);
   renderList();
 }
 
@@ -283,43 +257,7 @@ function populateCodeSelect(select, codes, placeholder) {
 }
 
 function renderList() {
-  list.replaceChildren();
-  if (!templates.length) { list.textContent = '등록된 템플릿이 없습니다.'; return; }
-  templates.forEach((item) => {
-    const card = document.createElement('article'); card.className = `template-list-item${editingId === item.id ? ' is-selected' : ''}`;
-    card.tabIndex = 0; card.setAttribute('role', 'button'); card.setAttribute('aria-label', `${item.name} 편집`);
-    card.addEventListener('click', () => requestOpenTemplate(item));
-    card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); requestOpenTemplate(item); } });
-    const info = document.createElement('div');
-    const title = document.createElement('strong'); title.textContent = item.name;
-    const typeLabel = item.kind === 'SCRIPT_PART' ? `점검 항목 · ${item.item || '미지정'}` : item.kind === 'SCRIPT' ? '전체 스크립트' : 'DB 쿼리';
-    const osLabel = item.os || '';
-    const targetLabel = item.kind === 'QUERY' ? `DBMS · ${item.dbms || 'MSSQL'}` : `${item.role ? ` · ${item.role}` : ''}${item.product ? ` · ${item.product}` : ''}`;
-    const meta = document.createElement('small'); meta.textContent = `${typeLabel}${osLabel ? ` · ${osLabel}` : ''}${targetLabel} · ${item.enabled ? '사용' : '중지'}`;
-    info.append(title, meta);
-    const badge = generatedBadge(item); if (badge) title.append(' ', badge);
-    const actions = document.createElement('div'); actions.className = 'button-area';
-    if (item.generatedState) {
-      // 점검 만들기 조각은 정책 항목이 관리합니다(여기서 삭제 불가)
-      const link = document.createElement('a'); link.className = 'btn btn-small'; link.href = '/settings/policy-management'; link.textContent = '정책에서 관리';
-      link.addEventListener('click', (event) => event.stopPropagation());
-      actions.append(link);
-    } else {
-      const remove = document.createElement('button'); remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.setAttribute('aria-label', `${item.name} 삭제`);
-      remove.addEventListener('click', (event) => { event.stopPropagation(); removeTemplate(item); });
-      actions.append(remove);
-    }
-    card.append(info, actions); list.appendChild(card);
-  });
-}
-
-/** 점검 만들기 조각 배지: 자동 생성 / 직접 편집됨 */
-function generatedBadge(item) {
-  if (!item.generatedState) return null;
-  const badge = document.createElement('span');
-  badge.className = `generated-badge${item.generatedState === 'DETACHED' ? ' is-detached' : ''}`;
-  badge.textContent = item.generatedState === 'DETACHED' ? '직접 편집됨' : '자동 생성';
-  return badge;
+  renderTemplateList(list, state.templates, { selectedId: state.editingId, onOpen: requestOpenTemplate, onDelete: removeTemplate });
 }
 
 /** 편집기 머리 안내: 점검 만들기 조각이면 정책 항목에서 관리된다는 것과 직접 편집 시 영향 */
@@ -328,15 +266,13 @@ function renderGeneratedNote(item) {
   let note = document.getElementById('template-generated-note');
   if (!item?.generatedState) { note?.remove(); return; }
   if (!note) { note = document.createElement('p'); note.id = 'template-generated-note'; note.className = 'check-builder-warning'; title.closest('.section-header').after(note); }
-  note.textContent = item.generatedState === 'DETACHED'
-    ? '점검 만들기에서 만든 스크립트를 직접 편집한 상태입니다. 정책 항목의 폼을 바꿔도 이 스크립트에는 반영되지 않습니다. 폼 기준으로 되돌리려면 점검 정책 관리에서 [폼 기준으로 다시 만들기]를 누르세요.'
-    : '점검 만들기 폼으로 자동 생성된 스크립트입니다. 여기서 고쳐 저장하면 이후 폼 변경이 반영되지 않습니다. 가능하면 점검 정책 관리에서 폼을 고치세요.';
+  note.textContent = generatedNoteText(item);
 }
 
 function requestOpenTemplate(item) {
-  if (editingId === item.id && !hasUnsavedChanges) return;
-  if (!hasUnsavedChanges) { openTemplate(item); return; }
-  pendingTemplate = item;
+  if (state.editingId === item.id && !state.hasUnsavedChanges) return;
+  if (!state.hasUnsavedChanges) { openTemplate(item); return; }
+  state.pendingTemplate = item;
   document.getElementById('unsaved-template-message').textContent = `현재 편집 중인 템플릿에 저장하지 않은 변경사항이 있습니다. '${item.name}'을(를) 열까요?`;
   document.getElementById('unsaved-template-dialog').showModal();
 }
@@ -344,8 +280,8 @@ function requestOpenTemplate(item) {
 function openTemplate(item) {
   if (!item) return;
   renderGeneratedNote(item);
-  editingId = item.id;
-  hasUnsavedChanges = false;
+  state.editingId = item.id;
+  state.hasUnsavedChanges = false;
   document.getElementById('template-form-title').textContent = '템플릿 수정';
   document.getElementById('btn-template-history').hidden = false;
   document.getElementById('btn-template-save').textContent = '변경 저장';
@@ -355,8 +291,6 @@ function openTemplate(item) {
   document.getElementById('template-item').value = item.item || 'START';
   document.getElementById('template-dbms').value = item.dbms || 'MSSQL';
   document.getElementById('template-uses-query').checked = item.usesQueryTemplate === true;
-  document.getElementById('template-role').value = item.role || '';
-  document.getElementById('template-product').value = item.product || '';
   document.getElementById('template-enabled').checked = item.enabled;
   document.getElementById('template-content').value = item.content;
   renderHighlightedTemplate();
@@ -373,37 +307,35 @@ async function saveTemplate(event) {
 async function persistTemplate() {
   const data = {
     name: document.getElementById('template-name').value.trim(), kind: kind.value,
-    os: ['SCRIPT', 'SCRIPT_PART'].includes(kind.value) ? document.getElementById('template-os').value : undefined,
+    os: kind.value === 'SCRIPT_PART' ? document.getElementById('template-os').value : undefined,
     item: undefined,
     dbms: kind.value === 'QUERY' ? document.getElementById('template-dbms').value : undefined,
     usesQueryTemplate: false,
-    role: kind.value === 'SCRIPT' ? document.getElementById('template-role').value || undefined : undefined,
-    product: kind.value === 'SCRIPT' ? document.getElementById('template-product').value.trim() || undefined : undefined,
     enabled: document.getElementById('template-enabled').checked,
     content: document.getElementById('template-content').value,
   };
   let saved;
   try {
-    saved = await api(editingId ? `/api/templates/${encodeURIComponent(editingId)}` : '/api/templates', { method: editingId ? 'PUT' : 'POST', body: data });
+    saved = await api(state.editingId ? `/api/templates/${encodeURIComponent(state.editingId)}` : '/api/templates', { method: state.editingId ? 'PUT' : 'POST', body: data });
   } catch (error) {
     notifyError(error, '템플릿을 저장하지 못했습니다.');
     return false;
   }
   showToast('템플릿을 저장했습니다.', 'success');
-  allTemplates = allTemplates.some((item) => item.id === saved.id) ? allTemplates.map((item) => item.id === saved.id ? saved : item) : [...allTemplates, saved];
-  editingId = saved.id;
-  hasUnsavedChanges = false;
+  state.allTemplates = state.allTemplates.some((item) => item.id === saved.id) ? state.allTemplates.map((item) => item.id === saved.id ? saved : item) : [...state.allTemplates, saved];
+  state.editingId = saved.id;
+  state.hasUnsavedChanges = false;
   document.getElementById('btn-template-history').hidden = false;
   applyTemplateFilters();
   return true;
 }
 
 async function showTemplateHistory() {
-  if (!editingId) return;
-  if (hasUnsavedChanges && !confirm('현재 저장하지 않은 변경사항은 이력에서 복원할 때 사라집니다. 이력을 계속 볼까요?')) return;
+  if (!state.editingId) return;
+  if (state.hasUnsavedChanges && !confirm('현재 저장하지 않은 변경사항은 이력에서 복원할 때 사라집니다. 이력을 계속 볼까요?')) return;
   let versions;
   try {
-    versions = (await api(`/api/templates/${encodeURIComponent(editingId)}/history`)) || [];
+    versions = (await api(`/api/templates/${encodeURIComponent(state.editingId)}/history`)) || [];
   } catch (error) {
     notifyError(error, '변경 이력을 불러오지 못했습니다.');
     return;
@@ -432,7 +364,7 @@ async function showTemplateHistory() {
       if (!confirm(`'${version.template.name}'의 이 버전을 복원할까요? 현재 내용도 변경 이력에 저장됩니다.`)) return;
       let restored;
       try {
-        restored = await api(`/api/templates/${encodeURIComponent(editingId)}/history/${encodeURIComponent(version.versionId)}/restore`, { method: 'POST' });
+        restored = await api(`/api/templates/${encodeURIComponent(state.editingId)}/history/${encodeURIComponent(version.versionId)}/restore`, { method: 'POST' });
       } catch (error) {
         notifyError(error, '버전을 복원하지 못했습니다.');
         return;
@@ -460,7 +392,7 @@ async function removeTemplate(item) {
   await loadTemplates();
 }
 
-function resetForm() { editingId = ''; hasUnsavedChanges = false; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; document.getElementById('btn-template-history').hidden = true; updateFormMode(); renderList(); }
+function resetForm() { state.editingId = ''; state.hasUnsavedChanges = false; form.reset(); renderHighlightedTemplate(); document.getElementById('template-form-title').textContent = '새 템플릿'; document.getElementById('btn-template-save').textContent = '템플릿 저장'; document.getElementById('btn-template-history').hidden = true; updateFormMode(); renderList(); }
 
 renderHighlightedTemplate();
 loadTemplates().catch((error) => notifyError(error, '공통코드 또는 템플릿을 불러오지 못했습니다.'));
