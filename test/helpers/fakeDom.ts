@@ -26,6 +26,17 @@ export class FakeElement {
       this.children.push(element);
     }
   }
+  appendChild(node: FakeElement) { this.append(node); return node; }
+  get classList() {
+    const names = () => this.className.split(/\s+/).filter(Boolean);
+    const write = (list: string[]) => { this.className = list.join(' '); };
+    return {
+      contains: (name: string) => names().includes(name),
+      add: (...add: string[]) => write([...new Set([...names(), ...add])]),
+      remove: (...remove: string[]) => write(names().filter((name) => !remove.includes(name))),
+      toggle: (name: string, force?: boolean) => { const on = force ?? !names().includes(name); write(on ? [...new Set([...names(), name])] : names().filter((n) => n !== name)); return on; },
+    };
+  }
   prepend(...nodes: FakeElement[]) { const rest = this.children; this.children = []; this.append(...nodes); this.children.push(...rest); }
   remove() { if (this.parent) this.parent.children = this.parent.children.filter((child) => child !== this); this.parent = null; }
   replaceChildren(...nodes: FakeElement[]) { for (const child of this.children) child.parent = null; this.children = []; this.text = ''; this.append(...nodes); }
