@@ -208,6 +208,8 @@ function renderServerInfo(server) {
   document.getElementById('server-ip').textContent = server.ip;
   renderResultPaths(server);
   document.getElementById('server-inactive-banner').hidden = server.enabled !== false;
+  // 미사용 서버는 결과를 받지 않으므로 올리기 버튼을 숨깁니다(서버도 거부).
+  document.getElementById('btn-upload-result').hidden = server.enabled === false;
   [
     ['btn-add-directory', addDirectoryRow],
     ['btn-add-file-check', addFileCheckRow],

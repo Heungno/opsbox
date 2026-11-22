@@ -44,7 +44,8 @@ function toRecord(server: Server, enabled: boolean): ServerRecord {
     name: server.name,
     os: server.os,
     ip: server.ip,
-    resultPath: server.resultPath?.trim() || null,
+    // 문자열이 아니면 여기서는 비워 두고, validateServer가 400으로 알립니다.
+    resultPath: typeof server.resultPath === 'string' ? server.resultPath.trim() || null : null,
     enabled,
     roles,
     products: Object.fromEntries(roles.filter((role) => server.products?.[role]).map((role) => [role, server.products![role]])),
@@ -146,7 +147,7 @@ export function createServer(input: Server) {
   const existing = findServerRecord(input.id);
   if (existing && !existing.enabled) throw new ConflictError(`미사용 서버 ${input.id}가 있습니다. 서버 목록에서 [다시 사용]을 누르세요.`);
   const normalized = normalizeInput({ ...input, enabled: true });
-  validateServer(normalized, getAllServers({ includeInactive: true }));
+  validateServer({ ...normalized, resultPath: input.resultPath }, getAllServers({ includeInactive: true }));
   persist(normalized);
   return getServer(normalized.id)!;
 }
@@ -157,7 +158,7 @@ export function updateServer(id: string, data: Partial<Server>) {
   // 서버 ID는 점검 결과·스크립트 경로와 연결되어 있어 수정으로 바꿀 수 없습니다. 사용 여부는 미사용·다시 사용으로만 바꿉니다.
   const { id: _ignoredId, enabled: _ignoredEnabled, ...changes } = data;
   const updated = normalizeInput({ ...current, ...changes, id: current.id, enabled: current.enabled });
-  validateServer(updated, getAllServers({ includeInactive: true }), id);
+  validateServer({ ...updated, resultPath: 'resultPath' in changes ? changes.resultPath : updated.resultPath }, getAllServers({ includeInactive: true }), id);
   persist(updated);
   return getServer(id)!;
 }

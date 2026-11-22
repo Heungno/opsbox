@@ -69,3 +69,7 @@ test('수신함: OPSBOX_RESULT_INBOX의 각 폴더 바로 아래 파일만 가�
   assert.ok(fs.existsSync(path.join(inboxA, '2026', 'P-L1', 'old.json')), '하위 폴더 파일은 건드리지 않음');
   assert.deepEqual(getResultPathSettings().inboxes, [inboxA, inboxB]);
 });
+
+test('결과 저장 경로: 문자열이 아니면 500이 아니라 400', () => {
+  assert.throws(() => createServer({ ...linuxServer('P-L9'), resultPath: 5 }), (e: any) => e.status === 400 && /결과 저장 경로는 문자열이어야 합니다/.test(e.message));
+});
