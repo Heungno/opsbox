@@ -8,7 +8,7 @@ import { validateProcesses, validateDirectories, validateFileChecks, validatePor
 import { NotFoundError, ValidationError } from '../shared/errors';
 import { getTemplate } from '../features/templates/service';
 import { getCommonCodes } from '../features/common-codes/service';
-import { getPolicies } from './policyService';
+import { getPolicies } from '../features/policies/service';
 import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from './dbQueryDefaults';
 
 const COMMON_CODES = getCommonCodes();

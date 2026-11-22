@@ -8,7 +8,7 @@ import { validateBuilderSpec } from '../services/checkBuilder/spec';
 import { regenerateItem } from '../services/checkBuilder/templates';
 import type { BuilderOs, BuilderSpec } from '../services/checkBuilder/types';
 import { generateWindowsPart } from '../services/checkBuilder/windows';
-import { getPolicies } from '../services/policyService';
+import { getPolicies } from '../features/policies/service';
 import { ok, requireObject } from '../shared/http';
 
 /*

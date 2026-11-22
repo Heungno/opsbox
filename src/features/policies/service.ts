@@ -1,71 +1,33 @@
-import { readCollection, transaction, writeCollection } from '../db/database';
+import { transaction } from '../../db';
+import { findPolicy, listPolicies, removePolicy, upsertPolicy } from './repository';
 import { randomUUID } from 'crypto';
-import { NotFoundError, ValidationError } from '../shared/errors';
-import type { ExecutorType, Policy, PolicyCategory, PolicyDraft, PolicyItem, ResultView } from '../types/policy';
-import { getCommonCodes, getCommonCodeValues } from '../features/common-codes/service';
-import { builderInputs, builderResult, validateBuilderSpec } from './checkBuilder/spec';
-import { generatedTemplateId, syncGeneratedTemplates } from './checkBuilder/templates';
-import type { BuilderOs, BuilderSpec } from './checkBuilder/types';
+import { NotFoundError, ValidationError } from '../../shared/errors';
+import type { Policy, PolicyDraft, PolicyItem } from './types';
+import { getCommonCodes, getCommonCodeValues } from '../common-codes/service';
+import { builderInputs, builderResult, validateBuilderSpec } from '../../services/checkBuilder/spec';
+import { generatedTemplateId, syncGeneratedTemplates } from '../../services/checkBuilder/templates';
+import type { BuilderOs, BuilderSpec } from '../../services/checkBuilder/types';
 
-export type { PolicyCategory } from '../types/policy';
+export type { PolicyCategory } from './types';
 const executorTypes = () => getCommonCodeValues('policyExecutors');
 const resultViews = () => getCommonCodeValues('resultViews');
 
-function inferItem(id: string, category: PolicyCategory, os: 'Windows' | 'Linux'): PolicyItem {
-  const code = getCommonCodes().scriptItems.find((entry) => entry.value === id);
-  const name = code?.label || id;
-  const type: ExecutorType = id.endsWith('_LOG') ? 'LOG_ANALYSIS'
-    : id.startsWith('DB_') ? 'SQL_QUERY'
-      : id === 'WEB_ENGINE_STATUS' ? 'CONSOLE_COMMAND'
-        : id === 'HTTP' ? 'HTTP_CHECK'
-          : id === 'PORT' ? 'TCP_CHECK'
-            : id === 'PROCESS' ? 'PROCESS_CHECK'
-              : ['DIRECTORY', 'FILE_SIZE', 'DISK'].includes(id) ? 'FILESYSTEM_CHECK' : 'SCRIPT';
-  const views: ResultView[] = type === 'SQL_QUERY' ? ['SUMMARY', 'TABLE']
-    : type === 'LOG_ANALYSIS' ? ['SUMMARY', 'LOG_TABLE']
-    : type === 'CONSOLE_COMMAND' ? ['SUMMARY', 'CONSOLE']
-        : ['SUMMARY', ['CPU', 'MEMORY', 'DISK', 'UPTIME'].includes(id) ? 'METRIC' : 'TABLE'] as ResultView[];
-  const templateId = type === 'SQL_QUERY' ? `WINDOWS-QUERY-${id}` : `WINDOWS-PART-${id}`;
-  return {
-    id, name, enabled: true,
-    executor: { type, ...(type === 'SQL_QUERY' ? { dbms: 'MSSQL', templateId } : type === 'SCRIPT' || type === 'CONSOLE_COMMAND' ? { templateId: `${os.toUpperCase()}-PART-${id}` } : {}) },
-    inputs: type === 'LOG_ANALYSIS' ? [{ key: 'logDirectories', label: '로그 경로', type: 'PATH_LIST', scope: 'SERVER', required: true }] : [],
-    result: { components: views.map((view) => ({ type: view, ...(type === 'LOG_ANALYSIS' && view === 'LOG_TABLE' ? { columns: [{ key: 'timestamp', label: '시각' }, { key: 'severity', label: '심각도' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }] } : {}) })), ...(type === 'SQL_QUERY' ? { statusField: '__OPSBOX_STATUS' } : {}) },
-  };
-}
-
-function normalizePolicy(raw: any): Policy {
-  const category = raw.category as PolicyCategory;
-  const items: PolicyItem[] = Array.isArray(raw.items) ? raw.items : (raw.checks ?? []).map((id: string) => inferItem(id, category, raw.os));
-  const normalized = items.map((item) => ({
+/** 저장할 점검 항목 모양을 맞춥니다(빠진 기본값 채우기). */
+export function normalizeItems(items: PolicyItem[]): PolicyItem[] {
+  return items.map((item) => ({
     id: item.id, name: item.name || item.id, enabled: item.enabled !== false,
     executor: { ...(item.executor || {}), type: item.executor?.type || 'SCRIPT' },
     inputs: Array.isArray(item.inputs) ? item.inputs : [],
-    result: {
-      ...(item.result || {}),
-      components: Array.isArray(item.result?.components) ? item.result.components
-        : (Array.isArray((item.result as any)?.views) ? (item.result as any).views : ['SUMMARY']).map((type: ResultView) => ({ type, ...((item.result as any)?.columns && ['TABLE', 'LOG_TABLE'].includes(type) ? { columns: (item.result as any).columns } : {}) })),
-    },
+    result: { ...(item.result || {}), components: Array.isArray(item.result?.components) ? item.result.components : [{ type: 'SUMMARY' }] },
   }));
-  return { id: raw.id, name: raw.name, os: raw.os, category, enabled: raw.enabled !== false, items: normalized, checks: normalized.filter((item) => item.enabled).map((item) => item.id) };
 }
 
-function write(policies: Policy[]) {
-  const stored = policies.map(({ checks: _checks, ...policy }) => policy as Policy);
-  writeCollection('policies', stored, (policy) => policy.id);
-}
+export function getPolicies(): Policy[] { return listPolicies(); }
 
-function read(): Policy[] {
-  const rawPolicies = readCollection<any>('policies');
-  const policies = rawPolicies.map(normalizePolicy);
-  if (policies.some((policy, index) => JSON.stringify(policy.items) !== JSON.stringify(rawPolicies[index]?.items))) write(policies);
-  return policies;
-}
-
-export function getPolicies() { return read(); }
+export function getPolicy(id: string): Policy | undefined { return findPolicy(id); }
 
 export function savePolicy(input: Partial<PolicyDraft>, id?: string) {
-  const policies = read();
+  const policies = listPolicies();
   const errors: { field: string; message: string }[] = [];
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (!name || name.length > 80) errors.push({ field: 'name', message: '정책명은 1~80자로 입력하세요.' });
@@ -103,25 +65,23 @@ export function savePolicy(input: Partial<PolicyDraft>, id?: string) {
     return { ...item, inputs: builderInputs(spec), result: builderResult(spec), executor: { ...item.executor, templateId: generatedTemplateId(item.id, input.os as BuilderOs) } };
   });
   const before = index >= 0 ? policies[index] : undefined;
-  const policy = normalizePolicy({ id: id || randomUUID(), name, os: input.os, category: input.category, enabled: input.enabled, items: normalizedItems });
+  const policy: Policy = { id: id || randomUUID(), name, os: input.os!, category: input.category!, enabled: input.enabled !== false, items: normalizeItems(normalizedItems) };
   if (policies.some((entry) => entry.id !== id && entry.os === policy.os && entry.category === policy.category && entry.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
     throw new ValidationError([{ field: 'name', message: '같은 OS와 유형에 동일한 정책명이 있습니다.' }]);
   }
-  if (index >= 0) policies[index] = policy; else policies.push(policy);
   // 정책과 생성 템플릿을 함께 저장 (하나라도 실패하면 둘 다 되돌림)
   transaction(() => {
-    write(policies);
+    upsertPolicy(policy);
     syncGeneratedTemplates(before, policy);
   });
   return policy;
 }
 
 export function deletePolicy(id: string) {
-  const policies = read(); const filtered = policies.filter((policy) => policy.id !== id);
-  if (filtered.length === policies.length) throw new NotFoundError(`점검 정책을 찾을 수 없습니다: ${id}`);
-  const before = policies.find((policy) => policy.id === id);
+  const before = findPolicy(id);
+  if (!before) throw new NotFoundError(`점검 정책을 찾을 수 없습니다: ${id}`);
   transaction(() => {
-    write(filtered);
+    removePolicy(id);
     syncGeneratedTemplates(before, undefined);
   });
 }

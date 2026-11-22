@@ -1,7 +1,7 @@
 import type { ScriptPart } from '../features/templates/types';
-import type { OperatingSystem, PolicyCategory, PolicyRoleCategory } from './policy';
+import type { OperatingSystem, PolicyCategory, PolicyRoleCategory } from '../features/policies/types';
 import type { CommonCodeValue } from '../features/common-codes/types';
-export type { PolicyCategory } from './policy';
+export type { PolicyCategory } from '../features/policies/types';
 
 export interface ProcessCheck {
   name: string;

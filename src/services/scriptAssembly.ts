@@ -3,7 +3,7 @@ import { Server } from '../types/server';
 import { ManagedTemplate, ScriptPart } from '../features/templates/types';
 import { getServerProduct, getServerRoles } from './serverService';
 import { getCommonCodes } from '../features/common-codes/service';
-import { getPolicies } from './policyService';
+import { getPolicies } from '../features/policies/service';
 
 /*
  * Windows·Linux 공통 점검 스크립트 조립

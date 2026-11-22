@@ -7,7 +7,7 @@ import { before, test } from 'node:test';
 import { db } from '../src/db/database';
 import { app } from '../src/server';
 import { isDetached } from '../src/services/checkBuilder/templates';
-import { getPolicies, savePolicy } from '../src/services/policyService';
+import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { getTemplate, saveTemplate } from '../src/features/templates/service';
 import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
 

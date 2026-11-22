@@ -6,7 +6,7 @@ import { dashboardRoutes } from './dashboardRoutes';
 import { reportRoutes } from './reportRoutes';
 import { templateRoutes } from '../features/templates/routes';
 import { commonCodeRoutes } from '../features/common-codes/routes';
-import { policyRoutes } from './policyRoutes';
+import { policyRoutes } from '../features/policies/routes';
 import { authRoutes } from './authRoutes';
 import { auditRoutes } from './auditRoutes';
 import { checkBuilderRoutes } from './checkBuilderRoutes';

@@ -16,7 +16,7 @@ export * from './api';
 export * from './auth';
 export * from '../features/common-codes/types';
 export * from './server';
-export * from './policy';
+export * from '../features/policies/types';
 export * from '../features/templates/types';
 export * from './result';
 export * from './report';

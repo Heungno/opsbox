@@ -4,6 +4,8 @@ import path from 'node:path';
 import { toTables } from '../features/common-codes/codec';
 import { replaceTables } from '../features/common-codes/repository';
 import type { CommonCodes } from '../features/common-codes/types';
+import { upsertPolicy } from '../features/policies/repository';
+import type { Policy } from '../features/policies/types';
 import { upsertTemplate } from '../features/templates/repository';
 import type { ManagedTemplate } from '../features/templates/types';
 
@@ -21,4 +23,5 @@ export function readSeed<T>(fileName: string): T {
 export function seedNewDatabase() {
   replaceTables(toTables(readSeed<CommonCodes>('common-codes.json')));
   readSeed<ManagedTemplate[]>('templates.json').forEach(upsertTemplate);
+  readSeed<{ policies: Policy[] }>('policy.json').policies.forEach(upsertPolicy);
 }

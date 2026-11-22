@@ -10,7 +10,7 @@ import { after, before, test } from 'node:test';
 import { generateLinuxPart } from '../src/services/checkBuilder/linux';
 import { builderInputs, builderResult } from '../src/services/checkBuilder/spec';
 import type { BuilderSpec } from '../src/services/checkBuilder/types';
-import { getPolicies, savePolicy } from '../src/services/policyService';
+import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { generateScript } from '../src/services/scriptService';
 import { createServer, getServer, updateCheckConfig } from '../src/services/serverService';
 import { saveTemplate } from '../src/features/templates/service';

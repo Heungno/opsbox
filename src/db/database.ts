@@ -24,12 +24,6 @@ db.exec(`
     data TEXT NOT NULL
   );
 
-  CREATE TABLE IF NOT EXISTS policies (
-    id TEXT PRIMARY KEY,
-    position INTEGER NOT NULL,
-    data TEXT NOT NULL
-  );
-
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     data TEXT NOT NULL
@@ -86,10 +80,10 @@ db.exec(`
 `);
 
 /*
- * 목록형 데이터 (servers, policies)
+ * 목록형 데이터 (servers)
  * 각 행에 JSON 한 건을 저장하고 position으로 순서를 유지합니다.
  */
-export type CollectionTable = 'servers' | 'policies';
+export type CollectionTable = 'servers';
 
 export function readCollection<T>(table: CollectionTable): T[] {
   const rows = db.prepare(`SELECT data FROM ${table} ORDER BY position, id`).all() as Array<{ data: string }>;
@@ -138,15 +132,6 @@ function seedFromJsonFiles() {
     }
   }
 
-  if (isEmpty('policies')) {
-    const parsed = readJsonFile('policy.json') as any;
-    const policies = Array.isArray(parsed) ? parsed : parsed?.policies;
-    if (Array.isArray(policies) && policies.length) {
-      writeCollection('policies', policies, (policy: any) => String(policy.id));
-      seeded.push(`policies ${policies.length}건`);
-    }
-  }
-
   if (isEmpty('users')) {
     const parsed = readJsonFile('user.json') as { users?: any[] } | undefined;
     if (Array.isArray(parsed?.users) && parsed.users.length) {
@@ -159,63 +144,4 @@ function seedFromJsonFiles() {
   if (seeded.length) logger.info({ dbPath: DB_PATH, seeded }, 'JSON 데이터를 SQLite로 옮겼습니다');
 }
 
-/** Linux 기본 점검 정책에 프로세스·디렉터리·파일·포트·HTTP 항목 추가 (한 번만 실행) */
-const LINUX_BASIC_ITEMS_MIGRATION = 'migration_linux_basic_items_v1';
-
-function addLinuxBasicPolicyItems(): string[] {
-  if (readSetting(LINUX_BASIC_ITEMS_MIGRATION)) return [];
-  const row = db.prepare("SELECT data FROM policies WHERE id = 'linux-basic-default'").get() as { data: string } | undefined;
-  const parsed = readJsonFile('policy.json') as any;
-  const seedPolicy = (Array.isArray(parsed) ? parsed : parsed?.policies)?.find((policy: any) => policy.id === 'linux-basic-default');
-  const added: string[] = [];
-  if (row && seedPolicy) {
-    const policy = JSON.parse(row.data);
-    const have = new Set((policy.items ?? []).map((item: any) => item.id));
-    for (const item of seedPolicy.items ?? []) {
-      if (['PROCESS', 'DIRECTORY', 'FILE_SIZE', 'PORT', 'HTTP'].includes(item.id) && !have.has(item.id)) {
-        policy.items = [...(policy.items ?? []), item];
-        added.push(item.id);
-      }
-    }
-    if (added.length) {
-      db.prepare("UPDATE policies SET data = ? WHERE id = 'linux-basic-default'").run(JSON.stringify(policy));
-    }
-  }
-  writeSetting(LINUX_BASIC_ITEMS_MIGRATION, { appliedAt: new Date().toISOString(), added });
-  return added;
-}
-
-/** Linux WEB·WAS 기본 정책에 역할별 점검 항목 추가 (한 번만 실행, 사용자가 이미 가진 항목은 그대로 둠) */
-const LINUX_ROLE_ITEMS_MIGRATION = 'migration_linux_role_items_v1';
-
-function addLinuxRolePolicyItems(): string[] {
-  if (readSetting(LINUX_ROLE_ITEMS_MIGRATION)) return [];
-  const parsed = readJsonFile('policy.json') as any;
-  const seeds = (Array.isArray(parsed) ? parsed : parsed?.policies) ?? [];
-  const added: string[] = [];
-  for (const policyId of ['linux-web-default', 'linux-was-default']) {
-    const row = db.prepare('SELECT data FROM policies WHERE id = ?').get(policyId) as { data: string } | undefined;
-    const seedPolicy = seeds.find((policy: any) => policy.id === policyId);
-    if (!row || !seedPolicy) continue;
-    const policy = JSON.parse(row.data);
-    const have = new Set((policy.items ?? []).map((item: any) => item.id));
-    const missing = (seedPolicy.items ?? []).filter((item: any) => !have.has(item.id));
-    if (!missing.length) continue;
-    policy.items = [...(policy.items ?? []), ...missing];
-    db.prepare('UPDATE policies SET data = ? WHERE id = ?').run(JSON.stringify(policy), policyId);
-    added.push(...missing.map((item: any) => `${policyId}:${item.id}`));
-  }
-  writeSetting(LINUX_ROLE_ITEMS_MIGRATION, { appliedAt: new Date().toISOString(), added });
-  return added;
-}
-
-export function applyBuiltInUpdates() {
-  const policyItems = addLinuxBasicPolicyItems();
-  const rolePolicyItems = addLinuxRolePolicyItems();
-  if (policyItems.length || rolePolicyItems.length) {
-    logger.info({ linuxBasicPolicyItems: policyItems, linuxRolePolicyItems: rolePolicyItems }, '새 버전의 기본 템플릿·정책 항목을 반영했습니다');
-  }
-}
-
 seedFromJsonFiles();
-applyBuiltInUpdates();

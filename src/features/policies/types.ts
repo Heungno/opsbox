@@ -1,4 +1,4 @@
-import type { CommonCodeValue } from '../features/common-codes/types';
+import type { CommonCodeValue } from '../common-codes/types';
 
 export type OperatingSystem = CommonCodeValue;
 export type PolicyCategory = 'BASIC' | 'WEB' | 'WAS' | 'DB';
@@ -67,8 +67,6 @@ export interface Policy {
   category: PolicyCategory;
   enabled: boolean;
   items: PolicyItem[];
-  /** items에서 만든 항목 id 목록 (서버 점검 설정 API 호환용) */
-  checks: string[];
 }
 
-export type PolicyDraft = Omit<Policy, 'id' | 'checks'> & { id?: string };
+export type PolicyDraft = Omit<Policy, 'id'> & { id?: string };

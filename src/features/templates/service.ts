@@ -3,7 +3,7 @@ import { addVersion, findTemplate, listTemplates, listVersions, removeTemplate, 
 import type { ManagedTemplate } from './types';
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors';
 import { getCommonCodes } from '../common-codes/service';
-import { getPolicies } from '../../services/policyService';
+import { getPolicies } from '../policies/service';
 
 
 export function getTemplateHistory(id: string) {

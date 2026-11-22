@@ -4,7 +4,7 @@ import { getTemplate, getTemplates } from '../features/templates/service';
 import { assembleWindowsScript } from './windowsScriptService';
 import { assembleLinuxScript } from './linuxScriptService';
 import { resolveQueryTemplate } from './dbQueryDefaults';
-import { getPolicies } from './policyService';
+import { getPolicies } from '../features/policies/service';
 import { isBuilderItemIn } from './scriptAssembly';
 
 export function generateScript(serverId: string): string {

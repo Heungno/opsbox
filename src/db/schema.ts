@@ -55,6 +55,17 @@ const MIGRATIONS: string[] = [
     snapshot TEXT NOT NULL
   );
   CREATE INDEX idx_template_versions_template ON template_versions (template_id, saved_at DESC);
+
+  CREATE TABLE policies (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    os TEXT NOT NULL,
+    category TEXT NOT NULL CHECK (category IN ('BASIC', 'WEB', 'WAS', 'DB')),
+    enabled INTEGER NOT NULL DEFAULT 1,
+    items TEXT NOT NULL,                  -- PolicyItem[] (JSON)
+    position INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+  );
   `,
 ];
 

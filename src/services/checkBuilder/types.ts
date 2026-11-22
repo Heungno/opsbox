@@ -1,4 +1,4 @@
-import type { PolicyInput } from '../../types/policy';
+import type { PolicyInput } from '../../features/policies/types';
 
 /*
  * 점검 만들기(Check Builder) 폼 데이터

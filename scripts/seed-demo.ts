@@ -609,19 +609,19 @@ class ResultBuilder {
 export async function seedDemo(options: { results?: boolean } = {}) {
   const withResults = options.results ?? true;
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
-  const { db, readCollection } = await import('../src/db/database');
+  const { db } = await import('../src/db/database');
   const { createServer } = await import('../src/services/serverService');
   const { buildScriptConfig } = await import('../src/services/scriptAssembly');
   const { storeUploadedResult } = await import('../src/services/resultImportService');
   const { getHealthStatus, parseResultJson } = await import('../src/services/resultService');
 
-  const { savePolicy } = await import('../src/services/policyService');
+  const { getPolicies, getPolicy, savePolicy } = await import('../src/features/policies/service');
   // 점검 만들기 항목은 화면과 같은 정책 저장 경로로 추가 (생성 템플릿도 함께 만들어짐)
   for (const { policyId, item } of DEMO_BUILDER_ITEMS) {
-    const policy = readCollection<any>('policies').find((entry) => entry.id === policyId);
+    const policy = getPolicy(policyId)!;
     savePolicy({ ...policy, items: [...policy.items, item] }, policyId);
   }
-  const policies = readCollection<any>('policies');
+  const policies = getPolicies();
 
   // 로그인 계정
   const salt = randomBytes(32);

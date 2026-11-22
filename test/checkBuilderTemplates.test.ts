@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { db, readSetting, transaction, writeSetting } from '../src/db/database';
 import { generatedTemplateId, isDetached, regenerateItem, upgradeGeneratedTemplates } from '../src/services/checkBuilder/templates';
 import type { BuilderSpec } from '../src/services/checkBuilder/types';
-import { getPolicies, savePolicy } from '../src/services/policyService';
+import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { deleteTemplate, getTemplateHistory, getTemplates, saveTemplate } from '../src/features/templates/service';
 
 /*

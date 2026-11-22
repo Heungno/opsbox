@@ -1,4 +1,4 @@
-import type { PolicyInput } from '../../types/policy';
+import type { PolicyInput } from '../../features/policies/types';
 import type { BuilderOs, Preset } from './types';
 
 /*
