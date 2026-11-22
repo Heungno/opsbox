@@ -1,7 +1,7 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
 import { STATUS_MARKS, loadStatusLabels, statusLabel, statusLegend } from '/shared/js/status.js';
-import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
+import { renderTrendChart } from './trend-chart.js?v=20261122-weekly';
 import { renderItemBoxes } from './report-item-box.js?v=20261122-status2';
 
 await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
@@ -9,7 +9,7 @@ const statusLegendElement = document.getElementById('print-status-legend');
 if (statusLegendElement) statusLegendElement.textContent = statusLegend();
 
 // 자원 사용 추세 그래프: 기간(일). 기간 버튼과 비교 선택을 바꾸면 다시 그립니다.
-let trendDays = 28;
+let trendDays = 84; // 주간점검 기준 기본 12주(약 13점)
 document.querySelectorAll('[data-trend-days]').forEach((button) => button.addEventListener('click', () => {
   trendDays = Number(button.dataset.trendDays);
   document.querySelectorAll('[data-trend-days]').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));

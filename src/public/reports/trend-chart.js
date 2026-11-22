@@ -1,4 +1,4 @@
-import { buildTrendModel, TREND_SERIES } from './trend-chart-model.js';
+import { buildTrendModel, TREND_SERIES } from './trend-chart-model.js?v=20261122-weekly';
 
 /*
  * 보고서 자원 사용 추세 그래프 (SVG, 라이브러리 없음)

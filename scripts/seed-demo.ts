@@ -1,10 +1,10 @@
 /*
  * 데모 데이터 생성 (npm run demo:seed 로 실행 — scripts/demo.cjs가 데모 DB 경로를 설정합니다)
  *
- * 화면 확인용 서버 12대와 서버별 최근 8주(56일) 점검 결과를 만듭니다. (보고서 추세 그래프 확인용)
+ * 화면 확인용 서버 12대와 서버별 최근 26주 주간점검 결과(주 1회)를 만듭니다. (보고서 추세 그래프 확인용)
  * 결과 JSON은 실제 점검 스크립트(schemaVersion 2)와 같은 모양이고, 서버마다 상황을 하나씩 넣었습니다.
  *   디스크 사용률 증가 · DB 백업 실패 후 재점검 · WebtoB 서비스 중지 · JVM Heap 증가 · Heap Dump 발견 ·
- *   로그 오류 급증 · 포트 미리스닝 · HTTP 응답 실패 · CUBRID HA 이상 · 결과 미수신(3일째) 등
+ *   로그 오류 급증 · 포트 미리스닝 · HTTP 응답 실패 · CUBRID HA 이상 · 결과 미수신(2주째) 등
  * 같은 시드로 만들어 매번 같은 데이터가 나옵니다(날짜만 실행일 기준).
  *
  * 저장은 화면의 [결과 파일 올리기]와 같은 경로(storeUploadedResult)를 써서 검증·백업까지 거칩니다.
@@ -21,7 +21,8 @@ if (!process.env.OPSBOX_DB_PATH?.includes(`${path.sep}demo${path.sep}`)) {
 type Status = 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
 type Role = 'WEB' | 'WAS' | 'DB' | 'OTHER';
 
-const DAYS = 56;
+/** 주간점검 횟수 (26주 = 반기) */
+const WEEKS = 26;
 const DEMO_USER = 'demo';
 const DEMO_PASSWORD = 'demo1234';
 
@@ -51,8 +52,10 @@ const byPercent = (value: number, warning = 70, critical = 90): Status => (value
 
 /* ---------- 데모 서버 정의 ---------- */
 
-interface DayContext {
-  /** 0 = 가장 오래된 날, DAYS-1 = 오늘 */
+interface CheckContext {
+  /** 0 = 가장 오래된 주, WEEKS-1 = 이번 주 */
+  week: number;
+  /** 첫 점검부터 지난 날 수 (week * 7) — 가동 시간·누적 값 계산용 */
   day: number;
   date: Date;
   rnd: () => number;
@@ -76,11 +79,11 @@ interface DemoServer {
   logDirectories?: Partial<Record<'WEB_LOG' | 'WAS_LOG', string[]>>;
   dbTargets?: string[];
   base: { cpu: number; memory: number; volumes: { mount: string; totalGB: number; usedPercent: number; growthPerDay?: number }[] };
-  /** 결과가 없는 날 (미수신 재현) */
-  skipDays?: number[];
-  /** 같은 날 다시 점검한 결과를 하나 더 만드는 날 (조치 후 재점검) */
-  recheckDays?: number[];
-  scenario?: (ctx: DayContext & { recheck: boolean }, r: ResultBuilder) => void;
+  /** 결과가 없는 주 (미수신 재현) */
+  skipWeeks?: number[];
+  /** 같은 날 다시 점검한 결과를 하나 더 만드는 주 (조치 후 재점검) */
+  recheckWeeks?: number[];
+  scenario?: (ctx: CheckContext & { recheck: boolean }, r: ResultBuilder) => void;
 }
 
 const SERVERS: DemoServer[] = [
@@ -92,11 +95,11 @@ const SERVERS: DemoServer[] = [
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }, { port: 443, protocol: 'TCP', description: 'HTTPS' }],
     httpChecks: [{ name: '포털 메인', url: 'https://portal.example.go.kr/', expectedStatus: 200 }],
     logDirectories: { WEB_LOG: ['D:\\WebtoB\\log'] },
-    base: { cpu: 18, memory: 46, volumes: [{ mount: 'C:', totalGB: 120, usedPercent: 52 }, { mount: 'D:', totalGB: 300, usedPercent: 38, growthPerDay: 0.08 }] },
-    // 사흘 전 아침에 서비스 하나가 내려가 위험, 낮에 조치 후 재점검
-    recheckDays: [DAYS - 4],
-    scenario: ({ day, recheck }, r) => {
-      if (day === DAYS - 4 && !recheck) r.webtob({ downService: 'APP_SVC' });
+    base: { cpu: 18, memory: 46, volumes: [{ mount: 'C:', totalGB: 120, usedPercent: 52 }, { mount: 'D:', totalGB: 300, usedPercent: 38, growthPerDay: 0.025 }] },
+    // 2주 전 점검에서 서비스 하나가 내려가 위험, 낮에 조치 후 재점검
+    recheckWeeks: [WEEKS - 3],
+    scenario: ({ week, recheck }, r) => {
+      if (week === WEEKS - 3 && !recheck) r.webtob({ downService: 'APP_SVC' });
     },
   },
   {
@@ -107,11 +110,11 @@ const SERVERS: DemoServer[] = [
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }, { port: 443, protocol: 'TCP', description: 'HTTPS' }],
     httpChecks: [{ name: '포털 메인', url: 'https://portal.example.go.kr/', expectedStatus: 200 }, { name: '상태 확인', url: 'http://127.0.0.1/health', expectedStatus: 200 }],
     logDirectories: { WEB_LOG: ['/var/log/nginx'] },
-    base: { cpu: 12, memory: 38, volumes: [{ mount: '/', totalGB: 50, usedPercent: 41 }, { mount: '/var', totalGB: 100, usedPercent: 55, growthPerDay: 0.1 }] },
-    // 최근 이틀간 5xx 오류 급증, 오늘은 HTTP 응답 실패
-    scenario: ({ day }, r) => {
-      if (day >= DAYS - 2) r.logSpike('WEB_LOG', day === DAYS - 1 ? 42 : 17);
-      if (day === DAYS - 1) r.httpFail('상태 확인', 502);
+    base: { cpu: 12, memory: 38, volumes: [{ mount: '/', totalGB: 50, usedPercent: 41 }, { mount: '/var', totalGB: 100, usedPercent: 55, growthPerDay: 0.03 }] },
+    // 지난주부터 5xx 오류 급증, 이번 주는 HTTP 응답 실패
+    scenario: ({ week }, r) => {
+      if (week >= WEEKS - 2) r.logSpike('WEB_LOG', week === WEEKS - 1 ? 42 : 17);
+      if (week === WEEKS - 1) r.httpFail('상태 확인', 502);
     },
   },
   {
@@ -129,9 +132,9 @@ const SERVERS: DemoServer[] = [
     ports: [{ port: 9736, protocol: 'TCP', description: 'JEUS 관리' }, { port: 8088, protocol: 'TCP', description: 'JEUS HTTP' }],
     httpChecks: [{ name: '업무 API', url: 'http://10.10.2.21:8088/api/health', expectedStatus: 200 }],
     logDirectories: { WAS_LOG: ['E:\\jeus\\logs'] },
-    base: { cpu: 31, memory: 62, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 47 }, { mount: 'E:', totalGB: 500, usedPercent: 44, growthPerDay: 0.05 }] },
-    // JVM Heap이 날마다 늘어 주의 → 위험 (메모리 누수 의심)
-    scenario: ({ day }, r) => r.heap(50 + day * 0.75),
+    base: { cpu: 31, memory: 62, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 47 }, { mount: 'E:', totalGB: 500, usedPercent: 44, growthPerDay: 0.016 }] },
+    // JVM Heap이 주마다 늘어 주의 → 위험 (메모리 누수 의심)
+    scenario: ({ week }, r) => r.heap(50 + week * 1.65),
   },
   {
     id: 'WAS-02', name: '민원 처리 WAS', os: 'Linux', osName: 'Rocky Linux', osVersion: '9.4 (Blue Onyx)', ip: '10.10.2.22',
@@ -141,11 +144,11 @@ const SERVERS: DemoServer[] = [
     httpChecks: [{ name: '민원 API', url: 'http://10.10.2.22:8080/minwon/health', expectedStatus: 200 }],
     logDirectories: { WAS_LOG: ['/opt/tomcat/logs'] },
     base: { cpu: 24, memory: 58, volumes: [{ mount: '/', totalGB: 100, usedPercent: 49 }] },
-    // 닷새 전 OutOfMemory로 Heap Dump 생성, 이후 계속 남아 있음
-    scenario: ({ day }, r) => {
-      r.heap(48 + (day % 4) * 4);
-      if (day >= DAYS - 5) r.heapDump('/opt/tomcat/dump/java_pid21457.hprof', 2048);
-      if (day === DAYS - 5) r.logSpike('WAS_LOG', 9, 'java.lang.OutOfMemoryError: Java heap space');
+    // 2주 전 OutOfMemory로 Heap Dump 생성, 이후 계속 남아 있음
+    scenario: ({ week }, r) => {
+      r.heap(48 + (week % 4) * 4);
+      if (week >= WEEKS - 3) r.heapDump('/opt/tomcat/dump/java_pid21457.hprof', 2048);
+      if (week === WEEKS - 3) r.logSpike('WAS_LOG', 9, 'java.lang.OutOfMemoryError: Java heap space');
     },
   },
   {
@@ -156,9 +159,9 @@ const SERVERS: DemoServer[] = [
     httpChecks: [{ name: '통계 대시보드', url: 'https://stat.example.go.kr/', expectedStatus: 200 }],
     logDirectories: { WEB_LOG: ['/var/log/nginx'], WAS_LOG: ['/srv/stat/logs'] },
     base: { cpu: 15, memory: 44, volumes: [{ mount: '/', totalGB: 60, usedPercent: 58 }] },
-    // 어제 Node.js 앱이 죽어 3000 포트 미리스닝
-    scenario: ({ day }, r) => {
-      if (day === DAYS - 2) { r.processDown('node'); r.portDown(3000); }
+    // 지난주 점검에서 Node.js 앱이 죽어 3000 포트 미리스닝 (이번 주는 복구)
+    scenario: ({ week }, r) => {
+      if (week === WEEKS - 2) { r.processDown('node'); r.portDown(3000); }
     },
   },
   {
@@ -167,11 +170,11 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'sqlservr' }, { name: 'SQLAGENT' }], directories: [{ path: 'F:\\MSSQL\\Backup', warningPercent: 75, criticalPercent: 90 }], fileChecks: [],
     ports: [{ port: 1433, protocol: 'TCP', description: 'MSSQL' }], httpChecks: [],
     dbTargets: ['10.10.4.41,1433'],
-    base: { cpu: 22, memory: 64, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 40 }, { mount: 'F:', totalGB: 1000, usedPercent: 61, growthPerDay: 0.09 }] },
-    // 엿새 전 야간 전체 백업 실패 → 아침 점검 위험, 수동 백업 후 재점검 정상
-    recheckDays: [DAYS - 6],
-    scenario: ({ day, recheck }, r) => {
-      if (day === DAYS - 6 && !recheck) r.backupFailed();
+    base: { cpu: 22, memory: 64, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 40 }, { mount: 'F:', totalGB: 1000, usedPercent: 61, growthPerDay: 0.03 }] },
+    // 3주 전 야간 전체 백업 실패 → 아침 점검 위험, 수동 백업 후 재점검 정상
+    recheckWeeks: [WEEKS - 4],
+    scenario: ({ week, recheck }, r) => {
+      if (week === WEEKS - 4 && !recheck) r.backupFailed();
     },
   },
   {
@@ -180,9 +183,9 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'postgres' }], directories: [{ path: '/var/lib/pgsql/16/data' }], fileChecks: [],
     ports: [{ port: 5432, protocol: 'TCP', description: 'PostgreSQL' }], httpChecks: [],
     dbTargets: ['localhost:5432/minwon'],
-    base: { cpu: 14, memory: 52, volumes: [{ mount: '/', totalGB: 50, usedPercent: 37 }, { mount: '/var/lib/pgsql', totalGB: 500, usedPercent: 48, growthPerDay: 0.06 }] },
-    // 세션이 점점 늘어 오늘 주의
-    scenario: ({ day }, r) => r.sessions(40 + day * 0.75, 100),
+    base: { cpu: 14, memory: 52, volumes: [{ mount: '/', totalGB: 50, usedPercent: 37 }, { mount: '/var/lib/pgsql', totalGB: 500, usedPercent: 48, growthPerDay: 0.02 }] },
+    // 세션이 점점 늘어 이번 주 주의
+    scenario: ({ week }, r) => r.sessions(40 + week * 1.65, 100),
   },
   {
     id: 'DB-03', name: '통계 DB (MariaDB)', os: 'Linux', osName: 'Ubuntu', osVersion: '22.04.4 LTS (Jammy Jellyfish)', ip: '10.10.4.43',
@@ -190,8 +193,8 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'mariadbd' }], directories: [{ path: '/var/lib/mysql', warningPercent: 70, criticalPercent: 90 }], fileChecks: [],
     ports: [{ port: 3306, protocol: 'TCP', description: 'MariaDB' }], httpChecks: [],
     dbTargets: ['/run/mysqld/mysqld.sock'],
-    // 데이터 디스크가 하루 0.8%p씩 차서 4주쯤 전부터 주의, 오늘 위험
-    base: { cpu: 19, memory: 49, volumes: [{ mount: '/', totalGB: 50, usedPercent: 31 }, { mount: '/var/lib/mysql', totalGB: 400, usedPercent: 48, growthPerDay: 0.8 }] },
+    // 데이터 디스크가 주마다 약 1.8%p씩 차서 석 달쯤 전부터 주의, 이번 주 위험
+    base: { cpu: 19, memory: 49, volumes: [{ mount: '/', totalGB: 50, usedPercent: 31 }, { mount: '/var/lib/mysql', totalGB: 400, usedPercent: 48, growthPerDay: 0.25 }] },
   },
   {
     id: 'DB-04', name: '행정 DB (CUBRID)', os: 'Linux', osName: 'CentOS Linux', osVersion: '7.9.2009 (Core)', ip: '10.10.4.44',
@@ -199,10 +202,10 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'cub_server' }, { name: 'cub_master' }, { name: 'cub_broker' }], directories: [{ path: '/home/cubrid/database' }], fileChecks: [],
     ports: [{ port: 33000, protocol: 'TCP', description: 'CUBRID 브로커' }, { port: 1523, protocol: 'TCP', description: 'CUBRID 마스터' }], httpChecks: [],
     dbTargets: ['admindb@localhost'],
-    base: { cpu: 11, memory: 57, volumes: [{ mount: '/', totalGB: 100, usedPercent: 44 }, { mount: '/home', totalGB: 300, usedPercent: 52, growthPerDay: 0.05 }] },
-    // 나흘 전부터 이틀간 HA 상태가 maintenance (대기 서버 점검)
-    scenario: ({ day }, r) => {
-      if (day === DAYS - 4 || day === DAYS - 3) r.cubridHa('maintenance');
+    base: { cpu: 11, memory: 57, volumes: [{ mount: '/', totalGB: 100, usedPercent: 44 }, { mount: '/home', totalGB: 300, usedPercent: 52, growthPerDay: 0.016 }] },
+    // 3주 전부터 2주간 HA 상태가 maintenance (대기 서버 점검)
+    scenario: ({ week }, r) => {
+      if (week === WEEKS - 4 || week === WEEKS - 3) r.cubridHa('maintenance');
     },
   },
   {
@@ -210,9 +213,9 @@ const SERVERS: DemoServer[] = [
     roles: ['OTHER'], products: {}, sharedPath: '\\\\fileserver\\opsbox',
     processes: [{ name: 'LanmanServer' }], directories: [{ path: 'D:\\Share', warningPercent: 80, criticalPercent: 95 }], fileChecks: [],
     ports: [{ port: 445, protocol: 'TCP', description: 'SMB' }], httpChecks: [],
-    base: { cpu: 6, memory: 35, volumes: [{ mount: 'C:', totalGB: 100, usedPercent: 63 }, { mount: 'D:', totalGB: 4000, usedPercent: 64, growthPerDay: 0.05 }] },
-    // 사흘째 결과가 들어오지 않음 (점검 누락 재현)
-    skipDays: [DAYS - 3, DAYS - 2, DAYS - 1],
+    base: { cpu: 6, memory: 35, volumes: [{ mount: 'C:', totalGB: 100, usedPercent: 63 }, { mount: 'D:', totalGB: 4000, usedPercent: 64, growthPerDay: 0.016 }] },
+    // 2주째 결과가 들어오지 않음 (점검 누락 재현)
+    skipWeeks: [WEEKS - 2, WEEKS - 1],
   },
   {
     id: 'BATCH-01', name: '야간 배치 서버', os: 'Linux', osName: 'Rocky Linux', osVersion: '8.9 (Green Obsidian)', ip: '10.10.5.52',
@@ -222,9 +225,9 @@ const SERVERS: DemoServer[] = [
     ports: [], httpChecks: [],
     // 배치 시간과 겹쳐 CPU가 높은 날이 섞임
     base: { cpu: 35, memory: 41, volumes: [{ mount: '/', totalGB: 200, usedPercent: 46 }] },
-    scenario: ({ day }, r) => {
-      if (day % 5 === 2) r.cpu(93);
-      r.fileSize('/batch/out/daily_extract.csv', 380 + day * 3);
+    scenario: ({ week }, r) => {
+      if (week % 5 === 2) r.cpu(93);
+      r.fileSize('/batch/out/daily_extract.csv', 380 + week * 6.6);
     },
   },
 ];
@@ -263,7 +266,7 @@ class ResultBuilder {
   sessionUsage: { sessions: number; max: number } | null = null;
   haState = 'active';
 
-  constructor(private server: DemoServer, private ctx: DayContext) {
+  constructor(private server: DemoServer, private ctx: CheckContext) {
     const { rnd, day } = ctx;
     const noise = (spread: number) => (rnd() - 0.5) * 2 * spread;
     this.cpuValue = round(clamp(server.base.cpu + noise(8), 1, 99));
@@ -408,7 +411,7 @@ class ResultBuilder {
       WAS_DB_CONNECTION_POOL: jmx('DB Connection Pool 수집에는 JEUS/JMX 관리 주소와 인증 설정이 필요합니다.'),
       WAS_DEPLOYMENT: { status: 'Healthy', detail: { product, status: 'Healthy', processCount: 1, processes: this.processList([heap[0].processName]), message: '프로세스 기동 상태를 확인했습니다. 애플리케이션 배포 상태는 관리 콘솔에서 별도 확인해야 합니다.' } },
       WAS_HEAP_DUMP: dump
-        ? { status: 'Warning', detail: { status: 'Warning', configuredPaths: [dump.path.slice(0, dump.path.lastIndexOf('/'))], existingFileCount: 1, files: [{ path: dump.path, sizeMB: dump.sizeMB, modifiedAt: stamp(new Date(this.ctx.date.getTime() - (this.ctx.day - (DAYS - 5)) * 86400_000 - 3_600_000)) }] } }
+        ? { status: 'Warning', detail: { status: 'Warning', configuredPaths: [dump.path.slice(0, dump.path.lastIndexOf('/'))], existingFileCount: 1, files: [{ path: dump.path, sizeMB: dump.sizeMB, modifiedAt: stamp(new Date(this.ctx.date.getTime() - (this.ctx.day - (WEEKS - 3) * 7) * 86400_000 - 3_600_000)) }] } }
         : { status: 'Healthy', detail: { status: 'Healthy', configuredPaths: [], existingFileCount: 0, files: [] } },
       WAS_STARTUP_SCRIPT: jmx('비교할 기준 파일 또는 체크섬이 정책에 등록되지 않아 변경 여부를 판정할 수 없습니다.'),
       WAS_LOG: { status: log.status, detail: log },
@@ -462,7 +465,7 @@ class ResultBuilder {
       if (product === 'MSSQL') {
         const userDbs = dbNames.slice(3);
         q.DB_TABLESPACE = this.query(target, ['__OPSBOX_STATUS', 'databaseName', 'allocatedMB', 'usedMB', 'usagePercent'], userDbs.map((name, index) => {
-          const used = round(62 + index * 9 + this.ctx.day * 0.15, 2);
+          const used = round(62 + index * 9 + this.ctx.day * 0.05, 2);
           return [byPercent(used, 80, 90), name, sizes[index + 3], round((sizes[index + 3] * used) / 100, 2), used];
         }));
         const backupAge = (failed: boolean) => (failed ? round(31 + rnd() * 3, 1) : round(6 + rnd() * 3, 1));
@@ -508,19 +511,19 @@ class ResultBuilder {
 
   /** 점검 만들기 데모 항목 결과 (생성 조각이 남기는 detail 형식과 같음) */
   private builderItems(definitions: Definitions) {
-    const { rnd, day } = this.ctx;
+    const { rnd, week } = this.ctx;
     return definitions.basicPolicyItems.map((def) => {
       const row = (target: string, value: string, threshold: string, status: Status, message: string) => ({ target, value, threshold, status, message });
       if (def.item === SWAP_ITEM) {
         // 배치 서버는 야간 작업으로 Swap을 많이 씀
-        const value = round(this.server.id === 'BATCH-01' ? 40 + day * 0.6 + rnd() * 5 : 3 + rnd() * 20);
+        const value = round(this.server.id === 'BATCH-01' ? 40 + week * 1.3 + rnd() * 5 : 3 + rnd() * 20);
         const status = byPercent(value, 50, 80);
         return { role: 'BASIC', item: def.item, name: def.name, result: def.result, executorType: def.executorType, status,
           detail: { status, message: null, rows: [row('이 서버', String(value), '주의 ≥ 50% / 위험 ≥ 80%', status, '')], output: String(value) } };
       }
       if (def.item === PORT_ITEM) {
-        // WAS-01은 엿새 전 방화벽 정책 변경으로 DB 포트 접속 실패
-        const failed = this.server.id === 'WAS-01' && day === DAYS - 6;
+        // WAS-01은 3주 전 방화벽 정책 변경으로 DB 포트 접속 실패
+        const failed = this.server.id === 'WAS-01' && week === WEEKS - 4;
         const status: Status = failed ? 'Critical' : 'Healthy';
         return { role: 'BASIC', item: def.item, name: def.name, result: def.result, executorType: def.executorType, status,
           detail: { status, message: null, rows: [row(DB_PORT_TARGET, failed ? '실패' : '성공', '접속 제한 3초', status, failed ? '접속 실패 (3초 안에 응답 없음)' : '접속 성공')] } };
@@ -654,11 +657,12 @@ async function main() {
     const config = buildScriptConfig(server);
     const definitions: Definitions = { rolePolicies: config.checks.rolePolicies as Definitions['rolePolicies'], policyItems: config.checks.policyItems, basicPolicyItems: config.checks.basicPolicyItems };
 
-    for (let day = 0; day < DAYS; day++) {
-      if (demo.skipDays?.includes(day)) continue;
-      for (const recheck of demo.recheckDays?.includes(day) ? [false, true] : [false]) {
-        const date = new Date(today.getTime() - (DAYS - 1 - day) * 86400_000 + Math.round(rnd() * 40) * 60_000 + (recheck ? 5 * 3_600_000 : 0));
-        const ctx = { day, date, rnd };
+    for (let week = 0; week < WEEKS; week++) {
+      if (demo.skipWeeks?.includes(week)) continue;
+      for (const recheck of demo.recheckWeeks?.includes(week) ? [false, true] : [false]) {
+        const day = week * 7;
+        const date = new Date(today.getTime() - (WEEKS - 1 - week) * 7 * 86400_000 + Math.round(rnd() * 40) * 60_000 + (recheck ? 5 * 3_600_000 : 0));
+        const ctx = { week, day, date, rnd };
         const builder = new ResultBuilder(demo, ctx);
         demo.scenario?.({ ...ctx, recheck }, builder);
         const json = builder.build(definitions);

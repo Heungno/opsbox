@@ -26,11 +26,12 @@ export function parseCheckDate(text) {
 
 const isValue = (value) => typeof value === 'number' && Number.isFinite(value);
 
-/** x 눈금 간격(일): 2주는 2일, 4주는 7일, 그보다 길면 14일 */
+/** x 눈금 간격(일): 2주 이하 2일, 4주 7일, 12주 14일, 그보다 길면(26주) 28일 */
 function tickStepDays(days) {
   if (days <= 14) return 2;
   if (days <= 28) return 7;
-  return 14;
+  if (days <= 84) return 14;
+  return 28;
 }
 
 export function buildTrendModel(results, { endDate, days, width = 720, height = 240, padding = { top: 12, right: 16, bottom: 28, left: 40 } }) {

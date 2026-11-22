@@ -81,6 +81,14 @@ test('x 눈금은 기간에 맞는 간격과 MM/DD 라벨', () => {
   assert.ok(two.xTicks.length >= 6 && two.xTicks.length <= 8, String(two.xTicks.length));
 });
 
+test('주간점검용 긴 기간: 12주는 2주 간격, 26주는 4주 간격 눈금', () => {
+  const twelve = buildTrendModel([result('2026-09-01 09:00:00', 1, 1, 1), result(END, 2, 2, 2)], options(84));
+  assert.ok(twelve.xTicks.length >= 6 && twelve.xTicks.length <= 7, String(twelve.xTicks.length));
+  const half = buildTrendModel([result('2026-06-01 09:00:00', 1, 1, 1), result(END, 2, 2, 2)], options(182));
+  assert.ok(half.xTicks.length >= 6 && half.xTicks.length <= 7, String(half.xTicks.length));
+  assert.ok(half.xTicks.every((tick: any) => tick.x >= 40 && tick.x <= 720 - 16));
+});
+
 test('점검 시점별 묶음(entries)에 x·일시·파일·세 값을 담는다', () => {
   const model = buildTrendModel([result('2026-11-20 09:00:00', 1, null, 3, 'a.json'), result(END, 4, 5, 6, 'b.json')], options(14));
   assert.equal(model.entries.length, 2);
