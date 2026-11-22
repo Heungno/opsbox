@@ -1,10 +1,11 @@
-import { getResultByFile, getHealthStatus, getResultSummaries } from '../features/results/service';
-import { getReportFields } from './reportRuleService';
-import { getAllServers, getServerRoles } from '../features/servers/service';
-import type { ReportDetail, ReportListItem, ReportListQuery } from '../types/report';
+import { getResultByFile, getHealthStatus, getResultSummaries } from '../results/service';
+import { getReportFields } from './rules';
+import { getAllServers, getServerRoles } from '../servers/service';
+import type { ReportDetail, ReportListItem, ReportListQuery } from './types';
 
 export function getAllReports(filter?: ReportListQuery): ReportListItem[] {
-  const servers = getAllServers();
+  // 미사용 서버의 보고서도 남깁니다(서버를 지우지 않는 이유).
+  const servers = getAllServers({ includeInactive: true });
   const reports: ReportListItem[] = [];
 
   const targetServers = filter?.serverId

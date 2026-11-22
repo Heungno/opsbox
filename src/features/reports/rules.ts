@@ -1,6 +1,6 @@
-import type { ReportField } from '../types/report';
+import type { ReportField } from './types';
 
-export type { ReportField } from '../types/report';
+export type { ReportField } from './types';
 
 const REPORT_RULES: Record<string, ReportField[]> = {
   WEB: [

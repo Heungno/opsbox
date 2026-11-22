@@ -3,9 +3,10 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createServer } from '../src/features/servers/service';
+import { activateServer, createServer, deactivateServer } from '../src/features/servers/service';
 import { storeUploadedResult } from '../src/features/results/importer';
-import { getAllReports } from '../src/services/reportService';
+import { getAllReports } from '../src/features/reports/service';
+import { getDashboardSummary, getRecentChecks } from '../src/features/dashboard/service';
 
 createServer({ id: 'WEB-A', name: '웹 A', type: 'WEB', roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.1' } as any);
 createServer({ id: 'DB-B', name: '디비 B', type: 'WAS', roles: ['WAS'], products: { WAS: 'Apache Tomcat' }, os: 'Windows', ip: '10.0.0.2' } as any);
@@ -66,4 +67,14 @@ test('보고서 목록: 서버(ID·이름 일부)와 날짜 범위(양 끝 포�
   assert.deepEqual(getAllReports({ serverId: '디비' }).map((r) => r.fileName), ['b-old.json', 'b1.json']);
   assert.deepEqual(getAllReports({ startDate: '2026-11-10', endDate: '2026-11-15' }).map((r) => r.fileName), ['a2.json', 'b1.json']);
   assert.deepEqual(getAllReports({ serverId: 'NONE' }), []);
+});
+
+test('미사용 서버의 보고서도 목록에 나오고, 대시보드에서는 빠진다', () => {
+  deactivateServer('DB-B');
+  assert.ok(getAllReports().some((r) => r.serverId === 'DB-B'));
+  assert.ok(getAllReports({ serverId: '디비' }).length > 0, '서버 이름 검색도 미사용 서버 포함');
+  assert.equal(getRecentChecks().some((c) => c.serverId === 'DB-B'), false);
+  assert.equal(getDashboardSummary().total, 1);
+  activateServer('DB-B');
+  assert.equal(getDashboardSummary().total, 2);
 });

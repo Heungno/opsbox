@@ -19,6 +19,6 @@ export * from '../features/servers/types';
 export * from '../features/policies/types';
 export * from '../features/templates/types';
 export * from '../features/results/types';
-export * from './report';
+export * from '../features/reports/types';
 export * from './audit';
 export type { ValidationResult } from './validation';

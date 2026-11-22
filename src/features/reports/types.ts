@@ -1,5 +1,5 @@
-import type { ServerProduct, ServerRole } from '../features/servers/types';
-import type { CheckStatus } from '../features/results/types';
+import type { ServerProduct, ServerRole } from '../servers/types';
+import type { CheckStatus } from '../results/types';
 
 export interface DashboardSummary {
   total: number;

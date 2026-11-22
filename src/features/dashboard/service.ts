@@ -1,7 +1,7 @@
-import { getAllServers, getServerRoles } from '../features/servers/service';
+import { getAllServers, getServerRoles } from '../servers/service';
 
-import { getLatestResult, getHealthStatus } from '../features/results/service';
-import type { DashboardSummary, RecentCheck } from '../types/report';
+import { getLatestResult, getHealthStatus } from '../results/service';
+import type { DashboardSummary, RecentCheck } from '../reports/types';
 
 export function getDashboardSummary(): DashboardSummary {
   const servers = getAllServers();
