@@ -13,7 +13,7 @@
 - **점검 정책 관리**: OS(Windows·Linux)별로 기본·WEB·WAS·DB 정책을 만들고, 서버에서 불러와 서버별 값(프로세스, 경로, 포트, URL, DB 인스턴스 등)을 입력합니다.
 - **점검 만들기**: 스크립트를 쓰지 않고 폼만 채워 점검 항목을 추가합니다. 6가지 유형을 지원하고, 매뉴얼 기준으로 준비된 점검 17개가 있습니다.
 - **스크립트 관리**: 점검 항목별 PowerShell·bash 조각과 SQL 쿼리를 편집하고 변경 이력에서 복원합니다. 서버가 스크립트를 내려받을 때 조각을 한 파일로 조립합니다.
-- **결과 수집**: 공유 폴더의 결과 JSON을 자동으로 가져오거나 화면에서 올립니다. 원본은 암호화해 백업합니다.
+- **결과 수집**: 수신함 폴더의 결과 JSON을 자동으로 가져오거나 화면에서 올립니다. 원본은 암호화해 백업합니다.
 - **대시보드·보고서**: 상태별(정상·주의·위험·미수집) 집계를 보여 줍니다. 보고서는 유형별 점검표, 이전 점검과의 비교, 자원 사용 추세 그래프(4·12·26주), A4 인쇄·PDF를 지원합니다.
 - **공통코드 관리**: 역할, OS, 제품, 상태 이름 같은 선택값을 관리합니다. **변경 이력** 화면에서는 감사 로그를 조회합니다.
 - 밝은 테마와 어두운 테마를 전환할 수 있습니다. 처음에는 기기 설정을 따릅니다.
@@ -56,14 +56,14 @@ npm run demo:remove   # data/demo/ 삭제
 ## 데이터와 결과 수집
 
 - 모든 데이터는 `data/opsbox.db`(SQLite)에 저장되고 Git에서는 제외됩니다.
-- `data/*.json`(템플릿, 정책, 공통코드 등)은 **처음 실행할 때만** DB로 옮기는 초기값입니다. 이후에는 DB가 원본입니다.
-- 새 버전의 기본 템플릿은 시작할 때 기존 DB에 추가됩니다. 사용자가 고친 템플릿은 건드리지 않습니다.
+- `seeds/*.json`(템플릿, 정책, 공통코드)은 **DB를 새로 만들 때만** 넣는 기본값입니다. 이후에는 DB가 원본입니다.
+- DB 구조는 `src/db/schema.ts`에 있고 `PRAGMA user_version`으로 버전을 관리합니다. 자세한 내용은 [DB 문서](docs/DATABASE.md)를 보세요.
 
 **결과 수집 흐름**
-1. 각 서버 공유 폴더의 `results/`가 수신함입니다.
-2. OpsBox가 시작할 때와 5분마다 결과 파일을 읽어, 파일 안의 서버 ID로 서버를 구분해 저장합니다.
+1. 점검 스크립트가 결과 저장 경로(설정 → 결과 수집의 OS별 기본값 또는 서버별 지정)에 `<서버ID>_<시각>.json`을 저장합니다.
+2. OpsBox가 시작할 때와 5분마다 수신함(`OPSBOX_RESULT_INBOX`, 기본 `data/inbox`) 바로 아래의 결과 파일을 읽어, 파일 안의 서버 ID로 서버를 구분해 저장합니다. 결과 저장 경로와 수신함은 보통 같은 공유 폴더입니다.
 3. 원본은 AES-256-GCM으로 암호화해 `data/backup/results/<연도>/<서버ID>/`에 보관하고, 수신함에서는 지웁니다.
-4. 같은 파일은 다시 저장하지 않습니다. 형식 오류가 난 파일은 수신함에 그대로 남깁니다.
+4. 같은 파일은 다시 저장하지 않습니다. 형식 오류가 났거나 미사용 서버의 파일은 수신함에 그대로 남깁니다.
 
 **백업 키**
 - `data/backup.key`가 없으면 처음 실행할 때 자동으로 만듭니다.
@@ -76,6 +76,7 @@ npm run demo:remove   # data/demo/ 삭제
 | --- | --- | --- |
 | `OPSBOX_PORT` | `3000` | 접속 포트 (데모 3001) |
 | `OPSBOX_DB_PATH` | `data/opsbox.db` | SQLite DB 파일 |
+| `OPSBOX_RESULT_INBOX` | `data/inbox` | 결과 수신함 폴더, 여러 개는 `;`로 구분 |
 | `OPSBOX_BACKUP_DIR` | `data/backup/results` | 암호화 백업 폴더 |
 | `OPSBOX_BACKUP_KEY` / `OPSBOX_BACKUP_KEY_FILE` | (없음) / `data/backup.key` | 백업 키(base64 32바이트) 또는 키 파일 |
 | `OPSBOX_IMPORT_INTERVAL_MINUTES` | `5` | 자동 가져오기 주기(분), 0이면 끔 |
@@ -93,20 +94,25 @@ npm run demo:remove   # data/demo/ 삭제
 ## 개발 참고
 
 ```text
-src/server.ts      Fastify 시작점
-src/db/            SQLite 연결·테이블 생성·초기값 이관
-src/routes/        API (서버·정책·템플릿·스크립트·결과·보고서·공통코드·감사 로그·인증)
-src/services/      업무 로직 (스크립트 조립, 결과 가져오기, 상태 판정, 백업 등)
-src/types/         공용 타입 (strict)
+src/server.ts      시작점 (listen, 결과 가져오기 스케줄러, 종료 처리)
+src/app.ts         Fastify 앱 조립 (보안 헤더, 로그인 확인, 화면·API 라우트)
+src/db/            SQLite 연결, 스키마·버전(schema.ts), 새 DB 기본값(seed.ts)
+src/features/      기능별 폴더: servers, policies, templates, common-codes, settings,
+                   results, reports, dashboard, scripts(check-builder 포함), audit, auth
+                   각 폴더: routes.ts(API) · service.ts(규칙) · repository.ts(SQL) · types.ts
+src/shared/        오류 클래스, HTTP 응답 도우미, 로거, 화면 레이아웃 조립
 src/public/        화면: 메뉴별 폴더(dashboard, reports, settings/*), 공통은 shared/
+seeds/             새 DB에 넣는 기본 공통코드·정책·템플릿
 scripts/           데모·계정 생성·백업 복호화·빌드 보조
-test/              node:test 테스트
+test/              node:test 테스트 (golden/: 생성 스크립트·설정 API 기준 비교 파일)
 ```
 
 - **API 응답 형식**: 성공은 `{ success: true, data }`, 실패는 `{ success: false, code, message, errors?, requestId? }`입니다.
-  - 서버 코드에서는 `src/errors.ts`의 오류 클래스를 던집니다.
+  - 서버 코드에서는 `src/shared/errors.ts`의 오류 클래스를 던집니다.
   - 화면 코드에서는 `fetch` 대신 `src/public/shared/js/api.js`의 `api()`를 씁니다.
 - **CSP**: `script-src 'self'`라서 HTML 안의 인라인 스크립트와 `onclick`은 동작하지 않습니다. 별도 `.js` 파일로 작성하세요.
+- **기능끼리의 의존**: 다른 기능은 그 기능의 `service.ts`만 import합니다. `repository.ts`(SQL)는 같은 기능 안에서만 씁니다.
+- **기준 비교 테스트**: `test/golden.test.ts`는 데모 서버의 생성 스크립트와 설정 API 응답을 `test/golden/`과 비교합니다. 동작을 일부러 바꿨을 때만 `node --import tsx scripts/update-golden.ts`로 다시 만들고, 바뀐 줄을 확인한 뒤 커밋하세요.
 - **공통 레이아웃**: 사이드바 등 공통 레이아웃은 `src/public/shared/fragments/layout.html`이고, 서버가 각 화면에 붙여서 내보냅니다.
 
 ## 향후 계획
