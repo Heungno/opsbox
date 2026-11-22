@@ -11,6 +11,9 @@
  * DOM은 createElement + textContent만 사용합니다.
  */
 
+import { statusLabel } from '../shared/js/status.js';
+
+const STATUS_COLUMNS = new Set(['status', '__OPSBOX_STATUS']);
 const VIEW_LABELS = { TABLE: '표', LOG_TABLE: '로그', CONSOLE: '콘솔 결과', METRIC: '측정값', JSON: 'JSON 상세' };
 const BADGE_CLASS = { Healthy: 'badge-success', Warning: 'badge-warning', Critical: 'badge-danger', NotCollected: 'badge-muted' };
 
@@ -33,7 +36,11 @@ function buildTable(columns, rows, valueOf) {
   const body = el('tbody');
   rows.forEach((values) => {
     const row = el('tr');
-    columns.forEach((column, index) => row.append(el('td', null, cellText(valueOf(values, column, index)))));
+    columns.forEach((column, index) => {
+      const value = valueOf(values, column, index);
+      // 상태 열(status·__OPSBOX_STATUS)은 상태 값 대신 상태 이름(공통코드)으로 보여 줌
+      row.append(el('td', null, STATUS_COLUMNS.has(column.key ?? column) && typeof value === 'string' ? statusLabel(value) : cellText(value)));
+    });
     body.append(row);
   });
   table.append(head, body);
@@ -108,7 +115,7 @@ function buildBox(item, extra) {
   const box = el('section', 'report-item-box');
   box.setAttribute('data-item', item.item);
   const head = el('div', 'report-item-head');
-  head.append(el('h3', null, item.name || item.item), el('span', `server-badge ${BADGE_CLASS[status] || 'badge-muted'}`, status));
+  head.append(el('h3', null, item.name || item.item), el('span', `server-badge ${BADGE_CLASS[status] || 'badge-muted'}`, statusLabel(status)));
   box.append(head);
   const message = item.message || detail.message;
   if (message) box.append(el('p', 'report-item-message', String(message)));

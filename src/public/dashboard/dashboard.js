@@ -1,6 +1,8 @@
 import { api } from '/shared/js/api.js';
+import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
 await window.opsboxLayoutReady;
+await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 
 async function init() {
   await loadSummary();
@@ -73,7 +75,7 @@ function renderRecentChecks(checks) {
     const healthCell = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = `history-status ${item.health.toLowerCase()}`;
-    badge.textContent = item.health;
+    badge.textContent = statusLabel(item.health);
     healthCell.appendChild(badge);
 
     const cpu = document.createElement('td');

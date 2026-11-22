@@ -1,7 +1,9 @@
 import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
 import { api, apiRequest, downloadFile, loadText, notifyError, showToast } from '/shared/js/api.js';
+import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
 await window.opsboxLayoutReady;
+await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 
 const params = new URLSearchParams(window.location.search);
 let serverId = params.get('id');
@@ -424,7 +426,7 @@ function renderHealthSummary(health) {
 
   badge.className = `summary-badge badge-${health.toLowerCase()}`;
 
-  badge.textContent = health;
+  badge.textContent = statusLabel(health);
 
   container.appendChild(badge);
 }
@@ -476,7 +478,7 @@ function renderLatestResult(result, health) {
 
   badge.className = 'summary-badge';
 
-  badge.textContent = health;
+  badge.textContent = statusLabel(health);
 
   if (health === 'Healthy') {
     badge.classList.add('badge-success');
@@ -595,7 +597,7 @@ function renderResultHistory(results) {
     const badge = document.createElement('span');
 
     badge.className = `history-status ${health.toLowerCase()}`;
-    badge.textContent = health;
+    badge.textContent = statusLabel(health);
     statusCell.appendChild(badge);
 
     const report = document.createElement('td');

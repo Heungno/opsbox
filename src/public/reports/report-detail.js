@@ -1,9 +1,11 @@
 import { highlightConsoleOutput } from '../shared/js/syntax-highlight.js';
 import { api, apiRequest, notifyError } from '/shared/js/api.js';
+import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 import { renderTrendChart } from './trend-chart.js?v=20261122-trend2';
-import { renderItemBoxes } from './report-item-box.js?v=20261122-boxes3';
+import { renderItemBoxes } from './report-item-box.js?v=20261122-status2';
 
 await window.opsboxLayoutReady;
+await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 
 // 자원 사용 추세 그래프: 기간(일). 기간 버튼과 비교 선택을 바꾸면 다시 그립니다.
 let trendDays = 28;
@@ -413,7 +415,7 @@ function renderDatabaseChecks(check, product) {
     const state = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = `server-badge ${database.status === 'Healthy' ? 'badge-success' : database.status === 'Warning' ? 'badge-warning' : 'badge-danger'}`;
-    badge.textContent = `${database.state} · ${database.status === 'Healthy' ? '정상' : database.status === 'Warning' ? '확인 필요' : '위험'}`;
+    badge.textContent = `${database.state} · ${statusLabel(database.status)}`;
     state.appendChild(badge);
     const recovery = document.createElement('td'); recovery.textContent = database.recoveryModel || '-';
     const size = document.createElement('td'); size.textContent = Number.isFinite(Number(database.sizeMB)) ? Number(database.sizeMB).toLocaleString() : '-';
@@ -443,7 +445,7 @@ function renderDatabaseQueryTables(items) {
     const title = document.createElement('strong');
     title.textContent = `${item.name || item.item || 'DB 쿼리'}${query.name ? ` · ${query.name}` : ''}`;
     const meta = document.createElement('span');
-    meta.textContent = `${query.target || '-'} · ${query.status || item.status || '미수집'}`;
+    meta.textContent = `${query.target || '-'} · ${statusLabel(query.status || item.status || 'NotCollected')}`;
     heading.append(title, meta);
     section.appendChild(heading);
     if (query.message) {
@@ -523,7 +525,7 @@ function renderWasHeapRows(items) {
     const state = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = `server-badge ${item.status === 'Healthy' ? 'badge-success' : item.status === 'Warning' ? 'badge-warning' : item.status === 'NotCollected' ? 'badge-muted' : 'badge-danger'}`;
-    badge.textContent = item.status === 'Healthy' ? '정상' : item.status === 'Warning' ? '경고' : item.status === 'NotCollected' ? '미수집' : '위험';
+    badge.textContent = statusLabel(item.status);
     state.appendChild(badge);
     const note = document.createElement('td'); note.textContent = item.message || '-';
     row.append(name, pid, usage, state, note); tbody.appendChild(row);
@@ -577,7 +579,7 @@ function renderChecklist(targetId, rows) {
     const name = document.createElement('td'); name.textContent = label;
     const state = document.createElement('td');
     const badge = document.createElement('span'); badge.className = `server-badge ${result.status === 'Healthy' ? 'badge-success' : result.status === 'Warning' ? 'badge-warning' : result.status === 'NotCollected' ? 'badge-muted' : 'badge-danger'}`;
-    badge.textContent = result.status === 'Healthy' ? '정상' : result.status === 'Warning' ? '경고' : result.status === 'NotCollected' ? '미수집' : '위험';
+    badge.textContent = statusLabel(result.status);
     state.appendChild(badge);
     const detail = document.createElement('td'); detail.textContent = `${result.detail} · ${note}`;
     row.append(name, state, detail); tbody.appendChild(row);
@@ -615,7 +617,8 @@ function renderServerInfo(data, osInfo) {
 }
 
 // 인쇄용 문서 개요 (화면에서는 숨겨지고 인쇄할 때만 보임)
-const PRINT_HEALTH_LABEL = { Healthy: '○ 정상 (Healthy)', Warning: '△ 주의 (Warning)', Critical: '× 위험 (Critical)' };
+// 흑백 인쇄에서도 구분되도록 상태 이름 앞에 붙이는 기호 (이름은 공통코드 healthStatuses)
+const PRINT_HEALTH_MARK = { Healthy: '○', Warning: '△', Critical: '×' };
 
 function setPrintText(id, value) {
   const element = document.getElementById(id);
@@ -643,7 +646,7 @@ function renderPrintHeader(data, health, serverTypes) {
   setPrintText('print-ip', server.ip);
   setPrintText('print-os', getOsInfo(data).label);
   setPrintText('print-check-date', data.checkDate);
-  setPrintText('print-health', PRINT_HEALTH_LABEL[health] || health);
+  setPrintText('print-health', [PRINT_HEALTH_MARK[health], statusLabel(health)].filter(Boolean).join(' '));
   updatePrintSigner();
 }
 
@@ -666,7 +669,7 @@ function renderHealth(health) {
 
   const badge = document.createElement('div');
   badge.className = 'summary-badge';
-  badge.textContent = health;
+  badge.textContent = statusLabel(health);
 
   if (health === 'Healthy') {
     badge.classList.add('badge-success');
@@ -704,7 +707,7 @@ function renderDisks(disks) {
     const status = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = `server-badge ${disk.status === 'Healthy' ? 'badge-success' : disk.status === 'Warning' ? 'badge-warning' : 'badge-danger'}`;
-    badge.textContent = disk.status ?? '미판정';
+    badge.textContent = statusLabel(disk.status);
     status.appendChild(badge);
     row.append(device, used, total, usage, status);
     tbody.appendChild(row);
@@ -931,7 +934,7 @@ function renderFileChecks(fileChecks) {
     const status = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = `server-badge ${file.status === 'Healthy' ? 'badge-success' : file.status === 'Warning' ? 'badge-warning' : 'badge-danger'}`;
-    badge.textContent = file.status ?? 'Critical';
+    badge.textContent = statusLabel(file.status ?? 'Critical');
     status.appendChild(badge);
     row.append(path, exists, size, status);
     tbody.appendChild(row);

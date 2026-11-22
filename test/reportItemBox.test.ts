@@ -29,9 +29,10 @@ test('항목마다 상자 하나, 제목 옆에 상태 배지', async () => {
   assert.equal(first.getAttribute('data-item'), 'CUSTOM_A');
   assert.equal(first.find('h3')[0].textContent, 'Swap 사용률');
   const badge = first.find('span', 'server-badge')[0];
-  assert.equal(badge.textContent, 'Warning');
+  assert.equal(badge.textContent, '경고', '공통코드 상태 이름');
   assert.ok(badge.className.includes('badge-warning'));
   assert.ok(boxes(container)[2].find('span', 'server-badge')[0].className.includes('badge-muted'), '미수집은 회색');
+  assert.equal(boxes(container)[2].find('span', 'server-badge')[0].textContent, '미수집');
 });
 
 test('따로 떨어진 "· 요약" 상자는 없다', async () => {
@@ -119,4 +120,12 @@ test('결과가 비어 있고 안내 메시지가 있으면 "데이터 없음" �
 test('열 이름이 설정되지 않은 쿼리 표의 상태 열은 "상태"로 보인다', async () => {
   const item = { item: 'X', name: 'x', status: 'Healthy', result: { components: [{ type: 'SUMMARY' }, { type: 'LOG_TABLE' }] }, detail: { queries: [{ target: 't', columns: ['__OPSBOX_STATUS', 'logSizeMB'], rows: [['Healthy', '10']] }] } };
   assert.deepEqual(boxes(await render([item]))[0].find('th').map((cell) => cell.textContent), ['상태', 'logSizeMB']);
+});
+
+test('표의 상태 열(status·__OPSBOX_STATUS) 값은 상태 이름으로 보인다', async () => {
+  const builder = { item: 'A', name: 'a', status: 'Warning', result: { components: [{ type: 'SUMMARY' }, { type: 'TABLE', columns: [{ key: 'target', label: '대상' }, { key: 'status', label: '상태' }] }] }, detail: { rows: [{ target: 'x', status: 'Warning' }] } };
+  const query = { item: 'B', name: 'b', status: 'Healthy', result: { components: [{ type: 'SUMMARY' }, { type: 'TABLE' }] }, detail: { queries: [{ target: 't', columns: ['__OPSBOX_STATUS', 'db'], rows: [['Healthy', 'app']] }] } };
+  const [first, second] = boxes(await render([builder, query]));
+  assert.deepEqual(first.find('td').map((cell) => cell.textContent), ['x', '경고']);
+  assert.deepEqual(second.find('td').map((cell) => cell.textContent), ['정상', 'app']);
 });

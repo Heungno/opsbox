@@ -1,5 +1,7 @@
 import { api, notifyError } from '/shared/js/api.js';
+import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 await window.opsboxLayoutReady;
+await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그리기 전에 불러옴
 
 async function init() {
   bindEvents();
@@ -121,7 +123,7 @@ function createServerReportsTable(items) {
     const row = document.createElement('tr');
     const date = document.createElement('td'); date.textContent = item.checkDate || '-';
     const state = document.createElement('td');
-    const badge = document.createElement('span'); badge.className = `history-status ${(item.health || '').toLowerCase()}`; badge.textContent = item.health || '미판정'; state.appendChild(badge);
+    const badge = document.createElement('span'); badge.className = `history-status ${(item.health || '').toLowerCase()}`; badge.textContent = statusLabel(item.health); state.appendChild(badge);
     const cpu = document.createElement('td'); cpu.textContent = `${item.cpu ?? '-'}%`;
     const memory = document.createElement('td'); memory.textContent = `${item.memory ?? '-'}%`;
     const disk = document.createElement('td'); disk.textContent = `${item.disk ?? '-'}%`;
