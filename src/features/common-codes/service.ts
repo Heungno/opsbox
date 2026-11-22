@@ -1,10 +1,12 @@
-import { readSetting, writeSetting } from '../db/database';
-import { BadRequestError } from '../shared/errors';
-import type { CommonCodes } from '../types/commonCode';
+import '../../db'; // 스키마·기본값 준비
+import { fromTables, toTables } from './codec';
+import { readTables, replaceTables } from './repository';
+import { BadRequestError } from '../../shared/errors';
+import type { CommonCodes } from './types';
 
 const REQUIRED_SYSTEM_SCRIPT_CODES = ['START', 'SAVE'];
 
-export type { CommonCode, CommonCodes } from '../types/commonCode';
+export type { CommonCode, CommonCodes } from './types';
 
 export function getCommonCodeValues(category: keyof CommonCodes): string[] {
   const value = getCommonCodes()[category];
@@ -13,9 +15,9 @@ export function getCommonCodeValues(category: keyof CommonCodes): string[] {
 }
 
 export function getRawCommonCodes(): CommonCodes {
-  const codes = readSetting<CommonCodes>('common_codes');
-  if (!codes) throw new Error('공통코드 데이터가 없습니다. seeds/common-codes.json 기본값 파일을 확인하세요.');
-  return codes;
+  const tables = readTables();
+  if (!tables.categories.length) throw new Error('공통코드 데이터가 없습니다. seeds/common-codes.json 기본값 파일을 확인하세요.');
+  return fromTables(tables);
 }
 
 export function getCommonCodes(): CommonCodes {
@@ -52,6 +54,6 @@ export function saveCommonCodes(codes: CommonCodes): CommonCodes {
       }
     }
   }
-  writeSetting('common_codes', codes);
+  replaceTables(toTables(codes));
   return codes;
 }

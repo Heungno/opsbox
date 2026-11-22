@@ -7,7 +7,7 @@ import { validateProcesses, validateDirectories, validateFileChecks, validatePor
 
 import { NotFoundError, ValidationError } from '../shared/errors';
 import { getTemplate } from './templateService';
-import { getCommonCodes } from './commonCodeService';
+import { getCommonCodes } from '../features/common-codes/service';
 import { getPolicies } from './policyService';
 import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from './dbQueryDefaults';
 

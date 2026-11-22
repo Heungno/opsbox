@@ -1,4 +1,4 @@
-import type { CommonCodeValue } from './commonCode';
+import type { CommonCodeValue } from '../features/common-codes/types';
 
 export type OperatingSystem = CommonCodeValue;
 export type PolicyCategory = 'BASIC' | 'WEB' | 'WAS' | 'DB';

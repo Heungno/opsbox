@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { logger } from '../shared/logger';
+import './index'; // 새 스키마(공통코드 등) 준비
 import { DB_PATH, db, transaction } from './connection';
 
 export { DB_PATH, db, transaction };
@@ -178,14 +179,6 @@ function seedFromJsonFiles() {
     }
   }
 
-  if (readSetting('common_codes') === undefined) {
-    const codes = readJsonFile('common-codes.json');
-    if (codes && typeof codes === 'object') {
-      writeSetting('common_codes', codes);
-      seeded.push('common codes');
-    }
-  }
-
   if (isEmpty('users')) {
     const parsed = readJsonFile('user.json') as { users?: any[] } | undefined;
     if (Array.isArray(parsed?.users) && parsed.users.length) {
@@ -320,37 +313,13 @@ function upgradeBuiltInTemplates(): string[] {
   return upgraded;
 }
 
-/*
- * 새 버전에서 추가된 실행 방식 공통코드(예: 점검 만들기 CHECK_BUILDER) 채우기.
- * 공통코드는 DB를 처음 만들 때만 들어가므로, 기존 DB에는 한 번만 채웁니다(이후 사용자가 지우면 되살리지 않음).
- */
-const EXECUTOR_CODES_MIGRATION = 'migration_executor_codes_v1';
-
-function addNewExecutorCodes(): string[] {
-  if (readSetting(EXECUTOR_CODES_MIGRATION) !== undefined) return [];
-  const seed = readJsonFile('common-codes.json') as { policyExecutors?: Array<{ value: string }> } | undefined;
-  const codes = readSetting<{ policyExecutors?: Array<{ value: string }> }>('common_codes');
-  const added: string[] = [];
-  if (codes && Array.isArray(codes.policyExecutors) && Array.isArray(seed?.policyExecutors)) {
-    const have = new Set(codes.policyExecutors.map((code) => code.value));
-    const missing = seed.policyExecutors.filter((code) => !have.has(code.value));
-    if (missing.length) {
-      writeSetting('common_codes', { ...codes, policyExecutors: [...codes.policyExecutors, ...missing] });
-      added.push(...missing.map((code) => code.value));
-    }
-  }
-  writeSetting(EXECUTOR_CODES_MIGRATION, { appliedAt: new Date().toISOString(), added });
-  return added;
-}
-
 export function applyBuiltInUpdates() {
-  const executorCodes = addNewExecutorCodes();
   const templates = addNewBuiltInTemplates();
   const upgradedTemplates = upgradeBuiltInTemplates();
   const policyItems = addLinuxBasicPolicyItems();
   const rolePolicyItems = addLinuxRolePolicyItems();
-  if (executorCodes.length || templates.length || upgradedTemplates.length || policyItems.length || rolePolicyItems.length) {
-    logger.info({ executorCodes, templates, upgradedTemplates, linuxBasicPolicyItems: policyItems, linuxRolePolicyItems: rolePolicyItems }, '새 버전의 기본 템플릿·정책 항목을 반영했습니다');
+  if (templates.length || upgradedTemplates.length || policyItems.length || rolePolicyItems.length) {
+    logger.info({ templates, upgradedTemplates, linuxBasicPolicyItems: policyItems, linuxRolePolicyItems: rolePolicyItems }, '새 버전의 기본 템플릿·정책 항목을 반영했습니다');
   }
 }
 

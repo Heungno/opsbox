@@ -1,5 +1,5 @@
 import type { ServerRole } from './server';
-import type { CommonCodeValue } from './commonCode';
+import type { CommonCodeValue } from '../features/common-codes/types';
 import type { OperatingSystem } from './policy';
 
 export type TemplateKind = CommonCodeValue;

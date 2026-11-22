@@ -3,7 +3,7 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { applyBuiltInUpdates, db, readSetting, transaction, writeSetting } from '../src/db/database';
+import { db, readSetting, transaction, writeSetting } from '../src/db/database';
 import { generatedTemplateId, isDetached, regenerateItem, upgradeGeneratedTemplates } from '../src/services/checkBuilder/templates';
 import type { BuilderSpec } from '../src/services/checkBuilder/types';
 import { getPolicies, savePolicy } from '../src/services/policyService';
@@ -99,20 +99,6 @@ test('DB 정책에서도 점검 만들기를 쓸 수 있고, 기본 정책의 DB
   savePolicy({ ...dbPolicy, items: [...dbPolicy.items, builderItem('CUSTOM_TPL0000000000002', { version: 1, type: 'FILE_FRESHNESS', presetId: null, maxAgeHours: 24 }, '설정 백업')] } as any, dbPolicy.id);
   assert.ok(template('GEN-CUSTOM_TPL0000000000002-LINUX'));
   assert.throws(() => saveWith([{ id: 'CUSTOM_TPL0000000000003', name: 'q', enabled: true, executor: { type: 'SQL_QUERY' }, inputs: [], result: { components: [{ type: 'SUMMARY' }] } }]));
-});
-
-test('기존 DB 공통코드에 점검 만들기 실행 방식이 없으면 한 번만 채운다', () => {
-  const codes = readSetting<any>('common_codes');
-  writeSetting('common_codes', { ...codes, policyExecutors: codes.policyExecutors.filter((code: any) => code.value !== 'CHECK_BUILDER') });
-  db.prepare("DELETE FROM settings WHERE key = 'migration_executor_codes_v1'").run();
-  applyBuiltInUpdates();
-  assert.ok(readSetting<any>('common_codes').policyExecutors.some((code: any) => code.value === 'CHECK_BUILDER'));
-  // 이미 적용한 뒤 사용자가 지운 코드는 되살리지 않음
-  const again = readSetting<any>('common_codes');
-  writeSetting('common_codes', { ...again, policyExecutors: again.policyExecutors.filter((code: any) => code.value !== 'CHECK_BUILDER') });
-  applyBuiltInUpdates();
-  assert.equal(readSetting<any>('common_codes').policyExecutors.some((code: any) => code.value === 'CHECK_BUILDER'), false);
-  writeSetting('common_codes', again);
 });
 
 test('생성기 버전이 낮은 고치지 않은 생성 템플릿은 다시 만들고, 직접 편집한 것은 그대로 둔다', () => {
