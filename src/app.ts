@@ -4,7 +4,7 @@ import fastifyStatic from '@fastify/static';
 import { randomUUID } from 'node:crypto';
 
 import { routes } from './routes';
-import { readSessionCookie } from './services/authService';
+import { readSessionCookie } from './features/auth/service';
 import { UnauthorizedError } from './shared/errors';
 import { registerErrorHandlers } from './shared/error-handler';
 import { ok } from './shared/http';

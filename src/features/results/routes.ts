@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { BadRequestError, NotFoundError } from '../../shared/errors';
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import { getImportStatus, importResults, logImportSummary, storeUploadedResult } from './importer';
 import { getHealthStatus, getLatestResult, getResultByFile, getResults } from './service';
 import type { ResultFileParams, ServerIdParams } from '../../types/api';

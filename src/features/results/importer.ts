@@ -10,7 +10,7 @@ import { clearImportError, countResults, findBackupPathByHash, hasSameImportErro
 import { writeEncryptedBackup } from './backup-crypto';
 import { BadRequestError, ConflictError } from '../../shared/errors';
 import { logger } from '../../shared/logger';
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import type { ImportStatus, ImportSummary } from './types';
 
 /*

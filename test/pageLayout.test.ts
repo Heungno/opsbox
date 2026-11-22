@@ -5,7 +5,7 @@ import { test } from 'node:test';
 
 import { PAGES, composePage } from '../src/shared/pages';
 import { app } from '../src/server';
-import { createSession, createUser, sessionCookie } from '../src/services/authService';
+import { createSession, createUser, sessionCookie } from '../src/features/auth/service';
 
 createUser('tester', '테스터', 'tester-password-1');
 

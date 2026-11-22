@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import { deletePolicy, getPolicies, savePolicy } from './service';
 import type { IdParams } from '../../types/api';
 import type { PolicyDraft } from './types';

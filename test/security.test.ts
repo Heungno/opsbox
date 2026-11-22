@@ -5,7 +5,7 @@ import { test } from 'node:test';
 
 import { app } from '../src/server';
 import { writeEncryptedBackup } from '../src/features/results/backup-crypto';
-import { resetLoginThrottle } from '../src/services/loginThrottle';
+import { resetLoginThrottle } from '../src/features/auth/login-throttle';
 import { createServer } from '../src/features/servers/service';
 
 /*

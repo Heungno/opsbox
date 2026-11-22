@@ -27,7 +27,7 @@ function prepare() {
   prepared ??= (async () => {
     const { seedDemo } = await import('../../scripts/seed-demo');
     await seedDemo({ results: false });
-    const { createUser } = await import('../../src/services/authService');
+    const { createUser } = await import('../../src/features/auth/service');
     const { app } = await import('../../src/server');
     createUser('golden', '기준 비교', 'golden-pass-1234');
     const login = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { username: 'golden', password: 'golden-pass-1234' } });

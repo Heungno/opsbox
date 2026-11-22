@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { isDetached } from '../../services/checkBuilder/templates';
 
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import { deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from './service';
 import type { IdParams } from '../../types/api';
 import type { ManagedTemplate } from './types';

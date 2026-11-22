@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
-import { BadRequestError, TooManyRequestsError, UnauthorizedError } from '../shared/errors';
-import { recordAudit } from '../services/auditService';
-import { assertLoginAllowed, recordLoginFailure, recordLoginSuccess } from '../services/loginThrottle';
-import { authenticate, changePassword, clearSessionCookie, createSession, readSessionCookie, sessionCookie, updateDisplayName } from '../services/authService';
-import type { LoginRequest } from '../types/auth';
-import { ok, requireObject } from '../shared/http';
+import { BadRequestError, TooManyRequestsError, UnauthorizedError } from '../../shared/errors';
+import { recordAudit } from '../audit/service';
+import { assertLoginAllowed, recordLoginFailure, recordLoginSuccess } from './login-throttle';
+import { authenticate, changePassword, clearSessionCookie, createSession, readSessionCookie, sessionCookie, updateDisplayName } from './service';
+import type { LoginRequest } from './types';
+import { ok, requireObject } from '../../shared/http';
 
 const isSecure = () => process.env.NODE_ENV === 'production';
 

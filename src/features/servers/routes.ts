@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { NotFoundError, ValidationError } from '../../shared/errors';
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import { activateServer, createServer, deactivateServer, getAllServers, getCheckConfig, getServer, updateCheckConfig, updateServer } from './service';
 import type { IdParams } from '../../types/api';
 import type { CheckConfigInput, Server } from './types';

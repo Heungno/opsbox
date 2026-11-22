@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { recordAudit } from '../services/auditService';
+import { recordAudit } from '../features/audit/service';
 import { generateScript } from '../services/scriptService';
 import { getServer } from '../features/servers/service';
 import type { ServerIdParams } from '../types/api';

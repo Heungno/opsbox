@@ -1,8 +1,9 @@
 import type { FastifyRequest } from 'fastify';
 
-import { db } from '../db/database';
-import { logger } from '../shared/logger';
-import type { AuditAction, AuditActionOption, AuditChange, AuditLogEntry, AuditLogPage, AuditLogQuery, AuditTargetType } from '../types/audit';
+import '../../db'; // 스키마 준비
+import { countAuditRows, deleteAuditRowsBefore, insertAuditRow, listAuditRows } from './repository';
+import { logger } from '../../shared/logger';
+import type { AuditAction, AuditActionOption, AuditChange, AuditLogEntry, AuditLogPage, AuditLogQuery, AuditTargetType } from './types';
 
 /*
  * 감사 로그(변경 이력)
@@ -88,21 +89,18 @@ export function recordAudit(request: FastifyRequest | null, input: AuditInput) {
   try {
     const option = AUDIT_ACTIONS.find((item) => item.value === input.action);
     const changes = input.changes ?? (input.before !== undefined || input.after !== undefined ? diffObjects(input.before, input.after) : []);
-    db.prepare(`
-      INSERT INTO audit_logs (at, username, action, target_type, target_id, summary, changes, detail, ip, request_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      new Date().toISOString(),
-      input.username ?? request?.user?.username ?? 'system',
-      input.action,
-      input.targetType ?? option?.targetType ?? 'AUTH',
-      input.targetId ?? null,
-      input.summary,
-      changes.length ? JSON.stringify(changes) : null,
-      input.detail === undefined ? null : JSON.stringify(input.detail),
-      request?.ip ?? null,
-      request ? String(request.id) : null,
-    );
+    insertAuditRow({
+      at: new Date().toISOString(),
+      username: input.username ?? request?.user?.username ?? 'system',
+      action: input.action,
+      targetType: input.targetType ?? option?.targetType ?? 'AUTH',
+      targetId: input.targetId ?? null,
+      summary: input.summary,
+      changes: changes.length ? JSON.stringify(changes) : null,
+      detail: input.detail === undefined ? null : JSON.stringify(input.detail),
+      ip: request?.ip ?? null,
+      requestId: request ? String(request.id) : null,
+    });
   } catch (error) {
     logger.error({ err: error, action: input.action, targetId: input.targetId }, '감사 로그 기록 실패');
   }
@@ -164,8 +162,8 @@ export function listAuditLogs(query: AuditLogQuery = {}): AuditLogPage {
   }
 
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  const total = (db.prepare(`SELECT COUNT(*) AS count FROM audit_logs ${clause}`).get(...params) as { count: number }).count;
-  const rows = db.prepare(`SELECT * FROM audit_logs ${clause} ORDER BY at DESC, id DESC LIMIT ? OFFSET ?`).all(...params, pageSize, (page - 1) * pageSize) as unknown as AuditRow[];
+  const total = countAuditRows(clause, params);
+  const rows = listAuditRows<AuditRow>(clause, params, pageSize, (page - 1) * pageSize);
   return { items: rows.map(toEntry), total, page, pageSize };
 }
 
@@ -174,8 +172,7 @@ export function purgeOldAuditLogs() {
   const days = Number(process.env.OPSBOX_AUDIT_RETENTION_DAYS ?? 365);
   if (!Number.isFinite(days) || days <= 0) return 0;
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-  const result = db.prepare('DELETE FROM audit_logs WHERE at < ?').run(cutoff);
-  const removed = Number(result.changes);
+  const removed = deleteAuditRowsBefore(cutoff);
   if (removed) logger.info({ removed, cutoff }, '보관 기간이 지난 감사 로그를 삭제했습니다');
   return removed;
 }

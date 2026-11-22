@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import { ok, requireObject } from '../../shared/http';
 import { getResultPathSettings, saveResultPathSettings } from './service';
 

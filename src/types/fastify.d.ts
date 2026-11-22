@@ -1,6 +1,6 @@
 import 'fastify';
 
-import type { SessionUser } from './auth';
+import type { SessionUser } from '../features/auth/types';
 
 declare module 'fastify' {
   interface FastifyRequest {

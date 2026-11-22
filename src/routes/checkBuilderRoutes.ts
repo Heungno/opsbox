@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { BadRequestError, ValidationError } from '../shared/errors';
-import { recordAudit } from '../services/auditService';
+import { recordAudit } from '../features/audit/service';
 import { generateLinuxPart, type BuilderRole } from '../services/checkBuilder/linux';
 import { presetsFor } from '../services/checkBuilder/presets';
 import { validateBuilderSpec } from '../services/checkBuilder/spec';

@@ -119,6 +119,30 @@ const MIGRATIONS: string[] = [
     value TEXT NOT NULL
   );
 
+  -- scripts/create-user.cjs가 OpsBox보다 먼저 같은 정의로 만들 수 있어 IF NOT EXISTS
+  CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY COLLATE NOCASE,
+    display_name TEXT,
+    password_salt TEXT NOT NULL,
+    password_hash TEXT NOT NULL
+  );
+
+  CREATE TABLE audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    at TEXT NOT NULL,                     -- UTC ISO 시각
+    username TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id TEXT,
+    summary TEXT NOT NULL,
+    changes TEXT,                         -- 바뀐 항목(JSON)
+    detail TEXT,                          -- 추가 정보(JSON)
+    ip TEXT,
+    request_id TEXT
+  );
+  CREATE INDEX idx_audit_logs_at ON audit_logs (at DESC);
+  CREATE INDEX idx_audit_logs_action ON audit_logs (action, at DESC);
+
   CREATE TABLE result_import_errors (
     source_path TEXT PRIMARY KEY,
     server_id TEXT,

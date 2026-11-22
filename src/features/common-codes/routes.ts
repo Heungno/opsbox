@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 
-import { recordAudit } from '../../services/auditService';
+import { recordAudit } from '../audit/service';
 import { getCommonCodes, getRawCommonCodes, saveCommonCodes } from './service';
-import type { AuditChange } from '../../types/audit';
+import type { AuditChange } from '../audit/types';
 import type { CommonCodes } from './types';
 import { ok, requireObject } from '../../shared/http';
 

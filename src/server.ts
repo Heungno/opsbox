@@ -1,5 +1,5 @@
 import { buildApp } from './app';
-import { purgeOldAuditLogs } from './services/auditService';
+import { purgeOldAuditLogs } from './features/audit/service';
 import { upgradeGeneratedTemplates } from './services/checkBuilder/templates';
 import { startResultImportScheduler } from './features/results/importer';
 import { logger } from './shared/logger';

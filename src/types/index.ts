@@ -13,12 +13,12 @@
  * validation.ts 입력값 검증 결과
  */
 export * from './api';
-export * from './auth';
+export * from '../features/auth/types';
 export * from '../features/common-codes/types';
 export * from '../features/servers/types';
 export * from '../features/policies/types';
 export * from '../features/templates/types';
 export * from '../features/results/types';
 export * from '../features/reports/types';
-export * from './audit';
+export * from '../features/audit/types';
 export type { ValidationResult } from './validation';

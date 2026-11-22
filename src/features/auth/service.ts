@@ -1,6 +1,7 @@
-import { db } from '../db/database';
-import { ValidationError } from '../shared/errors';
-import type { SessionUser, UserRecord } from '../types/auth';
+import '../../db'; // 스키마 준비
+import { findUserRow, insertUser, updateDisplayNameRow, updatePasswordRow } from './repository';
+import { ValidationError } from '../../shared/errors';
+import type { SessionUser, UserRecord } from './types';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 /*
@@ -22,7 +23,7 @@ const PASSWORD_MAX = 256;
 
 /** 아이디로 사용자 한 명 (대소문자 무시: users.username은 COLLATE NOCASE) */
 function findUser(username: string): UserRecord | undefined {
-  const row = db.prepare('SELECT username, display_name, password_salt, password_hash FROM users WHERE username = ?').get(username.trim()) as Record<string, string | null> | undefined;
+  const row = findUserRow(username.trim());
   if (!row) return undefined;
   return {
     username: String(row.username),
@@ -71,7 +72,7 @@ export function createSession(username: string): string {
 /** 계정 추가 (데모·테스트용. 운영 계정은 scripts/create-user.cjs) */
 export function createUser(username: string, displayName: string, password: string) {
   const { salt, hash } = hashPassword(password);
-  db.prepare('INSERT INTO users (username, display_name, password_salt, password_hash) VALUES (?, ?, ?, ?)').run(username, displayName, salt, hash);
+  insertUser(username, displayName, salt, hash);
 }
 
 /** 내 표시 이름 바꾸기: 앞뒤 공백 제거, 1~50자, 제어 문자 금지 */
@@ -82,7 +83,7 @@ export function updateDisplayName(username: string, value: unknown): { before: s
   if (!name) throw new ValidationError([{ field: 'displayName', message: '이름을 입력하세요.' }]);
   if ([...name].length > DISPLAY_NAME_MAX) throw new ValidationError([{ field: 'displayName', message: `이름은 ${DISPLAY_NAME_MAX}자 이하로 입력하세요.` }]);
   if (/[\u0000-\u001f\u007f]/.test(name)) throw new ValidationError([{ field: 'displayName', message: '이름에 줄바꿈·제어 문자를 넣을 수 없습니다.' }]);
-  db.prepare('UPDATE users SET display_name = ? WHERE username = ?').run(name, user.username);
+  updateDisplayNameRow(user.username, name);
   return { before: user.displayName || user.username, after: { username: user.username, displayName: name } };
 }
 
@@ -100,7 +101,7 @@ export function changePassword(username: string, currentPassword: unknown, newPa
   if (typeof currentPassword !== 'string' || !passwordMatches(user, currentPassword)) return false;
   if (newPassword === currentPassword) throw new ValidationError([{ field: 'newPassword', message: '새 비밀번호가 현재 비밀번호와 같습니다.' }]);
   const { salt, hash } = hashPassword(newPassword);
-  db.prepare('UPDATE users SET password_salt = ?, password_hash = ? WHERE username = ?').run(salt, hash, user.username);
+  updatePasswordRow(user.username, salt, hash);
   return true;
 }
 

@@ -7,8 +7,8 @@ import { reportRoutes } from '../features/reports/routes';
 import { templateRoutes } from '../features/templates/routes';
 import { commonCodeRoutes } from '../features/common-codes/routes';
 import { policyRoutes } from '../features/policies/routes';
-import { authRoutes } from './authRoutes';
-import { auditRoutes } from './auditRoutes';
+import { authRoutes } from '../features/auth/routes';
+import { auditRoutes } from '../features/audit/routes';
 import { checkBuilderRoutes } from './checkBuilderRoutes';
 import { settingsRoutes } from '../features/settings/routes';
 

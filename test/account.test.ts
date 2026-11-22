@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { app } from '../src/server';
-import { createUser } from '../src/services/authService';
-import { resetLoginThrottle } from '../src/services/loginThrottle';
+import { createUser } from '../src/features/auth/service';
+import { resetLoginThrottle } from '../src/features/auth/login-throttle';
 
 /*
  * 내 정보: 본인 표시 이름·비밀번호 변경
