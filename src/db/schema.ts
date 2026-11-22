@@ -152,6 +152,17 @@ const MIGRATIONS: string[] = [
     last_seen TEXT NOT NULL
   );
   `,
+  /* 2: 공통코드 auditTargets(변경 이력 대상 이름)를 기존 DB에 추가. 새 DB는 시드가 넣으므로(공통코드가 아직 없음) 건너뜁니다 */ `
+  INSERT INTO common_code_categories (category, shape, group_keys, position)
+  SELECT 'auditTargets', 'LIST', NULL, (SELECT position FROM common_code_categories WHERE category = 'healthStatuses') + 0.5
+  WHERE EXISTS (SELECT 1 FROM common_code_categories WHERE category = 'healthStatuses')
+    AND NOT EXISTS (SELECT 1 FROM common_code_categories WHERE category = 'auditTargets');
+  INSERT INTO common_codes (category, value, label, position)
+  SELECT 'auditTargets', column1, column2, (SELECT COALESCE(MAX(position), -1) FROM common_codes) + column3
+  FROM (VALUES ('AUTH', '로그인', 1), ('SERVER', '서버', 2), ('POLICY', '점검 정책', 3), ('TEMPLATE', '템플릿', 4), ('COMMON_CODE', '공통코드', 5), ('RESULT', '점검 결과', 6), ('SCRIPT', '스크립트', 7), ('SETTINGS', '설정', 8))
+  WHERE EXISTS (SELECT 1 FROM common_code_categories WHERE category = 'auditTargets')
+    AND NOT EXISTS (SELECT 1 FROM common_codes WHERE category = 'auditTargets');
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

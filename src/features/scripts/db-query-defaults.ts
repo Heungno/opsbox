@@ -6,9 +6,9 @@ import type { ManagedTemplate } from '../templates/types';
  * 정책 항목(DB_INSTANCE_STATUS 등)마다 서버의 DB 제품에 맞는 기본 쿼리가 있습니다.
  *   MSSQL: WINDOWS-QUERY-<항목> (Windows·Linux 공통, T-SQL)
  *   PostgreSQL / MariaDB / CUBRID: <제품>-QUERY-<항목>
- * 화면(server-detail.js)에도 같은 규칙이 있으니 바꿀 때 함께 고치세요.
+ * 화면은 이 표를 GET /api/scripts/db-query-prefixes 로 받아 씁니다(여기 한 곳에서만 고칩니다).
  */
-const DEFAULT_QUERY_PREFIX: Record<string, string> = {
+export const DEFAULT_QUERY_PREFIX: Readonly<Record<string, string>> = {
   MSSQL: 'WINDOWS-QUERY',
   PostgreSQL: 'POSTGRESQL-QUERY',
   MariaDB: 'MARIADB-QUERY',

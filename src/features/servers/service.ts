@@ -8,12 +8,12 @@ import { resultPathError } from '../settings/service';
 import { resolveServer, toStoredCheckConfig } from './check-plan';
 import { findServerRecord, listServerRecords, saveServerRecord, setServerEnabled } from './repository';
 import type { CheckConfig, CheckConfigInput, RolePolicyType, Server, ServerProduct, ServerRecord, ServerRole } from './types';
+import { ROLE_POLICY_TYPES } from '../../shared/constants';
 import { validateDirectories, validateFileChecks, validateHttpChecks, validatePorts, validateProcesses } from './validation';
 
 const COMMON_CODES = getCommonCodes();
 const ROLES: ServerRole[] = COMMON_CODES.serverRoles.map(({ value }) => value as ServerRole);
 const PRODUCTS = COMMON_CODES.productsByRole as Record<Exclude<ServerRole, 'OTHER'>, ServerProduct[]>;
-const ROLE_POLICY_TYPES: RolePolicyType[] = ['WEB', 'WAS', 'DB'];
 const DEFAULT_ROLE_CHECKS: Partial<Record<RolePolicyType, ScriptPart[]>> = {
   WEB: getTemplate('WINDOWS-PART-WEB_ENGINE_STATUS') ? ['WEB_ENGINE_STATUS'] : [],
   WAS: getTemplate('WINDOWS-PART-WAS_JVM_HEAP') ? ['WAS_JVM_HEAP'] : [],

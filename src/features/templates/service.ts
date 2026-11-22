@@ -2,7 +2,8 @@ import { transaction } from '../../db';
 import { addVersion, findTemplate, listTemplates, listVersions, removeTemplate, upsertTemplate } from './repository';
 import type { ManagedTemplate } from './types';
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors';
-import { getCommonCodes } from '../common-codes/service';
+import { getCommonCodes, getCommonCodeValues } from '../common-codes/service';
+import { SCRIPT_OS } from '../../shared/constants';
 import { getPolicies } from '../policies/service';
 
 
@@ -22,14 +23,13 @@ export function restoreTemplateVersion(id: string, versionId: string) {
 function validate(input: Partial<ManagedTemplate>) {
   const errors: Array<{ field: string; message: string }> = [];
   if (!input.name?.trim()) errors.push({ field: 'name', message: '템플릿 이름은 필수입니다.' });
-  if (!['SCRIPT', 'SCRIPT_PART', 'QUERY'].includes(input.kind ?? '')) errors.push({ field: 'kind', message: '템플릿 종류를 선택하세요.' });
+  if (!getCommonCodeValues('templateKinds').includes(input.kind ?? '')) errors.push({ field: 'kind', message: '템플릿 종류를 선택하세요.' });
   if (!input.content?.trim()) errors.push({ field: 'content', message: '템플릿 내용을 입력하세요.' });
-  if (['SCRIPT', 'SCRIPT_PART'].includes(input.kind ?? '') && !['Windows', 'Linux'].includes(input.os ?? '')) errors.push({ field: 'os', message: '스크립트 템플릿은 운영체제를 지정해야 합니다.' });
+  if (input.kind === 'SCRIPT_PART' && !(SCRIPT_OS as readonly string[]).includes(input.os ?? '')) errors.push({ field: 'os', message: '스크립트 템플릿은 운영체제를 지정해야 합니다.' });
   const customPolicyItems = getPolicies().flatMap((policy) => policy.items.map((item) => item.id));
   if (input.kind === 'SCRIPT_PART' && input.item && !['START', 'SAVE', ...getCommonCodes().scriptItems.map(({ value }) => value), ...customPolicyItems].includes(input.item)) errors.push({ field: 'item', message: '점검 항목이 올바르지 않습니다.' });
   if (input.kind === 'QUERY' && !getCommonCodes().productsByRole.DB.includes(input.dbms ?? '')) errors.push({ field: 'dbms', message: 'DBMS 종류를 선택하세요.' });
   if (input.usesQueryTemplate && input.item !== 'DB_QUERY_RUNNER') errors.push({ field: 'usesQueryTemplate', message: 'DB 공통 쿼리 실행기에서만 쿼리 템플릿을 사용할 수 있습니다.' });
-  if (input.role && !['WEB', 'WAS', 'DB', 'OTHER'].includes(input.role)) errors.push({ field: 'role', message: '대상 역할이 올바르지 않습니다.' });
   if (errors.length) throw new ValidationError(errors);
 }
 
@@ -47,7 +47,7 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
   if (id && !existing) throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${id}`);
   const item: ManagedTemplate = {
     id: id ?? `TPL-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: input.name!.trim(), kind: input.kind!, os: input.os, role: input.role, product: input.product, dbms: input.dbms, item: input.kind === 'SCRIPT_PART' ? input.item : undefined, usesQueryTemplate: input.usesQueryTemplate === true,
+    name: input.name!.trim(), kind: input.kind!, os: input.os, dbms: input.dbms, item: input.kind === 'SCRIPT_PART' ? input.item : undefined, usesQueryTemplate: input.usesQueryTemplate === true,
     enabled: input.enabled !== false, content: input.content!, updatedAt: new Date().toISOString(),
     // 점검 만들기 정보는 기존 값만 유지(화면에서 보낸 값은 무시) — 고쳐 저장해도 '직접 편집됨'을 판단할 수 있게
     ...(existing?.generated ? { generated: existing.generated } : {}),

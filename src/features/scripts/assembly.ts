@@ -1,3 +1,4 @@
+import { ROLE_POLICY_TYPES } from '../../shared/constants';
 import { BadRequestError } from '../../shared/errors';
 import { Server } from '../servers/types';
 import { ManagedTemplate, ScriptPart } from '../templates/types';
@@ -34,7 +35,7 @@ export function selectScriptParts(server: Server, templates: ManagedTemplate[], 
   if (server.fileChecks?.length && hasBasicItem('FILE_SIZE') && !selected.includes('FILE_SIZE')) selected.push('FILE_SIZE');
   if (server.ports?.length && hasBasicItem('PORT') && !selected.includes('PORT')) selected.push('PORT');
   if (server.httpChecks?.length && hasBasicItem('HTTP') && !selected.includes('HTTP')) selected.push('HTTP');
-  for (const role of ['WEB', 'WAS', 'DB'] as const) {
+  for (const role of ROLE_POLICY_TYPES) {
     if (!roles.includes(role)) continue;
     const items = server.roleChecks?.[role] ?? [];
     if (role === 'DB') {
@@ -91,7 +92,7 @@ export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedT
   const assignedPolicies = getPolicies().filter((policy) => Object.values(server.policyIds ?? {}).includes(policy.id));
   const itemDefinitions = new Map(assignedPolicies.flatMap((policy) => policy.items.map((item) => [item.id, item] as const)));
   const rolePolicies = Object.fromEntries(
-    (['WEB', 'WAS', 'DB'] as const).map((role) => [role, (server.roleChecks?.[role] ?? []).map((item) => {
+    ROLE_POLICY_TYPES.map((role) => [role, (server.roleChecks?.[role] ?? []).map((item) => {
       const definition = itemDefinitions.get(item);
       return { item, name: definition?.name ?? labels.get(item) ?? item, result: definition?.result, executorType: definition?.executor.type };
     })]),

@@ -1,3 +1,4 @@
+import { ROLE_POLICY_TYPES } from '../../shared/constants';
 import type { CommonCodes } from '../common-codes/types';
 import type { Policy } from '../policies/types';
 import type { ScriptPart } from '../templates/types';
@@ -11,7 +12,6 @@ import type { RolePolicySetting, RolePolicyType, Server, ServerRecord, StoredChe
  * - 기본·역할 정책 항목의 스크립트 조각(scriptParts)
  * - 역할 정책이 없으면: 저장값, 저장값도 없으면 Windows 기본 역할 점검
  */
-const ROLE_POLICY_TYPES: RolePolicyType[] = ['WEB', 'WAS', 'DB'];
 
 export interface PlanContext {
   policies: Policy[];

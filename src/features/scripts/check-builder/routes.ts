@@ -1,12 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 
+import { POLICY_CATEGORIES, SCRIPT_OS } from '../../../shared/constants';
 import { BadRequestError, ValidationError } from '../../../shared/errors';
 import { recordAudit } from '../../audit/service';
 import { generateLinuxPart, type BuilderRole } from './linux';
 import { presetsFor } from './presets';
 import { validateBuilderSpec } from './spec';
 import { regenerateItem } from './templates';
-import type { BuilderOs, BuilderSpec } from './types';
+import { BUILDER_LEVELS, BUILDER_TYPE_HELP, BUILDER_TYPE_LABELS, BUILDER_TYPES, type BuilderOs, type BuilderSpec } from './types';
 import { generateWindowsPart } from './windows';
 import { getPolicies } from '../../policies/service';
 import { ok, requireObject } from '../../../shared/http';
@@ -17,8 +18,8 @@ import { ok, requireObject } from '../../../shared/http';
  *   POST /check-builder/preview                                 저장하지 않고 생성될 스크립트 보기
  *   POST /policies/:policyId/items/:itemId/regenerate           폼 기준으로 스크립트 다시 만들기
  */
-const OS_VALUES: BuilderOs[] = ['Windows', 'Linux'];
-const ROLE_VALUES: BuilderRole[] = ['BASIC', 'WEB', 'WAS', 'DB'];
+const OS_VALUES: readonly BuilderOs[] = SCRIPT_OS;
+const ROLE_VALUES: readonly BuilderRole[] = POLICY_CATEGORIES;
 
 function requireOs(value: unknown): BuilderOs {
   if (!OS_VALUES.includes(value as BuilderOs)) throw new BadRequestError('운영체제(Windows 또는 Linux)를 지정하세요.');
@@ -26,6 +27,12 @@ function requireOs(value: unknown): BuilderOs {
 }
 
 export async function checkBuilderRoutes(app: FastifyInstance) {
+  // 점검 만들기 폼의 종류·판정 수준 이름 (화면에 따로 적지 않도록 여기서 내려줌)
+  app.get('/check-builder/types', async () => ok({
+    types: BUILDER_TYPES.map((value) => ({ value, label: BUILDER_TYPE_LABELS[value], help: BUILDER_TYPE_HELP[value] })),
+    levels: BUILDER_LEVELS,
+  }));
+
   app.get<{ Querystring: { os?: string } }>('/check-builder/presets', async (request) => ok(presetsFor(requireOs(request.query.os))));
 
   app.post<{ Body: { os?: unknown; role?: unknown; itemId?: unknown; itemName?: unknown; spec?: unknown } }>('/check-builder/preview', async (request) => {

@@ -10,6 +10,7 @@ export interface ManagedTemplate {
   name: string;
   kind: TemplateKind;
   os?: OperatingSystem;
+  /** 예전 통째 스크립트 템플릿(SCRIPT)용. 지금은 저장하지 않습니다 */
   role?: ServerRole;
   product?: string;
   dbms?: string;

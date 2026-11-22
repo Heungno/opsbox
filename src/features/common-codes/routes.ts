@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { recordAudit } from '../audit/service';
-import { getCommonCodes, getRawCommonCodes, saveCommonCodes } from './service';
+import { getCommonCodesForClient, getRawCommonCodes, saveCommonCodes } from './service';
 import type { AuditChange } from '../audit/types';
 import type { CommonCodes } from './types';
 import { ok, requireObject } from '../../shared/http';
@@ -42,8 +42,8 @@ function diffCommonCodes(before: CommonCodes, after: CommonCodes): AuditChange[]
 export async function commonCodeRoutes(app: FastifyInstance) {
   // 관리 화면용: 사용 여부·정렬 정보(_codeMeta)를 포함한 원본
   app.get('/common-codes/manage', async () => ok(getRawCommonCodes()));
-  // 일반 화면용: 사용 중인 코드만 정렬해서
-  app.get('/common-codes', async () => ok(getCommonCodes()));
+  // 일반 화면용: 사용 중인 코드만 정렬해서 + 비활성 코드까지 담은 이름표(_labels)
+  app.get('/common-codes', async () => ok(getCommonCodesForClient()));
   app.put<{ Body: CommonCodes }>('/common-codes', async (request) => {
     const before = getRawCommonCodes();
     const saved = saveCommonCodes(requireObject<CommonCodes>(request.body));

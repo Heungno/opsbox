@@ -35,6 +35,30 @@ export function getCommonCodes(): CommonCodes {
   return codes;
 }
 
+/**
+ * 화면용 공통코드: 사용 중인 코드(getCommonCodes)에 이름표 _labels를 더합니다.
+ * _labels에는 비활성 코드도 들어 있어, 예전 데이터에 남은 코드의 이름도 보여 줄 수 있습니다.
+ * 키: 목록형은 값, 그룹형(productsByRole 등)은 '그룹::값'
+ */
+export function getCommonCodesForClient(): CommonCodes & { _labels: Record<string, Record<string, string>> } {
+  const raw = getRawCommonCodes() as unknown as Record<string, unknown>;
+  const labels: Record<string, Record<string, string>> = {};
+  const add = (category: string, entries: unknown, group?: string) => {
+    if (!Array.isArray(entries)) return;
+    for (const entry of entries) {
+      const value = typeof entry === 'string' ? entry : String((entry as { value?: unknown })?.value ?? '');
+      const label = typeof entry === 'string' ? entry : String((entry as { label?: unknown })?.label ?? value);
+      (labels[category] ??= {})[group === undefined ? value : `${group}::${value}`] = label;
+    }
+  };
+  for (const [category, value] of Object.entries(raw)) {
+    if (category === '_codeMeta') continue;
+    if (Array.isArray(value)) add(category, value);
+    else if (value && typeof value === 'object') for (const [group, entries] of Object.entries(value)) add(category, entries, group);
+  }
+  return { ...getCommonCodes(), _labels: labels };
+}
+
 export function saveCommonCodes(codes: CommonCodes): CommonCodes {
   if (!codes || typeof codes !== 'object' || Array.isArray(codes)) {
     throw new BadRequestError('공통코드 JSON 구조가 올바르지 않습니다.');

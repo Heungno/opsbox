@@ -89,6 +89,40 @@
       "severity": -1
     }
   ],
+  "auditTargets": [
+    {
+      "value": "AUTH",
+      "label": "로그인"
+    },
+    {
+      "value": "SERVER",
+      "label": "서버"
+    },
+    {
+      "value": "POLICY",
+      "label": "점검 정책"
+    },
+    {
+      "value": "TEMPLATE",
+      "label": "템플릿"
+    },
+    {
+      "value": "COMMON_CODE",
+      "label": "공통코드"
+    },
+    {
+      "value": "RESULT",
+      "label": "점검 결과"
+    },
+    {
+      "value": "SCRIPT",
+      "label": "스크립트"
+    },
+    {
+      "value": "SETTINGS",
+      "label": "설정"
+    }
+  ],
   "policyCategories": [
     {
       "value": "BASIC",

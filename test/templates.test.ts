@@ -47,3 +47,7 @@ test('템플릿: 점검 만들기 템플릿을 지워도 지우기 전 내용이
   assert.equal(getTemplate(generated.id), undefined);
   assert.equal(getTemplateHistory(generated.id)[0]?.template.content, 'echo 1');
 });
+
+test('템플릿: 쓰이지 않는 종류 SCRIPT(통째 스크립트)는 저장할 수 없다', () => {
+  assert.throws(() => saveTemplate({ name: 'x', kind: 'SCRIPT', os: 'Linux', content: 'echo' }), /템플릿 종류를 선택하세요/);
+});

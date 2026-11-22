@@ -23,6 +23,22 @@ export const BUILDER_TYPE_LABELS: Record<BuilderType, string> = {
   LOG_PATTERN: '로그 문구 검색',
 };
 
+/** 점검 만들기 폼의 종류 설명 (GET /api/check-builder/types) */
+export const BUILDER_TYPE_HELP: Record<BuilderType, string> = {
+  COMMAND_NUMBER: '명령 출력의 숫자를 주의·위험 기준과 비교합니다. (예: Swap 사용률, Ping 손실률)',
+  COMMAND_TEXT: '명령 출력에 비정상 문구가 있는지 확인합니다. (예: NIC 링크 DOWN, Multipath failed)',
+  SETTING_VALUE: 'Linux 커널 파라미터 또는 Windows 레지스트리 값이 기준과 같은지 확인합니다.',
+  REMOTE_PORT: '이 서버에서 다른 서버의 포트로 접속되는지 확인합니다. 대상은 서버 상세에서 입력합니다.',
+  FILE_FRESHNESS: '파일이 정해진 시간 안에 수정되었는지 확인합니다. (예: 설정 파일 백업) 경로는 서버 상세에서 입력합니다.',
+  LOG_PATTERN: '최근 기간의 로그에서 문구가 들어간 줄 수를 셉니다. 경로는 서버 상세에서 입력합니다.',
+};
+
+/** 판정 수준과 화면 이름 (높은 수준부터) */
+export const BUILDER_LEVELS: Array<{ value: Level; label: string }> = [
+  { value: 'Critical', label: '위험' },
+  { value: 'Warning', label: '주의' },
+];
+
 /** 제한 값 (설계 문서 3·5.6장) */
 export const LIMITS = {
   commandLength: 2000,

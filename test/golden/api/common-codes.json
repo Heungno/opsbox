@@ -89,6 +89,40 @@
       "severity": -1
     }
   ],
+  "auditTargets": [
+    {
+      "value": "AUTH",
+      "label": "로그인"
+    },
+    {
+      "value": "SERVER",
+      "label": "서버"
+    },
+    {
+      "value": "POLICY",
+      "label": "점검 정책"
+    },
+    {
+      "value": "TEMPLATE",
+      "label": "템플릿"
+    },
+    {
+      "value": "COMMON_CODE",
+      "label": "공통코드"
+    },
+    {
+      "value": "RESULT",
+      "label": "점검 결과"
+    },
+    {
+      "value": "SCRIPT",
+      "label": "스크립트"
+    },
+    {
+      "value": "SETTINGS",
+      "label": "설정"
+    }
+  ],
   "policyCategories": [
     {
       "value": "BASIC",
@@ -418,5 +452,139 @@
       "DB_CUSTOM_QUERY"
     ]
   },
-  "_codeMeta": {}
+  "_codeMeta": {},
+  "_labels": {
+    "serverRoles": {
+      "WEB": "WEB",
+      "WAS": "WAS",
+      "DB": "DB",
+      "OTHER": "기타"
+    },
+    "operatingSystems": {
+      "Windows": "Windows",
+      "Linux": "Linux"
+    },
+    "productsByRole": {
+      "WEB::WebtoB": "WebtoB",
+      "WEB::Apache HTTP Server": "Apache HTTP Server",
+      "WEB::IIS": "IIS",
+      "WEB::Nginx": "Nginx",
+      "WAS::JEUS": "JEUS",
+      "WAS::Apache Tomcat": "Apache Tomcat",
+      "WAS::JBoss": "JBoss",
+      "WAS::Node.js": "Node.js",
+      "DB::MSSQL": "MSSQL",
+      "DB::MariaDB": "MariaDB",
+      "DB::CUBRID": "CUBRID",
+      "DB::PostgreSQL": "PostgreSQL"
+    },
+    "portProtocols": {
+      "TCP": "TCP",
+      "UDP": "UDP"
+    },
+    "healthStatuses": {
+      "Healthy": "정상",
+      "Warning": "경고",
+      "Critical": "위험",
+      "Unknown": "알 수 없음",
+      "NotChecked": "미점검",
+      "NotCollected": "미수집"
+    },
+    "auditTargets": {
+      "AUTH": "로그인",
+      "SERVER": "서버",
+      "POLICY": "점검 정책",
+      "TEMPLATE": "템플릿",
+      "COMMON_CODE": "공통코드",
+      "RESULT": "점검 결과",
+      "SCRIPT": "스크립트",
+      "SETTINGS": "설정"
+    },
+    "policyCategories": {
+      "BASIC": "기본",
+      "WEB": "WEB",
+      "WAS": "WAS",
+      "DB": "DB"
+    },
+    "policyExecutors": {
+      "SCRIPT": "스크립트",
+      "SQL_QUERY": "DB 쿼리",
+      "LOG_ANALYSIS": "로그 분석",
+      "CONSOLE_COMMAND": "콘솔 명령",
+      "HTTP_CHECK": "HTTP 확인",
+      "TCP_CHECK": "TCP 포트 확인",
+      "PROCESS_CHECK": "프로세스 확인",
+      "FILESYSTEM_CHECK": "파일·디렉터리 확인",
+      "CHECK_BUILDER": "점검 만들기"
+    },
+    "resultViews": {
+      "SUMMARY": "상태 요약",
+      "METRIC": "측정값",
+      "TABLE": "표",
+      "LOG_TABLE": "로그 표",
+      "CONSOLE": "콘솔",
+      "JSON": "JSON 상세"
+    },
+    "templateKinds": {
+      "SCRIPT_PART": "점검 항목 스크립트",
+      "QUERY": "DB 쿼리"
+    },
+    "scriptItems": {
+      "START": "실행 준비",
+      "HOST_INFO": "서버 기본정보",
+      "CPU": "CPU 사용률",
+      "MEMORY": "메모리 사용률",
+      "UPTIME": "가동시간",
+      "DISK": "디스크 사용량",
+      "PROCESS": "프로세스",
+      "DIRECTORY": "디렉터리 사용량",
+      "FILE_SIZE": "파일 크기",
+      "PORT": "포트 리스닝",
+      "HTTP": "HTTP 응답",
+      "WEB_ENGINE_STATUS": "WEB 엔진 상태",
+      "WEB_WAS_CONNECTION": "WEB-WAS 연동 상태",
+      "WEB_REQUEST_VOLUME": "사용자 요청 처리량",
+      "WEB_LOG": "WEB 로그 상태",
+      "WAS_JVM_HEAP": "JVM Heap 사용률",
+      "WAS_THREAD_POOL": "Thread Pool 사용률",
+      "WAS_LONG_RUNNING_THREAD": "장기 수행 Thread",
+      "WAS_DB_CONNECTION_POOL": "DB Connection Pool 상태",
+      "WAS_DEPLOYMENT": "애플리케이션 배포 상태",
+      "WAS_HEAP_DUMP": "Heap Dump 파일 상태",
+      "WAS_STARTUP_SCRIPT": "기동 스크립트 변경 상태",
+      "WAS_LOG": "WAS 로그 상태",
+      "DB_INSTANCE_STATUS": "DB 인스턴스·접속 상태",
+      "DB_QUERY_RUNNER": "DB 공통 쿼리 실행기",
+      "DB_PROCESS_LIMIT": "세션·프로세스 사용률",
+      "DB_TABLESPACE": "데이터 영역 사용률",
+      "DB_BACKUP": "백업 상태",
+      "DB_ARCHIVE_MODE": "아카이브 모드 상태",
+      "DB_TRANSACTION_LOG": "트랜잭션 로그 사용률",
+      "DB_REPLICATION": "복제·이중화 상태",
+      "DB_CUSTOM_QUERY": "기타 사용자 쿼리",
+      "SAVE": "결과 저장"
+    },
+    "rolePolicies": {
+      "WEB::WEB_ENGINE_STATUS": "WEB_ENGINE_STATUS",
+      "WEB::WEB_WAS_CONNECTION": "WEB_WAS_CONNECTION",
+      "WEB::WEB_REQUEST_VOLUME": "WEB_REQUEST_VOLUME",
+      "WEB::WEB_LOG": "WEB_LOG",
+      "WAS::WAS_JVM_HEAP": "WAS_JVM_HEAP",
+      "WAS::WAS_THREAD_POOL": "WAS_THREAD_POOL",
+      "WAS::WAS_LONG_RUNNING_THREAD": "WAS_LONG_RUNNING_THREAD",
+      "WAS::WAS_DB_CONNECTION_POOL": "WAS_DB_CONNECTION_POOL",
+      "WAS::WAS_DEPLOYMENT": "WAS_DEPLOYMENT",
+      "WAS::WAS_HEAP_DUMP": "WAS_HEAP_DUMP",
+      "WAS::WAS_STARTUP_SCRIPT": "WAS_STARTUP_SCRIPT",
+      "WAS::WAS_LOG": "WAS_LOG",
+      "DB::DB_INSTANCE_STATUS": "DB_INSTANCE_STATUS",
+      "DB::DB_PROCESS_LIMIT": "DB_PROCESS_LIMIT",
+      "DB::DB_TABLESPACE": "DB_TABLESPACE",
+      "DB::DB_BACKUP": "DB_BACKUP",
+      "DB::DB_ARCHIVE_MODE": "DB_ARCHIVE_MODE",
+      "DB::DB_TRANSACTION_LOG": "DB_TRANSACTION_LOG",
+      "DB::DB_REPLICATION": "DB_REPLICATION",
+      "DB::DB_CUSTOM_QUERY": "DB_CUSTOM_QUERY"
+    }
+  }
 }
