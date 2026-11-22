@@ -1,7 +1,7 @@
 /*
  * 데모 데이터 생성 (npm run demo:seed 로 실행 — scripts/demo.cjs가 데모 DB 경로를 설정합니다)
  *
- * 화면 확인용 서버 12대와 서버별 최근 14일 점검 결과를 만듭니다.
+ * 화면 확인용 서버 12대와 서버별 최근 8주(56일) 점검 결과를 만듭니다. (보고서 추세 그래프 확인용)
  * 결과 JSON은 실제 점검 스크립트(schemaVersion 2)와 같은 모양이고, 서버마다 상황을 하나씩 넣었습니다.
  *   디스크 사용률 증가 · DB 백업 실패 후 재점검 · WebtoB 서비스 중지 · JVM Heap 증가 · Heap Dump 발견 ·
  *   로그 오류 급증 · 포트 미리스닝 · HTTP 응답 실패 · CUBRID HA 이상 · 결과 미수신(3일째) 등
@@ -21,7 +21,7 @@ if (!process.env.OPSBOX_DB_PATH?.includes(`${path.sep}demo${path.sep}`)) {
 type Status = 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
 type Role = 'WEB' | 'WAS' | 'DB' | 'OTHER';
 
-const DAYS = 14;
+const DAYS = 56;
 const DEMO_USER = 'demo';
 const DEMO_PASSWORD = 'demo1234';
 
@@ -92,7 +92,7 @@ const SERVERS: DemoServer[] = [
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }, { port: 443, protocol: 'TCP', description: 'HTTPS' }],
     httpChecks: [{ name: '포털 메인', url: 'https://portal.example.go.kr/', expectedStatus: 200 }],
     logDirectories: { WEB_LOG: ['D:\\WebtoB\\log'] },
-    base: { cpu: 18, memory: 46, volumes: [{ mount: 'C:', totalGB: 120, usedPercent: 52 }, { mount: 'D:', totalGB: 300, usedPercent: 38, growthPerDay: 0.3 }] },
+    base: { cpu: 18, memory: 46, volumes: [{ mount: 'C:', totalGB: 120, usedPercent: 52 }, { mount: 'D:', totalGB: 300, usedPercent: 38, growthPerDay: 0.08 }] },
     // 사흘 전 아침에 서비스 하나가 내려가 위험, 낮에 조치 후 재점검
     recheckDays: [DAYS - 4],
     scenario: ({ day, recheck }, r) => {
@@ -107,7 +107,7 @@ const SERVERS: DemoServer[] = [
     ports: [{ port: 80, protocol: 'TCP', description: 'HTTP' }, { port: 443, protocol: 'TCP', description: 'HTTPS' }],
     httpChecks: [{ name: '포털 메인', url: 'https://portal.example.go.kr/', expectedStatus: 200 }, { name: '상태 확인', url: 'http://127.0.0.1/health', expectedStatus: 200 }],
     logDirectories: { WEB_LOG: ['/var/log/nginx'] },
-    base: { cpu: 12, memory: 38, volumes: [{ mount: '/', totalGB: 50, usedPercent: 41 }, { mount: '/var', totalGB: 100, usedPercent: 55, growthPerDay: 0.4 }] },
+    base: { cpu: 12, memory: 38, volumes: [{ mount: '/', totalGB: 50, usedPercent: 41 }, { mount: '/var', totalGB: 100, usedPercent: 55, growthPerDay: 0.1 }] },
     // 최근 이틀간 5xx 오류 급증, 오늘은 HTTP 응답 실패
     scenario: ({ day }, r) => {
       if (day >= DAYS - 2) r.logSpike('WEB_LOG', day === DAYS - 1 ? 42 : 17);
@@ -129,9 +129,9 @@ const SERVERS: DemoServer[] = [
     ports: [{ port: 9736, protocol: 'TCP', description: 'JEUS 관리' }, { port: 8088, protocol: 'TCP', description: 'JEUS HTTP' }],
     httpChecks: [{ name: '업무 API', url: 'http://10.10.2.21:8088/api/health', expectedStatus: 200 }],
     logDirectories: { WAS_LOG: ['E:\\jeus\\logs'] },
-    base: { cpu: 31, memory: 62, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 47 }, { mount: 'E:', totalGB: 500, usedPercent: 44, growthPerDay: 0.2 }] },
+    base: { cpu: 31, memory: 62, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 47 }, { mount: 'E:', totalGB: 500, usedPercent: 44, growthPerDay: 0.05 }] },
     // JVM Heap이 날마다 늘어 주의 → 위험 (메모리 누수 의심)
-    scenario: ({ day }, r) => r.heap(55 + day * 3.2),
+    scenario: ({ day }, r) => r.heap(50 + day * 0.75),
   },
   {
     id: 'WAS-02', name: '민원 처리 WAS', os: 'Linux', osName: 'Rocky Linux', osVersion: '9.4 (Blue Onyx)', ip: '10.10.2.22',
@@ -167,7 +167,7 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'sqlservr' }, { name: 'SQLAGENT' }], directories: [{ path: 'F:\\MSSQL\\Backup', warningPercent: 75, criticalPercent: 90 }], fileChecks: [],
     ports: [{ port: 1433, protocol: 'TCP', description: 'MSSQL' }], httpChecks: [],
     dbTargets: ['10.10.4.41,1433'],
-    base: { cpu: 22, memory: 64, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 40 }, { mount: 'F:', totalGB: 1000, usedPercent: 61, growthPerDay: 0.35 }] },
+    base: { cpu: 22, memory: 64, volumes: [{ mount: 'C:', totalGB: 150, usedPercent: 40 }, { mount: 'F:', totalGB: 1000, usedPercent: 61, growthPerDay: 0.09 }] },
     // 엿새 전 야간 전체 백업 실패 → 아침 점검 위험, 수동 백업 후 재점검 정상
     recheckDays: [DAYS - 6],
     scenario: ({ day, recheck }, r) => {
@@ -180,9 +180,9 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'postgres' }], directories: [{ path: '/var/lib/pgsql/16/data' }], fileChecks: [],
     ports: [{ port: 5432, protocol: 'TCP', description: 'PostgreSQL' }], httpChecks: [],
     dbTargets: ['localhost:5432/minwon'],
-    base: { cpu: 14, memory: 52, volumes: [{ mount: '/', totalGB: 50, usedPercent: 37 }, { mount: '/var/lib/pgsql', totalGB: 500, usedPercent: 48, growthPerDay: 0.25 }] },
+    base: { cpu: 14, memory: 52, volumes: [{ mount: '/', totalGB: 50, usedPercent: 37 }, { mount: '/var/lib/pgsql', totalGB: 500, usedPercent: 48, growthPerDay: 0.06 }] },
     // 세션이 점점 늘어 오늘 주의
-    scenario: ({ day }, r) => r.sessions(40 + day * 3, 100),
+    scenario: ({ day }, r) => r.sessions(40 + day * 0.75, 100),
   },
   {
     id: 'DB-03', name: '통계 DB (MariaDB)', os: 'Linux', osName: 'Ubuntu', osVersion: '22.04.4 LTS (Jammy Jellyfish)', ip: '10.10.4.43',
@@ -190,8 +190,8 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'mariadbd' }], directories: [{ path: '/var/lib/mysql', warningPercent: 70, criticalPercent: 90 }], fileChecks: [],
     ports: [{ port: 3306, protocol: 'TCP', description: 'MariaDB' }], httpChecks: [],
     dbTargets: ['/run/mysqld/mysqld.sock'],
-    // 데이터 디스크가 하루 2.3%p씩 차서 일주일 전부터 주의, 오늘 위험
-    base: { cpu: 19, memory: 49, volumes: [{ mount: '/', totalGB: 50, usedPercent: 31 }, { mount: '/var/lib/mysql', totalGB: 400, usedPercent: 62, growthPerDay: 2.3 }] },
+    // 데이터 디스크가 하루 0.8%p씩 차서 4주쯤 전부터 주의, 오늘 위험
+    base: { cpu: 19, memory: 49, volumes: [{ mount: '/', totalGB: 50, usedPercent: 31 }, { mount: '/var/lib/mysql', totalGB: 400, usedPercent: 48, growthPerDay: 0.8 }] },
   },
   {
     id: 'DB-04', name: '행정 DB (CUBRID)', os: 'Linux', osName: 'CentOS Linux', osVersion: '7.9.2009 (Core)', ip: '10.10.4.44',
@@ -199,7 +199,7 @@ const SERVERS: DemoServer[] = [
     processes: [{ name: 'cub_server' }, { name: 'cub_master' }, { name: 'cub_broker' }], directories: [{ path: '/home/cubrid/database' }], fileChecks: [],
     ports: [{ port: 33000, protocol: 'TCP', description: 'CUBRID 브로커' }, { port: 1523, protocol: 'TCP', description: 'CUBRID 마스터' }], httpChecks: [],
     dbTargets: ['admindb@localhost'],
-    base: { cpu: 11, memory: 57, volumes: [{ mount: '/', totalGB: 100, usedPercent: 44 }, { mount: '/home', totalGB: 300, usedPercent: 52, growthPerDay: 0.2 }] },
+    base: { cpu: 11, memory: 57, volumes: [{ mount: '/', totalGB: 100, usedPercent: 44 }, { mount: '/home', totalGB: 300, usedPercent: 52, growthPerDay: 0.05 }] },
     // 나흘 전부터 이틀간 HA 상태가 maintenance (대기 서버 점검)
     scenario: ({ day }, r) => {
       if (day === DAYS - 4 || day === DAYS - 3) r.cubridHa('maintenance');
@@ -210,7 +210,7 @@ const SERVERS: DemoServer[] = [
     roles: ['OTHER'], products: {}, sharedPath: '\\\\fileserver\\opsbox',
     processes: [{ name: 'LanmanServer' }], directories: [{ path: 'D:\\Share', warningPercent: 80, criticalPercent: 95 }], fileChecks: [],
     ports: [{ port: 445, protocol: 'TCP', description: 'SMB' }], httpChecks: [],
-    base: { cpu: 6, memory: 35, volumes: [{ mount: 'C:', totalGB: 100, usedPercent: 63 }, { mount: 'D:', totalGB: 4000, usedPercent: 64, growthPerDay: 0.2 }] },
+    base: { cpu: 6, memory: 35, volumes: [{ mount: 'C:', totalGB: 100, usedPercent: 63 }, { mount: 'D:', totalGB: 4000, usedPercent: 64, growthPerDay: 0.05 }] },
     // 사흘째 결과가 들어오지 않음 (점검 누락 재현)
     skipDays: [DAYS - 3, DAYS - 2, DAYS - 1],
   },
@@ -224,7 +224,7 @@ const SERVERS: DemoServer[] = [
     base: { cpu: 35, memory: 41, volumes: [{ mount: '/', totalGB: 200, usedPercent: 46 }] },
     scenario: ({ day }, r) => {
       if (day % 5 === 2) r.cpu(93);
-      r.fileSize('/batch/out/daily_extract.csv', 380 + day * 12);
+      r.fileSize('/batch/out/daily_extract.csv', 380 + day * 3);
     },
   },
 ];
@@ -462,7 +462,7 @@ class ResultBuilder {
       if (product === 'MSSQL') {
         const userDbs = dbNames.slice(3);
         q.DB_TABLESPACE = this.query(target, ['__OPSBOX_STATUS', 'databaseName', 'allocatedMB', 'usedMB', 'usagePercent'], userDbs.map((name, index) => {
-          const used = round(62 + index * 9 + this.ctx.day * 0.6, 2);
+          const used = round(62 + index * 9 + this.ctx.day * 0.15, 2);
           return [byPercent(used, 80, 90), name, sizes[index + 3], round((sizes[index + 3] * used) / 100, 2), used];
         }));
         const backupAge = (failed: boolean) => (failed ? round(31 + rnd() * 3, 1) : round(6 + rnd() * 3, 1));
@@ -513,7 +513,7 @@ class ResultBuilder {
       const row = (target: string, value: string, threshold: string, status: Status, message: string) => ({ target, value, threshold, status, message });
       if (def.item === SWAP_ITEM) {
         // 배치 서버는 야간 작업으로 Swap을 많이 씀
-        const value = round(this.server.id === 'BATCH-01' ? 40 + day * 2.5 + rnd() * 5 : 3 + rnd() * 20);
+        const value = round(this.server.id === 'BATCH-01' ? 40 + day * 0.6 + rnd() * 5 : 3 + rnd() * 20);
         const status = byPercent(value, 50, 80);
         return { role: 'BASIC', item: def.item, name: def.name, result: def.result, executorType: def.executorType, status,
           detail: { status, message: null, rows: [row('이 서버', String(value), '주의 ≥ 50% / 위험 ≥ 80%', status, '')], output: String(value) } };

@@ -80,7 +80,7 @@ npm run demo:remove   # data/demo/ 삭제
 ```
 
 - 운영 DB(`data/opsbox.db`)·백업·키는 건드리지 않습니다. 데모는 `data/demo/` 안에 DB·백업·키·로그를 따로 둡니다.
-- Windows·Linux 서버 12대(WEB·WAS·DB·기타, 제품별)와 서버별 최근 14일 점검 결과를 만듭니다. 날짜는 실행일 기준입니다.
+- Windows·Linux 서버 12대(WEB·WAS·DB·기타, 제품별)와 서버별 최근 8주(56일) 점검 결과를 만듭니다(보고서 자원 사용 추세 그래프 확인용). 날짜는 실행일 기준입니다.
 - 점검 만들기 데모 항목 2개(Linux 'Swap 사용률', Windows '포털 DB 포트 접속')가 정책과 결과에 들어 있습니다.
 - 서버마다 상황이 하나씩 들어 있습니다: 디스크 사용률 증가(DB-03), MSSQL 백업 실패 후 재점검(DB-01), WebtoB 서비스 중지(WEB-01), JVM Heap 증가(WAS-01), Heap Dump·OutOfMemory(WAS-02), 로그 오류 급증·HTTP 실패(WEB-02), 프로세스·포트 중지(APP-01), CUBRID HA 점검(DB-04), 배치 CPU 급증·파일 크기 증가(BATCH-01), 3일째 결과 미수신(FILE-01).
 - 결과는 화면의 [결과 파일 올리기]와 같은 경로로 저장되어 검증·암호화 백업까지 거칩니다. 생성 규칙은 `scripts/seed-demo.ts`에 있습니다.
