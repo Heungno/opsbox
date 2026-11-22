@@ -222,7 +222,7 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
     array('OPSBOX_DB_QUERY_ITEMS', database.policyQueries.map((query) => query.item)),
     array('OPSBOX_DB_QUERY_NAMES', database.policyQueries.map((query) => query.name)),
     array('OPSBOX_DB_QUERY_SQL', database.policyQueries.map((query) => query.content.replace(/\r\n/g, '\n'))),
-    array('OPSBOX_DB_QUERY_TARGETS', database.policyQueries.map((query) => dbTargets(query.item))),
+    array('OPSBOX_DB_QUERY_TARGETS', database.policyQueries.map((query) => dbTargets(query.item ?? ''))),
     array('OPSBOX_DB_CUSTOM_NAMES', database.customQueries.map((query) => query.name)),
     array('OPSBOX_DB_CUSTOM_SQL', database.customQueries.map((query) => query.content.replace(/\r\n/g, '\n'))),
     scalar('OPSBOX_DB_CUSTOM_TARGETS', dbTargets('DB_CUSTOM_QUERY')),
