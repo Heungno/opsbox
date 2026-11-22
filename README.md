@@ -58,6 +58,7 @@ npm run demo:remove   # data/demo/ 삭제
 - 모든 데이터는 `data/opsbox.db`(SQLite)에 저장되고 Git에서는 제외됩니다.
 - `seeds/*.json`(템플릿, 정책, 공통코드)은 **DB를 새로 만들 때만** 넣는 기본값입니다. 이후에는 DB가 원본입니다.
 - DB 구조는 `src/db/schema.ts`에 있고 `PRAGMA user_version`으로 버전을 관리합니다. 자세한 내용은 [DB 문서](docs/DATABASE.md)를 보세요.
+- 재구성 전 OpsBox가 만든 `data/opsbox.db`는 열 수 없습니다. 백업한 뒤 지우고 다시 시작하세요(시작할 때 안내가 나옵니다).
 
 **결과 수집 흐름**
 1. 점검 스크립트가 결과 저장 경로(설정 → 결과 수집의 OS별 기본값 또는 서버별 지정)에 `<서버ID>_<시각>.json`을 저장합니다.

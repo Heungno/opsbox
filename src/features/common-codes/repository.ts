@@ -7,7 +7,8 @@ const toBool = (value: unknown) => (value === null || value === undefined ? null
 const toInt = (value: boolean | null) => (value === null ? null : value ? 1 : 0);
 
 export function readTables(): CommonCodeTables {
-  const categories = db.prepare('SELECT category, shape, position FROM common_code_categories ORDER BY position').all() as unknown as CategoryRow[];
+  const categories = (db.prepare('SELECT category, shape, group_keys, position FROM common_code_categories ORDER BY position').all() as any[])
+    .map((row): CategoryRow => ({ category: row.category, shape: row.shape, position: row.position, ...(row.group_keys ? { groupKeys: JSON.parse(row.group_keys) } : {}) }));
   const rows = (db.prepare('SELECT category, group_key, value, label, enabled, sort_order, extra, position FROM common_codes ORDER BY position').all() as any[])
     .map((row): CommonCodeRow => ({
       category: row.category,
@@ -27,8 +28,8 @@ export function readTables(): CommonCodeTables {
 export function replaceTables({ categories, rows, overrides }: CommonCodeTables) {
   transaction(() => {
     db.exec('DELETE FROM common_code_overrides; DELETE FROM common_codes; DELETE FROM common_code_categories;');
-    const insertCategory = db.prepare('INSERT INTO common_code_categories (category, shape, position) VALUES (?, ?, ?)');
-    categories.forEach((row) => insertCategory.run(row.category, row.shape, row.position));
+    const insertCategory = db.prepare('INSERT INTO common_code_categories (category, shape, group_keys, position) VALUES (?, ?, ?, ?)');
+    categories.forEach((row) => insertCategory.run(row.category, row.shape, row.groupKeys ? JSON.stringify(row.groupKeys) : null, row.position));
     const insertRow = db.prepare('INSERT INTO common_codes (category, group_key, value, label, enabled, sort_order, extra, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     rows.forEach((row) => insertRow.run(row.category, row.groupKey, row.value, row.label, toInt(row.enabled), row.sortOrder, row.extra === null ? null : JSON.stringify(row.extra), row.position));
     const insertOverride = db.prepare('INSERT INTO common_code_overrides (meta_key, label, enabled, sort_order) VALUES (?, ?, ?, ?)');

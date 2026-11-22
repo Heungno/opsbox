@@ -208,6 +208,8 @@ OpsBox는 시작할 때 `src/db/index.ts`에서 다음을 합니다.
 
 이미 쓰는 DB에는 기본값을 다시 넣지 않으므로, **사용자가 지운 기본 템플릿·정책은 되살아나지 않습니다.**
 
+재구성 전 OpsBox가 만든 DB(버전 표시 없이 예전 테이블이 있는 DB)는 열지 않고 "이전 버전 OpsBox가 만든 DB입니다" 오류로 멈춥니다. DB 파일(`opsbox.db`, `-wal`, `-shm`)을 백업한 뒤 지우고 다시 시작하세요. Codespaces는 `.devcontainer/setup.cjs`가 예전 DB를 `opsbox.db.legacy-<시각>`으로 옮겨 두고 새로 시작합니다.
+
 > 테이블 구조를 바꿔야 할 때는 `src/db/schema.ts`의 `MIGRATIONS` 배열 **끝에** 새 SQL을 추가하세요(이미 있는 항목은 고치지 않음). 새 버전의 기본값을 기존 DB에도 넣어야 하면 그 마이그레이션 안에서 넣습니다.
 
 ## 7. 백업과 복구

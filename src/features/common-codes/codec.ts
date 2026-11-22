@@ -9,11 +9,11 @@ import type { CommonCodes } from './types';
  * - GROUPS: { WEB: [ 'Nginx', ... ], WAS: [...] }       (productsByRole, rolePolicies)
  * - META:   _codeMeta { '분류::그룹::코드': { label?, enabled?, sortOrder? } }   (관리 화면의 사용 여부·정렬)
  * 문자열로만 된 코드는 label을 NULL로 저장해 다시 문자열로 돌려놓습니다.
- * 행이 하나도 없는 그룹은 저장하면 문서에서 빠집니다.
+ * 그룹 이름 목록은 분류 행에 따로 두어, 코드가 하나도 없는 그룹도 빈 목록으로 돌아옵니다.
  */
 export const META_CATEGORY = '_codeMeta';
 
-export interface CategoryRow { category: string; shape: 'LIST' | 'GROUPS' | 'META'; position: number }
+export interface CategoryRow { category: string; shape: 'LIST' | 'GROUPS' | 'META'; position: number; groupKeys?: string[] }
 export interface CommonCodeRow {
   category: string;
   groupKey: string;
@@ -66,7 +66,7 @@ export function toTables(codes: CommonCodes): CommonCodeTables {
       tables.categories.push({ category, shape: 'LIST', position });
       addEntries(category, '', value);
     } else if (isObject(value) && Object.values(value).every(Array.isArray)) {
-      tables.categories.push({ category, shape: 'GROUPS', position });
+      tables.categories.push({ category, shape: 'GROUPS', position, groupKeys: Object.keys(value) });
       for (const [groupKey, entries] of Object.entries(value)) addEntries(category, groupKey, entries as unknown[]);
     } else {
       throw new BadRequestError(`공통코드 분류 ${category}는 목록 또는 그룹별 목록이어야 합니다.`);
@@ -88,7 +88,7 @@ export function fromTables({ categories, rows, overrides }: CommonCodeTables): C
   };
   const doc: Record<string, unknown> = {};
   const sortedRows = [...rows].sort((a, b) => a.position - b.position);
-  for (const { category, shape } of [...categories].sort((a, b) => a.position - b.position)) {
+  for (const { category, shape, groupKeys } of [...categories].sort((a, b) => a.position - b.position)) {
     if (shape === 'META') {
       doc[category] = Object.fromEntries(overrides.map(({ metaKey, label, enabled, sortOrder }) => [metaKey, {
         ...(label === null ? {} : { label }),
@@ -98,7 +98,7 @@ export function fromTables({ categories, rows, overrides }: CommonCodeTables): C
     } else if (shape === 'LIST') {
       doc[category] = sortedRows.filter((row) => row.category === category).map(toEntry);
     } else {
-      const groups: Record<string, unknown[]> = {};
+      const groups: Record<string, unknown[]> = Object.fromEntries((groupKeys ?? []).map((key) => [key, []]));
       for (const row of sortedRows.filter((entry) => entry.category === category)) (groups[row.groupKey] ??= []).push(toEntry(row));
       doc[category] = groups;
     }

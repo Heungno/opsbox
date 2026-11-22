@@ -11,6 +11,7 @@ const MIGRATIONS: string[] = [
   CREATE TABLE common_code_categories (
     category TEXT PRIMARY KEY,
     shape TEXT NOT NULL CHECK (shape IN ('LIST', 'GROUPS', 'META')),
+    group_keys TEXT,                      -- GROUPS: 그룹 이름 목록(JSON, 순서 그대로). 코드가 없는 빈 그룹도 남깁니다
     position INTEGER NOT NULL
   );
   CREATE TABLE common_codes (
@@ -160,6 +161,14 @@ export function migrate(db: DatabaseSync): { created: boolean } {
   const current = Number((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version);
   if (current > SCHEMA_VERSION) {
     throw new Error(`이 DB는 더 새 버전의 OpsBox가 만든 것입니다(DB 버전 ${current}, 이 OpsBox ${SCHEMA_VERSION}). OpsBox를 업데이트하세요.`);
+  }
+  if (current === 0) {
+    // 버전 표시가 없는데 테이블이 있으면 재구성 전 OpsBox가 만든 DB입니다.
+    // (users는 scripts/create-user.cjs가 먼저 만들 수 있어 제외)
+    const existing = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> 'users'").all() as Array<{ name: string }>).map((row) => row.name);
+    if (existing.length) {
+      throw new Error(`이전 버전 OpsBox가 만든 DB입니다(테이블: ${existing.slice(0, 5).join(', ')}). 이 버전에서는 열 수 없으니, DB 파일(opsbox.db, opsbox.db-wal, opsbox.db-shm)을 백업한 뒤 지우고 다시 시작하세요. 새 DB에는 기본 템플릿·정책이 다시 들어갑니다.`);
+    }
   }
   for (let version = current + 1; version <= SCHEMA_VERSION; version++) {
     db.exec(MIGRATIONS[version - 1]);

@@ -54,3 +54,14 @@ test('공통코드: 같은 그룹에 같은 코드가 두 번 있으면 저장�
   assert.throws(() => saveCommonCodes(raw), (error: any) => error.status === 400 && /같은 코드가 두 번 있습니다: serverRoles WEB/.test(error.message));
   assert.deepEqual(getRawCommonCodes(), seed(), '실패하면 이전 값 유지');
 });
+
+test('공통코드: 코드를 모두 지운 그룹도 빈 목록으로 남는다(그룹을 읽는 곳이 깨지지 않게)', () => {
+  const raw = seed();
+  raw.productsByRole.DB = [];
+  raw.rolePolicies.DB = [];
+  saveCommonCodes(raw);
+  assert.deepEqual(getRawCommonCodes().productsByRole.DB, []);
+  assert.deepEqual(getCommonCodes().rolePolicies.DB, []);
+  assert.deepEqual(Object.keys(getRawCommonCodes().productsByRole), Object.keys(seed().productsByRole), '그룹 순서 유지');
+  saveCommonCodes(seed());
+});

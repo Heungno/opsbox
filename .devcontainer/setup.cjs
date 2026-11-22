@@ -2,11 +2,30 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { DatabaseSync } = require('node:sqlite');
 
 const root = path.resolve(__dirname, '..');
 const sharePath = path.join(__dirname, 'sample-share');
 const sampleResults = path.join(__dirname, 'sample-results');
 const seededMarker = path.join(sharePath, '.seeded');
+
+// 이전 버전 OpsBox가 만든 DB(버전 표시 없이 예전 테이블이 있음)는 열 수 없으므로, 지우지 않고 이름을 바꿔 옆에 둡니다.
+// (Codespaces는 테스트 환경이라 새 DB로 다시 시작합니다. 샘플 결과도 다시 넣습니다.)
+const dbPath = process.env.OPSBOX_DB_PATH || path.join(root, 'data', 'opsbox.db');
+if (fs.existsSync(dbPath)) {
+  const db = new DatabaseSync(dbPath);
+  const version = db.prepare('PRAGMA user_version').get().user_version;
+  const legacy = version === 0 && db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> 'users'").get();
+  db.close();
+  if (legacy) {
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+    for (const suffix of ['', '-wal', '-shm']) {
+      if (fs.existsSync(dbPath + suffix)) fs.renameSync(dbPath + suffix, `${dbPath}.legacy-${stamp}${suffix}`);
+    }
+    fs.rmSync(seededMarker, { force: true });
+    console.log(`이전 버전 DB를 옮겨 두고 새 DB로 시작합니다: ${dbPath}.legacy-${stamp}`);
+  }
+}
 
 // 테스트 계정·샘플 서버 (OpsBox 서비스로 만듦)
 fs.mkdirSync(sharePath, { recursive: true });
