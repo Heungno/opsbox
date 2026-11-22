@@ -1,0 +1,60 @@
+import './helpers/env';
+
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+import { createServer } from '../src/services/serverService';
+import { storeUploadedResult } from '../src/services/resultImportService';
+import { getAllReports } from '../src/services/reportService';
+
+createServer({ id: 'WEB-A', name: '웹 A', type: 'WEB', roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.1' } as any);
+createServer({ id: 'DB-B', name: '디비 B', type: 'WAS', roles: ['WAS'], products: { WAS: 'Apache Tomcat' }, os: 'Windows', ip: '10.0.0.2' } as any);
+
+function v2(serverId: string, collectedAt: string, status: string, extra: Record<string, unknown> = {}) {
+  return Buffer.from(JSON.stringify({
+    schemaVersion: 2,
+    server: { id: serverId, name: serverId, roles: ['WEB'], products: {} },
+    collectedAt,
+    host: { hostname: `${serverId.toLowerCase()}-host` },
+    resources: { cpu: { usagePercent: 11 }, memory: { usagePercent: 22 }, disk: { maxUsagePercent: 33, volumes: [{ usagePercent: 44 }] } },
+    checks: {},
+    summary: { status },
+    ...extra,
+  }));
+}
+
+storeUploadedResult(v2('WEB-A', '2026-11-01 09:00:00', 'Healthy'), 'a1.json');
+storeUploadedResult(v2('WEB-A', '2026-11-15 09:00:00', 'Warning'), 'a2.json');
+storeUploadedResult(v2('DB-B', '2026-11-10 09:00:00', 'Critical'), 'b1.json');
+// 이전 형식(버전 1): server 문자열, checkDate, hostname 최상위
+storeUploadedResult(Buffer.from(JSON.stringify({ server: 'DB-B', checkDate: '2026-11-20 08:00:00', hostname: 'old-host', cpu: 5, memory: 6, disks: [{ usagePercent: 70, status: 'Healthy' }] })), 'b-old.json');
+// 점검 일시가 없는 결과는 목록에서 뺀다
+storeUploadedResult(Buffer.from(JSON.stringify({ server: 'DB-B', hostname: 'no-date' })), 'b-nodate.json');
+
+test('보고서 목록: 모든 서버의 결과를 최신 점검 순으로, 서버 정보와 요약 수치를 붙여 돌려준다', () => {
+  const reports = getAllReports();
+  assert.deepEqual(reports.map((r) => r.fileName), ['b-old.json', 'a2.json', 'b1.json', 'a1.json']);
+  const a2 = reports.find((r) => r.fileName === 'a2.json')!;
+  assert.equal(a2.serverId, 'WEB-A');
+  assert.equal(a2.serverName, '웹 A');
+  assert.equal(a2.os, 'Linux');
+  assert.deepEqual(a2.serverTypes, ['WEB']);
+  assert.equal(a2.hostname, 'web-a-host');
+  assert.equal(a2.checkDate, '2026-11-15 09:00:00');
+  assert.equal(a2.health, 'Warning');
+  assert.equal(a2.cpu, 11);
+  assert.equal(a2.memory, 22);
+  assert.equal(a2.disk, 44, '디스크는 볼륨 중 최대 사용률');
+
+  const old = reports.find((r) => r.fileName === 'b-old.json')!;
+  assert.equal(old.hostname, 'old-host');
+  assert.equal(old.cpu, 5);
+  assert.equal(old.disk, 70);
+});
+
+test('보고서 목록: 서버(ID·이름 일부)와 날짜 범위(양 끝 포함)로 거른다', () => {
+  assert.deepEqual(getAllReports({ serverId: 'web' }).map((r) => r.fileName), ['a2.json', 'a1.json']);
+  assert.deepEqual(getAllReports({ serverId: '디비' }).map((r) => r.fileName), ['b-old.json', 'b1.json']);
+  assert.deepEqual(getAllReports({ startDate: '2026-11-10', endDate: '2026-11-15' }).map((r) => r.fileName), ['a2.json', 'b1.json']);
+  assert.deepEqual(getAllReports({ serverId: 'NONE' }), []);
+});

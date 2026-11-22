@@ -62,6 +62,8 @@ DB 연결 설정: `journal_mode = WAL`(읽기와 쓰기가 서로 막지 않음)
 | `common_codes` | 공통코드 전체 (OS, 역할, 제품, 점검 항목 이름 등) |
 | `builtin_template_ids` | 지금까지 DB에 넣었던 기본 템플릿 id 목록. 새 버전의 기본 템플릿을 추가할 때, 사용자가 지운 기본 템플릿을 되살리지 않으려고 기록합니다 (6장) |
 | `migration_linux_basic_items_v1` | Linux 기본 정책에 프로세스·디렉터리·파일·포트·HTTP 항목을 추가한 기록 (한 번만 실행) |
+| `migration_linux_role_items_v1` | Linux WEB·WAS 기본 정책에 역할별 점검 항목을 추가한 기록 (한 번만 실행) |
+| `migration_executor_codes_v1` | 새 실행 방식 공통코드(예: 점검 만들기 `CHECK_BUILDER`)를 추가한 기록 (한 번만 실행) |
 
 ### 3.2 사용자
 
@@ -88,6 +90,8 @@ DB 연결 설정: `journal_mode = WAL`(읽기와 쓰기가 서로 막지 않음)
 | `result_import_errors` | `source_path` (PK), `server_id`, `message`, `first_seen`, `last_seen` | 가져오지 못한 파일과 이유. 같은 파일을 다음에 가져오면 지워집니다 |
 
 인덱스: `(server_id, check_date DESC)`, `(server_id, file_name)` – 서버별 최신 결과·이력 조회용.
+
+보고서 목록은 `raw_json`을 펼치지 않고 요약 열(`check_date`, `status`, `cpu`, `memory`, `disk`)만 읽습니다. 호스트 이름만 `json_extract`로 꺼냅니다. 그래서 `status`는 **가져올 때 계산한 값**이며, 나중에 판정 규칙이 바뀌어도 이미 저장된 행은 다시 계산하지 않습니다. 보고서 상세는 `raw_json`을 그대로 읽습니다.
 
 ### 3.4 변경 이력
 
@@ -173,9 +177,14 @@ OpsBox는 시작할 때마다 다음을 확인합니다(`src/db/database.ts`).
 2. **새 기본 템플릿 추가** – 새 버전의 `templates.json`에 생긴 기본 템플릿 중 **한 번도 넣은 적 없는 것만** DB에 추가합니다.
    - 이미 넣었던 기본 템플릿 id는 `settings.builtin_template_ids`에 기록하므로, 사용자가 지운 기본 템플릿은 되살리지 않습니다.
    - 사용자가 고친 템플릿은 덮어쓰지 않습니다.
-3. **정책 보강 (1회)** – Linux 기본 정책(`linux-basic-default`)에 프로세스·디렉터리·파일 크기·포트·HTTP 항목이 없으면 추가합니다. 기존 항목과 기준값은 그대로 둡니다.
+3. **고치지 않은 기본 템플릿 갱신** – DB의 템플릿 내용이 예전 기본값과 똑같을 때(SHA-256 비교, `BUILTIN_TEMPLATE_UPGRADES`)만 새 기본값으로 바꿉니다. 사용자가 고친 템플릿은 그대로 둡니다.
+4. **정책 보강 (각 1회)**
+   - Linux 기본 정책(`linux-basic-default`)에 프로세스·디렉터리·파일 크기·포트·HTTP 항목이 없으면 추가합니다.
+   - Linux WEB·WAS 기본 정책(`linux-web-default`, `linux-was-default`)에 빠진 역할별 점검 항목을 추가합니다.
+   - 기존 항목과 기준값은 그대로 둡니다.
+5. **실행 방식 공통코드 추가 (1회)** – 새 버전의 `common-codes.json`에 생긴 실행 방식(예: 점검 만들기 `CHECK_BUILDER`)을 기존 공통코드에 더합니다. 이후 사용자가 지우면 되살리지 않습니다.
 
-추가된 내용은 애플리케이션 로그에 "새 버전의 기본 템플릿·정책 항목을 추가했습니다"로 남습니다.
+한 번만 실행하는 작업은 `settings`의 `migration_…` 키(3.1)로 실행 여부를 기록합니다. 반영된 내용은 애플리케이션 로그에 "새 버전의 기본 템플릿·정책 항목을 반영했습니다"로 남습니다.
 
 > 테이블 구조를 바꿔야 할 때는 `CREATE TABLE IF NOT EXISTS` 다음에 `ALTER TABLE`을 추가하고, 이미 바뀌었는지 확인한 뒤 실행하도록 작성하세요. 기존 설치본의 DB가 그대로 열려야 합니다.
 

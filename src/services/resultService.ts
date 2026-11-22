@@ -64,6 +64,38 @@ export function getResults(serverId: string): CheckResult[] {
   return rows.map(toResult);
 }
 
+export interface ResultSummary {
+  serverId: string;
+  fileName: string;
+  checkDate: string;
+  hostname: string | null;
+  status: CheckStatus;
+  cpu: number | null;
+  memory: number | null;
+  disk: number | null;
+}
+
+/*
+ * 목록용 요약: 가져올 때 저장한 요약 열(check_date·status·cpu·memory·disk)만 읽고,
+ * 원본 JSON은 호스트 이름만 SQLite에서 꺼냅니다(전체를 JS로 파싱하지 않음).
+ * 점검 일시가 없는 결과는 뺍니다. 날짜 범위는 YYYY-MM-DD, 양 끝 포함.
+ */
+export function getResultSummaries(serverIds: string[], range: { startDate?: string; endDate?: string } = {}): ResultSummary[] {
+  if (!serverIds.length) return [];
+  const where = [`server_id IN (${serverIds.map(() => '?').join(', ')})`, 'check_date IS NOT NULL', "check_date <> ''"];
+  const params: string[] = [...serverIds];
+  if (range.startDate) { where.push('substr(check_date, 1, 10) >= ?'); params.push(range.startDate); }
+  if (range.endDate) { where.push('substr(check_date, 1, 10) <= ?'); params.push(range.endDate); }
+  return db.prepare(`
+    SELECT server_id AS serverId, file_name AS fileName, check_date AS checkDate, status, cpu, memory, disk,
+      CASE WHEN NOT json_valid(raw_json) THEN NULL
+           WHEN json_extract(raw_json, '$.schemaVersion') >= 2 AND json_type(raw_json, '$.checks') IS NOT NULL
+             THEN json_extract(raw_json, '$.host.hostname')
+           ELSE json_extract(raw_json, '$.hostname') END AS hostname
+    FROM check_results WHERE ${where.join(' AND ')} ${ORDER}
+  `).all(...params) as unknown as ResultSummary[];
+}
+
 export function getLatestResult(serverId: string): CheckResult | null {
   const row = db.prepare(`SELECT file_name, raw_json FROM check_results WHERE server_id = ? ${ORDER} LIMIT 1`).get(serverId) as ResultRow | undefined;
   return row ? toResult(row) : null;

@@ -1,4 +1,4 @@
-import { getResultByFile, getHealthStatus, getResults } from './resultService';
+import { getResultByFile, getHealthStatus, getResultSummaries } from './resultService';
 import { getReportFields } from './reportRuleService';
 import { getAllServers, getServerRoles } from './serverService';
 import type { ReportDetail, ReportListItem, ReportListQuery } from '../types/report';
@@ -15,39 +15,26 @@ export function getAllReports(filter?: ReportListQuery): ReportListItem[] {
       )
     : servers;
 
-  for (const server of targetServers) {
-    try {
-      const results = getResults(server.id);
-      for (const res of results) {
-        if (!res.checkDate) continue;
+  const serverById = new Map(targetServers.map((server) => [server.id, server]));
+  const summaries = getResultSummaries([...serverById.keys()], { startDate: filter?.startDate, endDate: filter?.endDate });
 
-        const checkDay = res.checkDate.slice(0, 10);
-        if (filter?.startDate && checkDay < filter.startDate) {
-          continue;
-        }
-        if (filter?.endDate && checkDay > filter.endDate) {
-          continue;
-        }
-
-        reports.push({
-          serverId: server.id,
-          serverName: server.name,
-          serverType: server.type,
-          serverTypes: getServerRoles(server),
-          products: server.products,
-          os: server.os,
-          hostname: res.hostname || '-',
-          checkDate: res.checkDate,
-          fileName: res.fileName,
-          health: getHealthStatus(res),
-          cpu: res.cpu,
-          memory: res.memory,
-          disk: res.disk,
-        });
-      }
-    } catch (e) {
-      // 결과를 읽지 못한 서버는 목록에서 빼고 다른 서버는 계속 표시합니다.
-    }
+  for (const summary of summaries) {
+    const server = serverById.get(summary.serverId)!;
+    reports.push({
+      serverId: server.id,
+      serverName: server.name,
+      serverType: server.type,
+      serverTypes: getServerRoles(server),
+      products: server.products,
+      os: server.os,
+      hostname: summary.hostname || '-',
+      checkDate: summary.checkDate,
+      fileName: summary.fileName,
+      health: summary.status,
+      cpu: summary.cpu as number,
+      memory: summary.memory as number,
+      disk: summary.disk as number,
+    });
   }
 
   return reports.sort((a, b) => (b.checkDate || '').localeCompare(a.checkDate || ''));
