@@ -16,12 +16,8 @@
         <div class="form-group"><label for="policy-os-filter">운영체제</label><select id="policy-os-filter"></select></div>
         <div class="form-group"><label for="policy-search">검색</label><input id="policy-search" type="search" placeholder="정책명 검색" /></div>
       </div>
-      <div id="policy-category-tabs" class="policy-category-tabs" role="tablist" aria-label="정책 유형">
-        <button type="button" role="tab" data-category="BASIC" aria-selected="true">기본 <span>0</span></button>
-        <button type="button" role="tab" data-category="WEB" aria-selected="false">WEB <span>0</span></button>
-        <button type="button" role="tab" data-category="WAS" aria-selected="false">WAS <span>0</span></button>
-        <button type="button" role="tab" data-category="DB" aria-selected="false">DB <span>0</span></button>
-      </div>
+      <!-- 분류 탭: 공통코드 policyCategories -->
+      <div id="policy-category-tabs" class="policy-category-tabs" role="tablist" aria-label="정책 유형"></div>
       <div id="policy-list" class="template-list"></div>
       <p id="policy-empty" class="policy-help" hidden>조건에 맞는 정책이 없습니다. 새 정책을 만들어 보세요.</p>
       <p id="policy-error" class="policy-help" role="alert" hidden>정책을 불러오지 못했습니다.</p>
