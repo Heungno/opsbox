@@ -2,7 +2,7 @@
  * Codespaces 테스트 데이터: 테스트 계정과 샘플 서버를 OpsBox 서비스로 만듭니다(이미 있으면 건너뜀).
  * .devcontainer/setup.cjs 가 실행합니다. 샘플 결과는 수신함(OPSBOX_RESULT_INBOX, devcontainer.json)으로 들어옵니다.
  */
-import { createUser } from '../src/services/authService';
+import { createUser } from '../src/features/auth/service';
 import { createServer, getServer } from '../src/features/servers/service';
 import { db } from '../src/db';
 
