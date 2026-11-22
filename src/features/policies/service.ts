@@ -4,9 +4,9 @@ import { randomUUID } from 'crypto';
 import { NotFoundError, ValidationError } from '../../shared/errors';
 import type { Policy, PolicyDraft, PolicyItem } from './types';
 import { getCommonCodes, getCommonCodeValues } from '../common-codes/service';
-import { builderInputs, builderResult, validateBuilderSpec } from '../../services/checkBuilder/spec';
-import { generatedTemplateId, syncGeneratedTemplates } from '../../services/checkBuilder/templates';
-import type { BuilderOs, BuilderSpec } from '../../services/checkBuilder/types';
+import { builderInputs, builderResult, validateBuilderSpec } from '../scripts/check-builder/spec';
+import { generatedTemplateId, syncGeneratedTemplates } from '../scripts/check-builder/templates';
+import type { BuilderOs, BuilderSpec } from '../scripts/check-builder/types';
 
 export type { PolicyCategory } from './types';
 const executorTypes = () => getCommonCodeValues('policyExecutors');

@@ -6,9 +6,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { before, test } from 'node:test';
 
-import type { BuilderSpec } from '../src/services/checkBuilder/types';
+import type { BuilderSpec } from '../src/features/scripts/check-builder/types';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
-import { generateScript } from '../src/services/scriptService';
+import { generateScript } from '../src/features/scripts/service';
 import { createServer, getServer, updateCheckConfig } from '../src/features/servers/service';
 
 /*

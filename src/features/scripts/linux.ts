@@ -1,6 +1,6 @@
-import { Server } from '../features/servers/types';
-import { ManagedTemplate } from '../features/templates/types';
-import { buildScriptConfig, ScriptConfig, selectScriptParts } from './scriptAssembly';
+import { Server } from '../servers/types';
+import { ManagedTemplate } from '../templates/types';
+import { buildScriptConfig, ScriptConfig, selectScriptParts } from './assembly';
 
 /*
  * Linux 점검 스크립트 조립

@@ -1,15 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 
-import { BadRequestError, ValidationError } from '../shared/errors';
-import { recordAudit } from '../features/audit/service';
-import { generateLinuxPart, type BuilderRole } from '../services/checkBuilder/linux';
-import { presetsFor } from '../services/checkBuilder/presets';
-import { validateBuilderSpec } from '../services/checkBuilder/spec';
-import { regenerateItem } from '../services/checkBuilder/templates';
-import type { BuilderOs, BuilderSpec } from '../services/checkBuilder/types';
-import { generateWindowsPart } from '../services/checkBuilder/windows';
-import { getPolicies } from '../features/policies/service';
-import { ok, requireObject } from '../shared/http';
+import { BadRequestError, ValidationError } from '../../../shared/errors';
+import { recordAudit } from '../../audit/service';
+import { generateLinuxPart, type BuilderRole } from './linux';
+import { presetsFor } from './presets';
+import { validateBuilderSpec } from './spec';
+import { regenerateItem } from './templates';
+import type { BuilderOs, BuilderSpec } from './types';
+import { generateWindowsPart } from './windows';
+import { getPolicies } from '../../policies/service';
+import { ok, requireObject } from '../../../shared/http';
 
 /*
  * 점검 만들기 API

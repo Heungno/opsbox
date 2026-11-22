@@ -7,7 +7,7 @@ import path from 'node:path';
 import { before, test } from 'node:test';
 
 import { createServer, getServer, updateCheckConfig } from '../src/features/servers/service';
-import { generateScript } from '../src/services/scriptService';
+import { generateScript } from '../src/features/scripts/service';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { saveTemplate } from '../src/features/templates/service';
 

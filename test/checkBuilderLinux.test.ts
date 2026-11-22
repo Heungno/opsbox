@@ -7,11 +7,11 @@ import net from 'node:net';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 
-import { generateLinuxPart } from '../src/services/checkBuilder/linux';
-import { builderInputs, builderResult } from '../src/services/checkBuilder/spec';
-import type { BuilderSpec } from '../src/services/checkBuilder/types';
+import { generateLinuxPart } from '../src/features/scripts/check-builder/linux';
+import { builderInputs, builderResult } from '../src/features/scripts/check-builder/spec';
+import type { BuilderSpec } from '../src/features/scripts/check-builder/types';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
-import { generateScript } from '../src/services/scriptService';
+import { generateScript } from '../src/features/scripts/service';
 import { createServer, getServer, updateCheckConfig } from '../src/features/servers/service';
 import { saveTemplate } from '../src/features/templates/service';
 

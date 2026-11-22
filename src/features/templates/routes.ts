@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { isDetached } from '../../services/checkBuilder/templates';
+import { isDetached } from '../scripts/check-builder/templates';
 
 import { recordAudit } from '../audit/service';
 import { deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from './service';

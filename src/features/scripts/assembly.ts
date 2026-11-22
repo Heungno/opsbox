@@ -1,10 +1,10 @@
-import { BadRequestError } from '../shared/errors';
-import { Server } from '../features/servers/types';
-import { ManagedTemplate, ScriptPart } from '../features/templates/types';
-import { getServerProduct, getServerRoles } from '../features/servers/service';
-import { getCommonCodes } from '../features/common-codes/service';
-import { defaultResultPath } from '../features/settings/service';
-import { getPolicies } from '../features/policies/service';
+import { BadRequestError } from '../../shared/errors';
+import { Server } from '../servers/types';
+import { ManagedTemplate, ScriptPart } from '../templates/types';
+import { getServerProduct, getServerRoles } from '../servers/service';
+import { getCommonCodes } from '../common-codes/service';
+import { defaultResultPath } from '../settings/service';
+import { getPolicies } from '../policies/service';
 
 /*
  * Windows·Linux 공통 점검 스크립트 조립

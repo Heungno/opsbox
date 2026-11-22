@@ -11,7 +11,7 @@ const inboxB = path.join(TEST_ROOT, 'inbox-b');
 process.env.OPSBOX_RESULT_INBOX = `${inboxA};${inboxB}`;
 
 const { createServer } = require('../src/features/servers/service') as typeof import('../src/features/servers/service');
-const { generateScript } = require('../src/services/scriptService') as typeof import('../src/services/scriptService');
+const { generateScript } = require('../src/features/scripts/service') as typeof import('../src/features/scripts/service');
 const { importResults } = require('../src/features/results/importer') as typeof import('../src/features/results/importer');
 const { getResultPathSettings, saveResultPathSettings } = require('../src/features/settings/service') as typeof import('../src/features/settings/service');
 

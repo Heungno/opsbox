@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { serverRoutes } from '../features/servers/routes';
-import { scriptRoutes } from './scriptRoutes';
+import { scriptRoutes } from '../features/scripts/routes';
 import { resultRoutes } from '../features/results/routes';
 import { dashboardRoutes } from '../features/dashboard/routes';
 import { reportRoutes } from '../features/reports/routes';
@@ -9,7 +9,7 @@ import { commonCodeRoutes } from '../features/common-codes/routes';
 import { policyRoutes } from '../features/policies/routes';
 import { authRoutes } from '../features/auth/routes';
 import { auditRoutes } from '../features/audit/routes';
-import { checkBuilderRoutes } from './checkBuilderRoutes';
+import { checkBuilderRoutes } from '../features/scripts/check-builder/routes';
 import { settingsRoutes } from '../features/settings/routes';
 
 export async function routes(app: FastifyInstance) {

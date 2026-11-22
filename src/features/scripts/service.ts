@@ -1,11 +1,11 @@
-import { BadRequestError, NotFoundError } from '../shared/errors';
-import { getServer, getServerProduct } from '../features/servers/service';
-import { getTemplate, getTemplates } from '../features/templates/service';
-import { assembleWindowsScript } from './windowsScriptService';
-import { assembleLinuxScript } from './linuxScriptService';
-import { resolveQueryTemplate } from './dbQueryDefaults';
-import { getPolicies } from '../features/policies/service';
-import { isBuilderItemIn } from './scriptAssembly';
+import { BadRequestError, NotFoundError } from '../../shared/errors';
+import { getServer, getServerProduct } from '../servers/service';
+import { getTemplate, getTemplates } from '../templates/service';
+import { assembleWindowsScript } from './windows';
+import { assembleLinuxScript } from './linux';
+import { resolveQueryTemplate } from './db-query-defaults';
+import { getPolicies } from '../policies/service';
+import { isBuilderItemIn } from './assembly';
 
 export function generateScript(serverId: string): string {
   const server = getServer(serverId);
@@ -13,6 +13,7 @@ export function generateScript(serverId: string): string {
   if (!server) {
     throw new NotFoundError(`서버를 찾을 수 없습니다: ${serverId}`);
   }
+  if (!server.enabled) throw new BadRequestError(`미사용 서버는 스크립트를 내려받을 수 없습니다: ${serverId}`);
 
   // 쿼리 실행기에는 SQL 항목만 넘깁니다(점검 만들기 항목은 각자의 스크립트 조각으로 실행).
   const builderItems = new Set(isBuilderItemIn(getPolicies(), server.policyIds?.DB, server.roleChecks?.DB ?? []));

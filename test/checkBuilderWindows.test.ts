@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { psLiteral } from '../src/services/checkBuilder/literal';
-import { generateWindowsPart } from '../src/services/checkBuilder/windows';
-import type { BuilderSpec } from '../src/services/checkBuilder/types';
+import { psLiteral } from '../src/features/scripts/check-builder/literal';
+import { generateWindowsPart } from '../src/features/scripts/check-builder/windows';
+import type { BuilderSpec } from '../src/features/scripts/check-builder/types';
 
 /*
  * 점검 만들기: Windows(PowerShell) 생성 조각 정적 검사

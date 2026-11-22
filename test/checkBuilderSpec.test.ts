@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { getPreset, presetsFor } from '../src/services/checkBuilder/presets';
-import { builderInputs, builderResult, resolveSpec, validateBuilderSpec } from '../src/services/checkBuilder/spec';
+import { getPreset, presetsFor } from '../src/features/scripts/check-builder/presets';
+import { builderInputs, builderResult, resolveSpec, validateBuilderSpec } from '../src/features/scripts/check-builder/spec';
 
 /*
  * 점검 만들기: 폼 데이터 검증, 준비된 점검 목록, 서버별 입력·결과 표시 정의

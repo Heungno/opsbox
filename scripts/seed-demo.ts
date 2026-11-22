@@ -612,7 +612,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
   const { db } = await import('../src/db/database');
   const { createServer } = await import('../src/features/servers/service');
-  const { buildScriptConfig } = await import('../src/services/scriptAssembly');
+  const { buildScriptConfig } = await import('../src/features/scripts/assembly');
   const { storeUploadedResult } = await import('../src/features/results/importer');
   const { getHealthStatus, parseResultJson } = await import('../src/features/results/service');
 

@@ -1,6 +1,6 @@
-import { Server } from '../features/servers/types';
-import { ManagedTemplate } from '../features/templates/types';
-import { buildScriptConfig, selectScriptParts } from './scriptAssembly';
+import { Server } from '../servers/types';
+import { ManagedTemplate } from '../templates/types';
+import { buildScriptConfig, selectScriptParts } from './assembly';
 
 const CONFIG_TOKEN = '@@CONFIG_BASE64@@';
 

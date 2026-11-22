@@ -7,8 +7,8 @@ import { db, transaction } from '../src/db/database';
 import { getSettingValue as readSetting, setSettingValue } from '../src/features/settings/repository';
 
 const writeSetting = (key: string, value: number) => setSettingValue(key, String(value));
-import { generatedTemplateId, isDetached, regenerateItem, upgradeGeneratedTemplates } from '../src/services/checkBuilder/templates';
-import type { BuilderSpec } from '../src/services/checkBuilder/types';
+import { generatedTemplateId, isDetached, regenerateItem, upgradeGeneratedTemplates } from '../src/features/scripts/check-builder/templates';
+import type { BuilderSpec } from '../src/features/scripts/check-builder/types';
 import { getPolicies, savePolicy } from '../src/features/policies/service';
 import { deleteTemplate, getTemplateHistory, getTemplates, saveTemplate } from '../src/features/templates/service';
 

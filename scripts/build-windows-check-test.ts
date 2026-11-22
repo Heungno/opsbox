@@ -10,10 +10,10 @@
  */
 import { writeFileSync } from 'node:fs';
 
-import { psLiteral } from '../src/services/checkBuilder/literal';
-import { presetsFor } from '../src/services/checkBuilder/presets';
-import type { BuilderSpec } from '../src/services/checkBuilder/types';
-import { generateWindowsPart } from '../src/services/checkBuilder/windows';
+import { psLiteral } from '../src/features/scripts/check-builder/literal';
+import { presetsFor } from '../src/features/scripts/check-builder/presets';
+import type { BuilderSpec } from '../src/features/scripts/check-builder/types';
+import { generateWindowsPart } from '../src/features/scripts/check-builder/windows';
 
 interface Case {
   id: string;

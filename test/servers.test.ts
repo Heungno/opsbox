@@ -8,7 +8,7 @@ import { db } from '../src/db';
 import { app } from '../src/server';
 import { deletePolicy, savePolicy } from '../src/features/policies/service';
 import { activateServer, createServer, deactivateServer, getAllServers, getCheckConfig, getServer, updateCheckConfig } from '../src/features/servers/service';
-import { generateScript } from '../src/services/scriptService';
+import { generateScript } from '../src/features/scripts/service';
 
 const webServer = (id: string) => ({ id, name: id, roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', processes: [], directories: [] } as any);
 
@@ -73,4 +73,10 @@ test('API: DELETE /api/servers/:id는 없고, deactivate·activate는 변경 이
   assert.equal((await call('POST', '/api/servers/API-1/activate')).json().data.enabled, true);
   const actions = (db.prepare("SELECT action FROM audit_logs WHERE target_id = 'API-1' ORDER BY id").all() as Array<{ action: string }>).map((row) => row.action);
   assert.deepEqual(actions, ['SERVER_DEACTIVATE', 'SERVER_ACTIVATE']);
+});
+
+test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
+  createServer(webServer('OFF-4'));
+  deactivateServer('OFF-4');
+  assert.throws(() => generateScript('OFF-4'), (e: any) => e.status === 400 && /미사용 서버는 스크립트를 내려받을 수 없습니다: OFF-4/.test(e.message));
 });

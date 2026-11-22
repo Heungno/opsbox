@@ -1,6 +1,6 @@
 import { buildApp } from './app';
 import { purgeOldAuditLogs } from './features/audit/service';
-import { upgradeGeneratedTemplates } from './services/checkBuilder/templates';
+import { upgradeGeneratedTemplates } from './features/scripts/check-builder/templates';
 import { startResultImportScheduler } from './features/results/importer';
 import { logger } from './shared/logger';
 

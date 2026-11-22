@@ -7,7 +7,7 @@ import path from 'node:path';
 import { before, test } from 'node:test';
 
 import { createServer, updateCheckConfig } from '../src/features/servers/service';
-import { generateScript } from '../src/services/scriptService';
+import { generateScript } from '../src/features/scripts/service';
 import { saveTemplate } from '../src/features/templates/service';
 import { getHealthStatus, parseResultJson } from '../src/features/results/service';
 

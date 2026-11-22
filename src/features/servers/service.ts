@@ -3,7 +3,7 @@ import { getCommonCodes } from '../common-codes/service';
 import { getPolicies } from '../policies/service';
 import { getTemplate } from '../templates/service';
 import type { ScriptPart } from '../templates/types';
-import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from '../../services/dbQueryDefaults';
+import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from '../scripts/db-query-defaults';
 import { resultPathError } from '../settings/service';
 import { resolveServer, toStoredCheckConfig } from './check-plan';
 import { findServerRecord, listServerRecords, saveServerRecord, setServerEnabled } from './repository';

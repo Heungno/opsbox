@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
 
-import { BadRequestError, NotFoundError } from '../../shared/errors';
-import type { Policy, PolicyItem } from '../../features/policies/types';
-import type { ManagedTemplate } from '../../features/templates/types';
-import { getPolicies } from '../../features/policies/service';
-import { deleteGeneratedTemplate, getTemplates, saveGeneratedTemplate } from '../../features/templates/service';
+import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import type { Policy, PolicyItem } from '../../policies/types';
+import type { ManagedTemplate } from '../../templates/types';
+import { getPolicies } from '../../policies/service';
+import { deleteGeneratedTemplate, getTemplates, saveGeneratedTemplate } from '../../templates/service';
 import { generateLinuxPart, type BuilderRole } from './linux';
 import { GENERATOR_VERSION } from './literal';
 import type { BuilderOs, BuilderSpec } from './types';

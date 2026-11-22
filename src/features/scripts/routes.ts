@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 
-import { recordAudit } from '../features/audit/service';
-import { generateScript } from '../services/scriptService';
-import { getServer } from '../features/servers/service';
-import type { ServerIdParams } from '../types/api';
+import { recordAudit } from '../audit/service';
+import { generateScript } from './service';
+import { getServer } from '../servers/service';
+import type { ServerIdParams } from '../../types/api';
 
 export async function scriptRoutes(app: FastifyInstance) {
   // 점검 스크립트 다운로드. 생성 실패(설정 누락 등)는 JSON 오류로 응답합니다.
