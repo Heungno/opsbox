@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 서버 코드를 기능별 폴더로 옮기고 DB를 새 스키마로 바꾸며 예전 호환 코드를 모두 지운다. 기능과 생성 스크립트는 그대로, 서버 삭제만 "미사용"으로 바꾼다.
+**Goal:** 서버 코드를 기능별 폴더로 옮기고 DB를 새 스키마로 바꾸며 예전 호환 코드를 모두 지운다. 기능과 생성 스크립트는 그대로 둔다. 서버 삭제를 "미사용"으로 바꾸고, 결과 경로를 수신함과 대상 서버 저장 경로로 나눈다.
 
 **Architecture:** 기능 하나씩 옮긴다(B-1). 각 기능은 `src/features/<기능>/{routes,service,repository,types}.ts`로 옮기고, 같은 작업에서 그 기능의 테이블을 새 스키마로 바꾼다. 먼저 만든 "기준 비교 테스트"(생성 스크립트·설정 API 응답)가 모든 작업에서 동작이 같음을 보장한다.
 
@@ -17,12 +17,12 @@
   - 타입 검사: `node "$TMPDIR/ts5/node_modules/typescript/lib/tsc.js" -p tsconfig.build.json --noEmit`
   - 타입 검사 도구가 없으면 먼저 설치한다: `npm i --prefix "$TMPDIR/ts5" typescript@5`
 - 모든 작업은 전체 테스트, 타입 검사, `test/golden.test.ts` 통과로 끝난다. 하나라도 실패하면 다음 작업으로 넘어가지 않는다.
-- API 주소와 응답 모양은 유지한다. 예외는 셋이다: 서버 객체의 `type`·`product` 삭제, 서버 객체의 `enabled` 추가, `DELETE /api/servers/:id`를 `POST /api/servers/:id/deactivate`·`/activate`로 교체.
-- 생성되는 점검 스크립트(.ps1/.sh)는 바이트 단위로 같아야 한다.
+- API 주소와 응답 모양은 유지한다. 예외는 넷이다: 서버 객체의 `type`·`product` 삭제, 서버 객체의 `enabled` 추가, `DELETE /api/servers/:id`를 `POST /api/servers/:id/deactivate`·`/activate`로 교체, 서버의 `sharedPath`를 `resultPath`로 교체(Task 8).
+- 생성되는 점검 스크립트(.ps1/.sh)는 바이트 단위로 같아야 한다. 예외는 Task 8의 결과 경로 변경뿐이다.
 - 스키마는 `PRAGMA user_version = 1` 하나다. 설치본이 없으므로 이 작업이 끝날 때까지 버전 1의 정의를 직접 고친다. 스키마를 바꾼 작업 뒤에는 `data/opsbox.db*`, `data/demo/`를 지우고 `npm run demo:seed`로 다시 만든다.
 - 파일 이름은 kebab-case로 한다. 기능끼리는 서로의 `service.ts`만 import하고, 다른 기능의 `repository.ts`는 직접 쓰지 않는다.
 - 커밋 메시지는 한국어로, 기존 커밋 스타일을 따른다. 작업마다 한 커밋.
-- 화면 코드(`src/public/`)는 Task 12 전까지 건드리지 않는다.
+- 화면 코드(`src/public/`)는 Task 13 전까지 건드리지 않는다.
 
 ## Review Focus
 
@@ -30,7 +30,8 @@
 2. **미사용 서버의 결과 파일이 수신함에 들어옴:** 가져오지 않고 원본을 남기며, 오류 목록에 "미사용 서버"로 표시한다. → Task 7
 3. **공통코드 화면에서 코드를 끄거나 순서를 바꾸고 저장:** 다시 열었을 때 꺼진 코드와 순서가 그대로 보여야 한다(관리 화면은 문서 전체를 저장한다). → Task 3
 4. **서버가 쓰는 정책 삭제:** 서버 상세와 스크립트 내려받기가 계속 되고, 해당 역할은 정책이 없는 상태로 보여야 한다. → Task 6
-5. **사용자가 지운 기본 템플릿·정책:** OpsBox를 다시 시작해도 되살아나지 않아야 한다(시드는 빈 DB에서 한 번만 실행). → Task 4
+5. **결과 저장 경로를 대상 OS와 다른 형식으로 입력**(Linux 서버에 `D:\share`): 저장하지 않고 예시가 담긴 오류를 보여야 한다. 그대로 저장되면 스크립트가 엉뚱한 곳에 저장한다. → Task 8
+6. **사용자가 지운 기본 템플릿·정책:** OpsBox를 다시 시작해도 되살아나지 않아야 한다(시드는 빈 DB에서 한 번만 실행). → Task 4
 
 ---
 
@@ -63,7 +64,7 @@ test('생성 스크립트와 설정 API 응답이 기준 파일과 같다', () =
   const expectedFiles = listGoldenFiles(); // test/golden 아래 모든 파일
   for (const name of Object.keys(actual)) assert.ok(expectedFiles.includes(name), `기준 파일 없음: ${name}`);
   for (const name of expectedFiles) {
-    if (!(name in actual)) continue; // 미사용으로 바뀐 서버의 스크립트는 건너뜀 (Task 12)
+    if (!(name in actual)) continue; // 미사용으로 바뀐 서버의 스크립트는 건너뜀 (Task 13)
     assert.equal(actual[name], fs.readFileSync(path.join(GOLDEN_DIR, name), 'utf8'), name);
   }
 });
@@ -84,7 +85,7 @@ test('생성 스크립트와 설정 API 응답이 기준 파일과 같다', () =
 **Files:**
 - Move: `src/errors.ts` → `src/shared/errors.ts`, `src/logger.ts` → `src/shared/logger.ts`, `src/utils/http.ts` → `src/shared/http.ts`, `src/utils/errorHandler.ts` → `src/shared/error-handler.ts`, `src/pages.ts` → `src/shared/pages.ts`
 - Create: `src/db/connection.ts`: `db`, `DB_PATH`, `transaction()`를 `database.ts`에서 옮긴다. PRAGMA 설정도 여기에 둔다.
-- Modify: `src/db/database.ts`: 테이블 생성·시드·마이그레이션만 남기고 `connection.ts`를 import한다. Task 11에서 삭제한다.
+- Modify: `src/db/database.ts`: 테이블 생성·시드·마이그레이션만 남기고 `connection.ts`를 import한다. Task 12에서 삭제한다.
 - Create: `src/app.ts`: `export function buildApp(): FastifyInstance`. 지금 `server.ts`의 Fastify 생성, 훅, 정적 파일, 화면·API 라우트, `/api/health`를 옮긴다.
 - Modify: `src/server.ts`: `buildApp()`, listen, 스케줄러, 종료 처리만 남긴다. `export { app }`은 유지한다(테스트 호환). 값은 `buildApp()` 결과다.
 - Move: `data/common-codes.json`, `data/policy.json`, `data/templates.json` → `seeds/`. `data/template-history.json`, `data/servers.json.example`, `data/user.json.example`은 삭제한다(시드하지 않음).
@@ -241,7 +242,7 @@ test('템플릿: 사용자가 지운 기본 템플릿은 다시 시작해도 되
 
 **Files:**
 - Create: `src/features/policies/{routes,service,repository,types}.ts`
-- Move: 점검 만들기 정책 API(`src/routes/checkBuilderRoutes.ts`)는 Task 10에서 옮긴다. 이 작업에서는 import만 고친다.
+- Move: 점검 만들기 정책 API(`src/routes/checkBuilderRoutes.ts`)는 Task 11에서 옮긴다. 이 작업에서는 import만 고친다.
 - Delete: `src/routes/policyRoutes.ts`, `src/services/policyService.ts`, `src/types/policy.ts`, `database.ts`의 `policies` 테이블·시드, `addLinuxBasicPolicyItems`, `addLinuxRolePolicyItems`
 - Test: `test/policies.test.ts`
 
@@ -377,7 +378,7 @@ test('API: DELETE /api/servers/:id는 없고 deactivate는 변경 이력을 남�
 - [ ] **Step 2:** 실패 확인
 - [ ] **Step 3:** 구현. `getAllServers`를 부르는 기존 곳의 의도를 정한다.
   - 사용 중인 서버만: 대시보드, 결과 가져오기의 서버 확인, 스크립트
-  - 미사용 포함: 보고서 목록(Task 8에서 확인), 서버 목록 API의 `includeInactive`
+  - 미사용 포함: 보고서 목록(Task 9에서 확인), 서버 목록 API의 `includeInactive`
 - [ ] **Step 4:** 새 테스트, 전체 테스트, 타입 검사, golden 통과. golden이 실패하면 계산 값 분리에서 빠진 규칙이 있는 것이다. 기준 파일을 고치지 말고 `resolveCheckPlan`을 고친다.
 - [ ] **Step 5:** DB 다시 만들기, 커밋: "서버: 입력값만 저장하고 정책 계산은 resolveCheckPlan으로, 삭제 대신 미사용"
 
@@ -388,8 +389,8 @@ test('API: DELETE /api/servers/:id는 없고 deactivate는 변경 이력을 남�
 **Files:**
 - Create: `src/features/results/{routes,service,repository,types,importer,backup-crypto}.ts`(`importer.ts`는 `resultImportService.ts`, `backup-crypto.ts`는 `backupCrypto.ts`를 옮긴 것)
 - Delete: `src/routes/resultRoutes.ts`, `src/services/result*.ts`, `src/services/backupCrypto.ts`, `src/types/result.ts`, `database.ts`의 `check_results`·`result_import_errors` 테이블
-- Modify: `.devcontainer/sample-results/`의 두 파일을 `schemaVersion: 2` 형식으로 바꾸고 `sample-results/` 바로 아래로 옮긴다. `.devcontainer/setup.cjs`, `.devcontainer/README.md`의 경로도 고친다. `scripts/decrypt-backup.cjs`의 import 경로를 고친다.
-- Test: `test/resultImport.test.ts`(이전 방식 폴더 테스트 2개 삭제, 새 테스트 추가), `test/reportList.test.ts`(v1 결과를 v2로 바꾸기)
+- Modify: `.devcontainer/sample-results/`의 두 파일을 `schemaVersion: 2` 형식으로 바꾼다. `.devcontainer/setup.cjs`는 `data/servers.json`·`data/user.json`을 쓰는 대신 `node --import tsx`로 실행하는 도우미 스크립트(`.devcontainer/seed.ts`)에서 `createServer`, `createUser`를 부르게 바꾼다. 그리고 `src/db/database.ts`의 `servers.json`·`user.json` 읽기(Task 2의 임시 예외)를 지운다. `scripts/decrypt-backup.cjs`의 import 경로를 고친다.
+- Test: `test/resultImport.test.ts`(새 테스트 추가. 이전 방식 폴더 테스트는 Task 8에서 정리), `test/reportList.test.ts`(v1 결과를 v2로 바꾸기)
 
 **스키마:**
 ```sql
@@ -411,7 +412,7 @@ CREATE TABLE result_import_errors (지금과 같음);
 - `schemaVersion`이 2가 아니면 실패: `'지원하지 않는 결과 형식입니다(schemaVersion 2만 지원). 최신 점검 스크립트로 다시 점검하세요.'`
 - `collectedAt`이 `/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/`가 아니면 실패: `'점검 일시(collectedAt) 형식이 올바르지 않습니다: <값>'`. 변환하지 않는다. 스크립트가 이 형식으로 쓰기 때문이다.
 - 서버가 없으면 지금 문구를 유지한다. 서버가 미사용이면 실패: `'미사용 서버의 결과입니다: <id>. 서버 목록에서 [다시 사용]을 누른 뒤 가져오세요.'`. 원본은 지우지 않는다.
-- `results/` 아래 하위 폴더는 읽지 않는다(바로 아래 파일만).
+- 수신함 위치와 하위 폴더 처리는 이 작업에서 바꾸지 않는다(Task 8). Windows 스크립트가 아직 `results\<연도>\<서버ID>\`에 저장하기 때문이다.
 - `hostname`은 가져올 때 `host.hostname`으로 저장한다. `getResultSummaries`는 `json_extract` 대신 이 열을 읽는다.
 - `parseResultJson`의 v1 분기를 지운다.
 
@@ -437,11 +438,6 @@ test('schemaVersion 2가 아니거나 점검 일시 형식이 다르면 가져�
   assert.throws(() => storeUploadedResult(Buffer.from(result('SRV-A', '2026-01-01T00:00:00Z')), 't.json'), /점검 일시\(collectedAt\) 형식/);
 });
 
-test('results/ 아래 하위 폴더의 파일은 읽지 않는다', () => {
-  fs.mkdirSync(path.join(inbox, '2026', 'SRV-A'), { recursive: true });
-  fs.writeFileSync(path.join(inbox, '2026', 'SRV-A', 'old.json'), result('SRV-A', '2026-05-01 00:00:00'));
-  assert.equal(importResults().imported, 0);
-});
 ```
 
 - [ ] **Step 2:** 실패 확인 → 구현 → 새 테스트, 전체 테스트, 타입 검사, golden 통과
@@ -450,7 +446,87 @@ test('results/ 아래 하위 폴더의 파일은 읽지 않는다', () => {
 
 ---
 
-### Task 8: 보고서·대시보드
+### Task 8: 결과 경로 분리 (수신함 / 대상 서버 저장 경로)
+
+설계 문서 4.7. **생성 스크립트와 서버 API가 일부러 바뀌는 유일한 작업이다.** 이 작업에서만 기준 비교 파일을 다시 만든다.
+
+**Files:**
+- Create: `src/features/settings/{routes,service,repository}.ts`
+- Modify: `src/db/schema.ts`
+  - `CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`를 추가한다. 예전 `database.ts`의 `settings` 테이블을 쓰는 곳이 남아 있으면 이 테이블로 옮긴다.
+  - `servers.shared_path`를 `result_path TEXT`(NULL 허용)로 바꾼다.
+- Modify: `src/features/servers/*`: `sharedPath`를 `resultPath?: string`로 바꾼다. 빈 문자열은 NULL로 저장한다. 검증은 Windows 서버면 `/^(\\\\|[A-Za-z]:\\)/`, Linux 서버면 `/^\//`이고, 오류 문구는 `'결과 저장 경로는 <OS> 절대 경로여야 합니다. 예: <예시>'`이다.
+- Modify: `src/features/scripts/assembly.ts`(Task 11 전이면 `src/services/scriptAssembly.ts`): 설정의 `server.sharedPath`를 `server.resultDirectory`로 바꾼다. 값은 서버 `resultPath` → OS 기본값 → `''` 순서로 정한다.
+- Modify: `seeds/templates.json`
+  - `WINDOWS-PART-START`: `$opsboxResultDirectory`는 매개변수 → `$opsboxConfig.server.resultDirectory` → `$PSScriptRoot` 순서다. 연도·서버ID 하위 폴더는 만들지 않는다. `$opsboxResultPath`의 파일 이름은 `"$($opsboxConfig.server.id)_$opsboxRunStamp.json"`이다.
+  - `WINDOWS-PART-SAVE`: 대체 저장 파일 이름은 이미 같은 형식이니 그대로 둔다.
+  - `LINUX-PART-START`, `LINUX-PART-SAVE`: `OPSBOX_SHARED_PATH`를 `OPSBOX_RESULT_DIR`로 바꾼다. START는 `opsbox_result_dir="$OPSBOX_RESULT_DIR"`이다. SAVE의 `"${OPSBOX_SHARED_PATH%/}/results/"*` 비교는 `"${OPSBOX_RESULT_DIR%/}/"*`로 바꾼다.
+  - Linux 스크립트 생성기(`linux.ts`)의 `scalar('OPSBOX_SHARED_PATH', …)`를 `scalar('OPSBOX_RESULT_DIR', resultDirectory)`로 바꾼다. `/`로 시작할 때만 넣는 규칙은 유지한다.
+- Modify: `src/features/results/importer.ts`
+  - 수신함은 `process.env.OPSBOX_RESULT_INBOX`를 `;`로 나눈 목록이고, 기본값은 `data/inbox`(`process.cwd()` 기준)이다. 서버별 경로는 읽지 않는다.
+  - 각 수신함 바로 아래의 `.json` 파일만 읽는다. 하위 폴더 탐색, `folderYear`·`folderServerId` 힌트, 폴더와 내용 불일치 검사는 지운다.
+  - 수신함 폴더가 없으면 만든다.
+  - `getImportStatus()` 응답에 `inboxes: string[]`를 더한다.
+- Modify: `.devcontainer/devcontainer.json`: `OPSBOX_RESULT_INBOX`를 `.devcontainer/sample-share/results`로 둔다. `.devcontainer/seed.ts`의 샘플 서버에서 `sharedPath`를 지운다. 샘플 결과 파일 이름을 `SAMPLE-WEB01_<시각>.json`으로 맞춘다.
+- Modify: `scripts/seed-demo.ts`: `sharedPath`를 `resultPath`로 바꾸고, Windows 데모 결과 파일 이름을 `<서버ID>_<시각>.json`으로 바꾼다.
+- Test: `test/resultPaths.test.ts`, `test/resultImport.test.ts`(이전 방식 폴더·폴더 불일치 테스트 삭제), `test/linuxScript.test.ts` 등 `OPSBOX_SHARED_PATH`·`sharedPath`를 검사하는 기존 테스트 수정
+
+**Interfaces:**
+- Produces:
+  - `getResultPathSettings(): { windows: string; linux: string; inboxes: string[] }`
+  - `saveResultPathSettings(input: { windows?: string; linux?: string }): ResultPathSettings`: 빈 값을 허용하고, 값이 있으면 OS별 절대 경로 검증을 한다.
+  - `getInboxDirs(): string[]`
+  - 라우트: `GET/PUT /api/settings/result-paths`. PUT은 변경 이력 `SETTINGS_UPDATE`(설정 변경)를 남긴다.
+
+- [ ] **Step 1:** 실패하는 테스트 작성(`test/resultPaths.test.ts`)
+
+```ts
+test('결과 저장 경로: 서버 값 → OS 기본값 → 빈 값(스크립트 폴더) 순서', () => {
+  saveResultPathSettings({ windows: '\\\\NAS\\opsbox\\results', linux: '/mnt/opsbox/results' });
+  createServer(linuxServer('P-L1'));
+  createServer({ ...linuxServer('P-L2'), resultPath: '/data/opsbox' });
+  assert.match(generateScript('P-L1'), /OPSBOX_RESULT_DIR='\/mnt\/opsbox\/results'/);
+  assert.match(generateScript('P-L2'), /OPSBOX_RESULT_DIR='\/data\/opsbox'/);
+  saveResultPathSettings({ linux: '' });
+  assert.match(generateScript('P-L1'), /OPSBOX_RESULT_DIR=''/);
+});
+
+test('결과 저장 경로: 서버 OS에 맞지 않는 경로는 거부', () => {
+  assert.throws(() => createServer({ ...linuxServer('P-L3'), resultPath: 'D:\\share' }), /Linux 절대 경로여야 합니다/);
+  assert.throws(() => saveResultPathSettings({ windows: '/mnt/x' }), /Windows 절대 경로여야 합니다/);
+});
+
+test('Windows 스크립트는 하위 폴더 없이 <서버ID>_<시각>.json으로 저장', () => {
+  createServer(windowsServer('P-W1'));
+  const script = generateScript('P-W1');
+  assert.doesNotMatch(script, /Get-Date -Format 'yyyy'\)\) \$opsboxConfig\.server\.id/);
+  assert.match(script, /"\$\(\$opsboxConfig\.server\.id\)_\$opsboxRunStamp\.json"/);
+});
+
+test('수신함: OPSBOX_RESULT_INBOX의 각 폴더 바로 아래 파일만 가져온다', () => {
+  // 이 테스트 파일 맨 위(helpers/env import 직후)에서 OPSBOX_RESULT_INBOX = '<TEST_ROOT>/inbox-a;<TEST_ROOT>/inbox-b'로 설정
+  fs.writeFileSync(path.join(inboxA, 'a.json'), result('P-L1', '2026-06-01 00:00:00'));
+  fs.writeFileSync(path.join(inboxB, 'b.json'), result('P-L1', '2026-06-02 00:00:00'));
+  fs.mkdirSync(path.join(inboxA, '2026', 'P-L1'), { recursive: true });
+  fs.writeFileSync(path.join(inboxA, '2026', 'P-L1', 'old.json'), result('P-L1', '2026-06-03 00:00:00'));
+  assert.equal(importResults().imported, 2);
+  assert.deepEqual(getResultPathSettings().inboxes, [inboxA, inboxB]);
+});
+```
+
+`linuxServer(id)`, `windowsServer(id)`, `result(serverId, collectedAt)`는 테스트 파일 안의 도우미다. `result`는 `resultImport.test.ts`와 같은 v2 형식이다.
+
+- [ ] **Step 2:** 실패 확인 → 구현 → 새 테스트와 전체 테스트를 통과시킨다. golden은 이 단계에서 실패해야 정상이다.
+- [ ] **Step 3: 기준 비교 파일 다시 만들기.** 먼저 지금 golden 실패 목록을 저장한다. `node --no-warnings --import tsx scripts/update-golden.ts`를 실행한 뒤 `git diff --stat test/golden`과 `git diff test/golden`으로 바뀐 줄을 확인한다. 허용되는 차이는 다음뿐이다.
+  - 서버 JSON의 `sharedPath` → `resultPath`
+  - 스크립트의 결과 폴더·파일 이름 줄, `OPSBOX_SHARED_PATH` → `OPSBOX_RESULT_DIR`, 설정 JSON의 `sharedPath` → `resultDirectory`
+  - 템플릿 JSON의 위 세 템플릿 내용
+  - 그 밖의 차이가 있으면 기준 파일을 되돌리고 코드를 고친다.
+- [ ] **Step 4:** 타입 검사를 통과시키고, DB를 다시 만들고, 커밋: "결과 경로 분리: 수신함은 OPSBOX_RESULT_INBOX, 대상 서버 저장 경로는 OS별 기본값과 서버별 지정"
+
+---
+
+### Task 9: 보고서·대시보드
 
 **Files:**
 - Create: `src/features/reports/{routes,service,rules,types}.ts`(`rules.ts`는 `reportRuleService.ts`), `src/features/dashboard/{routes,service}.ts`
@@ -476,7 +552,7 @@ test('미사용 서버의 보고서도 목록에 나오고, 대시보드에서�
 
 ---
 
-### Task 9: 변경 이력·인증
+### Task 10: 변경 이력·인증
 
 **Files:**
 - Create: `src/features/audit/{routes,service,repository,types}.ts`, `src/features/auth/{routes,service,repository,types,login-throttle}.ts`
@@ -490,7 +566,7 @@ test('미사용 서버의 보고서도 목록에 나오고, 대시보드에서�
 
 ---
 
-### Task 10: 스크립트·점검 만들기
+### Task 11: 스크립트·점검 만들기
 
 **Files:**
 - Create: `src/features/scripts/{routes,service,assembly,linux,windows,db-query-defaults}.ts`, `src/features/scripts/check-builder/{routes,linux,windows,literal,presets,spec,templates,types}.ts`
@@ -514,7 +590,7 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
 
 ---
 
-### Task 11: 정리
+### Task 12: 정리
 
 **Files:**
 - Delete: `src/db/database.ts`, `src/routes/`, `src/services/`, `src/types/`, `src/utils/`. 남은 공통 타입(`api.ts`, `validation.ts`, `fastify.d.ts`)은 `src/shared/`로 옮긴다.
@@ -522,7 +598,7 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
   - `description`을 "서버 정기점검 스크립트 생성·결과 수집·보고서"로 채운다.
   - `main`을 `dist/server.js`로 바꾼다.
   - 쓰이지 않는 `nodemon`을 devDependencies에서 뺀다.
-- Modify: `src/db/schema.ts`에 `settings` 테이블이 남아 있으면 쓰는 곳을 확인하고, 없으면 삭제한다.
+- Modify: 예전 `database.ts`의 `settings` 키(`builtin_template_ids`, `migration_*`)를 읽는 코드가 남아 있지 않은지 확인한다. 새 `settings` 테이블(Task 8)에는 결과 저장 경로 키만 있어야 한다.
 
 - [ ] **Step 1:** 삭제한 경로를 import하는 곳이 없는지 확인한다: `node -e` 스크립트로 `src`, `test`, `scripts`의 `from '…/(routes|services|types|utils)/` 패턴을 찾아 0건
 - [ ] **Step 2:** 빌드 결과물이 실행되는지 확인한다.
@@ -532,7 +608,7 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
 
 ---
 
-### Task 12: 화면 최소 수정 (type·product, 미사용)
+### Task 13: 화면 최소 수정 (type·product, 미사용, 결과 수집)
 
 **Files:**
 - Modify: `src/public/settings/server-management/server-list.js`, `server-detail.js`, `server-list.html`, `server-detail.html`, `src/public/reports/report-detail.js`, `src/public/settings/script-management/script-management.js`
@@ -542,6 +618,13 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
   - "미사용 포함" 체크박스를 둔다(켜면 `?includeInactive=1`).
   - 미사용 서버 행에는 "미사용" 표시와 [다시 사용] 버튼을 둔다.
 - 서버 상세: 미사용 서버면 상단에 "미사용 서버입니다" 안내와 [다시 사용] 버튼을 두고, 스크립트 내려받기 버튼을 숨긴다.
+- 결과 경로(설계 4.7):
+  - 서버 등록·수정 폼의 "공유 폴더" 입력을 "결과 저장 경로(선택)"로 바꾼다(`resultPath`). 안내 문구는 "비워 두면 설정 → 결과 수집의 OS별 기본 경로를 씁니다"이다.
+  - 서버 상세의 스크립트·결과 경로 안내는 실제로 쓰일 경로를 보여 준다. 우선순위는 Task 8과 같다.
+- 새 화면 `/settings/result-collection`(`src/public/settings/result-collection/`):
+  - 수신함 목록은 읽기 전용이고, 안내 문구 "OPSBOX_RESULT_INBOX 환경 변수로 바꿉니다"를 붙인다.
+  - Windows·Linux 기본 결과 저장 경로 입력과 [저장] 버튼을 둔다.
+  - `src/shared/pages.ts`의 `PAGES`와 레이아웃 메뉴(설정 아래 "결과 수집")에 등록한다.
 - Modify: `scripts/seed-demo.ts`: 마지막 데모 서버 1대를 만든 뒤 `deactivateServer`로 미사용으로 바꾼다.
 - Modify: `test/pageLayout.test.ts` 등 화면 HTML을 검사하는 테스트가 있으면 맞춘다.
 
@@ -552,12 +635,13 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
   - [미사용] → [다시 사용]이 동작한다.
   - 미사용 서버의 보고서가 보고서 목록에서 열린다.
   - 서버 상세, 정책·템플릿 편집, 스크립트 내려받기, 결과 올리기가 된다.
+  - 결과 수집 화면에서 기본 경로를 저장하면, 스크립트 미리보기의 결과 폴더가 바뀐다.
   - 브라우저 콘솔에 오류가 없다.
 - [ ] **Step 3:** 커밋: "화면: 서버 type·product 대신 roles·products, 서버 미사용·다시 사용"
 
 ---
 
-### Task 13: 문서
+### Task 14: 문서
 
 **Files:**
 - Modify: `docs/DATABASE.md`
@@ -565,6 +649,7 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
   - 6장(최초 이관·업그레이드)은 "빈 DB면 seeds/로 시드, user_version으로 버전 관리"로 바꾼다.
   - 4장에서 이전 방식 폴더와 v1 형식 설명을 지운다.
   - 서버 미사용과 결과 보존을 설명한다.
+  - 결과 경로를 설명한다: 수신함 `OPSBOX_RESULT_INBOX`, 결과 수집 화면의 OS별 기본 경로, 서버별 결과 저장 경로. 9장(환경 변수) 표에 `OPSBOX_RESULT_INBOX`를 넣는다.
   - 8장의 조회 예시 SQL을 새 테이블로 고친다.
 - Modify: `README.md`(폴더 구조, 실행 방법, 시드 위치), `docs/USER_GUIDE.md`(서버 삭제 → 미사용), `.devcontainer/README.md`
 - [ ] **Step 1:** 문서에 나오는 경로가 실제로 있는지 확인한다(`node -e`로 문서의 `` `src/…` ``, `` `seeds/…` `` 경로를 추출해 존재 여부 검사).
