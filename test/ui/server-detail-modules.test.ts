@@ -3,7 +3,7 @@ import { beforeEach, test } from 'node:test';
 
 import { resetCodes, setCodes } from '../../src/public/shared/js/codes.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from '../../src/public/settings/server-management/server-overview.js';
-import { activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, defaultScriptTemplate, defaultScriptTemplateName, policyCheckIds, policyRoleTabs, resolveQueryTemplateId } from '../../src/public/settings/server-management/server-policy-form.js';
+import { COMMAND_ONLY_ITEMS, commandTemplateOptions, activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, defaultScriptTemplate, defaultScriptTemplateName, policyCheckIds, policyRoleTabs, resolveQueryTemplateId } from '../../src/public/settings/server-management/server-policy-form.js';
 import { scriptCommand, scriptDescription } from '../../src/public/settings/server-management/server-script-panel.js';
 
 beforeEach(() => {
@@ -98,4 +98,19 @@ test('디렉터리 행: 임계값 칸이 비면 값을 보내지 않는다(스�
 test('정책 탭: 정책 분류 코드를 사용 안 함으로 바꿔도 그 역할 서버의 정책 탭은 남는다(이름은 _labels)', () => {
   setCodes({ policyCategories: [{ value: 'BASIC', label: '기본' }, { value: 'DB', label: 'DB' }], _labels: { policyCategories: { WEB: '웹' } } });
   assert.deepEqual(policyRoleTabs(['WEB', 'OTHER']), [{ value: 'BASIC', label: '기본' }, { value: 'WEB', label: '웹' }]);
+});
+
+test('선택 창: 그 항목의 명령 템플릿만, 서버 제품과 같은 것 먼저, 다르면 표시', () => {
+  const t = [
+    { id: 'a', name: 'B 템플릿', kind: 'COMMAND', product: 'JEUS', item: 'WAS_ENGINE_STATUS', enabled: true },
+    { id: 'b', name: 'A 템플릿', kind: 'COMMAND', product: 'WebLogic', item: 'WAS_ENGINE_STATUS', enabled: true },
+    { id: 'c', name: '다른 항목', kind: 'COMMAND', product: 'JEUS', item: 'WAS_JVM_HEAP', enabled: true },
+    { id: 'd', name: '중지', kind: 'COMMAND', product: 'JEUS', item: 'WAS_ENGINE_STATUS', enabled: false },
+  ];
+  assert.deepEqual(commandTemplateOptions(t, 'WAS_ENGINE_STATUS', 'WAS', 'JEUS'), [
+    { id: 'a', label: 'B 템플릿 (관리 명령)' },
+    { id: 'b', label: 'A 템플릿 (관리 명령 · 제품: WebLogic — 이 서버 WAS는 JEUS)' },
+  ]);
+  assert.deepEqual(commandTemplateOptions(t, 'WAS_ENGINE_STATUS', 'WAS', '')[0].label, 'A 템플릿 (관리 명령 · 제품: WebLogic — 이 서버 WAS는 제품 미지정)');
+  assert.deepEqual(COMMAND_ONLY_ITEMS, ['WAS_ENGINE_STATUS']);
 });

@@ -60,6 +60,23 @@ export function isDefaultScriptTemplate(template, os, item) {
   return template.id === `WINDOWS-PART-${item}` || template.id === `${String(os || '').toUpperCase()}-PART-${item}`;
 }
 
+/** 관리 명령 템플릿으로만 점검하는 항목(기본 스크립트 조각 없음). 서버 쪽 원본은 src/shared/constants.ts의 COMMAND_ONLY_ITEMS */
+export const COMMAND_ONLY_ITEMS = ['WAS_ENGINE_STATUS'];
+
+/** 선택 창에 더할 명령 템플릿: 그 항목(item)용·사용 중인 것만, 서버 제품과 같은 것 먼저(같으면 이름순) */
+export function commandTemplateOptions(templates, item, role, serverProduct) {
+  const same = (template) => upper(template.product) === upper(serverProduct);
+  return templates
+    .filter((template) => template.kind === 'COMMAND' && template.enabled && template.item === item)
+    .sort((a, b) => Number(same(b)) - Number(same(a)) || String(a.name).localeCompare(String(b.name), 'ko'))
+    .map((template) => ({
+      id: template.id,
+      label: same(template)
+        ? `${template.name} (관리 명령)`
+        : `${template.name} (관리 명령 · 제품: ${template.product} — 이 서버 ${role}는 ${serverProduct || '제품 미지정'})`,
+    }));
+}
+
 /** 기본 스크립트 이름 (항목 이름은 공통코드 scriptItems) */
 export function defaultScriptTemplateName(os, item) {
   return `${os || 'Windows'} 점검 항목 · ${codeLabel('scriptItems', item)}`;

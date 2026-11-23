@@ -4,7 +4,7 @@ import { codeList, loadCodes } from '/shared/js/codes.js';
 import { roleChoices } from './server-list-view.js';
 import { createServerPicker } from '/shared/js/server-picker.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from './server-overview.js';
-import { activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
+import { COMMAND_ONLY_ITEMS, activeScriptItems, commandTemplateOptions, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
 import { scriptCommand, scriptDescription } from './server-script-panel.js';
 import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
@@ -1271,12 +1271,15 @@ function createPolicyScriptControl(item, label, showLabel = false) {
   }
   const available = state.managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === state.currentServer.os && template.item === item);
   const selectedId = state.selectedScriptParts[item] || '';
-  const selected = available.find((template) => template.id === selectedId);
+  const selected = available.find((template) => template.id === selectedId)
+    || state.managedTemplates.find((template) => template.id === selectedId && template.kind === 'COMMAND' && template.item === item);
   const defaultTemplate = getDefaultScriptTemplate(item);
   const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
   choose.textContent = selected
     ? selected.name
-    : selectedId ? '저장된 템플릿 없음' : (defaultTemplate?.name || getDefaultScriptTemplateName(item));
+    : selectedId ? '저장된 템플릿 없음'
+      : COMMAND_ONLY_ITEMS.includes(item) ? '선택 안 함 · 미수집'
+        : (defaultTemplate?.name || getDefaultScriptTemplateName(item));
   choose.setAttribute('aria-label', `${label} 스크립트 선택`);
   choose.addEventListener('click', () => openScriptTemplatePicker(item, label));
   wrapper.append(choose);
@@ -1330,7 +1333,7 @@ function updateSelectedTemplateEditButton() {
   }
   const selectedId = document.getElementById('script-template-picker-select').value;
   const template = selectedId
-    ? state.managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
+    ? state.managedTemplates.find((candidate) => candidate.id === selectedId && (candidate.kind === 'SCRIPT_PART' || candidate.kind === 'COMMAND'))
     : getDefaultScriptTemplate(item);
   const editButton = document.getElementById('script-template-picker-edit');
   editButton.hidden = !template;
@@ -1355,11 +1358,14 @@ function populateScriptTemplatePicker(item) {
   const scriptItem = isDatabasePolicy ? 'DB_QUERY_RUNNER' : item;
   const scriptDefault = getDefaultScriptTemplate(scriptItem);
   select.replaceChildren(new Option(
-    scriptDefault ? `기본 제공 · ${scriptDefault.name}` : `기본값 사용 · ${defaultTemplate?.name || getDefaultScriptTemplateName(item)}`,
+    COMMAND_ONLY_ITEMS.includes(scriptItem) ? '선택 안 함 · 미수집'
+      : scriptDefault ? `기본 제공 · ${scriptDefault.name}` : `기본값 사용 · ${defaultTemplate?.name || getDefaultScriptTemplateName(item)}`,
     '',
   ));
   const available = state.managedTemplates.filter((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === state.currentServer.os);
   const selectableTemplates = available;
+  const role = String(scriptItem).split('_')[0];
+  const commandOptions = isDatabasePolicy ? [] : commandTemplateOptions(state.managedTemplates, scriptItem, role, state.currentServer?.products?.[role] || '');
   let selectedId = state.selectedScriptParts[scriptItem] || '';
   if (selectedId && isDefaultScriptTemplate(available.find((template) => template.id === selectedId) || {}, scriptItem)) {
     delete state.selectedScriptParts[scriptItem];
@@ -1369,7 +1375,8 @@ function populateScriptTemplatePicker(item) {
     const category = '사용자 지정';
     select.add(new Option(`${category} · ${template.name}`, template.id));
   });
-  if (selectedId && !selectableTemplates.some((template) => template.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
+  commandOptions.forEach((option) => select.add(new Option(option.label, option.id)));
+  if (selectedId && !selectableTemplates.some((template) => template.id === selectedId) && !commandOptions.some((option) => option.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
   select.value = selectedId;
   updateSelectedTemplateEditButton();
   const querySelect = document.getElementById('db-query-template-select');
@@ -1434,7 +1441,7 @@ function openSelectedTemplatePage() {
   }
   const selectedId = document.getElementById('script-template-picker-select').value;
   const template = selectedId
-    ? state.managedTemplates.find((candidate) => candidate.id === selectedId && candidate.kind === 'SCRIPT_PART')
+    ? state.managedTemplates.find((candidate) => candidate.id === selectedId && (candidate.kind === 'SCRIPT_PART' || candidate.kind === 'COMMAND'))
     : getDefaultScriptTemplate(item);
   if (!template) { alert('수정할 스크립트를 찾을 수 없습니다. 스크립트 관리에서 확인하세요.'); return; }
   window.open(`/settings/script-management?id=${encodeURIComponent(template.id)}`, '_blank', 'noopener');
