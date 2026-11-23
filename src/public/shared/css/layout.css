@@ -80,7 +80,7 @@
 }
 
 .menu-icon {
-  font-size: 16px;
+  font-size: var(--text-lg);
 }
 
 .sidebar.collapsed .logo,
@@ -90,12 +90,12 @@
 
 .sidebar.collapsed .sidebar-header {
   justify-content: center;
-  padding: 16px 8px;
+  padding: var(--space-4) var(--space-2);
 }
 
 .sidebar.collapsed .sidebar-menu a {
   justify-content: center;
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .header h1 {
@@ -111,13 +111,13 @@
 }
 
 .logo::before {
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 0 0 4px var(--chassis-halo);
 }
 
 .sidebar-group {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .sidebar-menu .settings-menu-toggle {
@@ -150,13 +150,13 @@
 
 .sidebar.collapsed .sidebar-menu .settings-menu-toggle {
   justify-content: center;
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .sidebar.collapsed .sidebar-footer {
   display: grid;
-  gap: 7px;
-  padding: 10px 6px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
 }
 
 .sidebar-footer {
@@ -168,22 +168,22 @@
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 9px;
-  padding: 3px 2px 8px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-half) var(--space-2);
 }
 
 .sidebar-user-card strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .sidebar.collapsed .sidebar-user-card {
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
-  padding: 2px 0 6px;
+  gap: var(--space-1);
+  padding: var(--space-half) 0 var(--space-1);
 }
 
 .sidebar.collapsed .sidebar-user-card strong {
@@ -193,7 +193,7 @@
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
-  font-size: 9px;
+  font-size: var(--text-2xs);
   line-height: 1.2;
 }
 
@@ -204,13 +204,13 @@
 
 .sidebar.collapsed .sidebar-footer .theme-toggle {
   justify-content: center;
-  padding-right: 4px;
-  padding-left: 4px;
+  padding-right: var(--space-1);
+  padding-left: var(--space-1);
 }
 
 .theme-toggle {
   display: inline-flex;
-  gap: 9px;
+  gap: var(--space-2);
   font: inherit;
 }
 
@@ -232,7 +232,7 @@
   .sidebar.collapsed .sidebar-footer {
     display: grid;
     margin: 0;
-    padding: 8px 12px 12px;
+    padding: var(--space-2) var(--space-3) var(--space-3);
     border-top: 0;
   }
 
@@ -247,15 +247,15 @@
   }
   .sidebar.collapsed .sidebar-header {
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: var(--space-3) var(--space-4);
   }
   .sidebar.collapsed .sidebar-menu a {
     justify-content: center;
-    padding: 9px 6px;
+    padding: var(--space-2) var(--space-1);
   }
 
   .header {
-    gap: 10px;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
   .header .button-area {
@@ -268,7 +268,7 @@
 }
 
 .sidebar-header {
-  padding: 16px 16px 14px;
+  padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--chassis-line);
 }
 
@@ -281,20 +281,20 @@
   height: 32px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 7px;
-  font-size: 16px;
+  border-radius: var(--radius-control);
+  font-size: var(--text-lg);
 }
 
 .sidebar-menu {
-  gap: 3px;
-  padding: 18px 10px;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-2);
 }
 
 .sidebar-menu a,
 .sidebar-menu .settings-menu-toggle {
-  padding: 8px 10px;
-  gap: 10px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-2);
+  gap: var(--space-2);
+  font-size: var(--text-md);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
@@ -304,16 +304,16 @@
 }
 
 .sidebar-submenu {
-  gap: 2px;
+  gap: var(--space-half);
 }
 
 .sidebar-submenu a {
-  padding: 7px 10px;
+  padding: var(--space-2) var(--space-2);
 }
 
 .sidebar-footer {
-  gap: 8px;
-  padding: 12px 10px 14px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-3);
   border-top: 1px solid var(--chassis-line);
 }
 
@@ -322,9 +322,9 @@
   cursor: pointer;
   min-height: 36px;
   justify-content: flex-start;
-  padding: 7px 10px;
-  border-radius: 7px;
-  font-size: 12px;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
 }
 
 .theme-toggle svg {
@@ -378,7 +378,7 @@
   }
   .sidebar-header,
   .sidebar.collapsed .sidebar-header {
-    padding: 10px 16px;
+    padding: var(--space-2) var(--space-4);
     justify-content: space-between;
   }
   .sidebar.collapsed .logo {
@@ -396,14 +396,14 @@
   .sidebar.collapsed .sidebar-menu {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 12px;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
   }
   .sidebar-menu a,
   .sidebar.collapsed .sidebar-menu a {
     flex: none;
     justify-content: flex-start;
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
   }
   .sidebar.collapsed .sidebar-menu a .menu-text,
   .sidebar.collapsed .sidebar-menu .settings-menu-toggle .menu-text {
@@ -417,7 +417,7 @@
   .sidebar-menu .settings-menu-toggle,
   .sidebar.collapsed .sidebar-menu .settings-menu-toggle {
     justify-content: flex-start;
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
   }
   .sidebar.collapsed .settings-menu-chevron {
     display: inline;
@@ -433,29 +433,29 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin: 0;
-    padding: 10px 12px 14px;
+    padding: var(--space-2) var(--space-3) var(--space-3);
   }
   .sidebar-user-card,
   .sidebar.collapsed .sidebar-user-card {
     flex: 1 1 100%;
     flex-direction: row;
     justify-content: flex-start;
-    gap: 9px;
-    padding: 0 2px;
+    gap: var(--space-2);
+    padding: 0 var(--space-half);
   }
   .sidebar.collapsed .sidebar-user-card strong {
     max-width: none;
     white-space: nowrap;
-    font-size: 12px;
+    font-size: var(--text-sm);
     text-align: left;
   }
   .sidebar-footer .theme-toggle,
   .sidebar.collapsed .sidebar-footer .theme-toggle {
     flex: 1 1 0;
     white-space: nowrap;
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
   }
   .sidebar.collapsed #logout-button span:last-child,
   .sidebar.collapsed #theme-toggle-label {
@@ -465,7 +465,7 @@
 
 .content {
   background: transparent;
-  padding: 36px clamp(16px, 3.2vw, 56px) 56px;
+  padding: var(--space-8) clamp(var(--space-4), 3.2vw, var(--space-14)) var(--space-14);
 }
 
 @media (min-width: 901px) {
@@ -502,9 +502,9 @@
 #sidebar[data-theme] .logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   color: var(--chassis-title);
-  font-size: 16px;
+  font-size: var(--text-lg);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -563,7 +563,7 @@
   left: -10px;
   width: 3px;
   content: "";
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--chassis-accent);
 }
 
@@ -590,8 +590,8 @@
 }
 
 #sidebar[data-theme] .sidebar-submenu {
-  margin-left: 19px;
-  padding: 2px 0 4px 10px;
+  margin-left: var(--space-5);
+  padding: var(--space-half) 0 var(--space-1) var(--space-2);
   border: 0;
   border-left: 1px solid var(--chassis-line);
   border-radius: 0;
@@ -601,7 +601,7 @@
 
 #sidebar[data-theme] .sidebar-submenu a {
   min-height: 34px;
-  font-size: 13px;
+  font-size: var(--text-md);
 }
 
 #sidebar[data-theme] .sidebar-submenu a.active::before {
@@ -633,31 +633,31 @@
 }
 
 .header {
-  margin-bottom: 28px;
-  padding: 0 0 20px;
+  margin-bottom: var(--space-6);
+  padding: 0 0 var(--space-5);
   border-bottom: 1px solid var(--rule);
 }
 
 .header h1 {
   color: var(--ink);
-  font-size: clamp(24px, 2.2vw, 30px);
+  font-size: var(--text-display-sm);
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
 
 .header p {
-  margin: 6px 0 0;
+  margin: var(--space-1) 0 0;
   max-width: 72ch;
   color: var(--slate);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 a[data-menu="account"] {
   display: block;
   color: inherit;
   text-decoration: none;
-  border-radius: 9px;
+  border-radius: var(--radius-panel);
 }
 
 a[data-menu="account"]:hover,
@@ -682,7 +682,7 @@ a[data-menu="account"]:focus-visible {
   justify-content: center;
   border-radius: 50%;
   background: var(--chassis-avatar);
-  font-size: 13px;
+  font-size: var(--text-md);
   font-weight: 700;
 }
 

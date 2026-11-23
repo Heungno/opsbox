@@ -3,13 +3,13 @@
 .policy-check-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 10px;
-  margin: 12px 0 18px;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-4);
 }
 
 .policy-item-add {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .policy-item-add label {
@@ -25,18 +25,18 @@
 .policy-item-views {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .policy-item-views legend {
-  padding: 0 5px;
+  padding: 0 var(--space-1);
   font-weight: 700;
 }
 
 .policy-item-views label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .policy-json-field textarea {
@@ -46,9 +46,9 @@
 .policy-check-selected-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--surface-sunk);
 }
 
@@ -64,36 +64,36 @@
 .policy-item-dialog .modal-card {
   max-height: min(88dvh, 900px);
   overflow: auto;
-  padding: clamp(18px, 3vw, 28px);
-  border-radius: 14px;
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
+  border-radius: var(--radius-panel);
 }
 
 .policy-item-dialog .section-header {
   position: sticky;
   top: calc(-1 * clamp(18px, 3vw, 28px));
   z-index: 2;
-  margin: calc(-1 * clamp(18px, 3vw, 28px)) calc(-1 * clamp(18px, 3vw, 28px)) 20px;
-  padding: clamp(18px, 3vw, 28px);
+  margin: calc(-1 * clamp(var(--space-4), 3vw, var(--space-6))) calc(-1 * clamp(var(--space-4), 3vw, var(--space-6))) var(--space-5);
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
   border-bottom: 1px solid var(--rule);
   background: var(--surface);
 }
 
 .policy-item-dialog .section-header h2 {
-  font-size: 19px;
+  font-size: var(--text-xl);
 }
 
 .policy-item-dialog .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 16px;
+  gap: var(--space-3) var(--space-4);
 }
 
 .policy-item-dialog .policy-json-field {
-  margin-top: 14px;
+  margin-top: var(--space-3);
 }
 
 .policy-item-dialog .policy-json-field small {
   display: block;
-  margin-top: 3px;
+  margin-top: var(--space-1);
   color: var(--slate);
   font-weight: 400;
 }
@@ -107,8 +107,8 @@
   position: sticky;
   bottom: calc(-1 * clamp(18px, 3vw, 28px));
   z-index: 2;
-  margin: 18px calc(-1 * clamp(18px, 3vw, 28px)) calc(-1 * clamp(18px, 3vw, 28px));
-  padding: 14px clamp(18px, 3vw, 28px);
+  margin: var(--space-4) calc(-1 * clamp(var(--space-4), 3vw, var(--space-6))) calc(-1 * clamp(var(--space-4), 3vw, var(--space-6)));
+  padding: var(--space-3) clamp(var(--space-4), 3vw, var(--space-6));
   border-top: 1px solid var(--rule);
   background: var(--surface);
 }
@@ -116,16 +116,16 @@
 #policy-item-result-components {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 #policy-item-result-components label {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--surface-sunk);
 }
 
@@ -136,17 +136,17 @@
 }
 
 .policy-item-views {
-  margin: 14px 0;
-  padding: 12px;
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
 }
 
 .policy-advanced-settings {
-  margin-top: 16px;
-  padding: 12px 14px;
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
   background: var(--surface-sunk);
 }
 
@@ -156,19 +156,19 @@
 }
 
 .policy-advanced-settings summary span {
-  margin-left: 6px;
+  margin-left: var(--space-1);
   color: var(--slate);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 400;
 }
 
 .policy-advanced-settings[open] summary {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .policy-template-link {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .policy-template-link input {
@@ -179,7 +179,7 @@
 .policy-check-selected-row {
   justify-content: space-between;
   min-width: 0;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3);
 }
 
 .policy-check-selected-row > span {
@@ -215,7 +215,7 @@
 
 .policy-category-tabs {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
 }
 
 .policy-category-tabs {
@@ -228,25 +228,25 @@
   min-width: 0;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-1);
   font: inherit;
   font-weight: 600;
 }
 
 .policy-category-tabs [role="tab"] span {
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
 }
 
 @media (max-width: 640px) {
   .policy-category-tabs {
     width: calc(100% - 16px);
-    margin-right: 8px;
-    margin-left: 8px;
+    margin-right: var(--space-2);
+    margin-left: var(--space-2);
   }
   .policy-category-tabs [role="tab"] {
-    gap: 4px;
-    padding-right: 4px;
-    padding-left: 4px;
+    gap: var(--space-1);
+    padding-right: var(--space-1);
+    padding-left: var(--space-1);
   }
   .policy-item-dialog .form-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -263,16 +263,16 @@
 
 @media (max-width: 900px) {
   #policy-form > .section-header {
-    margin-top: 16px;
+    margin-top: var(--space-4);
   }
 }
 
 .policy-category-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   width: auto;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   padding: 0;
   border: 0;
   background: transparent;
@@ -283,12 +283,12 @@
   flex: 0 0 auto;
   width: auto;
   min-height: 30px;
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--slate);
   background: var(--surface);
-  font-size: 13px;
+  font-size: var(--text-md);
 }
 
 .policy-category-tabs [role="tab"]:hover {
@@ -310,14 +310,14 @@
   padding: 0;
   color: inherit;
   background: transparent;
-  font-size: 12px;
+  font-size: var(--text-sm);
   opacity: 0.7;
 }
 
 .check-builder-form {
   display: grid;
-  gap: 12px;
-  margin-top: 4px;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
 }
 
 .check-builder-form .form-group > span {
@@ -341,11 +341,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--petrol);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   background: var(--surface-sunk);
 }
 

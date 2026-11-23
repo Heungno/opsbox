@@ -13,46 +13,46 @@
 .script-item {
   color: var(--ink);
   border: 1px solid var(--rule);
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .script-item h3 {
-  margin: 0 0 6px 0;
-  font-size: 14px;
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
 .script-desc {
   color: var(--slate);
-  font-size: 12px;
-  margin-bottom: 12px;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
 }
 
 .command-title {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1);
   color: var(--ink);
 }
 
 .command-box {
-  font-size: 12px;
-  padding: 12px 16px;
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-4);
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  margin: 0 0 12px 0;
+  margin: 0 0 var(--space-3) 0;
 }
 
 .policy-header {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   border: 1px solid var(--rule);
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  font-size: 12px;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--slate);
 }
@@ -61,9 +61,9 @@
 .process-row {
   display: grid;
   grid-template-columns: 1fr 80px;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .directory-grid,
@@ -73,36 +73,36 @@
     100px
     100px
     80px;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .file-check-grid,
 .file-check-row {
   display: grid;
   grid-template-columns: 1fr 100px 100px 80px;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .port-grid,
 .port-row {
   display: grid;
   grid-template-columns: 110px 110px minmax(180px, 1fr) 80px;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .http-check-grid,
 .http-check-row {
   display: grid;
   grid-template-columns: minmax(130px, .8fr) minmax(220px, 2fr) 110px 80px;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 @media (max-width: 768px) {
@@ -126,8 +126,8 @@
 }
 
 .dashboard {
-  gap: 14px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .summary-card {
@@ -152,23 +152,23 @@
 
 .policy-header {
   border-color: var(--rule);
-  border-radius: 9px;
+  border-radius: var(--radius-panel);
   background: var(--surface-sunk);
 }
 
 .role-product-fields {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .role-product-row {
   display: grid;
   grid-template-columns: minmax(120px, 0.4fr) minmax(180px, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   opacity: 0.62;
 }
 
@@ -181,7 +181,7 @@
 .role-product-row .role-choice-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   font-weight: 600;
 }
@@ -201,7 +201,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 
@@ -210,12 +210,12 @@
 }
 
 .server-form-section {
-  padding: 14px 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--rule);
 }
 
 .server-form-section:first-child {
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 .server-form-section:last-of-type {
@@ -223,8 +223,8 @@
 }
 
 .server-form-section > h3 {
-  margin: 0 0 12px;
-  font-size: 14px;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
 }
 
 .server-form-section .form-grid {
@@ -232,47 +232,47 @@
 }
 
 .policy-section {
-  padding: 12px 14px;
-  margin-top: 14px;
+  padding: var(--space-3) var(--space-3);
+  margin-top: var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
 }
 
 .policy-category-group {
-  margin-top: 14px;
-  padding: 12px;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
   background: var(--surface-sunk);
 }
 
 .policy-category-heading {
-  margin: 0 2px 10px;
+  margin: 0 var(--space-half) var(--space-2);
 }
 
 .policy-category-heading h3 {
-  font-size: 16px;
+  font-size: var(--text-lg);
 }
 
 .policy-category-group > .policy-help {
-  margin: 0 2px 10px;
+  margin: 0 var(--space-half) var(--space-2);
 }
 
 .role-policy-block {
-  margin-top: 14px;
+  margin-top: var(--space-3);
 }
 
 .policy-section-heading {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-2);
 }
 
 .policy-section-heading h3 {
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .policy-section .policy-help {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-2);
 }
 
 .policy-script-controls {
@@ -282,7 +282,7 @@
 .policy-script-control {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   min-width: 180px;
 }
 
@@ -302,16 +302,16 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 7px;
+  gap: var(--space-2);
   min-width: 0;
-  padding: 10px;
+  padding: var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 9px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
 }
 
 .policy-script-control.is-common label {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -326,7 +326,7 @@
 .policy-heading-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .policy-heading-actions > div {
@@ -335,28 +335,28 @@
 
 .role-script-policy-item .policy-script-control {
   max-width: 520px;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 
 .role-policy-list {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .role-policy-row {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(180px, auto) auto;
   align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 9px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
 }
 
 .role-policy-description {
   display: grid;
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .role-policy-description small {
@@ -365,16 +365,16 @@
 
 .role-policy-option {
   display: grid;
-  gap: 4px;
-  margin-top: 6px;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
   color: var(--slate);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .role-policy-option textarea {
   min-height: 64px;
-  padding: 8px 10px;
-  font-size: 12px;
+  padding: var(--space-2) var(--space-2);
+  font-size: var(--text-sm);
 }
 
 .role-policy-row .policy-script-control {
@@ -390,48 +390,48 @@
 .server-overview-checks {
   display: grid;
   grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.5fr);
-  gap: 14px;
-  margin-top: 14px;
-  padding-top: 12px;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--rule);
 }
 
 .server-overview-checks h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-md);
 }
 
 .compact-result-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .compact-result-grid .result-item {
   min-width: 0;
-  padding: 7px 8px;
+  padding: var(--space-2) var(--space-2);
 }
 
 .compact-result-grid .result-item span {
-  font-size: 10px;
+  font-size: var(--text-2xs);
 }
 
 .server-overview-latest .result-date {
-  margin-top: 5px;
-  font-size: 10px;
+  margin-top: var(--space-1);
+  font-size: var(--text-2xs);
 }
 
 .compact-history-table {
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .compact-history-table th,
 .compact-history-table td {
-  padding: 5px 6px;
+  padding: var(--space-1) var(--space-1);
 }
 
 .compact-history-table .btn {
-  padding: 3px 7px;
-  font-size: 10px;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-2xs);
 }
 
 .server-final-json-preview pre .syntax-json-key {
@@ -471,9 +471,9 @@
 }
 
 .server-final-json-preview {
-  margin-top: 14px;
+  margin-top: var(--space-3);
   border-top: 1px solid var(--rule);
-  padding-top: 12px;
+  padding-top: var(--space-3);
 }
 
 .server-final-json-preview summary {
@@ -485,9 +485,9 @@
 .server-final-json-preview pre {
   max-height: 420px;
   overflow: auto;
-  padding: 12px;
+  padding: var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--ink);
   font: 11px/1.5 Consolas, 'Courier New', monospace;
@@ -520,7 +520,7 @@
   position: sticky;
   top: 0;
   display: flex;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
 }
 
 .server-detail-tabs button {
@@ -531,11 +531,11 @@
 
 .policy-role-tabs {
   position: static;
-  margin: 0 0 14px;
+  margin: 0 0 var(--space-3);
 }
 
 .policy-role-tabs button {
-  padding: 6px 12px;
+  padding: var(--space-1) var(--space-3);
 }
 
 .server-management-page [data-policy-role-panel].is-inactive,
@@ -545,7 +545,7 @@
 
 .server-editor-column {
   min-width: 0;
-  padding-right: 4px;
+  padding-right: var(--space-1);
 }
 
 .server-workspace .template-list-panel {
@@ -580,8 +580,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0 14px;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
 }
 
 .policy-script-controls label {
@@ -615,12 +615,12 @@
 }
 
 .server-role-tabs {
-  margin-right: 12px;
-  margin-left: 12px;
+  margin-right: var(--space-3);
+  margin-left: var(--space-3);
 }
 
 .server-list-empty {
-  padding: 28px 12px;
+  padding: var(--space-6) var(--space-3);
   color: var(--slate);
   text-align: center;
 }
@@ -632,7 +632,7 @@
 
 .summary-card {
   min-height: 0;
-  padding: 14px 16px;
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--rule);
   border-top: 1px solid var(--rule);
   border-radius: var(--radius-control);
@@ -649,28 +649,28 @@
 
 .summary-card span {
   color: var(--slate);
-  font-size: 13px;
+  font-size: var(--text-md);
   font-weight: 400;
   letter-spacing: 0;
 }
 
 .summary-card strong {
-  margin-top: 2px;
+  margin-top: var(--space-half);
   color: var(--ink);
-  font-size: 24px;
+  font-size: var(--text-2xl);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .server-overview-latest .summary-badge {
   padding: 0;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .server-detail-tabs {
   z-index: 5;
-  gap: 2px;
-  padding: 0 4px;
+  gap: var(--space-half);
+  padding: 0 var(--space-1);
   border: 0;
   border-bottom: 1px solid var(--rule);
   border-radius: 0;
@@ -680,10 +680,10 @@
 .server-detail-tabs button {
   cursor: pointer;
   position: relative;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3);
   border-radius: 0;
   color: var(--slate);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .server-detail-tabs button:hover {
@@ -715,9 +715,9 @@
   --tab-count: 5;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   width: auto;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   padding: 0;
   border: 0;
   background: transparent;
@@ -730,7 +730,7 @@
 }
 
 .compact-result-grid .result-item strong {
-  font-size: 15px;
+  font-size: var(--text-base);
   overflow-wrap: anywhere;
   word-break: break-all;
 }
@@ -753,8 +753,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .overview-heading h3 {
@@ -769,7 +769,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -780,9 +780,9 @@
 .checkbox-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -796,10 +796,10 @@
 
 .server-inactive-badge {
   display: inline-block;
-  margin-left: 6px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 12px;
+  margin-left: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
   background: var(--surface-sunk);
   color: var(--slate);
   vertical-align: middle;
@@ -808,6 +808,6 @@
 /* 서버 목록 머리의 신규·검색·미사용 포함 */
 .section-title > .server-list-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-2);
   align-items: center;
 }

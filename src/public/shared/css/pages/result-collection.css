@@ -1,8 +1,8 @@
 /* 결과 수집 화면에서만 쓰는 규칙 */
 
 .result-path-list {
-  margin: 8px 0 12px;
-  padding-left: 20px;
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: var(--space-5);
 }
 
 .result-path-list code {

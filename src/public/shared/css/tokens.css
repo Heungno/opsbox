@@ -25,7 +25,9 @@
      --diff-up-wash / --diff-down-wash / --diff-same-wash  보고서 이전 점검 비교 배지 바탕(두 테마 같은 값)
      --chassis-avatar   사이드바 사용자 아바타 바탕
    글꼴  --font-ui, --font-code
-   모서리 --radius-panel, --radius-control
+   모서리 --radius-sm(4) --radius-control(6) --radius-panel(10) --radius-pill(알약)
+   글자 크기  --text-2xs(10) -xs(11) -sm(12) -md(13) -base(14) -lg(16) -xl(20) -2xl(24),  --text-display-sm/-md/-lg  큰 제목(화면 너비에 따라 변함)
+   간격   --space-half(2) --space-1(4) -2(8) -3(12) -4(16) -5(20) -6(24) -8(32) -10(40) -14(56)  (padding·margin·gap은 이 단계만, 0과 1px 선은 그대로)
 
    화면 너비 기준 (@media 안에서는 변수를 못 쓰므로 목록만 둡니다)
      지금 쓰는 값: 480 · 640 · 760 · 768 · 820 · 900 · 1100 · 1180px (단계 맞춤 때 정리)
@@ -110,6 +112,31 @@
 
   --radius-panel: 10px;
   --radius-control: 6px;
+  --radius-sm: 4px;
+  --radius-pill: 999px;
+
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-display-sm: clamp(24px, 2.2vw, 30px);
+  --text-display-md: clamp(26px, 3vw, 38px);
+  --text-display-lg: clamp(48px, 5vw, 64px);
+
+  --space-half: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-14: 56px;
 }
 
 :root[data-theme="dark"] {

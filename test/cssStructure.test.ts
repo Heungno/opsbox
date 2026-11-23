@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { findDuplicateSelectorsAcrossFiles, findImportantWithoutReason, findLiteralColors, importedFiles, parseRules } from '../scripts/css-structure';
+import { findDuplicateSelectorsAcrossFiles, findImportantWithoutReason, findLiteralColors, findLiteralSpacing, importedFiles, parseRules } from '../scripts/css-structure';
 
 test('직접 색 찾기: 토큰 블록 안 선언은 허용', () => {
   const css = ':root { --ink: #16212b; }\n.a { color: #fff; border-color: var(--ink); background: transparent; }';
@@ -12,6 +12,12 @@ test('직접 색 찾기: 토큰 블록 안 선언은 허용', () => {
 test('직접 색 찾기: rgb()·색 이름도, 주석·url·토큰 color-mix는 아님', () => {
   const css = '/* #abc */\n.a { color: rgb(1, 2, 3); background: url("x.svg#red"); fill: white; outline-color: color-mix(in srgb, var(--ok) 10%, transparent); }';
   assert.deepEqual(findLiteralColors(css, { allowInTokenBlocks: false }).map((c) => [c.line, c.value]), [[2, 'rgb(1, 2, 3)'], [2, 'white']]);
+});
+
+test('직접 px 간격·글자·모서리 찾기: 토큰 블록·0·1px 허용, calc 안 px는 잡고, 주석·pt·% 는 아님', () => {
+  const css = ':root { --space-2: 8px; font-size: 15px; }\n/* padding: 7px */\n.a { padding: 0 1px 7px 12px; margin-left: calc(100% - 24px); font-size: 9pt; border-radius: 50%; width: 300px; }\n.b { font-size: 13px; gap: var(--space-2); border-top-left-radius: 3px; }';
+  assert.deepEqual(findLiteralSpacing(css, { allowInTokenBlocks: true }).map((c) => [c.line, c.property, c.value]), [[3, 'padding', '7px'], [3, 'padding', '12px'], [3, 'margin-left', '24px'], [4, 'font-size', '13px'], [4, 'border-top-left-radius', '3px']]);
+  assert.equal(findLiteralSpacing(css, { allowInTokenBlocks: false }).length, 6);
 });
 
 test('!important는 이유 주석이 있어야', () => {
@@ -74,4 +80,12 @@ test('예전 별칭 토큰(--primary, --bg, --text-light, --card-bg, --border, -
 test('HTML에 고정 인라인 스타일(style="…", <style>)이 없다', () => {
   const offenders = listFiles(PUBLIC, /\.html$/).filter((file) => /\sstyle="|<style[\s>]/.test(fs.readFileSync(file, 'utf8'))).map((file) => path.relative(PUBLIC, file));
   assert.deepEqual(offenders, []);
+});
+
+test('실제 CSS: 간격·글자 크기·모서리는 단계 토큰만 (px 직접 값 0, 1px·0 제외)', () => {
+  for (const [file, css] of Object.entries(readCssTree())) {
+    assert.deepEqual(findLiteralSpacing(css, { allowInTokenBlocks: file === 'tokens.css' }), [], file);
+  }
+  const print = fs.readFileSync(path.join(PUBLIC, 'reports', 'report-print.css'), 'utf8');
+  assert.deepEqual(findLiteralSpacing(print, { allowInTokenBlocks: true }), [], 'report-print.css');
 });

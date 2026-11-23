@@ -148,7 +148,7 @@
 
   .print-approval th,
   .print-approval td {
-    padding: 2px 4px !important;
+    padding: var(--space-half) var(--space-1) !important;
     border: 0.75pt solid var(--print-line) !important;
     color: var(--print-ink) !important;
     text-align: center !important;

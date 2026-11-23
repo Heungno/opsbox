@@ -3,7 +3,7 @@
 .audit-filter {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr) auto;
-  gap: 12px 14px;
+  gap: var(--space-3) var(--space-3);
   align-items: end;
 }
 
@@ -14,13 +14,13 @@
 
 .audit-filter-buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .audit-total {
-  margin-left: 6px;
+  margin-left: var(--space-1);
   color: var(--slate);
-  font-size: 13px;
+  font-size: var(--text-md);
   font-weight: 500;
 }
 
@@ -65,20 +65,20 @@
 
 .audit-detail {
   display: grid;
-  gap: 10px;
-  padding: 12px 4px 6px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-1) var(--space-1);
 }
 
 .audit-changes {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--text-sm);
   table-layout: fixed;
 }
 
 .audit-changes th,
 .audit-changes td {
-  padding: 6px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--rule);
   text-align: left;
   overflow-wrap: anywhere;
@@ -100,19 +100,19 @@
 .audit-json {
   max-height: 240px;
   margin: 0;
-  padding: 10px;
+  padding: var(--space-2);
   overflow: auto;
   border: 1px solid var(--rule);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
 }
 
 .audit-pager {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-top: 14px;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
   color: var(--slate);
 }
 
@@ -156,8 +156,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: "action time" "target target" "summary summary" "user ip";
-    gap: 4px 10px;
-    padding: 12px 6px;
+    gap: var(--space-1) var(--space-2);
+    padding: var(--space-3) var(--space-1);
     border-bottom: 1px solid var(--rule);
   }
   .audit-row > td {
@@ -167,11 +167,11 @@
   }
   .audit-row > td:nth-child(1) {
     grid-area: time;
-    font-size: 12px;
+    font-size: var(--text-sm);
   }
   .audit-row > td:nth-child(2) {
     grid-area: user;
-    font-size: 12px;
+    font-size: var(--text-sm);
     color: var(--slate);
   }
   .audit-row > td:nth-child(3) {
@@ -187,7 +187,7 @@
   }
   .audit-row > td:nth-child(6) {
     grid-area: ip;
-    font-size: 12px;
+    font-size: var(--text-sm);
     text-align: right;
   }
   .audit-detail-row,

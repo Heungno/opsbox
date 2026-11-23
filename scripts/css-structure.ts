@@ -69,6 +69,30 @@ export function findLiteralColors(css: string, { allowInTokenBlocks }: { allowIn
   return found.sort((a, b) => a.line - b.line);
 }
 
+const SPACING_PROPERTY = /^(?:padding|margin)(?:-[a-z-]+)?$|^(?:row-|column-)?gap$|^font-size$|^border(?:-[a-z]+)*-radius$/;
+
+/** 간격·글자 크기·모서리(padding*, margin*, gap, font-size, border-radius)에 직접 적은 px (0·1px 제외). allowInTokenBlocks면 :root 블록 안 선언은 제외 */
+export function findLiteralSpacing(css: string, { allowInTokenBlocks }: { allowInTokenBlocks: boolean }): { line: number; property: string; value: string }[] {
+  const found: { line: number; property: string; value: string }[] = [];
+  for (const rule of parseRules(css)) {
+    if (allowInTokenBlocks && isTokenBlock(rule.selector)) continue;
+    let offset = 0;
+    for (const declaration of rule.body.split(';')) {
+      const colon = declaration.indexOf(':');
+      const property = declaration.slice(0, colon).trim();
+      if (colon >= 0 && SPACING_PROPERTY.test(property)) {
+        for (const match of declaration.slice(colon + 1).matchAll(/(?<![\w.-])-?\d*\.?\d+px\b/g)) {
+          if (/^-?(?:0|1)px$/.test(match[0])) continue;
+          const index = offset + colon + 1 + (match.index ?? 0);
+          found.push({ line: rule.line + rule.body.slice(0, index).split('\n').length - 1, property, value: match[0] });
+        }
+      }
+      offset += declaration.length + 1;
+    }
+  }
+  return found.sort((a, b) => a.line - b.line);
+}
+
 /** 같은 줄에 주석이 없고 바로 윗줄이 주석만 있는 줄도 아닌 !important 줄 번호 */
 export function findImportantWithoutReason(css: string): number[] {
   const lines = css.split('\n');
