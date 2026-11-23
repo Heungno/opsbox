@@ -5,6 +5,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../../shared/erro
 import { getCommonCodes, getCommonCodeValues } from '../common-codes/service';
 import { SCRIPT_OS } from '../../shared/constants';
 import { getPolicies } from '../policies/service';
+import { listServerRecords } from '../servers/repository';
 import { parseCommandTemplate } from './command-template';
 
 
@@ -72,6 +73,10 @@ export function saveTemplate(input: Partial<ManagedTemplate>, id?: string) {
 export function deleteTemplate(id: string) {
   const linked = getPolicies().flatMap((policy) => policy.items).find((item) => item.executor.type === 'CHECK_BUILDER' && item.executor.templateId === id);
   if (linked) throw new ConflictError(`점검 만들기 항목 '${linked.name}'에 연결된 스크립트입니다. 점검 정책 관리에서 항목을 삭제하세요.`);
+  if (findTemplate(id)?.kind === 'COMMAND') {
+    const names = listServerRecords().filter((record) => Object.values(record.checkConfig.scriptParts ?? {}).includes(id)).map((record) => record.name);
+    if (names.length) throw new ConflictError(`서버 ${names.join(', ')}에서 고른 관리 명령 템플릿입니다. 서버 정책에서 다른 템플릿을 고른 뒤 삭제하세요.`);
+  }
   if (!removeTemplate(id)) throw new NotFoundError(`템플릿을 찾을 수 없습니다: ${id}`);
 }
 

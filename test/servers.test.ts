@@ -8,7 +8,7 @@ import { db } from '../src/db';
 import { app } from '../src/server';
 import { deletePolicy, savePolicy } from '../src/features/policies/service';
 import { activateServer, createServer, deactivateServer, getAllServers, getCheckConfig, getServer, updateCheckConfig } from '../src/features/servers/service';
-import { getTemplate, saveTemplate } from '../src/features/templates/service';
+import { deleteTemplate, getTemplate, getTemplates, saveTemplate } from '../src/features/templates/service';
 import { generateScript } from '../src/features/scripts/service';
 
 const webServer = (id: string) => ({ id, name: id, roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', processes: [], directories: [] } as any);
@@ -125,4 +125,18 @@ test('서버: 서버 WAS 제품과 템플릿 제품이 달라도 저장된다', 
   createServer(winServer(id, 'WAS', 'Apache Tomcat'));
   updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WAS: ['WAS_ENGINE_STATUS'] }, scriptParts: { WAS_ENGINE_STATUS: 'JEUS6-COMMAND-WAS_ENGINE_STATUS' } } as any);
   assert.equal(getServer(id)!.scriptParts.WAS_ENGINE_STATUS, 'JEUS6-COMMAND-WAS_ENGINE_STATUS');
+});
+
+test('서버: 서버가 고른 명령 템플릿은 삭제할 수 없고, 고름을 풀면 삭제된다', () => {
+  const id = 'CMD-DEL-1';
+  const original = getTemplate('WEBTOB41-COMMAND-WEB_ENGINE_STATUS')!;
+  saveTemplate({ ...original, id: 'TEST-COMMAND-DEL', name: '삭제 시험' }, undefined);
+  const copy = getTemplates({ kind: 'COMMAND' }).find((t) => t.name === '삭제 시험')!;
+  createServer(winServer(id, 'WEB', 'WebtoB'));
+  updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WEB: ['WEB_ENGINE_STATUS'] }, scriptParts: { WEB_ENGINE_STATUS: copy.id } } as any);
+  assert.throws(() => deleteTemplate(copy.id), (e: any) => e.status === 409 && /서버 .*에서 고른 관리 명령 템플릿/.test(e.message));
+  assert.ok(getTemplate(copy.id));
+  updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WEB: ['WEB_ENGINE_STATUS'] }, scriptParts: { WEB_ENGINE_STATUS: 'WEBTOB41-COMMAND-WEB_ENGINE_STATUS' } } as any);
+  deleteTemplate(copy.id);
+  assert.equal(getTemplate(copy.id), undefined);
 });
