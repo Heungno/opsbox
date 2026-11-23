@@ -63,8 +63,7 @@ const STATES: Omit<Scenario, 'theme' | 'width'>[] = [
     await wait(800);
   } },
   { name: 'empty-report-list', url: '/reports', prepare: async (page) => {
-    await page.$eval('#filter-server', (input) => { (input as HTMLInputElement).value = 'NO-SUCH-SERVER'; });
-    await page.click('#filter-form button[type="submit"]');
+    await page.type('#server-search', 'NO-SUCH-SERVER');
     await wait(800);
   } },
   { name: 'login', url: '/login', anonymous: true },

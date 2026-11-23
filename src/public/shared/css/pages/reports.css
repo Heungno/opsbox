@@ -4,87 +4,6 @@
   width: 100%;
 }
 
-.report-tree-type {
-  border: 1px solid var(--rule);
-  margin: var(--space-2) 0;
-  overflow: hidden;
-}
-
-.report-tree-type-summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.report-tree-type-summary::-webkit-details-marker,
-.report-tree-server-summary::-webkit-details-marker {
-  display: none;
-}
-
-.report-tree-type-summary {
-  padding: var(--space-3) var(--space-4);
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.report-tree-type-summary::before {
-  display: inline-block;
-  width: 18px;
-  content: "▸";
-}
-
-.report-tree-server-summary::before {
-  display: inline-block;
-  content: "▸";
-}
-
-.report-tree-type[open] > .report-tree-type-summary::before,
-.report-tree-server[open] > .report-tree-server-summary::before {
-  content: "▾";
-}
-
-.report-tree-server {
-  margin: 0 var(--space-3) var(--space-2);
-  border: 1px solid var(--rule);
-  background: var(--surface);
-}
-
-.report-tree-server-summary {
-  cursor: pointer;
-  list-style: none;
-  padding: var(--space-3) var(--space-3);
-  color: var(--ink);
-}
-
-.report-tree-title {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.report-tree-title small {
-  color: var(--slate);
-  font-size: var(--text-sm);
-  font-weight: 500;
-}
-
-.report-tree-empty {
-  color: var(--slate);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  margin: 0;
-  padding: var(--space-2) var(--space-4) var(--space-3) var(--space-8);
-}
-
-.report-tree-table {
-  min-width: 600px;
-  margin-bottom: var(--space-2);
-}
-
-.report-tree-server {
-  overflow-x: auto;
-}
-
 .type-report-card h3 {
   margin: var(--space-5) 0 var(--space-2);
   color: var(--ink);
@@ -225,25 +144,6 @@
 .role-report-group .type-report-card > .policy-help {
   border-left-color: var(--petrol);
   background: var(--surface-sunk);
-}
-
-.report-tree-type,
-.report-tree-server {
-  border-color: var(--rule);
-  border-radius: var(--radius-control);
-}
-
-.report-tree-type {
-  background: var(--surface-sunk);
-}
-
-.report-tree-type-summary::before {
-  color: var(--slate);
-}
-
-.report-tree-server-summary::before {
-  width: 18px;
-  color: var(--slate);
 }
 
 .trend-card .section-header {
@@ -597,17 +497,66 @@ td.table-empty-cell {
   font-size: var(--text-xs);
 }
 
-/* 보고서 목록 검색 줄 */
+/* 보고서 목록: 왼쪽 서버 패널 + 오른쪽 기간 조건·요약·표 */
+.report-list-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.report-summary button.summary-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.report-summary button.summary-card[aria-pressed="true"] {
+  border-color: var(--petrol);
+  background: var(--petrol-wash);
+}
+
+.report-summary-healthy strong { color: var(--ok); }
+.report-summary-warning strong { color: var(--warn); }
+.report-summary-critical strong { color: var(--crit); }
+
+.report-summary-latest strong {
+  font-size: var(--text-base);
+}
+
+.report-summary-latest small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--slate);
+}
+
+.report-list-table td:first-child,
+.report-list-table .btn {
+  white-space: nowrap;
+}
+
+.report-list-empty {
+  padding: var(--space-6) 0;
+  color: var(--slate);
+  text-align: center;
+}
+
+/* 보고서 목록 기간 조건 줄 */
 .report-filter-form {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
   align-items: flex-end;
-}
-
-.report-filter-form > .report-filter-search {
-  flex: 1;
-  min-width: 200px;
 }
 
 .report-filter-form > .report-filter-date {

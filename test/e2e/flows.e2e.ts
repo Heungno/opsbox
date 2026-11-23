@@ -77,7 +77,7 @@ test('공통코드에서 OTHER 이름을 바꾸면 대시보드·보고서 목�
   assert.match(await text('#server-role-tabs'), /기타 장비/);
   assert.match(await text('#server-list'), /FILE-01 .*기타 장비/);
   await open('/reports');
-  assert.match(await text('#report-tree'), /기타 장비 \d+개 서버/);
+  assert.match(await text('#server-picker-role-tabs'), /기타 장비 \d+/);
   const reports = (await call('GET', '/api/reports')).data;
   const file = reports.find((report: { serverId: string }) => report.serverId === 'FILE-01').fileName;
   await open(`/reports/detail?serverId=FILE-01&file=${encodeURIComponent(file)}`, 2500);
@@ -120,4 +120,26 @@ test('서버 상세: 공통코드를 못 불러와도 화면이 멈추지 않는
     await page.setRequestInterception(false);
   }
   assert.deepEqual(session.errors.filter((error) => error.startsWith('pageerror')), []);
+});
+
+test('보고서 목록: 서버를 고르면 그 서버 보고서만, 주소에 남고 새로고침해도 유지', { skip }, async () => {
+  const errorsBefore = session.errors.length; // 앞 테스트가 일부러 낸 오류(공통코드 503)는 빼고 봄
+  const serverCells = () => session.page.$$eval('#report-list tbody tr', (rows) => rows.map((row) => row.children[1].textContent || ''));
+  const selected = () => text('#server-picker-list .is-selected');
+  await open('/reports');
+  assert.equal(await selected(), '전체 서버');
+  assert.ok(new Set(await serverCells()).size >= 2, '전체 서버는 여러 서버 보고서');
+  const item = await session.page.evaluateHandle(() => [...document.querySelectorAll('#server-picker-list .template-list-item')].find((node) => node.textContent?.includes('WEB-01 ·')));
+  await item.asElement()!.click();
+  await settle(500);
+  const cells = await serverCells();
+  assert.ok(cells.length > 0 && cells.every((cell) => cell.endsWith('(WEB-01)')), cells.join('|'));
+  assert.equal(await session.page.evaluate(() => location.search), '?serverId=WEB-01');
+  assert.match(await text('#report-heading'), /대민 포털 WEB #1 · \d+건/);
+  await open('/reports?serverId=WEB-01');
+  assert.match(await selected(), /WEB-01 ·/);
+  await open('/reports?serverId=NO-SUCH');
+  assert.equal(await selected(), '전체 서버');
+  assert.equal(await session.page.evaluate(() => location.search), '');
+  assert.deepEqual(session.errors.slice(errorsBefore), []);
 });
