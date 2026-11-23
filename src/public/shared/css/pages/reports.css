@@ -496,6 +496,34 @@
   margin: 0;
 }
 
+/* 로그 점검 건수: 상태 배지와 같은 표시등(점 + 글자)을 한 줄로. 0건은 꺼진 점, 건수가 있으면 신호색 */
+.report-log-counts {
+  margin-bottom: 10px;
+}
+
+.report-log-scope {
+  margin: 0 0 6px;
+  color: var(--slate);
+  font-size: 12px;
+}
+
+.report-log-meters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+.report-log-count {
+  font-weight: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-log-read-error {
+  margin: 6px 0 0;
+  color: var(--warn);
+  font-size: 12px;
+}
+
 .report-item-queries > h4 {
   margin: 10px 0 6px;
   font-size: 12px;

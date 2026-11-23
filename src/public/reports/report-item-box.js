@@ -80,12 +80,55 @@ function renderTableView(item, components, detail, hasMessage) {
   return buildTable(columns, rows, (values, column, index) => (Array.isArray(values) ? values[index] : values?.[column.key || column]));
 }
 
+/** 로그 유형별 건수 칸: 순서·이름·신호(건수가 있을 때 켜지는 색). 신호는 스크립트의 상태 판정과 같음(Fatal·Error·5xx → 위험, Warning·4xx → 경고) */
+const LOG_COUNTERS = [
+  { key: 'fatal', label: 'Fatal', signal: 'crit' },
+  { key: 'errorException', label: 'Error/Exception', signal: 'crit' },
+  { key: 'http5xx', label: 'HTTP 5xx', signal: 'crit' },
+  { key: 'warning', label: 'Warning', signal: 'warn' },
+  { key: 'http4xx', label: 'HTTP 4xx', signal: 'warn' },
+];
+const SIGNAL_BADGE = { crit: 'badge-danger', warn: 'badge-warning' };
+const formatCount =(value) => (Number(value) || 0).toLocaleString('ko-KR');
+
+/**
+ * 로그 점검 건수: 검사 범위 한 줄 + 유형별 건수 표시등 한 줄 + 읽기 실패 한 줄.
+ * 스크립트가 센 categories가 있을 때만 (미수집이면 categories가 비어 있음)
+ */
+function logCounts(detail) {
+  const counts = detail.categories;
+  if (!counts || typeof counts !== 'object' || !Object.keys(counts).length) return null;
+  const wrap = el('div', 'report-log-counts');
+  const scanned = detail.scannedLineCount ? `, ${formatCount(detail.scannedLineCount)}줄을` : '를';
+  wrap.append(el('p', 'report-log-scope', `최근 ${detail.periodDays ?? 7}일 로그 파일 ${formatCount(detail.checkedFileCount)}개${scanned} 검사해 ${formatCount(detail.matchedLineCount)}줄을 찾았습니다.`));
+  // 상태 배지와 같은 표시등(점 + 글자): 0건은 꺼진 점, 건수가 있으면 신호색
+  const meters = el('div', 'report-log-meters');
+  LOG_COUNTERS.forEach(({ key, label, signal }) => {
+    const value = Number(counts[key]) || 0;
+    const meter = el('span', `server-badge ${value ? SIGNAL_BADGE[signal] : 'badge-muted'}`);
+    meter.setAttribute('data-count', key);
+    meter.append(`${label} `, el('b', 'report-log-count', formatCount(value)));
+    meters.append(meter);
+  });
+  wrap.append(meters);
+  if (detail.readErrorCount) {
+    const readError = detail.readErrors?.[0];
+    wrap.append(el('p', 'report-log-read-error', `읽지 못한 파일 ${formatCount(detail.readErrorCount)}개${readError ? `: ${readError.path} (${readError.message})` : ''}`));
+  }
+  return wrap;
+}
+
 function renderLogView(components, detail, hasMessage) {
   const configured = components.find((component) => component.type === 'LOG_TABLE')?.columns || [];
   const columns = configured.length ? configured : [{ key: 'timestamp', label: '시각' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
   const rows = (Array.isArray(detail.samples) ? detail.samples : []).map((sample) => ({ ...sample, message: sample.text || sample.message }));
-  if (!rows.length) return emptyOrNull(hasMessage, '표시할 로그 데이터가 없습니다.');
-  return buildTable(columns, rows, (values, column) => values[column.key]);
+  const counts = logCounts(detail);
+  const table = rows.length ? buildTable(columns, rows, (values, column) => values[column.key]) : emptyOrNull(hasMessage || Boolean(counts), '표시할 로그 데이터가 없습니다.');
+  if (!counts) return table;
+  const wrap = el('div', 'report-log-view');
+  wrap.append(counts);
+  if (table) wrap.append(table);
+  return wrap;
 }
 
 function renderMetricView(detail) {

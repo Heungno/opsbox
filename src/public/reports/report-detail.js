@@ -5,7 +5,7 @@ import { STATUS_MARKS, statusLabel, statusLegend } from '/shared/js/status.js';
 import { formatPrintDate, printRoleText, roleListText } from './report-print.js';
 import { createDiffBadge, formatUptime, osInfo, summarizeDatabaseCheck, summarizeDisks, summarizeHttp, summarizeMetric, summarizePaths, summarizePorts, summarizeProcesses, summarizeRolePolicyDetail, summarizeWasRuntime, summarizeWebtoB } from './report-sections.js';
 import { renderTrendChart } from './trend-chart.js?v=20261122-weekly';
-import { renderItemBoxes } from './report-item-box.js?v=20261122-status2';
+import { renderItemBoxes } from './report-item-box.js?v=20261123-logcounts';
 
 await loadCodes(); // 공통코드(역할·상태 이름)를 그리기 전에 불러옴
 const statusLegendElement = document.getElementById('print-status-legend');

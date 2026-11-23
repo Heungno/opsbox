@@ -140,3 +140,32 @@ test('내용 블록 소제목은 공통코드 resultViews 이름(공통코드에
     resetCodes();
   }
 });
+
+test('로그 점검(WEB_LOG·WAS_LOG)은 로그 표 위에 검사 범위와 에러 유형별 건수 표시등을 보여 준다', async () => {
+  const log = { item: 'WEB_LOG', name: 'WEB 로그', status: 'Critical', result: { components: [{ type: 'SUMMARY' }, { type: 'LOG_TABLE' }] },
+    detail: { status: 'Critical', periodDays: 7, checkedFileCount: 2, scannedLineCount: 12400, matchedLineCount: 9, categories: { fatal: 1, errorException: 3, warning: 2, http5xx: 0, http4xx: 1 },
+      readErrorCount: 0, samples: [{ path: '/var/log/nginx/error.log', timestamp: '2026-11-22 10:00:00', text: 'ERROR upstream timed out' }] } };
+  const meters = (box: FakeElement) => box.find('div', 'report-log-meters')[0]?.find('span', 'server-badge') ?? [];
+  const box = boxes(await render([log]))[0];
+  assert.equal(box.find('p', 'report-log-scope')[0].textContent, '최근 7일 로그 파일 2개, 12,400줄을 검사해 9줄을 찾았습니다.');
+  assert.deepEqual(meters(box).map((meter) => meter.textContent),
+    ['Fatal 1', 'Error/Exception 3', 'HTTP 5xx 0', 'Warning 2', 'HTTP 4xx 1'], '위험 유형 먼저, 경고 유형 다음');
+  // 상태 배지와 같은 표시등: Fatal·Error·5xx 는 위험, Warning·4xx 는 경고, 0건은 꺼진 점
+  assert.deepEqual(meters(box).map((meter) => meter.className), ['server-badge badge-danger', 'server-badge badge-danger', 'server-badge badge-muted', 'server-badge badge-warning', 'server-badge badge-warning']);
+  assert.equal(box.find('td').map((cell) => cell.textContent).join(','), '2026-11-22 10:00:00,/var/log/nginx/error.log,ERROR upstream timed out', '로그 표는 그대로');
+  assert.equal(box.find('h4').length, 0, '블록은 하나(로그)라 소제목 없음');
+  assert.equal(box.find('p', 'report-log-read-error').length, 0);
+
+  // 발견 0건이어도 다섯 가지 모두 보이고 모두 꺼짐, 빈 로그 안내는 덧붙이지 않음
+  const clean = boxes(await render([{ ...log, status: 'Healthy', detail: { ...log.detail, matchedLineCount: 0, categories: { fatal: 0, errorException: 0, warning: 0, http5xx: 0, http4xx: 0 }, samples: [] } }]))[0];
+  assert.equal(meters(clean).length, 5);
+  assert.ok(meters(clean).every((meter) => meter.className === 'server-badge badge-muted'));
+  assert.doesNotMatch(clean.textContent, /표시할 로그 데이터가 없습니다/);
+  // 읽기 실패는 건수 아래 한 줄
+  const failed = boxes(await render([{ ...log, detail: { ...log.detail, readErrorCount: 1, readErrors: [{ path: '/var/log/x.log', message: 'Permission denied' }] } }]))[0];
+  assert.equal(failed.find('p', 'report-log-read-error')[0].textContent, '읽지 못한 파일 1개: /var/log/x.log (Permission denied)');
+  // 미수집(categories 비어 있음)은 건수 없이 안내 메시지만
+  const missing = boxes(await render([{ ...log, status: 'NotCollected', detail: { status: 'NotCollected', message: '서버 정책에서 WEB 로그 폴더를 지정하세요.', categories: {}, periodDays: 7 } }]))[0];
+  assert.equal(missing.find('div', 'report-log-counts').length, 0);
+  assert.match(missing.textContent, /WEB 로그 폴더를 지정하세요/);
+});
