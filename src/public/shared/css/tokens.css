@@ -13,7 +13,9 @@
      --surface          카드·패널 표면,   --surface-sunk  한 단계 들어간 표면(표 머리, 코드 상자)
      --ink              본문 글자,         --slate / --slate-soft  보조 글자
      --rule / --rule-soft  선
-     --petrol / -strong / -wash  강조(버튼, 링크, 선택)와 그 옅은 바탕
+     --petrol / -strong / -wash  강조(버튼, 링크, 선택)와 그 옅은 바탕,  --on-petrol  강조 바탕 위 글자
+     --table-head-rule  표 머리 아래 선
+     --shadow-dialog / --shadow-toast  떠 있는 대화상자·알림 그림자
      --ok --warn --crit --idle  상태 신호 (정상·경고·위험·기록 없음)
      --chassis*         사이드바(계기판 섀시). 섀시는 두 테마 모두 어두워서 글자·강조·신호 점은 테마와 상관없이 같은 값
      --trend-*          보고서 추세 그래프 계열색
@@ -63,6 +65,11 @@
   --chassis-halo: rgba(145, 182, 170, 0.1);
 
   --table-hover: #f3f6f7;
+  --table-head-rule: var(--ink);
+  --on-petrol: #ffffff;
+
+  --shadow-dialog: 0 24px 60px rgba(10, 18, 26, 0.28);
+  --shadow-toast: 0 12px 32px rgba(10, 18, 26, 0.18);
 
   --trend-cpu: #2a78d6;
   --trend-memory: #eb6834;
@@ -98,6 +105,8 @@
   --chassis-hover: rgba(255, 255, 255, 0.1);
 
   --table-hover: #1d2731;
+  --table-head-rule: var(--slate-soft);
+  --on-petrol: #0c1a20;
 
   --trend-cpu: #3987e5;
   --trend-memory: #d95926;

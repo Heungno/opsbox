@@ -18,4 +18,10 @@ Task 4: Ruling: winners.ts는 --match 시나리오만 봐서 base.css(전 화면
 Task 4: Ruling: 사이드바는 두 테마 모두 어두움 → 섀시 글자·강조·신호 점은 테마 공통 토큰, 활성 테두리(#dededb/#303030)·내 정보 hover는 테마별 토큰(값 그대로, Task 8에서 정리). 바닥의 .sidebar-footer label 규칙 4개는 요소가 없어 삭제
 Task 4: Ruling: npm test의 Windows 실패(테스트 끝 임시 폴더 EPERM 18개, golden CRLF 1개)는 CSS와 무관 — 환경 문제, 따로 고칠 일
 Task 4: complete (tests: visual:compare 0 diffs 120 scenarios(login 재확인 포함), e2e 9/9, unit 232 pass / 20 fail = Windows 환경만)
-T5 BASE=(이 커밋)
+T5 BASE=18886c1
+Task 5: Ruling: 공통 부품 = 2개 이상 화면이 쓰거나 기본 요소(카드·섹션 제목·표·배지·상태 램프·버튼·폼·탭·결과 지표·대화상자·알림·도움 문구). 한 화면만 쓰는 것(.summary-card, .compact-*, .command-*, .checkbox-label, .generated-badge 등)은 Task 6. 어디서도 안 쓰는 .stats-grid·.field-error·.visually-hidden 삭제
+Task 5: Ruling: components.css가 legacy보다 앞에 오면서 원래 지던 legacy 규칙 2개가 이김 → 원래 한 번도 이기지 못한 .server-overview-latest .summary-badge(686줄)·.template-filters label 삭제
+Task 5: Ruling: winners는 120개 시나리오 전체로 (Task 4의 base.css 교훈) — 68분 걸림, 241 선언·58 규칙 삭제, 맞은 적 없는 7개(toast 변형·fieldset)는 그대로
+Task 5: Ruling (사용자 결정 2026-11-23): 다크 덮어쓰기 선택자(특이도 높음)를 지우니 다크에서만 있던 불일치가 사라짐 — 작은 버튼이 다크에서 일반 크기, 보고서 섹션 제목 16/20px, 서버 상세 결과 숫자 22/15px, 감사 로그 줄 색. 다크가 밝은 테마와 같아지는 것을 받아들임(2711개 중 2657개 값이 밝은 테마와 같음, 나머지는 반올림·같은 규칙) → 다크 시나리오 60개 기준을 이 CSS로 다시 찍음
+Task 5: complete (tests: visual:compare 0 diffs 120 scenarios, e2e 9/9, unit 232 pass / 20 fail = Windows 환경만(EPERM 18, golden CRLF 1))
+T6 BASE=(이 커밋)
