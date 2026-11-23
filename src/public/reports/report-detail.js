@@ -66,7 +66,7 @@ async function init() {
 
   const backBtn = document.getElementById('btn-back');
   if (backBtn) {
-    backBtn.href = `/settings/server-management/detail?id=${encodeURIComponent(serverId)}`;
+    backBtn.href = `/settings/server-management?id=${encodeURIComponent(serverId)}`;
   }
 
   await loadHistoryAndReport(serverId, file);

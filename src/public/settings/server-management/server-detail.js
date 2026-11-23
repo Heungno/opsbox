@@ -630,7 +630,7 @@ function renderResultHistory(results) {
     const link = document.createElement('a');
     link.className = 'btn btn-small btn-primary';
     link.textContent = 'Report';
-    link.href = `/reports/detail?state.serverId=${encodeURIComponent(state.currentServer.id)}&file=${encodeURIComponent(item.fileName)}`;
+    link.href = `/reports/detail?serverId=${encodeURIComponent(state.currentServer.id)}&file=${encodeURIComponent(item.fileName)}`;
     report.appendChild(link);
 
     row.appendChild(date);

@@ -61,7 +61,7 @@ export function renderServerRows(tbody, servers, { onToggle }) {
   tbody.replaceChildren(...servers.map((server) => {
     const inactive = server.enabled === false;
     const row = el('tr', inactive ? 'server-inactive' : '');
-    const detailHref = `/settings/server-management/detail?id=${encodeURIComponent(server.id)}`;
+    const detailHref = `/settings/server-management?id=${encodeURIComponent(server.id)}`;
     const idCell = el('td');
     const link = el('a', '', server.id);
     link.href = detailHref;

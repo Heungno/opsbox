@@ -27,7 +27,7 @@ export function renderRecentChecks(tbody, checks) {
     const row = el('tr');
     const serverCell = el('td');
     const link = el('a', 'server-link', item.serverName);
-    link.href = `/settings/server-management/detail?id=${encodeURIComponent(item.serverId)}`;
+    link.href = `/settings/server-management?id=${encodeURIComponent(item.serverId)}`;
     serverCell.append(link);
     const healthCell = el('td');
     healthCell.append(el('span', `history-status ${String(item.health || '').toLowerCase()}`, statusLabel(item.health)));
