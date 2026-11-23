@@ -63,7 +63,13 @@ function compare(names: string[]) {
 async function main() {
   if (command === 'baseline') { await capture('baseline'); return; }
   if (command === 'compare') { const list = await capture('current'); process.exitCode = compare(list.map((s) => s.name)); return; }
-  if (command === 'report') { console.log(writeReport(OUT, scenarios().map((s) => s.name))); return; }
+  if (command === 'report') {
+    // 시나리오별 판정 메모(있으면): .out/notes.json { "시나리오 이름": "판정" }
+    const notesFile = path.join(OUT, 'notes.json');
+    const notes = fs.existsSync(notesFile) ? JSON.parse(fs.readFileSync(notesFile, 'utf8')) : {};
+    console.log(writeReport(OUT, scenarios().map((s) => s.name), notes));
+    return;
+  }
   throw new Error(`모르는 명령: ${command}`);
 }
 
