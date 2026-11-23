@@ -1,0 +1,202 @@
+/* 기본: 리셋·기본 요소·글꼴·포커스·선택 색 (토큰만 씁니다) */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+input,
+select {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: var(--text);
+  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075);
+}
+
+textarea {
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: var(--text);
+  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075), 0 0 0 3px rgba(9, 105, 218, 0.3);
+}
+
+body {
+  background: radial-gradient(ellipse at 78% -10%, var(--page-glow), transparent 35%),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+input,
+select {
+  height: 38px;
+  border-color: var(--border);
+  border-radius: 9px;
+  background: var(--control-bg);
+  color: var(--text);
+  box-shadow: none;
+}
+
+textarea {
+  border-color: var(--border);
+  border-radius: 9px;
+  background: var(--control-bg);
+  color: var(--text);
+  box-shadow: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #a3adbc;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary-bright);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+textarea {
+  line-height: 1.5;
+  background: var(--control-bg);
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+li,
+label,
+strong,
+small {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--petrol) 24%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--petrol);
+  outline-offset: 2px;
+}
+
+code,
+pre {
+  font-family: var(--font-code);
+}
+
+input,
+select {
+  border-color: var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 96px;
+  height: auto;
+  padding: 9px 11px;
+  resize: vertical;
+  border-color: var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--slate-soft);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--petrol);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--slate-soft);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--petrol);
+}
+
