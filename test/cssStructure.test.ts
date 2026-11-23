@@ -89,3 +89,11 @@ test('실제 CSS: 간격·글자 크기·모서리는 단계 토큰만 (px 직�
   const print = fs.readFileSync(path.join(PUBLIC, 'reports', 'report-print.css'), 'utf8');
   assert.deepEqual(findLiteralSpacing(print, { allowInTokenBlocks: true }), [], 'report-print.css');
 });
+
+test('상태 램프: 화면이 붙이는 badge-<상태> 클래스(정상·경고·위험)마다 램프 색이 정해져 있다', () => {
+  const css = fs.readFileSync(path.join(CSS_DIR, 'components.css'), 'utf8');
+  const lampRules = parseRules(css).filter((rule) => /--lamp:/.test(rule.body)).map((rule) => rule.selector);
+  for (const health of ['healthy', 'warning', 'critical']) {
+    assert.ok(lampRules.some((selector) => selector.split(',').some((part) => part.trim() === `.badge-${health}`)), `.badge-${health}`);
+  }
+});

@@ -5,11 +5,6 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
-.summary-card span,
-.summary-card strong {
-  display: block;
-}
-
 .script-item {
   color: var(--ink);
   border: 1px solid var(--rule);
@@ -128,22 +123,6 @@
 .dashboard {
   gap: var(--space-3);
   margin-bottom: var(--space-5);
-}
-
-.summary-card {
-  position: relative;
-  overflow: hidden;
-  border-left: 1px solid var(--rule);
-}
-
-.summary-card::after {
-  position: absolute;
-  top: -22px;
-  width: 82px;
-  height: 82px;
-  border: 14px solid currentColor;
-  border-radius: 50%;
-  opacity: 0.045;
 }
 
 .command-box {
@@ -503,10 +482,6 @@
   }
 }
 
-.server-workspace {
-  align-items: stretch;
-}
-
 .server-management-page .content {
   overflow-x: clip;
 }
@@ -623,38 +598,6 @@
 .command-box,
 .server-final-json-preview pre {
   font-family: var(--font-code);
-}
-
-.summary-card {
-  min-height: 0;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--rule);
-  border-top: 1px solid var(--rule);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  box-shadow: none;
-  color: var(--ink);
-}
-
-.summary-card::after {
-  right: -18px;
-  content: "";
-  display: none;
-}
-
-.summary-card span {
-  color: var(--slate);
-  font-size: var(--text-md);
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-.summary-card strong {
-  margin-top: var(--space-half);
-  color: var(--ink);
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  letter-spacing: -0.02em;
 }
 
 .server-overview-latest .summary-badge {

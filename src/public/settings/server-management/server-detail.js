@@ -1,7 +1,8 @@
 import { highlightJsonBlock } from '../../shared/js/syntax-highlight.js';
 import { api, apiRequest, downloadFile, loadText, notifyError, showToast } from '/shared/js/api.js';
 import { codeList, loadCodes } from '/shared/js/codes.js';
-import { renderRoleTabs, roleChoices } from './server-list-view.js';
+import { roleChoices } from './server-list-view.js';
+import { createServerPicker } from '/shared/js/server-picker.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from './server-overview.js';
 import { activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
 import { scriptCommand, scriptDescription } from './server-script-panel.js';
@@ -11,9 +12,11 @@ await loadStatusLabels(); // 상태 이름(공통코드 healthStatuses)을 그�
 
 const params = new URLSearchParams(window.location.search);
 /** 화면 상태 (서버·정책 선택, 저장 안 한 변경 여부, 불러온 공통코드·템플릿) */
+/** 왼쪽 서버 목록 패널 (bindEvents에서 만듦) */
+let picker;
+
 const state = {
   serverId: params.get('id'),
-  serverCache: [],
   currentServer: null,
   managedTemplates: [],
   selectedScriptParts: {},
@@ -29,7 +32,6 @@ const state = {
   activePolicyRole: 'BASIC',
   serverInfoDirty: false,
   policyDirty: false,
-  activeServerPickerRole: 'ALL',
   resultPathSettings: undefined,
   queryPrefixes: {},
 };
@@ -78,22 +80,13 @@ async function init() {
     state.activePolicyRole = button.dataset.policyRoleTab;
     updatePolicyRoleTabVisibility();
   });
-  document.getElementById('server-search')?.addEventListener('input', renderServerPicker);
-  const pickerRoleTabs = document.getElementById('server-picker-role-tabs');
-  pickerRoleTabs.addEventListener('click', (event) => {
-    const tab = event.target.closest('[role="tab"]');
-    if (!tab) return;
-    state.activeServerPickerRole = tab.dataset.role;
-    renderServerPicker();
-  });
-  pickerRoleTabs.addEventListener('keydown', (event) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    const tabs = [...pickerRoleTabs.querySelectorAll('[role="tab"]')];
-    const current = tabs.findIndex((tab) => tab.dataset.role === state.activeServerPickerRole);
-    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    event.preventDefault(); state.activeServerPickerRole = tabs[next].dataset.role; renderServerPicker();
-    // 탭을 다시 그리므로 새 탭에 포커스를 줍니다.
-    pickerRoleTabs.querySelector(`[data-role="${state.activeServerPickerRole}"]`)?.focus();
+  picker = createServerPicker({
+    search: document.getElementById('server-search'),
+    tabs: document.getElementById('server-picker-role-tabs'),
+    list: document.getElementById('server-picker-list'),
+    empty: document.getElementById('server-picker-empty'),
+    fetchServers: () => api('/api/servers?includeInactive=1'),
+    onSelect: selectServer,
   });
   document.getElementById('server-list-refresh')?.addEventListener('click', loadServerPicker);
   document.getElementById('btn-activate-server')?.addEventListener('click', activateCurrentServer);
@@ -120,37 +113,16 @@ async function init() {
 
 // 미사용 서버도 목록에 보여 줍니다(상세에서 [다시 사용]을 누를 수 있게).
 async function loadServerPicker() {
-  state.serverCache = (await api('/api/servers?includeInactive=1')) || [];
-  renderServerPicker();
-  if (!state.serverCache.length) {
+  const servers = await picker.load();
+  if (!servers.length) {
     document.getElementById('server-title').textContent = '등록된 서버가 없습니다.';
     document.getElementById('policy-section').hidden = true;
     document.getElementById('script-list').textContent = '서버를 먼저 등록하세요.';
     return;
   }
-  const selected = state.serverCache.find((server) => server.id === state.serverId) || state.serverCache[0];
+  const selected = servers.find((server) => server.id === state.serverId) || servers[0];
   await selectServer(selected.id);
 }
-
-function renderServerPicker() {
-  const list = document.getElementById('server-picker-list');
-  if (!list) return;
-  const keyword = document.getElementById('server-search').value.trim().toLowerCase();
-  const matching = state.serverCache.filter((server) => `${server.id} ${server.name} ${server.ip}`.toLowerCase().includes(keyword));
-  renderRoleTabs(document.getElementById('server-picker-role-tabs'), codeList('serverRoles'), matching, state.activeServerPickerRole);
-  const filtered = matching.filter((server) => state.activeServerPickerRole === 'ALL' || getServerRoles(server).includes(state.activeServerPickerRole));
-  list.replaceChildren();
-  for (const server of filtered) {
-    const item = document.createElement('div'); item.className = `template-list-item${server.id === state.serverId ? ' is-selected' : ''}`; item.setAttribute('role', 'button'); item.tabIndex = 0;
-    const info = document.createElement('div'); const name = document.createElement('strong'); name.textContent = server.name; const meta = document.createElement('small'); meta.textContent = `${server.id} · ${server.ip} · ${server.os}${server.enabled === false ? ' · 미사용' : ''}`; info.append(name, meta); item.append(info);
-    item.addEventListener('click', () => selectServer(server.id)); item.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectServer(server.id); }); list.append(item);
-  }
-  const empty = document.getElementById('server-picker-empty');
-  empty.hidden = filtered.length > 0;
-  empty.textContent = state.serverCache.length ? '조건에 맞는 서버가 없습니다.' : '등록된 서버가 없습니다.';
-}
-
-function getServerRoles(server) { return server.roles ?? []; }
 
 /** 정책에서 사용하는 점검 항목 id (사용 중인 항목만) */
 
@@ -159,8 +131,7 @@ async function activateCurrentServer() {
   try {
     await api(`/api/servers/${encodeURIComponent(state.currentServer.id)}/activate`, { method: 'POST' });
     showToast(`${state.currentServer.id} 서버를 다시 사용합니다.`, 'success');
-    state.serverCache = (await api('/api/servers?includeInactive=1')) || state.serverCache;
-    renderServerPicker();
+    await picker.load();
     state.currentServer = null;
     await loadServer();
   } catch (error) {
@@ -173,7 +144,7 @@ async function selectServer(id) {
   if (!confirmDiscardChanges(true)) return;
   state.serverId = id;
   history.replaceState(null, '', `/settings/server-management?id=${encodeURIComponent(id)}`);
-  renderServerPicker();
+  picker.setSelected(id);
   await loadServer();
 }
 
