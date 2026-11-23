@@ -95,3 +95,12 @@ test('CSS·JS·모달 조각 같은 정적 파일은 그대로 열린다', async
     assert.equal((await app.inject({ method: 'GET', url, headers: { cookie } })).statusCode, 200, url);
   }
 });
+
+test('글꼴 파일은 오래 캐시하고, 다른 정적 파일은 매번 확인한다 (페이지마다 글꼴이 바뀌어 보이지 않게)', async () => {
+  const font = await app.inject({ method: 'GET', url: '/shared/fonts/ibm-plex-sans-kr/files/ibm-plex-sans-kr-0-400-normal.woff2' });
+  assert.equal(font.statusCode, 200);
+  assert.equal(font.headers['cache-control'], 'public, max-age=31536000, immutable');
+  const css = await app.inject({ method: 'GET', url: '/shared/css/app.css' });
+  assert.equal(css.statusCode, 200);
+  assert.doesNotMatch(String(css.headers['cache-control']), /immutable/);
+});

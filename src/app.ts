@@ -79,6 +79,11 @@ export function buildApp(): FastifyInstance {
     root: PUBLIC_ROOT,
     prefix: '/',
     allowedPath: (pathname) => !isPageSourceFile(pathname),
+    // 글꼴은 페이지마다 다시 확인하면 그동안 대체 글꼴이 보였다가 바뀌어 화면이 깜빡입니다.
+    // 글꼴 파일은 바뀌지 않으므로 1년 캐시 (글꼴을 바꿀 때는 폴더 이름을 새로 지어 주소를 바꿉니다).
+    setHeaders: (reply, filePath) => {
+      if (/\.woff2?$/.test(filePath)) reply.header('cache-control', 'public, max-age=31536000, immutable');
+    },
   });
 
   /* 화면 경로 (공통 레이아웃을 끼워서 보냄: src/pages.ts) */
