@@ -40,3 +40,4 @@ Task 7: Ruling: 인라인 → 클래스. server-detail 체크박스 cssText는 s
 Task 7: Ruling: 인쇄 토큰은 계획의 --print-rule/--print-font 대신 기존 이름 --print-line/--print-serif/--print-sans 유지 + --print-ink/paper/grid/wash/head-bg. @page 쪽 번호 색도 var(--print-ink)
 Task 7: Ruling (사용자 요청): 인쇄 로그 표가 고정 배치라 칸이 같은 너비 → th[data-column]로 시각 36mm·경로 44mm, 로그 내용이 나머지
 Task 7: complete (tests: cssStructure 9/9, visual:compare 0 diffs except server-detail 6개(임시 폴더 이름), e2e 9/9, unit 실패 = Windows 환경만(EPERM, golden CRLF; resultImport는 전체 실행에서만 흔들림))
+Task 8: Ruling (사용자 결정 2026-11-23): 30분 안에 끝낼 수 있는 것만 → Step 4(README CSS 규칙·visual 명령) 먼저. 남은 것: Step 1 단계 맞춤(tokens.css 밖 px 값 469곳: font-size 108·padding 111·gap 106·margin 102·border-radius 42, 화면 너비 기준 480·640·760·768·820·900·1100·1180 → 480·640·900·1180), Step 2 px 직접 값 검사 테스트, Step 3 visual:report 판정, Step 5 테스트, 끝나면 이 작업 폴더 삭제. 30분 단위로 나눠 할 것(예: 모서리 → 글자 → 간격 → 화면 너비)
