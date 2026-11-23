@@ -11,107 +11,9 @@ html {
 }
 
 body {
+  margin: 0;
   padding: 0;
   min-height: 100vh;
-}
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Helvetica, Arial, sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-input,
-select {
-  width: 100%;
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 13px;
-  background: white;
-  color: var(--text);
-  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075);
-}
-
-textarea {
-  height: 32px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 13px;
-  background: white;
-  color: var(--text);
-  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075);
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: inset 0 1px 2px rgba(31, 35, 40, 0.075), 0 0 0 3px rgba(9, 105, 218, 0.3);
-}
-
-body {
-  background: radial-gradient(ellipse at 78% -10%, var(--page-glow), transparent 35%),
-    var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-}
-
-input,
-select {
-  height: 38px;
-  border-color: var(--border);
-  border-radius: 9px;
-  background: var(--control-bg);
-  color: var(--text);
-  box-shadow: none;
-}
-
-textarea {
-  border-color: var(--border);
-  border-radius: 9px;
-  background: var(--control-bg);
-  color: var(--text);
-  box-shadow: none;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #a3adbc;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--primary-bright);
-  box-shadow: 0 0 0 3px var(--focus-ring);
-}
-
-textarea {
-  line-height: 1.5;
-  background: var(--control-bg);
-  color: var(--text);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-body {
-  margin: 0;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-ui);
@@ -121,11 +23,9 @@ body {
   font-feature-settings: "tnum" 1;
 }
 
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
+/* hidden 속성은 화면 규칙의 display(flex·grid 등)보다 항상 이겨야 숨겨집니다 */
+[hidden] {
+  display: none !important;
 }
 
 h1,
@@ -155,13 +55,24 @@ pre {
   font-family: var(--font-code);
 }
 
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 input,
 select {
-  border-color: var(--rule);
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--rule);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--ink);
   font-size: 14px;
+  box-shadow: none;
 }
 
 textarea {
@@ -170,11 +81,13 @@ textarea {
   height: auto;
   padding: 9px 11px;
   resize: vertical;
-  border-color: var(--rule);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--ink);
   font-size: 14px;
+  line-height: 1.5;
+  box-shadow: none;
 }
 
 input:hover,
@@ -186,6 +99,7 @@ textarea:hover {
 input:focus,
 select:focus,
 textarea:focus {
+  outline: none;
   border-color: var(--petrol);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
@@ -200,3 +114,12 @@ input[type="radio"] {
   accent-color: var(--petrol);
 }
 
+/* 움직임 줄이기 설정: 화면 규칙의 전환·스크롤 애니메이션을 모두 꺼야 하므로 !important */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

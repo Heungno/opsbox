@@ -1,5 +1,5 @@
 /*
- * 브라우저 테스트용 Chromium: OPSBOX_E2E_BROWSER → Termux chromium → 흔한 Chrome 설치 경로.
+ * 브라우저 테스트용 Chromium: OPSBOX_E2E_BROWSER → Termux chromium → 흔한 Chrome·Edge 설치 경로.
  * 없으면 findBrowser()가 undefined를 돌려주고 테스트는 건너뜁니다.
  */
 import fs from 'node:fs';
@@ -11,6 +11,7 @@ const CANDIDATES = [
   '/usr/bin/chromium-browser',
   '/usr/bin/google-chrome',
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ];
 

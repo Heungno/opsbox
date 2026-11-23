@@ -24,8 +24,9 @@ async function capture(label: 'baseline' | 'current') {
   fs.mkdirSync(dir, { recursive: true });
   const list = scenarios().filter((scenario) => !only || scenario.name.includes(only));
   const app = await startApp();
-  const session = await openSession(app.baseUrl);
-  const anonymous = await launch();
+  // 브라우저를 못 띄우면 서버를 닫고 끝냄 (안 닫으면 프로세스가 끝나지 않고 멈춘 것처럼 보임)
+  const session = await openSession(app.baseUrl).catch(async (error) => { await app.stop(); throw error; });
+  const anonymous = await launch().catch(async (error) => { await session.browser.close(); await app.stop(); throw error; });
   try {
     for (const [index, scenario] of list.entries()) {
       process.stdout.write(`\r${label} ${index + 1}/${list.length} ${scenario.name}`.padEnd(80));

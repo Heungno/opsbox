@@ -15,7 +15,7 @@
      --rule / --rule-soft  선
      --petrol / -strong / -wash  강조(버튼, 링크, 선택)와 그 옅은 바탕
      --ok --warn --crit --idle  상태 신호 (정상·경고·위험·기록 없음)
-     --chassis*         사이드바(계기판 섀시)
+     --chassis*         사이드바(계기판 섀시). 섀시는 두 테마 모두 어두워서 글자·강조·신호 점은 테마와 상관없이 같은 값
      --trend-*          보고서 추세 그래프 계열색
    글꼴  --font-ui, --font-code
    모서리 --radius-panel, --radius-control
@@ -52,6 +52,15 @@
   --chassis-line: #2a3846;
   --chassis-text: #c3ccd4;
   --chassis-dim: #8796a4;
+  --chassis-title: #f2f5f7;
+  --chassis-active-text: #ffffff;
+  --chassis-accent: #6fb2c7;
+  --chassis-ok: #5fbf86;
+  --chassis-warn: #e3a24a;
+  --chassis-crit: #ef7a6f;
+  --chassis-active-edge: #dededb;
+  --chassis-hover: rgba(0, 0, 0, 0.06);
+  --chassis-halo: rgba(145, 182, 170, 0.1);
 
   --table-hover: #f3f6f7;
 
@@ -85,6 +94,8 @@
   --chassis: #0c1115;
   --chassis-raised: #161e25;
   --chassis-line: #222c35;
+  --chassis-active-edge: #303030;
+  --chassis-hover: rgba(255, 255, 255, 0.1);
 
   --table-hover: #1d2731;
 

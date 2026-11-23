@@ -13,22 +13,9 @@ T3 BASE=18f3cdd
 Task 3: complete (commits 18f3cdd..17de3a1, tests: unit 272/276 pass 4 skip, e2e 9/9, visual:compare 0 diffs 120 scenarios)
 Task 3: Ruling: result-path-error 시나리오가 클릭 뒤 hover 여부로 흔들림 — 마우스를 (0,0)으로 치우고 그 시나리오만 원래 CSS로 기준 다시 찍음 — 틀렸다면 그 버튼의 hover 색은 다른 시나리오(hover-focus-disabled)만 봄
 T4 BASE=17de3a1
-
-## 인계 메모 (2026-11-23, 휴대폰 Termux → PC로 옮김)
-Task 4 진행 중 (완료 아님). 지금 상태:
-- base.css(56개 선택자)·layout.css(281개)를 legacy.css에서 옮김, app.css import 순서 tokens → base → layout → legacy.
-- 옮기기 도구: tools/do-move.cjs (같은 선택자를 마지막 위치로 합치되, 사이에 같은 계열 속성을 정하는 다른 규칙이 있으면 그 선언은 원래 자리에 남김).
-  처음 버전(무조건 마지막 위치로 합침)은 모바일 메뉴 사이드바 폭을 바꿨음 → 고친 뒤 mobile-menu-open 차이 0. 고친 뒤 전체 120개 비교는 아직 안 돌림.
-- 다음 할 일:
-  1. 기준 다시 찍기 (PC는 글꼴·렌더링이 달라 Termux 기준을 못 씀; .out은 git에 없음):
-     git show 18f3cdd:src/public/shared/css/app.css > src/public/shared/css/app.css
-     npm run visual:baseline
-     git checkout src/public/shared/css/app.css
-     (18f3cdd의 app.css는 하나짜리 원래 파일. 기준을 두 번 찍어 차이 0인지 먼저 확인)
-  2. npm run visual:compare → 차이 0 확인
-  3. 안 쓰이는 선언 지우기: node --import tsx tools/winners.ts --match='^(dashboard|server-detail-web|policy-management|report-detail|account)-|collapsed|mobile|hover|toast|dialog|login|print|policy-tab' --files=layout.css,base.css
-     (CDP로 요소마다 cascade 승자 선언을 모음, 기본+hover 강제+focus 강제. Termux에선 58개에 20분 넘게 걸림)
-     → node tools/prune.cjs src/public/shared/css/layout.css --dry 로 먼저 보고, 맞은 적 있는 규칙의 진 선언만 지움(맞은 적 없는 규칙은 목록만)
-  4. layout.css에 남은 직접 색(126개 중 남은 것)·다크 덮어쓰기 → 토큰으로, !important 이유 주석(base.css 3줄)
-  5. visual:compare 0, npm test, npm run test:e2e → 커밋 "CSS 정리: 기본·배치(사이드바·본문)" → Task 4 complete 줄
-- 도구들은 작업용이라 Task 7/최종 정리 때 이 폴더째 지움.
+Task 4: Ruling: PC(Windows)에서 기준 다시 찍음 — 원래 하나짜리 app.css(18f3cdd)로 baseline, 같은 CSS로 compare 0/120 확인 — Chrome 없음 → browser.ts 후보에 Edge 추가, run.ts는 브라우저 실패 시 서버 닫고 끝냄
+Task 4: Ruling: winners.ts는 --match 시나리오만 봐서 base.css(전 화면 공통)엔 맞지 않음(script-management의 textarea min-height 96px가 지워짐) → base.css는 손으로 합침, layout.css만 prune(347 선언·112 규칙) — 비용: 맞은 적 없는 규칙 14개(접힌 사이드바)는 그대로 둠
+Task 4: Ruling: 사이드바는 두 테마 모두 어두움 → 섀시 글자·강조·신호 점은 테마 공통 토큰, 활성 테두리(#dededb/#303030)·내 정보 hover는 테마별 토큰(값 그대로, Task 8에서 정리). 바닥의 .sidebar-footer label 규칙 4개는 요소가 없어 삭제
+Task 4: Ruling: npm test의 Windows 실패(테스트 끝 임시 폴더 EPERM 18개, golden CRLF 1개)는 CSS와 무관 — 환경 문제, 따로 고칠 일
+Task 4: complete (tests: visual:compare 0 diffs 120 scenarios(login 재확인 포함), e2e 9/9, unit 232 pass / 20 fail = Windows 환경만)
+T5 BASE=(이 커밋)
