@@ -3,4 +3,12 @@
 @import url("./base.css");
 @import url("./layout.css");
 @import url("./components.css");
-@import url("./legacy.css");
+@import url("./pages/dashboard.css");
+@import url("./pages/reports.css");
+@import url("./pages/servers.css");
+@import url("./pages/policy.css");
+@import url("./pages/scripts.css");
+@import url("./pages/common-codes.css");
+@import url("./pages/result-collection.css");
+@import url("./pages/audit-logs.css");
+@import url("./pages/login.css");

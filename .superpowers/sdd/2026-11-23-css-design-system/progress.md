@@ -25,3 +25,11 @@ Task 5: Ruling: winners는 120개 시나리오 전체로 (Task 4의 base.css 교
 Task 5: Ruling (사용자 결정 2026-11-23): 다크 덮어쓰기 선택자(특이도 높음)를 지우니 다크에서만 있던 불일치가 사라짐 — 작은 버튼이 다크에서 일반 크기, 보고서 섹션 제목 16/20px, 서버 상세 결과 숫자 22/15px, 감사 로그 줄 색. 다크가 밝은 테마와 같아지는 것을 받아들임(2711개 중 2657개 값이 밝은 테마와 같음, 나머지는 반올림·같은 규칙) → 다크 시나리오 60개 기준을 이 CSS로 다시 찍음
 Task 5: complete (tests: visual:compare 0 diffs 120 scenarios, e2e 9/9, unit 232 pass / 20 fail = Windows 환경만(EPERM 18, golden CRLF 1))
 T6 BASE=(이 커밋)
+Task 6: Ruling: font-display: optional(3d07b28) 뒤로 비교가 HEAD에서도 108/120 어긋남(캐시 빈 첫 열기에서 ch·글자 폭을 대체 글꼴로 잼) → capture.ts가 찍기 전에 페이지를 한 번 다시 열게 함. 기준은 그대로(밝은 1440 22개 차이 0 확인)
+Task 6: Ruling: 지울 규칙 = 선택자의 클래스·id 이름이 하나도 HTML/JS에 없는 것(41개: .summary-total 등, .policy-item-editor, .role-policy-group 등). 첫 시도의 손 정규식은 .dashboard·.role-policy-row·syntax-json-*(JS가 이어 붙여 만듦)까지 지워 비교에서 걸림 → classify.cjs 기준으로 바꿈
+Task 6: Ruling: 2개 이상 화면이 쓰는 것(.template-workspace·list·list-item·management-page·filters, .server-badge, .webtob-console-output, .account-*, .script-template-picker) → components.css 끝, #current-user-avatar → layout.css. account 화면 전용 규칙이 없어 pages/account.css는 안 만듦. legacy.css가 비어 이 Task에서 삭제
+Task 6: Ruling: cssmove render — 같은 선택자의 뒤 정의가 같은 속성을 정하면 앞 선언은 버림(같은 특이도라 절대 못 이김)
+Task 6: Ruling: 화면 파일의 직접 색 44곳·다크 덮어쓰기 13개 → 토큰(--syntax-*, --editor-*, --console-*, --command-ink, --detached-*, --chassis-avatar, --trend-range-active-text). 값 그대로. .trend-range 선택 버튼의 :root[data-theme] 접두사는 이길 대상(:root[data-theme] .btn:not)이 Task 5에서 없어져 뗌
+Task 6: Ruling (사용자 결정 2026-11-23): 다크 덮어쓰기 .template-list-item이 .is-selected를 이겨 다크에서 선택 항목이 안 보였음 → 없애니 다크에서도 선택 강조가 보임. 받아들임 → 해당 다크 시나리오 15개 기준 다시 찍음
+Task 6: complete (tests: visual:compare 0 diffs 120 scenarios(다크 선택 항목 15개 기준 갱신 뒤), e2e 9/9, unit 233 pass / 20 fail = Windows 환경만(EPERM, golden CRLF))
+T7 BASE=(Task 6 커밋)

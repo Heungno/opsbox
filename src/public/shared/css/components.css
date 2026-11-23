@@ -644,3 +644,367 @@ td a:not(.btn):hover {
   white-space: nowrap;
 }
 
+
+/* ---------- 여러 화면이 함께 쓰는 부품: 목록·편집 작업 공간, 서버 배지, 콘솔 출력, 계정 카드, 템플릿 고르기 ---------- */
+
+.server-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 62px;
+  height: 25px;
+  border: 1px solid var(--badge-border);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+}
+
+#db-query-template-select[multiple] {
+  min-height: 150px;
+}
+
+.webtob-console-output {
+  max-height: 560px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 16px;
+  border: 1px solid var(--console-rule);
+  border-radius: 10px;
+  color: var(--console-ink);
+  font: 12px/1.65 Consolas, 'Courier New', monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.webtob-console-output .console-command {
+  color: var(--console-command);
+  font-weight: 600;
+}
+
+.webtob-console-output .console-danger {
+  color: var(--console-danger);
+  font-weight: 600;
+}
+
+.webtob-console-output .console-warning {
+  color: var(--console-warning);
+  font-weight: 600;
+}
+
+.webtob-console-output .console-success {
+  color: var(--console-success);
+  font-weight: 600;
+}
+
+.webtob-console-output .console-info {
+  color: var(--console-info);
+}
+
+.script-template-picker {
+  width: min(560px, calc(100vw - 40px));
+}
+
+.template-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.36fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.template-list-panel {
+  position: static;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.template-editor-panel {
+  min-width: 0;
+}
+
+.template-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.template-filters .form-group {
+  min-width: 0;
+  margin: 0;
+}
+
+.template-filters select {
+  width: 100%;
+  height: 34px;
+  font-size: 12px;
+}
+
+.template-list {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.template-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.template-list-item[role="button"] {
+  cursor: pointer;
+}
+
+.template-list-item[role="button"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.template-list-item > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.template-list-item strong {
+  overflow-wrap: anywhere;
+}
+
+.template-list-item .button-area {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .template-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .template-list-panel {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (min-width: 901px) {
+  body.template-management-page,
+  .template-management-page .layout {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .template-management-page .content {
+    min-width: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .template-management-page .container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .template-management-page .header {
+    flex: 0 0 auto;
+    margin-bottom: 14px;
+  }
+  .template-management-page .template-workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .template-management-page .template-list-panel {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  .template-management-page .template-list-panel {
+    display: flex;
+    flex-direction: column;
+  }
+  .template-management-page .template-list-panel .section-header {
+    flex: 0 0 auto;
+  }
+  .template-management-page .template-list {
+    flex: 1 1 auto;
+  }
+  .template-management-page .template-editor-panel {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .template-management-page .template-editor-panel > .section-header {
+    flex: 0 0 auto;
+  }
+  .template-management-page #template-form {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .template-management-page #template-form > .form-grid {
+    flex: 0 0 auto;
+  }
+  .template-management-page .template-content-group {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .template-management-page .template-content-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .template-management-page .template-editor {
+    height: 100%;
+    min-height: 0;
+  }
+  .template-management-page .template-output-example {
+    overflow: hidden;
+  }
+  .template-management-page .template-output-example pre {
+    max-height: calc(100% - 56px);
+  }
+  .template-management-page #template-help,
+  .template-management-page #template-form > .button-area {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 900px) {
+  body.template-management-page {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+  .template-management-page .template-list-panel {
+    max-height: 40vh;
+    overflow: auto;
+  }
+}
+
+.webtob-console-output {
+  font-family: var(--font-code);
+}
+
+.server-badge.badge-success,
+.server-badge.badge-warning,
+.server-badge.badge-danger,
+.server-badge.badge-critical,
+.server-badge.badge-muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--lamp-text, var(--ink));
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.server-badge.badge-success::before,
+.server-badge.badge-warning::before,
+.server-badge.badge-danger::before,
+.server-badge.badge-critical::before,
+.server-badge.badge-muted::before {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  content: "";
+  border-radius: 50%;
+  background: var(--lamp, var(--idle));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamp, var(--idle)) 18%, transparent);
+}
+
+.server-badge:not(.badge-success):not(.badge-warning):not(.badge-danger):not(.badge-critical):not(.badge-muted) {
+  min-width: 0;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--petrol);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.template-list {
+  gap: 6px;
+}
+
+.template-list-item {
+  justify-content: space-between;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.template-list-item[role="button"]:hover {
+  border-color: var(--rule);
+  background: var(--surface-sunk);
+}
+
+.template-list-item.is-selected {
+  border-color: var(--petrol);
+  background: var(--petrol-wash);
+  box-shadow: inset 3px 0 0 var(--petrol);
+}
+
+.template-list-item small {
+  color: var(--slate);
+  font-size: 12px;
+}
+
+.webtob-console-output {
+  tab-size: 4;
+  border-color: var(--chassis-line);
+  background: var(--chassis);
+}
+
+.check-builder-warning {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--warning);
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.account-card {
+  max-width: 560px;
+}
+
+.account-form {
+  display: grid;
+  gap: 4px;
+}
+
+.account-form input[readonly] {
+  opacity: .75;
+}
+
+.account-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.account-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+

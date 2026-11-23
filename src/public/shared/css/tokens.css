@@ -18,7 +18,11 @@
      --shadow-dialog / --shadow-toast  떠 있는 대화상자·알림 그림자
      --ok --warn --crit --idle  상태 신호 (정상·경고·위험·기록 없음)
      --chassis*         사이드바(계기판 섀시). 섀시는 두 테마 모두 어두워서 글자·강조·신호 점은 테마와 상관없이 같은 값
-     --trend-*          보고서 추세 그래프 계열색
+     --trend-*          보고서 추세 그래프 계열색,  --trend-range-active-text  기간 버튼(선택됨) 글자
+     --syntax-*         구문 강조 (스크립트 편집기, 서버 상세 JSON 미리보기),  --editor-selection / --editor-variable-wash  편집기 선택·변수 바탕
+     --console-*        콘솔 출력 상자(두 테마 모두 어두움)의 글자·선,  --command-ink  명령 상자 글자
+     --detached-wash / --detached-ink  템플릿과 연결이 끊긴 생성 배지
+     --chassis-avatar   사이드바 사용자 아바타 바탕
    글꼴  --font-ui, --font-code
    모서리 --radius-panel, --radius-control
 
@@ -74,6 +78,30 @@
   --trend-cpu: #2a78d6;
   --trend-memory: #eb6834;
   --trend-disk: #1baf7a;
+  --trend-range-active-text: #ffffff;
+
+  --syntax-comment: #6a737d;
+  --syntax-string: #0a7f42;
+  --syntax-variable: #8250df;
+  --syntax-number: #0550ae;
+  --syntax-keyword: #cf222e;
+  --syntax-builtin: #953800;
+  --syntax-null: #6e7781;
+  --editor-selection: rgb(9 105 218 / 28%);
+  --editor-variable-wash: rgb(9 105 218 / 18%);
+
+  --console-rule: #29384e;
+  --console-ink: #d6e2f2;
+  --console-command: #a5d6ff;
+  --console-danger: #ff7b72;
+  --console-warning: #ffa657;
+  --console-success: #7ee787;
+  --console-info: #79c0ff;
+  --command-ink: #d9e2e8;
+
+  --detached-wash: #fef3c7;
+  --detached-ink: #92400e;
+  --chassis-avatar: rgba(255, 255, 255, 0.16);
 
   --radius-panel: 10px;
   --radius-control: 6px;
@@ -111,6 +139,17 @@
   --trend-cpu: #3987e5;
   --trend-memory: #d95926;
   --trend-disk: #199e70;
+
+  --syntax-comment: #8b949e;
+  --syntax-string: #7ee787;
+  --syntax-variable: #d2a8ff;
+  --syntax-number: #79c0ff;
+  --syntax-keyword: #ff7b72;
+  --syntax-builtin: #ffa657;
+  --syntax-null: #8b949e;
+
+  --detached-wash: #4a3a12;
+  --detached-ink: #fcd58a;
 }
 
 /* 삼성 인터넷·Chrome의 '웹 페이지 어둡게' 강제 다크 모드 방지.

@@ -79,6 +79,10 @@ function render(list, { merge = true } = {}) {
         if (u === last) { moved.push(u.body); continue; }
         const keep = [], move = [];
         for (const d of decls(u.body)) {
+          // 같은 선택자(같은 특이도)의 뒤 정의가 같은 속성을 정하면 이 선언은 어떤 요소에서도 지므로 버림 (!important 예외)
+          const imp = /!important\s*$/.test(d.value);
+          const later = g.filter((o) => pos.get(o) > pos.get(u));
+          if (later.some((o) => decls(o.body).some((x) => x.prop === d.prop && (!imp || /!important\s*$/.test(x.value))))) continue;
           const fam = family(d.prop); let conflict = false;
           for (let i = pos.get(u) + 1; i < lastPos && !conflict; i++) { const o = list[i]; if (o.raw || keyOf(o) === k) continue; conflict = decls(o.body).some((x) => family(x.prop) === fam); }
           (conflict ? keep : move).push(d.prop + ": " + d.value);

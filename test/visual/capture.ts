@@ -71,6 +71,10 @@ export async function captureScenario(browser: Browser, anonymousBrowser: Browse
     const url = await resolveUrl(page, baseUrl, scenario.url);
     await page.goto(`${baseUrl}${url}`, { waitUntil: 'networkidle0' });
     await page.evaluate(() => document.fonts.ready);
+    // 글꼴은 font-display: optional — 캐시에 없는 조각은 그 페이지 끝까지 대체 글꼴로 그려 ch 폭·글자 폭이 실행마다 달라집니다.
+    // 이 페이지가 쓰는 조각을 한 번 받아 둔 뒤 다시 열어, 항상 IBM Plex Sans KR로 그려진 모양을 찍습니다.
+    await page.reload({ waitUntil: 'networkidle0' });
+    await page.evaluate(() => document.fonts.ready);
     // 애니메이션·전환을 끝난 상태로 (hover 색이 바뀌는 중간에 찍히지 않게)
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important;caret-color:transparent!important}' });
     await new Promise((resolve) => setTimeout(resolve, 600));

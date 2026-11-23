@@ -1,0 +1,504 @@
+/* 점검 보고서 (목록·상세) 화면에서만 쓰는 규칙 */
+
+.server-table {
+  width: 100%;
+}
+
+.report-tree-type {
+  border: 1px solid var(--border);
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.report-tree-type-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.report-tree-type-summary::-webkit-details-marker,
+.report-tree-server-summary::-webkit-details-marker {
+  display: none;
+}
+
+.report-tree-type-summary {
+  padding: 14px 16px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.report-tree-type-summary::before {
+  display: inline-block;
+  width: 18px;
+  content: "▸";
+}
+
+.report-tree-server-summary::before {
+  display: inline-block;
+  content: "▸";
+}
+
+.report-tree-type[open] > .report-tree-type-summary::before,
+.report-tree-server[open] > .report-tree-server-summary::before {
+  content: "▾";
+}
+
+.report-tree-server {
+  margin: 0 12px 10px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.report-tree-server-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 14px;
+  color: var(--text);
+}
+
+.report-tree-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.report-tree-title small {
+  color: var(--text-light);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.report-tree-empty {
+  color: var(--text-light);
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+  padding: 10px 18px 14px 36px;
+}
+
+.report-tree-table {
+  min-width: 600px;
+  margin-bottom: 8px;
+}
+
+.report-tree-server {
+  overflow-x: auto;
+}
+
+.type-report-card h3 {
+  margin: 22px 0 10px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.report-group {
+  min-width: 0;
+}
+
+.report-group-title {
+  border-bottom: 2px solid var(--border);
+}
+
+.common-report-group > .card {
+  margin-bottom: 14px;
+}
+
+.role-report-group > #type-report-form {
+  display: grid;
+  gap: 14px;
+}
+
+.role-report-group .type-report-card {
+  margin: 0;
+  padding: 24px;
+}
+
+.role-report-group .type-report-card > h2 {
+  margin: 0 0 12px;
+  padding-bottom: 12px;
+  color: var(--text);
+}
+
+.role-report-group .type-report-card > .policy-help {
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  color: var(--text-light);
+}
+
+.role-report-group .type-report-card > h3 {
+  margin: 20px 0 10px;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.report-subsection {
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.report-subsection h3 {
+  margin-top: 0;
+}
+
+.type-check-table {
+  margin-bottom: 16px;
+}
+
+.db-query-results {
+  display: grid;
+  gap: 12px;
+}
+
+.db-query-result {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-soft);
+}
+
+.db-query-result-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.db-query-result-heading span {
+  color: var(--text-light);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.db-query-result-message {
+  color: var(--text-light);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  margin: 0 0 8px;
+}
+
+.db-query-result-table {
+  min-width: 0;
+}
+
+.db-query-result-table th,
+.db-query-result-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+#health-summary .summary-badge {
+  font-size: 22px;
+  gap: 12px;
+}
+
+.report-group-title {
+  margin: 32px 0 14px;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.role-report-group .type-report-card {
+  border: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.role-report-group .type-report-card > h2 {
+  border-bottom: 1px solid var(--rule);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.role-report-group .type-report-card > .policy-help {
+  border-left-color: var(--petrol);
+  background: var(--surface-sunk);
+}
+
+.report-tree-type,
+.report-tree-server {
+  border-color: var(--rule);
+  border-radius: var(--radius-control);
+}
+
+.report-tree-type {
+  background: var(--surface-sunk);
+}
+
+.report-tree-type-summary::before {
+  color: var(--slate);
+}
+
+.report-tree-server-summary::before {
+  width: 18px;
+  color: var(--slate);
+}
+
+.trend-card .section-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trend-range {
+  display: flex;
+  gap: 4px;
+}
+
+:root .trend-range .btn[aria-pressed="true"]:not(.btn-primary):not(.btn-danger),
+.trend-range .btn[aria-pressed="true"]:not(.btn-primary):not(.btn-danger) {
+  background: var(--petrol);
+  border-color: var(--petrol);
+  color: var(--trend-range-active-text);
+}
+
+.trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.trend-legend-item,
+.trend-tooltip-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.trend-cpu .trend-swatch {
+  background: var(--trend-cpu);
+}
+
+.trend-memory .trend-swatch {
+  background: var(--trend-memory);
+}
+
+.trend-disk .trend-swatch {
+  background: var(--trend-disk);
+}
+
+.trend-chart-wrap {
+  position: relative;
+}
+
+.trend-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.trend-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.trend-axis {
+  fill: var(--text-light);
+  font-size: 11px;
+}
+
+.trend-threshold {
+  stroke: var(--text-light);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
+}
+
+.trend-threshold-label {
+  paint-order: stroke;
+  stroke: var(--card-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.trend-end-label {
+  stroke: var(--card-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.trend-threshold-label {
+  fill: var(--text-light);
+  font-size: 11px;
+}
+
+.trend-guide {
+  stroke: var(--text-light);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.trend-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trend-line.trend-cpu {
+  stroke: var(--trend-cpu);
+}
+
+.trend-line.trend-memory {
+  stroke: var(--trend-memory);
+}
+
+.trend-line.trend-disk {
+  stroke: var(--trend-disk);
+}
+
+.trend-point {
+  stroke: var(--card-bg);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.trend-point.trend-cpu {
+  fill: var(--trend-cpu);
+}
+
+.trend-point.trend-memory {
+  fill: var(--trend-memory);
+}
+
+.trend-point.trend-disk {
+  fill: var(--trend-disk);
+}
+
+.trend-point.is-current {
+  stroke: var(--card-bg);
+  stroke-width: 2;
+}
+
+.trend-point.is-compare {
+  fill: var(--card-bg);
+  stroke-width: 2;
+}
+
+.trend-point.is-compare.trend-cpu {
+  stroke: var(--trend-cpu);
+}
+
+.trend-point.is-compare.trend-memory {
+  stroke: var(--trend-memory);
+}
+
+.trend-point.is-compare.trend-disk {
+  stroke: var(--trend-disk);
+}
+
+.trend-end-label {
+  paint-order: stroke;
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.trend-hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.trend-hit:focus-visible {
+  fill: var(--focus-ring);
+}
+
+.trend-tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  min-width: 150px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 12px;
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+  display: grid;
+  gap: 3px;
+}
+
+.trend-tooltip[hidden] {
+  display: none;
+}
+
+.report-item-box {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  break-inside: avoid;
+}
+
+.report-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-item-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.report-item-message {
+  margin: 6px 0 0;
+  color: var(--text-light);
+  font-size: 13px;
+}
+
+.report-item-body {
+  margin-top: 10px;
+}
+
+.report-item-body > h4 {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.report-item-body > h4:first-child {
+  margin-top: 0;
+}
+
+.report-item-body .server-table {
+  margin: 0;
+}
+
+.report-item-queries > h4 {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+

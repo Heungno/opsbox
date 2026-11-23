@@ -1,0 +1,355 @@
+/* 점검 정책 관리 화면에서만 쓰는 규칙 */
+
+.policy-check-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+  margin: 12px 0 18px;
+}
+
+.policy-item-add {
+  display: grid;
+  gap: 10px;
+}
+
+.policy-item-add label {
+  margin: 0;
+  font-weight: 700;
+}
+
+.policy-item-add select {
+  width: 100%;
+  min-height: 170px;
+}
+
+.policy-item-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.policy-item-views legend {
+  padding: 0 5px;
+  font-weight: 700;
+}
+
+.policy-item-views label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.policy-json-field textarea {
+  font-family: Consolas, monospace;
+}
+
+.policy-check-selected-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.policy-check-selected-row > span {
+  overflow-wrap: anywhere;
+}
+
+.policy-item-dialog {
+  width: min(760px, calc(100vw - 40px));
+  overflow: visible;
+}
+
+.policy-item-dialog .modal-card {
+  max-height: min(88dvh, 900px);
+  overflow: auto;
+  padding: clamp(18px, 3vw, 28px);
+  border-radius: 14px;
+}
+
+.policy-item-dialog .section-header {
+  position: sticky;
+  top: calc(-1 * clamp(18px, 3vw, 28px));
+  z-index: 2;
+  margin: calc(-1 * clamp(18px, 3vw, 28px)) calc(-1 * clamp(18px, 3vw, 28px)) 20px;
+  padding: clamp(18px, 3vw, 28px);
+  border-bottom: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.policy-item-dialog .section-header h2 {
+  font-size: 19px;
+}
+
+.policy-item-dialog .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.policy-item-dialog .policy-json-field {
+  margin-top: 14px;
+}
+
+.policy-item-dialog .policy-json-field small {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.policy-item-dialog textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.policy-item-dialog .button-area {
+  position: sticky;
+  bottom: calc(-1 * clamp(18px, 3vw, 28px));
+  z-index: 2;
+  margin: 18px calc(-1 * clamp(18px, 3vw, 28px)) calc(-1 * clamp(18px, 3vw, 28px));
+  padding: 14px clamp(18px, 3vw, 28px);
+  border-top: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+#policy-item-result-components {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#policy-item-result-components label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+#policy-item-result-components input {
+  width: 16px;
+  min-width: 16px;
+  margin: 0;
+}
+
+.policy-item-views {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.policy-advanced-settings {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.policy-advanced-settings summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.policy-advanced-settings summary span {
+  margin-left: 6px;
+  color: var(--text-light);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.policy-advanced-settings[open] summary {
+  margin-bottom: 12px;
+}
+
+.policy-template-link {
+  display: flex;
+  gap: 8px;
+}
+
+.policy-template-link input {
+  min-width: 0;
+  flex: 1;
+}
+
+.policy-check-selected-row {
+  justify-content: space-between;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.policy-check-selected-row > span {
+  min-width: 0;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.policy-check-selected-row .button-area {
+  flex: 0 0 auto;
+}
+
+#policy-list .template-list-item {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+#policy-list .template-list-item strong {
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+#policy-list .template-list-item small {
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+#policy-search {
+  grid-column: 1 / -1;
+}
+
+.policy-category-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-radius: 10px;
+}
+
+.policy-category-tabs {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.policy-category-tabs [role="tab"] {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-weight: 600;
+}
+
+.policy-category-tabs [role="tab"] span {
+  border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  .policy-category-tabs {
+    width: calc(100% - 16px);
+    margin-right: 8px;
+    margin-left: 8px;
+  }
+  .policy-category-tabs [role="tab"] {
+    gap: 4px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+  .policy-item-dialog .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .policy-check-selected-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .policy-check-selected-row .button-area {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 900px) {
+  #policy-form > .section-header {
+    margin-top: 16px;
+  }
+}
+
+.policy-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: auto;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.policy-category-tabs [role="tab"] {
+  cursor: pointer;
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 30px;
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--slate);
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.policy-category-tabs [role="tab"]:hover {
+  color: var(--ink);
+  border-color: var(--slate-soft);
+  background: var(--surface);
+}
+
+.policy-category-tabs [role="tab"][aria-selected="true"] {
+  border-color: var(--ink);
+  color: var(--surface);
+  background: var(--ink);
+  box-shadow: none;
+}
+
+.policy-category-tabs [role="tab"] span {
+  line-height: 1.5;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.check-builder-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.check-builder-form .form-group > span {
+  font-weight: 600;
+}
+
+.check-builder-form .policy-help {
+  margin: 0;
+}
+
+.check-builder-command,
+.check-builder-preview {
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
+
+.check-builder-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.check-builder-notice p {
+  margin: 0;
+  flex: 1 1 260px;
+}
+

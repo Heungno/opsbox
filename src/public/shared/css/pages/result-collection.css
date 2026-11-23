@@ -1,0 +1,11 @@
+/* 결과 수집 화면에서만 쓰는 규칙 */
+
+.result-path-list {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+}
+
+.result-path-list code {
+  word-break: break-all;
+}
+

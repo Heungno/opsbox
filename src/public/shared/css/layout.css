@@ -670,3 +670,19 @@ a[data-menu="account"]:focus-visible {
   outline-offset: 2px;
 }
 
+
+/* ---------- 사이드바 사용자 칸 아바타 ---------- */
+
+#current-user-avatar {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--chassis-avatar);
+  font-size: 13px;
+  font-weight: 700;
+}
+
