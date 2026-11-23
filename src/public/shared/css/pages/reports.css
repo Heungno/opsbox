@@ -505,41 +505,6 @@ td.table-empty-cell {
   min-width: 0;
 }
 
-.report-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: var(--space-3);
-  margin: var(--space-4) 0;
-}
-
-.report-summary button.summary-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.report-summary button.summary-card[aria-pressed="true"] {
-  border-color: var(--petrol);
-  background: var(--petrol-wash);
-}
-
-.report-summary-healthy strong { color: var(--ok); }
-.report-summary-warning strong { color: var(--warn); }
-.report-summary-critical strong { color: var(--crit); }
-
-.report-summary-latest strong {
-  font-size: var(--text-base);
-}
-
-.report-summary-latest small {
-  display: block;
-  margin-top: var(--space-1);
-  color: var(--slate);
-}
-
 .report-list-table td:first-child,
 .report-list-table .btn {
   white-space: nowrap;

@@ -2,7 +2,7 @@ import { api, notifyError } from '/shared/js/api.js';
 import { loadCodes } from '/shared/js/codes.js';
 import { createServerPicker } from '/shared/js/server-picker.js';
 import { loadStatusLabels } from '/shared/js/status.js';
-import { filterReports, renderReportSummary, renderReportTable, summarizeReports } from './report-list-view.js';
+import { filterReports, renderReportTable } from './report-list-view.js';
 
 await Promise.all([loadCodes(), loadStatusLabels()]); // 역할·상태 이름을 그리기 전에 불러옴
 
@@ -10,7 +10,6 @@ const ALL_LABEL = '전체 서버';
 const state = {
   reports: [],
   serverId: null, // null = 전체 서버(왼쪽 목록에 보이는 서버들)
-  health: null, // 요약 카드로 고른 상태
 };
 
 const picker = createServerPicker({
@@ -50,18 +49,8 @@ async function loadReports() {
 function render() {
   const selected = picker.servers().find((server) => server.id === state.serverId);
   const serverIds = new Set(selected ? [selected.id] : picker.visibleServers().map((server) => server.id));
-  const inScope = filterReports(state.reports, { serverIds, health: null });
-  // 요약 카드와 상태 거르기는 서버 하나를 골랐을 때만 (전체 서버 요약은 쓰지 않음)
-  const shown = selected ? filterReports(inScope, { health: state.health }) : inScope;
+  const shown = filterReports(state.reports, { serverIds });
   document.getElementById('report-heading').textContent = `보고서 (${selected ? selected.name : ALL_LABEL} · ${shown.length}건)`;
-  const summary = document.getElementById('report-summary');
-  summary.hidden = !selected;
-  if (selected) {
-    renderReportSummary(summary, summarizeReports(inScope), {
-      activeHealth: state.health,
-      onHealth: (health) => { state.health = health; render(); },
-    });
-  }
   renderReportTable(document.getElementById('report-list'), shown);
 }
 

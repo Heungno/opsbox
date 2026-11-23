@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light dark" />
   <title>OpsBox | 점검 보고서</title>
   <script src="/shared/js/theme-init.js?v=20261121-system"></script>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261123-deactivate" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261123-no-summary" />
 </head>
 
 <body>
@@ -43,14 +43,13 @@
             <button type="button" id="btn-reset" class="btn btn-secondary">초기화</button>
           </div>
         </form>
-        <div id="report-summary" class="report-summary" aria-live="polite"></div>
         <div id="report-list" aria-live="polite"><p class="report-list-empty">조회중...</p></div>
       </section>
     </div>
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261122-layout"></script>
-  <script type="module" src="/reports/report-list.js?v=20261123-no-all-summary"></script>
+  <script type="module" src="/reports/report-list.js?v=20261123-no-summary"></script>
 </body>
 
 </html>
