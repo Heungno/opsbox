@@ -4,6 +4,7 @@ import { Server } from '../servers/types';
 import { ManagedTemplate, ScriptPart } from '../templates/types';
 import { getServerProduct, getServerRoles } from '../servers/service';
 import { getCommonCodes } from '../common-codes/service';
+import { CommandEntry, resolveCommandItems } from './commands';
 import { defaultResultPath } from '../settings/service';
 import { getPolicies } from '../policies/service';
 
@@ -23,8 +24,12 @@ const PART_PREFIX: Record<ScriptOs, string> = { Windows: 'WINDOWS-PART', Linux: 
 /** 반드시 있어야 하는 조각. 그 밖의 조각은 Linux에서 템플릿이 없으면 건너뜁니다(결과에는 미수집으로 남음). */
 const REQUIRED_PARTS: ReadonlySet<string> = new Set(['START', 'SAVE']);
 
+/** 관리 명령 템플릿을 실행하는 공통 조각 항목 */
+const COMMAND_RUNNER = 'COMMAND_RUNNER';
+
 export function selectScriptParts(server: Server, templates: ManagedTemplate[], os: ScriptOs, configToken: string): string[] {
   const roles = getServerRoles(server);
+  const commandItems = new Set(resolveCommandItems(server, templates).map((entry) => entry.item));
   const catalog = getPolicies().filter((policy) => policy.os === server.os);
   const basicPolicy = catalog.find((policy) => policy.id === server.policyIds?.BASIC && policy.category === 'BASIC');
   const basicItems = basicPolicy?.items.filter((item) => item.enabled) ?? [];
@@ -43,8 +48,10 @@ export function selectScriptParts(server: Server, templates: ManagedTemplate[], 
       const builderItems = new Set(isBuilderItemIn(catalog, server.policyIds?.DB, items));
       if (items.some((item) => !builderItems.has(item))) selected.push('DB_QUERY_RUNNER');
       selected.push(...items.filter((item) => builderItems.has(item)));
-    } else selected.push(...items);
+    } else selected.push(...items.filter((item) => !commandItems.has(item)));
   }
+  // 명령 템플릿 항목은 조각을 고르지 않고, 실행기 조각 하나를 역할 항목 뒤·SAVE 앞에 넣습니다.
+  if (commandItems.size) selected.push(COMMAND_RUNNER as ScriptPart);
   selected.push('SAVE');
 
   const parts: string[] = [];
@@ -76,7 +83,7 @@ export function isBuilderItemIn(policies: { id: string; items: { id: string; exe
   return items.filter((item) => policy?.items.find((entry) => entry.id === item)?.executor.type === 'CHECK_BUILDER');
 }
 
-export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedTemplate[] = [], customQueryTemplates: ManagedTemplate[] = []) {
+export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedTemplate[] = [], customQueryTemplates: ManagedTemplate[] = [], templates: ManagedTemplate[] = []) {
   const roles = getServerRoles(server);
   const products = Object.fromEntries(roles.map((role) => [role, getServerProduct(server, role)]).filter(([, product]) => product));
   const policyQueries = policyQueryTemplates.map(({ id, name, item, content }) => ({
@@ -125,6 +132,7 @@ export function buildScriptConfig(server: Server, policyQueryTemplates: ManagedT
       rolePolicySettings: server.rolePolicySettings ?? {},
     },
     database: { policyQueries, customQueries },
+    commands: resolveCommandItems(server, templates) as CommandEntry[],
   };
 }
 

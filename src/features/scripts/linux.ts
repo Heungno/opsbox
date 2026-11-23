@@ -1,5 +1,6 @@
 import { Server } from '../servers/types';
 import { ManagedTemplate } from '../templates/types';
+import { CommandEntry } from './commands';
 import { buildScriptConfig, ScriptConfig, selectScriptParts } from './assembly';
 
 /*
@@ -154,6 +155,18 @@ function itemInputs(config: ScriptConfig): string {
   return `declare -A OPSBOX_ITEM_INPUT=(${entries.join(' ')})`;
 }
 
+/** 관리 명령 항목 배열(역할·항목·이름·내용·미수집 문구는 같은 순서). 항목이 없으면 아무것도 넣지 않습니다. */
+function commandBlock(commands: CommandEntry[]): string[] {
+  if (!commands.length) return [];
+  return [
+    array('OPSBOX_COMMAND_ROLES', commands.map((entry) => entry.role)),
+    array('OPSBOX_COMMAND_ITEMS', commands.map((entry) => entry.item)),
+    array('OPSBOX_COMMAND_NAMES', commands.map((entry) => entry.name)),
+    array('OPSBOX_COMMAND_CONTENTS', commands.map((entry) => entry.content)),
+    array('OPSBOX_COMMAND_MESSAGES', commands.map((entry) => entry.message ?? '')),
+  ];
+}
+
 function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): string {
   const { server, checks, database } = config;
   const products = server.products as Partial<Record<string, string>>;
@@ -168,6 +181,8 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
   const hasLinuxPart = (item: string) => templates.some((template) => template.enabled && template.kind === 'SCRIPT_PART' && template.os === 'Linux' && template.item === item);
   const roleItems = Object.entries(checks.rolePolicies).flatMap(([role, items]) => items.map((item) => ({ role, ...item })));
   const notCollectedMessage = ({ role, item }: { role: string; item: string }) => {
+    const command = config.commands.find((entry) => entry.role === role && entry.item === item);
+    if (command?.message) return command.message;
     if (role === 'DB' && item === 'DB_CUSTOM_QUERY') return database.customQueries.length ? BASIC_NOT_COLLECTED_MESSAGE : '실행할 사용자 쿼리를 서버 정책에서 선택하세요.';
     if (role === 'DB' && !hasLinuxPart(item)) return queryItems.has(item) ? BASIC_NOT_COLLECTED_MESSAGE : dbQueryMissingMessage(dbms);
     return hasLinuxPart(item) ? BASIC_NOT_COLLECTED_MESSAGE : ROLE_NOT_SUPPORTED_MESSAGE;
@@ -234,13 +249,14 @@ function renderBashConfig(config: ScriptConfig, templates: ManagedTemplate[]): s
     array('OPSBOX_BASIC_ITEM_META', checks.basicPolicyItems.map(({ name, result, executorType }) => jsonFields({ name, result, executorType }))),
     scalar('OPSBOX_BASIC_NOT_COLLECTED_MESSAGE', BASIC_NOT_COLLECTED_MESSAGE),
     itemInputs(config),
+    ...commandBlock(config.commands),
     '# ---- OpsBox 설정 끝 ----',
     ROLE_RUNTIME,
   ].join('\n');
 }
 
 export function assembleLinuxScript(server: Server, templates: ManagedTemplate[], policyQueryTemplates: ManagedTemplate[] = [], customQueryTemplates: ManagedTemplate[] = []): string {
-  const config = buildScriptConfig(server, policyQueryTemplates, customQueryTemplates);
+  const config = buildScriptConfig(server, policyQueryTemplates, customQueryTemplates, templates);
   const block = renderBashConfig(config, templates);
   const parts = selectScriptParts(server, templates, 'Linux', CONFIG_TOKEN)
     .map((part) => part.replace(/\r\n/g, '\n').replace(CONFIG_TOKEN, () => block).trim());

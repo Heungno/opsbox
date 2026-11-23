@@ -7,6 +7,9 @@ import { resolveQueryTemplate } from './db-query-defaults';
 import { getPolicies } from '../policies/service';
 import { isBuilderItemIn } from './assembly';
 
+/** 스크립트 조각과 관리 명령 템플릿 (조립이 항목별로 알맞게 고름) */
+const scriptTemplates = () => [...getTemplates({ kind: 'SCRIPT_PART' }), ...getTemplates({ kind: 'COMMAND' })];
+
 export function generateScript(serverId: string): string {
   const server = getServer(serverId);
 
@@ -33,7 +36,7 @@ export function generateScript(serverId: string): string {
     if (!template?.enabled || template.kind !== 'QUERY' || (template.dbms ?? 'MSSQL') !== getServerProduct(server, 'DB')) throw new BadRequestError(`DBMS에 맞는 기타 쿼리 템플릿을 사용할 수 없습니다: ${id}`);
     return template;
   });
-  if (server.os === 'Windows') return assembleWindowsScript(server, getTemplates({ kind: 'SCRIPT_PART' }), policyQueryTemplates, customQueryTemplates);
+  if (server.os === 'Windows') return assembleWindowsScript(server, scriptTemplates(), policyQueryTemplates, customQueryTemplates);
 
   // Linux: 항목마다 서버 DB 제품용 쿼리를 고릅니다. 쿼리가 없는 항목은 스크립트를 막지 않고 결과에 미수집으로 남깁니다.
   const dbms = getServerProduct(server, 'DB');
@@ -42,5 +45,5 @@ export function generateScript(serverId: string): string {
       const template = resolveQueryTemplate(getTemplate, dbms, item, server.rolePolicySettings?.[item]?.queryTemplateId);
       return template ? [{ ...template, item }] : [];
     });
-  return assembleLinuxScript(server, getTemplates({ kind: 'SCRIPT_PART' }), linuxQueryTemplates, customQueryTemplates);
+  return assembleLinuxScript(server, scriptTemplates(), linuxQueryTemplates, customQueryTemplates);
 }
