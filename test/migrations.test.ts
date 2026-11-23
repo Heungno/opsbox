@@ -44,6 +44,7 @@ function downgradeToVersion2() {
   transaction(() => {
     removeTemplate('WEBTOB41-COMMAND-WEB_ENGINE_STATUS');
     removeTemplate('LINUX-PART-COMMAND_RUNNER');
+    removeTemplate('WINDOWS-PART-COMMAND_RUNNER');
     for (const id of ['linux-was-default', 'windows-was-default']) {
       const policy = findPolicy(id)!;
       upsertPolicy({ ...policy, items: policy.items.filter((item) => item.id !== 'WAS_ENGINE_STATUS') });
@@ -71,6 +72,7 @@ test('버전 3: 기존 DB에 명령 템플릿·WAS 엔진 상태를 더하고, �
   assert.ok((codes.scriptItems as Array<{ value: string }>).some((c) => c.value === 'WAS_ENGINE_STATUS'));
   assert.ok((codes.scriptItems as Array<{ value: string }>).some((c) => c.value === 'COMMAND_RUNNER'));
   assert.equal(findTemplate('LINUX-PART-COMMAND_RUNNER')!.item, 'COMMAND_RUNNER');
+  assert.equal(findTemplate('WINDOWS-PART-COMMAND_RUNNER')!.os, 'Windows');
   assert.ok((codes.rolePolicies as Record<string, string[]>).WAS.includes('WAS_ENGINE_STATUS'));
   assert.equal((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version, SCHEMA_VERSION);
 });
