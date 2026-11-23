@@ -3,6 +3,7 @@ import './helpers/env';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import fs from 'node:fs';
 import { prepareDatabase } from '../src/db';
 import { deleteGeneratedTemplate, deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from '../src/features/templates/service';
 
@@ -50,4 +51,19 @@ test('템플릿: 점검 만들기 템플릿을 지워도 지우기 전 내용이
 
 test('템플릿: 쓰이지 않는 종류 SCRIPT(통째 스크립트)는 저장할 수 없다', () => {
   assert.throws(() => saveTemplate({ name: 'x', kind: 'SCRIPT', os: 'Linux', content: 'echo' }), /템플릿 종류를 선택하세요/);
+});
+
+test('템플릿: COMMAND는 제품·항목을 저장하고 OS는 없으며, 형식이 틀리면 저장 거부', () => {
+  const WEBTOB = fs.readFileSync('docs/spikes/command-templates/webtob-4.1.cmd', 'utf8');
+  const saved = saveTemplate({ name: 'WebtoB 4.1 엔진', kind: 'COMMAND', product: 'WebtoB', item: 'WEB_ENGINE_STATUS', os: 'Linux', content: WEBTOB });
+  assert.equal(saved.product, 'WebtoB'); assert.equal(saved.item, 'WEB_ENGINE_STATUS'); assert.equal(saved.os, undefined);
+  assert.throws(() => saveTemplate({ name: 'x', kind: 'COMMAND', product: 'WebtoB', item: 'WEB_ENGINE_STATUS', content: 'st\n' }), /@opsbox-tool/);
+  assert.throws(() => saveTemplate({ name: 'x', kind: 'COMMAND', product: 'WebtoB', item: 'CPU', content: WEBTOB }), (e: any) => e.errors.some((x: any) => x.field === 'item'));
+  assert.throws(() => saveTemplate({ name: 'x', kind: 'COMMAND', product: 'Oracle', item: 'WEB_ENGINE_STATUS', content: WEBTOB }), (e: any) => e.errors.some((x: any) => x.field === 'product'));
+});
+
+test('템플릿: COMMAND 경고는 응답에만 붙고 저장된 템플릿에는 없다', () => {
+  const saved = saveTemplate({ name: '경고', kind: 'COMMAND', product: 'WebtoB', item: 'WEB_ENGINE_STATUS', content: '# @opsbox-tool x\n# @opsbox-args -Psecret\n# @opsbox-status Healthy ~ OK\nst\n' }) as any;
+  assert.match(saved.warnings[0], /비밀번호/);
+  assert.equal((getTemplate(saved.id) as any).warnings, undefined);
 });

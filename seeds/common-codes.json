@@ -213,6 +213,10 @@
     {
       "value": "QUERY",
       "label": "DB 쿼리"
+    },
+    {
+      "value": "COMMAND",
+      "label": "관리 명령"
     }
   ],
   "scriptItems": [
