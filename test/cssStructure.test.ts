@@ -72,7 +72,7 @@ test('인쇄 CSS: 직접 색은 :root 토큰 블록에만, 인쇄 토큰 블록�
 test('예전 별칭 토큰(--primary, --bg, --text-light, --card-bg, --border, --success, --danger, --warning 등)은 어디에도 없다', () => {
   const ALIASES = ['primary', 'primary-hover', 'primary-bright', 'bg', 'card-bg', 'text', 'text-light', 'border', 'success', 'success-bg', 'danger', 'danger-light', 'warning',
     'surface-muted', 'surface-soft', 'control-bg', 'page-glow', 'shadow-card', 'badge-bg', 'badge-fg', 'badge-border'];
-  const pattern = new RegExp(`--(?:${ALIASES.join('|')})(?![\w-])`);
+  const pattern = new RegExp(`--(?:${ALIASES.join('|')})(?![\\w-])`);
   const offenders = listFiles(PUBLIC, /\.(css|js|html)$/).filter((file) => pattern.test(fs.readFileSync(file, 'utf8'))).map((file) => path.relative(PUBLIC, file));
   assert.deepEqual(offenders, []);
 });

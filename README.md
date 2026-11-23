@@ -122,8 +122,9 @@ test/              node:test 테스트 (golden/: 생성 스크립트·설정 API
   - 화면에 보이는 이름·선택 목록은 하드코딩하지 않고 `shared/js/codes.js`(`codeLabel`·`codeList`·`roleLabel`)로 공통코드에서 가져옵니다. 프로그램 동작이 기대는 값(정책 분류 등)은 서버 `src/shared/constants.ts`에 두고, 화면에 필요하면 API로 내려줍니다.
   - 요소는 `shared/js/dom.js`의 `el()`로 만들고 `innerHTML`은 쓰지 않습니다.
 - **CSS 규칙** (`src/public/shared/css/`, `test/cssStructure.test.ts`가 검사)
-  - 파일 역할: `tokens.css`(색·글꼴·모서리 토큰) → `base.css`(요소 기본값) → `layout.css`(사이드바·본문 틀) → `components.css`(여러 화면이 쓰는 부품: 카드·표·배지·버튼·폼·대화상자 등) → `pages/<화면>.css`(그 화면에서만 쓰는 규칙). `app.css`는 이 순서로 `@import`만 하고, HTML은 `app.css` 하나만 링크합니다(보고서 상세만 `reports/report-print.css`를 더 링크).
+  - 파일 역할: `tokens.css`(색·글꼴 토큰, 간격 `--space-*`, 글자 크기 `--text-*`, 모서리 `--radius-*` 단계) → `base.css`(요소 기본값) → `layout.css`(사이드바·본문 틀) → `components.css`(여러 화면이 쓰는 부품: 카드·표·배지·버튼·폼·대화상자 등) → `pages/<화면>.css`(그 화면에서만 쓰는 규칙). `app.css`는 이 순서로 `@import`만 하고, HTML은 `app.css` 하나만 링크합니다(보고서 상세만 `reports/report-print.css`를 더 링크).
   - 색은 토큰으로만 씁니다(`var(--ink)`, `var(--crit)` 등). 규칙 안에 `#hex`·`rgb()`·색 이름을 직접 적지 않습니다(`transparent`, `currentColor`, 토큰을 섞은 `color-mix()`는 허용). 새 색이 필요하면 `tokens.css` 위 설명 목록과 토큰 블록에 용도 이름으로 추가합니다.
+  - `padding`·`margin`·`gap`·`font-size`·`border-radius`도 토큰으로만 씁니다(`var(--space-3)`, `var(--text-md)`, `var(--radius-control)` 등). px을 직접 적지 않으며(0·1px·%는 허용) 테스트가 검사합니다. 화면 너비 기준(`@media`)은 480·640·900·1180px 네 가지만 씁니다.
   - 다크 테마는 `tokens.css`의 `:root[data-theme="dark"]`에서 토큰 값만 바꿉니다. 규칙마다 다크 덮어쓰기를 만들지 않습니다.
   - 같은 선택자를 두 파일에 두지 않습니다. 새 화면의 CSS는 `pages/`에 파일을 만들고 `app.css`에 `@import`를 추가합니다.
   - `!important`는 같은 줄(또는 바로 윗줄)에 이유 주석이 있을 때만 씁니다. HTML에 `style="…"`·`<style>`을 쓰지 않고 클래스로 만듭니다(그래프 위치처럼 JS가 계산하는 값은 예외).
@@ -134,7 +135,8 @@ test/              node:test 테스트 (golden/: 생성 스크립트·설정 API
   - `npm run visual:baseline`: 지금 CSS로 기준을 찍습니다. 바꾸기 전에 한 번.
   - `npm run visual:compare`: 기준과 계산된 스타일을 비교해 다른 요소·속성을 보여 줍니다(전체 약 15분). 일부러 모양을 바꿨다면 확인한 뒤 그 시나리오만 기준을 다시 찍습니다.
   - `npm run visual:report`: 전·후 스크린샷과 차이 이미지를 나란히 놓은 `test/visual/.out/report.html`을 만듭니다.
-  - 세 명령 모두 `-- --only=<글자>`를 붙이면 이름에 그 글자가 든 시나리오만 돌립니다(예: `npm run visual:compare -- --only=report-print`).
+  - `-- --only=<글자>`는 baseline·compare에만 적용되어 이름에 그 글자가 든 시나리오만 돌립니다(예: `npm run visual:compare -- --only=report-print`).
+  - `test/visual/.out/notes.json`에 `{ "시나리오 이름": "판정 메모" }`를 적어 두면 report가 그 시나리오 옆에 메모를 보여 줍니다.
   - 서버 상세의 "OpsBox 수신함" 칸에 실행마다 다른 임시 폴더 이름이 나와서, 서버 상세 화면은 줄바꿈 높이가 조금 달라질 수 있습니다(CSS 차이 아님).
   - CSS를 고치는 동안에는 비교를 돌리지 않습니다(서버가 파일을 그때그때 읽음).
 - **기준 비교 테스트**: `test/golden.test.ts`는 데모 서버의 생성 스크립트와 설정 API 응답을 `test/golden/`과 비교합니다. 동작을 일부러 바꿨을 때만 `node --import tsx scripts/update-golden.ts`로 다시 만들고, 바뀐 줄을 확인한 뒤 커밋하세요.

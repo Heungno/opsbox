@@ -38,6 +38,7 @@
      color-scheme이 dark면 브라우저가 쪽 여백을 어둡게 칠하고 쪽 번호가 보이지 않으므로 light로 고정하고,
      따로 덮어쓰지 않은 요소도 밝게 나오도록 색 토큰을 밝은 테마 값으로 되돌립니다. */
   :root,
+  :root[data-theme="light"],
   :root[data-theme="dark"] {
     color-scheme: light !important;
     --paper: #ffffff;

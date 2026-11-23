@@ -333,11 +333,6 @@
   min-width: 220px;
 }
 
-.role-script-policy-item .policy-script-control {
-  max-width: 520px;
-  margin: var(--space-1) 0;
-}
-
 .role-policy-list {
   display: grid;
   gap: var(--space-2);

@@ -569,8 +569,6 @@
 
 #sidebar[data-theme] .sidebar-menu .menu-icon,
 #sidebar[data-theme] .sidebar-submenu .menu-icon {
-  --icon-color: currentColor;
-  --icon-bg: transparent;
   width: 20px;
   height: 20px;
   flex: 0 0 20px;
