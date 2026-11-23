@@ -41,3 +41,14 @@ test('스크립트 관리: 정책의 사용자 항목(CUSTOM_)을 항목 목록�
   const items = customScriptItems([{ os: 'Linux', category: 'WEB', items: [{ id: 'CUSTOM_A', name: '사용자 점검' }, { id: 'CPU', name: 'CPU' }] }]);
   assert.deepEqual(items.map((i: any) => [i.value, i.label, i.role]), [['CUSTOM_A', '사용자 점검 · WEB', 'WEB']]);
 });
+
+const cmd = { id: 'c', name: 'JEUS 6', kind: 'COMMAND', product: 'JEUS', item: 'WAS_ENGINE_STATUS', enabled: true };
+test('스크립트 관리: 관리 명령은 항목의 역할 묶음에, OS 필터와 상관없이 보인다', () => {
+  const items = [...ITEMS, { value: 'WAS_ENGINE_STATUS', label: 'WAS 엔진 상태', role: 'WAS' }];
+  assert.equal(templateGroup(cmd, items), 'WAS');
+  assert.deepEqual(filterTemplates([cmd], { os: 'Linux' }, items).map((t: any) => t.id), ['c']);
+  assert.deepEqual(filterTemplates([cmd], { kind: 'COMMAND', item: 'WAS_ENGINE_STATUS' }, items).map((t: any) => t.id), ['c']);
+});
+test('스크립트 관리: 관리 명령 한 줄 설명', () => {
+  assert.equal(templateMeta(cmd), '관리 명령 · JEUS · WAS_ENGINE_STATUS · 사용');
+});

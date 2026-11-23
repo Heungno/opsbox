@@ -56,6 +56,7 @@ editor.addEventListener('scroll', () => {
 function renderHighlightedTemplate() {
   const source = editor.value || ' ';
   const escapeHtml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  if (kind.value === 'COMMAND') { highlight.textContent = source; document.getElementById('template-highlight').dataset.language = 'plain'; return; }
   const language = kind.value === 'QUERY' ? 'sql' : document.getElementById('template-os').value === 'Linux' ? 'bash' : 'powershell';
   const definitions = {
     sql: {
@@ -104,25 +105,30 @@ function renderHighlightedTemplate() {
 
 function updateFormMode() {
   const part = kind.value === 'SCRIPT_PART';
+  const command = kind.value === 'COMMAND';
   const script = part;
   if (state.commonCodes) {
     const itemSelect = document.getElementById('template-item');
     const previousItem = itemSelect.value;
     const itemCodes = kind.value === 'QUERY'
       ? state.commonCodes.scriptItems.filter((entry) => entry.role === 'DB' && entry.value !== 'DB_QUERY_RUNNER')
-      : state.commonCodes.scriptItems;
+      : command
+        ? state.commonCodes.scriptItems.filter((entry) => entry.role === 'WEB' || entry.role === 'WAS')
+        : state.commonCodes.scriptItems;
     populateCodeSelect(itemSelect, itemCodes);
     if (itemCodes.some((entry) => entry.value === previousItem)) itemSelect.value = previousItem;
   }
   document.querySelectorAll('.template-script-option').forEach((node) => node.hidden = !script);
-  document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part);
+  document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part && !command);
+  document.querySelectorAll('.template-command-option').forEach((node) => node.hidden = !command);
+  if (!command) document.querySelectorAll('.template-part-option').forEach((node) => node.hidden = !part);
   document.querySelectorAll('.template-query-dbms-option').forEach((node) => node.hidden = kind.value !== 'QUERY');
   const linuxOption = document.querySelector('#template-os option[value="Linux"]');
   if (linuxOption) linuxOption.disabled = part;
   if (part && document.getElementById('template-os').value !== 'Windows') document.getElementById('template-os').value = 'Windows';
   const selectedItem = state.commonCodes?.scriptItems.find((entry) => entry.value === document.getElementById('template-item').value);
   document.querySelectorAll('.template-query-option').forEach((node) => { node.hidden = !(part && selectedItem?.value === 'DB_QUERY_RUNNER'); });
-  help.textContent = part
+  help.textContent = command ? COMMAND_HELP : part
     ? '점검 항목별 스크립트는 서버 정책에서 선택한 항목만 다운로드 시 조립됩니다. 각 항목은 자기 점검 결과만 수집하고, 최종 JSON 예시는 오른쪽에 표시됩니다. 실행 준비 항목의 @@CONFIG_BASE64@@ 토큰은 지우지 마세요.'
     : kind.value === 'QUERY'
       ? '선택한 DBMS에서 실행할 SQL입니다. 점검 항목과 분리해 여러 항목에서 재사용할 수 있습니다. 결과는 컬럼명과 행을 읽어 보고서 표로 표시합니다. 첫 번째 컬럼을 __OPSBOX_STATUS로 지정하면 Healthy, Warning, Critical 상태도 함께 판정할 수 있습니다.'
@@ -130,6 +136,12 @@ function updateFormMode() {
   renderHighlightedTemplate();
   renderOutputExample();
 }
+
+const COMMAND_HELP = [
+  '관리 도구 명령을 실행해 상태를 판정하는 템플릿입니다. 머리 주석: @opsbox-product(제품 이름), @opsbox-tool(도구 경로), @opsbox-home(설치 경로 변수), @opsbox-args(도구 인자), @opsbox-require(필수 환경 변수), @opsbox-quit(종료 명령), @opsbox-timeout(초, 기본 20), @opsbox-status <수준> ~ <정규식>. 주석이 아닌 빈 줄 아닌 줄은 도구에 보낼 명령입니다.',
+  '판정은 Critical, Warning, Healthy 순서로 처음 맞는 규칙을 씁니다. 정규식은 ERE 범위만 쓰세요(Linux는 bash grep -E, Windows는 .NET 정규식이 읽으므로 \\d, 전방탐색 등은 쓰지 않습니다). 출력을 대문자로 바꾼 뒤 맞춰 보므로 패턴도 대문자로 씁니다.',
+  '@opsbox-args 값에는 공백을 쓸 수 없습니다. 비밀번호는 직접 쓰지 말고 ${환경변수}로 지정하세요.',
+].join('\n');
 
 function renderOutputExample() {
   const examples = {
@@ -160,6 +172,7 @@ function renderOutputExample() {
       checks: { rolePolicies: { [definition.role]: { status: 'Healthy', items: [{ item, name: definition.label, status: 'Healthy', detail: { sample: true } }] } } },
     } : {});
   }
+  else if (kind.value === 'COMMAND') example = { product: 'JEUS 6', status: 'Healthy', command: 'jeusadmin: allenginenames, pidlist', output: '…', message: null };
   else if (kind.value === 'QUERY') example = { columns: ['__OPSBOX_STATUS', 'databaseName', 'state'], rows: [['Healthy', 'appdb', 'ONLINE']] };
   else example = { schemaVersion: 2, server: { id: 'SERVER01', roles: ['WEB'] }, resources: {}, checks: {}, summary: { status: 'Healthy' } };
   pane.textContent = JSON.stringify(example, null, 2);
@@ -173,6 +186,7 @@ async function loadTemplates() {
     populateCodeSelect(document.getElementById('template-kind'), state.commonCodes.templateKinds);
     populateCodeSelect(document.getElementById('template-os'), state.commonCodes.operatingSystems);
     populateCodeSelect(document.getElementById('template-item'), state.commonCodes.scriptItems);
+    populateCodeSelect(document.getElementById('template-product'), [...new Set([...state.commonCodes.productsByRole.WEB, ...state.commonCodes.productsByRole.WAS].map((entry) => typeof entry === 'string' ? entry : entry.value))]);
     populateCodeSelect(document.getElementById('template-dbms'), state.commonCodes.productsByRole.DB);
     populateCodeSelect(document.getElementById('template-filter'), [{ value: '', label: '전체' }, ...state.commonCodes.templateKinds]);
     populateCodeSelect(document.getElementById('template-os-filter'), [{ value: '', label: '전체 OS' }, ...state.commonCodes.operatingSystems]);
@@ -287,8 +301,10 @@ function openTemplate(item) {
   document.getElementById('btn-template-save').textContent = '변경 저장';
   document.getElementById('template-name').value = item.name;
   kind.value = item.kind;
+  updateFormMode();
   document.getElementById('template-os').value = item.os || 'Windows';
   document.getElementById('template-item').value = item.item || 'START';
+  if (item.product) document.getElementById('template-product').value = item.product;
   document.getElementById('template-dbms').value = item.dbms || 'MSSQL';
   document.getElementById('template-uses-query').checked = item.usesQueryTemplate === true;
   document.getElementById('template-enabled').checked = item.enabled;
@@ -308,7 +324,8 @@ async function persistTemplate() {
   const data = {
     name: document.getElementById('template-name').value.trim(), kind: kind.value,
     os: kind.value === 'SCRIPT_PART' ? document.getElementById('template-os').value : undefined,
-    item: undefined,
+    product: kind.value === 'COMMAND' ? document.getElementById('template-product').value : undefined,
+    item: kind.value === 'COMMAND' ? document.getElementById('template-item').value : undefined,
     dbms: kind.value === 'QUERY' ? document.getElementById('template-dbms').value : undefined,
     usesQueryTemplate: false,
     enabled: document.getElementById('template-enabled').checked,
@@ -322,6 +339,9 @@ async function persistTemplate() {
     return false;
   }
   showToast('템플릿을 저장했습니다.', 'success');
+  const { warnings = [], ...template } = saved;
+  saved = template;
+  for (const warning of warnings) showToast(warning, 'info', { duration: 10000 });
   state.allTemplates = state.allTemplates.some((item) => item.id === saved.id) ? state.allTemplates.map((item) => item.id === saved.id ? saved : item) : [...state.allTemplates, saved];
   state.editingId = saved.id;
   state.hasUnsavedChanges = false;

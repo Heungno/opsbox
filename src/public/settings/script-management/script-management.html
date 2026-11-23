@@ -36,7 +36,8 @@
             <div class="form-group"><label for="template-name">이름</label><input id="template-name" required placeholder="예: Windows WEB 기본 점검" /></div>
             <div class="form-group"><label for="template-kind">종류</label><select id="template-kind"></select></div>
             <div class="form-group template-script-option"><label for="template-os">운영체제</label><select id="template-os"></select></div>
-            <div class="form-group template-part-option" hidden><select id="template-item"></select></div>
+            <div class="form-group template-command-option" hidden><label for="template-product">제품</label><select id="template-product"></select></div>
+            <div class="form-group template-part-option template-command-option" hidden><select id="template-item" aria-label="점검 항목"></select></div>
             <div class="form-group template-query-dbms-option" hidden><label for="template-dbms">DBMS 종류</label><select id="template-dbms"></select></div>
             <label class="template-enabled template-query-option" hidden><input id="template-uses-query" type="checkbox" /> 실행 쿼리 템플릿 사용</label>
             <label class="template-enabled"><input id="template-enabled" type="checkbox" checked /> 사용</label>

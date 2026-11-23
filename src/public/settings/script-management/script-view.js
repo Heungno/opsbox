@@ -28,7 +28,7 @@ const templateOs = (template) => template.os || (template.kind === 'QUERY' ? 'Wi
 /** filters: { kind, os, group('ALL'·묶음), item } */
 export function filterTemplates(templates, { kind = '', os = '', group = 'ALL', item = '' } = {}, scriptItems) {
   return templates.filter((template) => (!kind || template.kind === kind)
-    && (!os || templateOs(template) === os)
+    && (!os || template.kind === 'COMMAND' || templateOs(template) === os)
     && (group === 'ALL' || templateGroup(template, scriptItems) === group)
     && (!item || template.kind === 'QUERY' || template.item === item));
 }
@@ -41,6 +41,7 @@ export function groupCounts(templates, { kind = '', os = '' } = {}, scriptItems,
 
 /** 목록 한 줄 설명 */
 export function templateMeta(template) {
+  if (template.kind === 'COMMAND') return `관리 명령 · ${template.product || '미지정'} · ${template.item || '미지정'} · ${template.enabled ? '사용' : '중지'}`;
   const typeLabel = template.kind === 'QUERY' ? 'DB 쿼리' : `점검 항목 · ${template.item || '미지정'}`;
   const os = template.kind === 'QUERY' ? '' : template.os || '';
   const dbms = template.kind === 'QUERY' ? ` · DBMS · ${template.dbms || 'MSSQL'}` : '';
