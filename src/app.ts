@@ -90,14 +90,6 @@ export function buildApp(): FastifyInstance {
   app.register(pageRoutes);
 
   app.get('/login', async (_request, reply) => reply.sendFile('login.html'));
-  app.get('/settings/server-management/detail', async (request, reply) => reply.redirect(`/settings/server-management${request.url.includes('?') ? request.url.slice(request.url.indexOf('?')) : ''}`));
-
-  // 예전 화면 주소(북마크)도 계속 열리도록 연결합니다. (/dashboard.html은 pages.ts에서 처리)
-  app.get('/server', async (request, reply) => reply.redirect('/servers'));
-  app.get('/server.html', async (request, reply) => reply.redirect('/servers'));
-  app.get('/server-detail.html', async (request, reply) => reply.redirect(`/servers/detail${request.url.slice('/server-detail.html'.length)}`));
-  app.get('/report-list.html', async (request, reply) => reply.redirect('/reports'));
-  app.get('/report.html', async (request, reply) => reply.redirect(`/reports/detail${request.url.slice('/report.html'.length)}`));
 
   /* API */
   app.register(apiRoutes, {

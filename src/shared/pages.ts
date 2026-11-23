@@ -28,12 +28,12 @@ interface PageDefinition {
 }
 
 export const PAGES: PageDefinition[] = [
-  { paths: ['/', '/dashboard', '/dashboard.html'], file: 'dashboard/dashboard.html', menu: 'dashboard' },
+  { paths: ['/', '/dashboard'], file: 'dashboard/dashboard.html', menu: 'dashboard' },
   { paths: ['/reports'], file: 'reports/report-list.html', menu: 'reports' },
   { paths: ['/reports/detail'], file: 'reports/report-detail.html', menu: 'reports' },
   { paths: ['/servers'], file: 'settings/server-management/server-list.html', menu: 'servers' },
-  { paths: ['/settings/server-management', '/servers/detail'], file: 'settings/server-management/server-detail.html', menu: 'servers' },
-  { paths: ['/settings/script-management', '/settings/templates'], file: 'settings/script-management/script-management.html', menu: 'settings-scripts' },
+  { paths: ['/settings/server-management'], file: 'settings/server-management/server-detail.html', menu: 'servers' },
+  { paths: ['/settings/script-management'], file: 'settings/script-management/script-management.html', menu: 'settings-scripts' },
   { paths: ['/settings/policy-management'], file: 'settings/policy-management/policy-management.html', menu: 'policy-management' },
   { paths: ['/settings/common-code-management'], file: 'settings/common-code-management/common-code-management.html', menu: 'common-code-management' },
   { paths: ['/settings/result-collection'], file: 'settings/result-collection/result-collection.html', menu: 'result-collection' },
