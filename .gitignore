@@ -26,3 +26,7 @@ data/demo/
 
 # 화면 모양 비교 결과 (npm run visual:*)
 test/visual/.out/
+
+# 점검 만들기 Windows 실기 검증 (scripts/build-windows-check-test.ts 로 생성)
+opsbox-check-builder-test.ps1
+opsbox-check-builder-test-result.json
