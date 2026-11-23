@@ -749,3 +749,8 @@
   gap: var(--space-2);
   align-items: center;
 }
+
+/* 정보 수정 창의 [미사용으로 바꾸기]는 저장·취소와 떨어뜨려 오른쪽 끝에 */
+.server-modal-deactivate {
+  margin-left: auto;
+}

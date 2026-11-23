@@ -143,3 +143,24 @@ test('보고서 목록: 서버를 고르면 그 서버 보고서만, 주소에 �
   assert.equal(await session.page.evaluate(() => location.search), '');
   assert.deepEqual(session.errors.slice(errorsBefore), []);
 });
+
+test('서버 상세: 정보 수정 창에서 미사용으로 바꾸고, 안내 줄의 [다시 사용]으로 되돌린다', { skip }, async () => {
+  const errorsBefore = session.errors.length;
+  const page = session.page;
+  await open('/settings/server-management?id=WEB-03');
+  await page.click('#btn-edit-server');
+  await settle(300);
+  assert.equal(await page.$eval('#server-modal-deactivate', (node) => (node as HTMLElement).hidden), false, '수정 창에는 미사용 버튼이 보임');
+  await page.click('#server-modal-deactivate'); // 확인 창은 before()에서 자동 수락
+  await settle(1200);
+  assert.equal((await call('GET', '/api/servers/WEB-03')).data.enabled, false);
+  assert.equal(await page.$eval('#server-modal', (node) => (node as HTMLDialogElement).open), false, '창이 닫힘');
+  assert.equal(await page.$eval('#server-inactive-banner', (node) => (node as HTMLElement).hidden), false, '미사용 안내 줄');
+  await page.click('#btn-activate-server');
+  await settle(1200);
+  assert.notEqual((await call('GET', '/api/servers/WEB-03')).data.enabled, false);
+  await page.click('#server-add');
+  await settle(300);
+  assert.equal(await page.$eval('#server-modal-deactivate', (node) => (node as HTMLElement).hidden), true, '신규 등록 창에는 없음');
+  assert.deepEqual(session.errors.slice(errorsBefore), []);
+});

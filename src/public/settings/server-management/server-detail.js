@@ -269,6 +269,7 @@ function bindServerEdit() {
     state.serverInfoDirty = false;
     document.getElementById('server-modal-title').textContent = '신규 서버 등록';
     document.getElementById('server-modal-save').textContent = '등록';
+    document.getElementById('server-modal-deactivate').hidden = true;
     document.getElementById('server-id-group').hidden = false;
     document.getElementById('server-form-id').required = true;
     form.reset();
@@ -280,6 +281,8 @@ function bindServerEdit() {
     state.serverInfoDirty = false;
     document.getElementById('server-modal-title').textContent = '서버 정보 수정';
     document.getElementById('server-modal-save').textContent = '변경 저장';
+    // 이미 미사용이면 상세 위 안내 줄의 [다시 사용]을 씀
+    document.getElementById('server-modal-deactivate').hidden = state.currentServer.enabled === false;
     document.getElementById('server-id-group').hidden = true;
     document.getElementById('server-form-id').required = false;
     document.getElementById('server-form-name').value = state.currentServer.name;
@@ -290,6 +293,21 @@ function bindServerEdit() {
     dialog.showModal();
   });
   document.getElementById('server-modal-close').addEventListener('click', closeDialog);
+  document.getElementById('server-modal-deactivate').addEventListener('click', async () => {
+    const id = state.currentServer.id;
+    if (!confirm(`${id} 서버를 미사용으로 바꿀까요?\n미사용으로 바꾸면 대시보드와 스크립트 내려받기에서 빠집니다. 점검 결과와 보고서는 그대로 남습니다.`)) return;
+    try {
+      await api(`/api/servers/${encodeURIComponent(id)}/deactivate`, { method: 'POST' });
+      state.serverInfoDirty = false;
+      dialog.close();
+      showToast(`${id} 서버를 미사용으로 바꿨습니다.`, 'success');
+      await picker.load();
+      state.currentServer = null;
+      await loadServer();
+    } catch (error) {
+      notifyError(error, '서버를 미사용으로 바꾸지 못했습니다.');
+    }
+  });
   document.getElementById('server-modal-cancel').addEventListener('click', closeDialog);
   dialog.addEventListener('cancel', (event) => {
     if (state.serverInfoDirty && !confirm('서버 정보에 저장하지 않은 변경사항이 있습니다. 저장하지 않고 닫을까요?')) event.preventDefault();
