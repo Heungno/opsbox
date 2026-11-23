@@ -23,3 +23,6 @@ logs/
 
 # 데모 데이터 (npm run demo:seed 로 다시 만들 수 있음)
 data/demo/
+
+# 화면 모양 비교 결과 (npm run visual:*)
+test/visual/.out/

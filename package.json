@@ -11,7 +11,10 @@
     "demo:seed": "node scripts/demo.cjs seed",
     "demo:dev": "node scripts/demo.cjs dev",
     "demo:remove": "node scripts/demo.cjs remove",
-    "test:e2e": "node --import tsx --test \"test/e2e/**/*.e2e.ts\""
+    "test:e2e": "node --import tsx --test \"test/e2e/**/*.e2e.ts\"",
+    "visual:baseline": "node --no-warnings --import tsx test/visual/run.ts baseline",
+    "visual:compare": "node --no-warnings --import tsx test/visual/run.ts compare",
+    "visual:report": "node --no-warnings --import tsx test/visual/run.ts report"
   },
   "keywords": [],
   "author": "",
