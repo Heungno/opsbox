@@ -15,15 +15,15 @@ test('보고서 목록: 서버·상태로 거르고 최신순', () => {
   assert.deepEqual(filterReports(REPORTS, { serverIds: new Set(), health: null }), []);
 });
 
-test('보고서 목록: 요약은 건수·서버 수·상태별 수·최근 점검', () => {
-  assert.deepEqual(summarizeReports(REPORTS), { total: 3, servers: 2, healthy: 2, warning: 0, critical: 1, latest: { checkDate: '2026-01-03 00:00:00', serverName: 'B 이름' } });
-  assert.deepEqual(summarizeReports([]), { total: 0, servers: 0, healthy: 0, warning: 0, critical: 0, latest: null });
+test('보고서 목록: 요약은 건수·상태별 수·최근 점검', () => {
+  assert.deepEqual(summarizeReports(REPORTS), { total: 3, healthy: 2, warning: 0, critical: 1, latest: { checkDate: '2026-01-03 00:00:00', serverName: 'B 이름' } });
+  assert.deepEqual(summarizeReports([]), { total: 0, healthy: 0, warning: 0, critical: 0, latest: null });
 });
 
-test('보고서 목록: 요약 카드 — 서버 카드는 전체일 때만, 상태 카드는 눌림 표시와 토글', () => {
+test('보고서 목록: 요약 카드 — 상태 카드는 눌림 표시와 토글', () => {
   const box = new FakeElement('div');
   const picked: Array<string | null> = [];
-  renderReportSummary(box, summarizeReports(REPORTS), { showServers: false, activeHealth: 'Warning', onHealth: (h: string | null) => picked.push(h) });
+  renderReportSummary(box, summarizeReports(REPORTS), { activeHealth: 'Warning', onHealth: (h: string | null) => picked.push(h) });
   assert.deepEqual(box.find('span').map((s) => s.textContent), ['보고서', '정상', '경고', '위험', '최근 점검']);
   const buttons = box.find('button', 'summary-card');
   assert.deepEqual(buttons.map((b) => [b.getAttribute('data-health'), b.getAttribute('aria-pressed')]), [['Healthy', 'false'], ['Warning', 'true'], ['Critical', 'false']]);
@@ -32,8 +32,7 @@ test('보고서 목록: 요약 카드 — 서버 카드는 전체일 때만, 상
   assert.deepEqual(picked, [null, 'Critical']);
   assert.match(box.textContent, /2026-01-03 00:00:00B 이름/);
 
-  renderReportSummary(box, summarizeReports([]), { showServers: true, activeHealth: null, onHealth: () => {} });
-  assert.deepEqual(box.find('span').map((s) => s.textContent), ['보고서', '서버', '정상', '경고', '위험', '최근 점검']);
+  renderReportSummary(box, summarizeReports([]), { activeHealth: null, onHealth: () => {} });
   assert.equal(box.find('strong').at(-1)!.textContent, '-');
 });
 

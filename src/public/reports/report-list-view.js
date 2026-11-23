@@ -20,7 +20,6 @@ export function summarizeReports(reports) {
   const latest = reports.reduce((best, item) => (!best || (item.checkDate || '') > (best.checkDate || '') ? item : best), null);
   return {
     total: reports.length,
-    servers: new Set(reports.map((item) => item.serverId)).size,
     healthy: count('Healthy'),
     warning: count('Warning'),
     critical: count('Critical'),
@@ -34,10 +33,9 @@ function card(tag, label, value, className = '') {
   return box;
 }
 
-/** 요약 카드. 정상·경고·위험 카드는 눌러서 표를 그 상태로 거름(다시 누르면 풂). */
-export function renderReportSummary(container, summary, { showServers, activeHealth, onHealth }) {
+/** 요약 카드(서버 하나를 골랐을 때). 정상·경고·위험 카드는 눌러서 표를 그 상태로 거름(다시 누르면 풂). */
+export function renderReportSummary(container, summary, { activeHealth, onHealth }) {
   const cards = [card('div', '보고서', summary.total)];
-  if (showServers) cards.push(card('div', '서버', summary.servers));
   for (const [health, key] of HEALTHS) {
     const button = card('button', statusLabel(health), summary[key], `report-summary-${key}`);
     button.type = 'button';

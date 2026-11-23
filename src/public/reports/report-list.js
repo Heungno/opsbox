@@ -51,13 +51,17 @@ function render() {
   const selected = picker.servers().find((server) => server.id === state.serverId);
   const serverIds = new Set(selected ? [selected.id] : picker.visibleServers().map((server) => server.id));
   const inScope = filterReports(state.reports, { serverIds, health: null });
-  const shown = filterReports(inScope, { health: state.health });
+  // 요약 카드와 상태 거르기는 서버 하나를 골랐을 때만 (전체 서버 요약은 쓰지 않음)
+  const shown = selected ? filterReports(inScope, { health: state.health }) : inScope;
   document.getElementById('report-heading').textContent = `보고서 (${selected ? selected.name : ALL_LABEL} · ${shown.length}건)`;
-  renderReportSummary(document.getElementById('report-summary'), summarizeReports(inScope), {
-    showServers: !selected,
-    activeHealth: state.health,
-    onHealth: (health) => { state.health = health; render(); },
-  });
+  const summary = document.getElementById('report-summary');
+  summary.hidden = !selected;
+  if (selected) {
+    renderReportSummary(summary, summarizeReports(inScope), {
+      activeHealth: state.health,
+      onHealth: (health) => { state.health = health; render(); },
+    });
+  }
   renderReportTable(document.getElementById('report-list'), shown);
 }
 
