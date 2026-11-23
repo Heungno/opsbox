@@ -11,11 +11,13 @@ import { assembleWindowsScript } from '../src/features/scripts/windows';
 import { COMMAND_NOT_SELECTED_MESSAGE } from '../src/features/scripts/commands';
 import type { ManagedTemplate } from '../src/features/templates/types';
 
-/* 명령 템플릿 항목 조립. 실행기 조각은 아직 시드에 없어 시험용 SCRIPT_PART(# RUNNER)를 넘깁니다. */
+/* 명령 템플릿 항목 조립. 위치를 찾기 쉽게 시드의 실행기 조각 대신 시험용 SCRIPT_PART(# RUNNER)를 넘깁니다. */
 const runner = (os: 'Linux' | 'Windows'): ManagedTemplate => ({
   id: `${os.toUpperCase()}-PART-COMMAND_RUNNER`, name: '실행기', kind: 'SCRIPT_PART', os, item: 'COMMAND_RUNNER', enabled: true, content: '# RUNNER', updatedAt: '',
 });
-const templates = (): ManagedTemplate[] => [...getTemplates({ kind: 'SCRIPT_PART' }), ...getTemplates({ kind: 'COMMAND' }), runner('Linux'), runner('Windows')];
+const templates = (): ManagedTemplate[] => [
+  ...getTemplates({ kind: 'SCRIPT_PART' }).filter((t) => t.item !== 'COMMAND_RUNNER'), ...getTemplates({ kind: 'COMMAND' }), runner('Linux'), runner('Windows'),
+];
 const seedPart = (id: string) => getTemplates({ kind: 'SCRIPT_PART' }).find((t) => t.id === id)!.content;
 const COMMAND_IDS = { WEB_ENGINE_STATUS: 'WEBTOB41-COMMAND-WEB_ENGINE_STATUS', WAS_ENGINE_STATUS: 'JEUS6-COMMAND-WAS_ENGINE_STATUS' };
 

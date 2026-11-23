@@ -37,6 +37,7 @@ export const SEED_UPGRADES: Record<number, { templates: string[]; policyItems: A
     codes: [
       { category: 'templateKinds', value: 'COMMAND' },
       { category: 'scriptItems', value: 'WAS_ENGINE_STATUS' },
+      { category: 'scriptItems', value: 'COMMAND_RUNNER' },
       { category: 'rolePolicies', group: 'WAS', value: 'WAS_ENGINE_STATUS' },
     ],
   },

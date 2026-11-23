@@ -43,12 +43,13 @@ test('마이그레이션 2: 빈 DB(새로 만드는 중)에서는 아무것도 �
 function downgradeToVersion2() {
   transaction(() => {
     removeTemplate('WEBTOB41-COMMAND-WEB_ENGINE_STATUS');
+    removeTemplate('LINUX-PART-COMMAND_RUNNER');
     for (const id of ['linux-was-default', 'windows-was-default']) {
       const policy = findPolicy(id)!;
       upsertPolicy({ ...policy, items: policy.items.filter((item) => item.id !== 'WAS_ENGINE_STATUS') });
     }
     const tables = readTables();
-    tables.rows = tables.rows.filter((row) => !(row.category === 'templateKinds' && row.value === 'COMMAND') && !(row.category === 'scriptItems' && row.value === 'WAS_ENGINE_STATUS')
+    tables.rows = tables.rows.filter((row) => !(row.category === 'templateKinds' && row.value === 'COMMAND') && !(row.category === 'scriptItems' && ['WAS_ENGINE_STATUS', 'COMMAND_RUNNER'].includes(row.value))
       && !(row.category === 'rolePolicies' && row.value === 'WAS_ENGINE_STATUS'));
     replaceTables(tables);
     db.exec('PRAGMA user_version = 2');
@@ -68,6 +69,8 @@ test('버전 3: 기존 DB에 명령 템플릿·WAS 엔진 상태를 더하고, �
   const codes = fromTables(readTables());
   assert.ok((codes.templateKinds as Array<{ value: string }>).some((c) => c.value === 'COMMAND'));
   assert.ok((codes.scriptItems as Array<{ value: string }>).some((c) => c.value === 'WAS_ENGINE_STATUS'));
+  assert.ok((codes.scriptItems as Array<{ value: string }>).some((c) => c.value === 'COMMAND_RUNNER'));
+  assert.equal(findTemplate('LINUX-PART-COMMAND_RUNNER')!.item, 'COMMAND_RUNNER');
   assert.ok((codes.rolePolicies as Record<string, string[]>).WAS.includes('WAS_ENGINE_STATUS'));
   assert.equal((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version, SCHEMA_VERSION);
 });
