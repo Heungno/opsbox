@@ -53,7 +53,7 @@ export function parseCommandTemplate(content: string): { template: CommandTempla
           break;
         }
         case 'status': {
-          const rule = /^(\S+)\s*~\s*(.*)$/.exec(value);
+          const rule = /^(\S+)\s+~\s+(\S.*)$/.exec(value);
           if (!rule) { lineErrors.push({ line: no, message: `${no}번 줄: 판정 규칙은 '<수준> ~ <정규식>' 형식이어야 합니다.` }); break; }
           if (!LEVELS.includes(rule[1])) { lineErrors.push({ line: no, message: `${no}번 줄: 수준은 Critical·Warning·Healthy 중 하나여야 합니다.` }); break; }
           try { new RegExp(rule[2]); } catch { lineErrors.push({ line: no, message: `${no}번 줄: 정규식이 올바르지 않습니다.` }); break; }

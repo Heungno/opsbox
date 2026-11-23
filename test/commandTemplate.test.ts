@@ -28,3 +28,20 @@ test('명령 템플릿: @opsbox-args에 ${…} 아닌 -P 값이 있으면 경고
   assert.deepEqual(errors, []);
   assert.match(warnings[0].message, /비밀번호를 직접 적었을 수 있습니다/);
 });
+
+test('명령 템플릿: 실행기가 무시할 판정 줄(~ 앞뒤 공백 없음, 빈 정규식)은 오류', () => {
+  for (const line of ['# @opsbox-status Healthy~OK', '# @opsbox-status Healthy ~ ', '# @opsbox-status Healthy ~']) {
+    const { errors } = parseCommandTemplate(`# @opsbox-tool x\n${line}\nst\n`);
+    assert.deepEqual(errors.map((e) => e.message), ["2번 줄: 판정 규칙은 '<수준> ~ <정규식>' 형식이어야 합니다."], line);
+  }
+});
+
+test('명령 템플릿: 모르는 키는 경고, CRLF도 같게 읽고, -P${VAR}는 경고 없음', () => {
+  const unknown = parseCommandTemplate('# @opsbox-tool x\n# @opsbox-foo bar\n# @opsbox-status Healthy ~ OK\nst\n');
+  assert.deepEqual(unknown.errors, []);
+  assert.match(unknown.warnings[0].message, /@opsbox-foo는 모르는 머리 주석이라 무시합니다/);
+  const lf = '# @opsbox-tool x\n# @opsbox-args -P${PW}\n# @opsbox-status Healthy ~ OK\nst\n';
+  const a = parseCommandTemplate(lf);
+  assert.deepEqual(a.warnings, []);
+  assert.deepEqual(parseCommandTemplate(lf.replace(/\n/g, '\r\n')), a);
+});
