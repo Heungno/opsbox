@@ -58,6 +58,8 @@ const STATES: Omit<Scenario, 'theme' | 'width'>[] = [
   { name: 'result-path-error', url: '/settings/result-collection', prepare: async (page) => {
     await page.$eval('#result-path-linux', (input) => { (input as HTMLInputElement).value = 'relative/dir'; });
     await page.click('#result-path-form button[type="submit"]');
+    // 누른 뒤 마우스가 버튼 위에 남으면 hover 색이 찍힐 때마다 달라져서 치웁니다
+    await page.mouse.move(0, 0);
     await wait(800);
   } },
   { name: 'empty-report-list', url: '/reports', prepare: async (page) => {
