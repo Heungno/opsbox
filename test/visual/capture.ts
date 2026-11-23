@@ -9,7 +9,7 @@ import type { Browser, Page } from 'puppeteer-core';
 import type { Scenario } from './scenarios';
 import type { StyleSnapshot } from './style-diff';
 
-/** 비교할 CSS 속성. 너비·높이는 글자(시각 등)에 따라 변해서 넣지 않습니다(배치는 스크린샷이 봄). */
+/** 비교할 CSS 속성. width·height 값 자체는 글자(시각 등)에 따라 변해서 넣지 않습니다(배치는 스크린샷이 봄). */
 export const PROPERTIES = [
   'color', 'background-color', 'background-image',
   ...['top', 'right', 'bottom', 'left'].flatMap((side) => [`border-${side}-color`, `border-${side}-width`, `border-${side}-style`, `padding-${side}`, `margin-${side}`]),
@@ -18,6 +18,9 @@ export const PROPERTIES = [
   'display', 'position', 'gap', 'grid-template-columns', 'flex-direction', 'flex-grow', 'flex-wrap', 'align-items', 'justify-content',
   'box-shadow', 'outline-color', 'outline-style', 'outline-width', 'outline-offset', 'opacity', 'visibility', 'overflow-x', 'white-space', 'word-break', 'cursor',
   'fill', 'stroke',
+  // 글자에 따라 안 변하는 크기·위치 (width/height 자체는 글자 길이에 따라 변해서 제외)
+  'min-width', 'max-width', 'min-height', 'max-height', 'flex-basis', 'flex-shrink', 'grid-template-rows', 'grid-column-start', 'grid-column-end',
+  'top', 'right', 'bottom', 'left', 'z-index', 'transform', 'vertical-align', 'list-style-type', 'text-overflow', 'overflow-y', 'font-style', 'font-variant-numeric', 'font-feature-settings', 'backdrop-filter', 'filter',
 ];
 
 /** 브라우저 안에서 실행: 요소 경로 → 계산된 스타일 */
