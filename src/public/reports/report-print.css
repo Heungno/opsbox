@@ -5,6 +5,18 @@
    - 화면에서는 .print-only 요소를 숨기고, 인쇄할 때만 보입니다.
 ========================================================= */
 
+/* 인쇄 토큰: 인쇄 양식의 색·글꼴은 여기서만 정합니다 (화면 규칙은 쓰지 않음) */
+:root {
+  --print-ink: #000;
+  --print-paper: #fff;
+  --print-line: #000;
+  --print-head-bg: #e6e6e6;
+  --print-grid: #d0d0d0;
+  --print-wash: #f5f5f5;
+  --print-serif: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
+  --print-sans: "맑은 고딕", "Malgun Gothic", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+}
+
 .print-only {
   display: none;
 }
@@ -17,7 +29,7 @@
     content: "- " counter(page) " -";
     font-family: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", serif;
     font-size: 9pt;
-    color: #000;
+    color: var(--print-ink);
   }
 }
 
@@ -43,23 +55,11 @@
     --warn: #000000;
     --crit: #000000;
     --idle: #666666;
-    --primary: #000000;
-    --bg: #ffffff;
-    --card-bg: #ffffff;
-    --text: #000000;
-    --text-light: #333333;
-    --border: #000000;
-    --surface-muted: #f5f7f8;
-    --surface-soft: #ffffff;
     --table-hover: transparent;
-    --control-bg: #ffffff;
-    --badge-bg: #ffffff;
-    --badge-fg: #000000;
-    --badge-border: #000000;
     --trend-cpu: #2a78d6;
     --trend-memory: #eb6834;
     --trend-disk: #1baf7a;
-    background: #fff !important;
+    background: var(--print-paper) !important;
   }
 
   /* 추세 그래프: 기간 버튼·값 상자는 인쇄하지 않음 */
@@ -71,15 +71,9 @@
 
   /* 인쇄 양식의 검은 테두리 색 대신 연한 격자 */
   .trend-grid {
-    stroke: #d0d0d0 !important;
+    stroke: var(--print-grid) !important;
   }
 
-  :root {
-    --print-serif: "바탕", Batang, "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", serif;
-    --print-sans: "맑은 고딕", "Malgun Gothic", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
-    --print-line: #000;
-    --print-head-bg: #e6e6e6;
-  }
 
   * {
     print-color-adjust: exact;
@@ -98,12 +92,12 @@
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
-    background: #fff !important;
+    background: var(--print-paper) !important;
     box-shadow: none !important;
   }
 
   body {
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-family: var(--print-serif) !important;
     font-size: 10pt !important;
     line-height: 1.6 !important;
@@ -156,9 +150,9 @@
   .print-approval td {
     padding: 2px 4px !important;
     border: 0.75pt solid var(--print-line) !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     text-align: center !important;
-    background: #fff !important;
+    background: var(--print-paper) !important;
   }
 
   .print-approval .print-approval-label {
@@ -181,7 +175,7 @@
     padding: 4mm 0 !important;
     border-top: 2.25pt double var(--print-line);
     border-bottom: 2.25pt double var(--print-line);
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-family: var(--print-sans) !important;
     font-size: 19pt !important;
     font-weight: 700 !important;
@@ -221,7 +215,7 @@
     padding: 0 0 1.5mm !important;
     border: 0 !important;
     border-bottom: 1.5pt solid var(--print-line) !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-family: var(--print-sans) !important;
     font-size: 14pt !important;
     font-weight: 700 !important;
@@ -243,7 +237,7 @@
     margin: 0 0 2.5mm !important;
     padding: 0 !important;
     border: 0 !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-family: var(--print-sans) !important;
     font-size: 11.5pt !important;
     font-weight: 700 !important;
@@ -257,7 +251,7 @@
   .report-group .card h3 {
     counter-increment: item;
     margin: 4mm 0 2mm !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-family: var(--print-sans) !important;
     font-size: 10.5pt !important;
     font-weight: 700 !important;
@@ -331,7 +325,7 @@
     border: 0 !important;
     border-left: 1.5pt solid var(--print-line) !important;
     background: transparent !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-size: 9pt !important;
   }
 
@@ -365,11 +359,25 @@
   td {
     padding: 1.6mm 2mm !important;
     border: 0.5pt solid var(--print-line) !important;
-    color: #000 !important;
-    background: #fff !important;
+    color: var(--print-ink) !important;
+    background: var(--print-paper) !important;
     vertical-align: middle !important;
     overflow-wrap: anywhere;
     white-space: normal !important;
+  }
+
+  /* 로그 표: 고정 표 배치(같은 너비)라 짧은 칸은 좁게, 로그 내용이 남는 너비를 모두 씀.
+     시각은 한 줄(YYYY-MM-DD HH:MM:SS), 파일 경로는 길면 줄바꿈 (설정에 없는 다른 열은 남은 너비를 나눔) */
+  .report-log-table th[data-column="timestamp"] {
+    width: 36mm;
+  }
+
+  .report-log-table th[data-column="path"] {
+    width: 44mm;
+  }
+
+  .report-log-table td {
+    vertical-align: top !important; /* 긴 로그 줄이 여러 줄이 되어도 시각·경로가 첫 줄에 맞도록 */
   }
 
   /* 일반 표는 좌우 바깥선을 비워 둠 (결재란은 사방 테두리 유지) */
@@ -421,7 +429,7 @@
     border: 0 !important;
     border-radius: 0 !important;
     background: none !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-size: inherit !important;
     font-weight: 700 !important;
     white-space: nowrap;
@@ -464,7 +472,7 @@
     padding: 0 !important;
     margin-left: 1mm !important;
     background: none !important;
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-size: 8pt !important;
     font-weight: 400 !important;
   }
@@ -485,7 +493,7 @@
     border: 0 !important;
     border-right: 0.5pt solid var(--print-line) !important;
     border-radius: 0 !important;
-    background: #fff !important;
+    background: var(--print-paper) !important;
   }
 
   .result-item:nth-child(4n) {
@@ -493,18 +501,18 @@
   }
 
   .result-item span {
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-family: var(--print-sans);
     font-size: 8.5pt !important;
   }
 
   .result-item strong {
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-size: 13pt !important;
   }
 
   .result-date {
-    color: #000 !important;
+    color: var(--print-ink) !important;
     font-size: 8.5pt !important;
   }
 
@@ -519,8 +527,8 @@
     padding: 2mm 3mm !important;
     border: 0.5pt solid var(--print-line) !important;
     border-radius: 0 !important;
-    background: #f5f5f5 !important;
-    color: #000 !important;
+    background: var(--print-wash) !important;
+    color: var(--print-ink) !important;
     font-size: 7.5pt !important;
     line-height: 1.4 !important;
     white-space: pre-wrap !important;
@@ -528,7 +536,7 @@
   }
 
   .webtob-console-output * {
-    color: #000 !important;
+    color: var(--print-ink) !important;
   }
 
   #webtob-report-details,

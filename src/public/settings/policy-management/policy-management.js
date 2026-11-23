@@ -26,7 +26,7 @@ function renderItems() {
   state.editingItems.forEach((item) => {
     const row = document.createElement('article'); row.className = 'policy-check-selected-row';
     const summary = document.createElement('span'); summary.textContent = itemSummary(item);
-    const actions = document.createElement('div'); actions.className = 'button-area'; actions.style.margin = '0';
+    const actions = document.createElement('div'); actions.className = 'button-area';
     const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'btn btn-small'; edit.textContent = '편집'; edit.addEventListener('click', () => openItem(item));
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-small btn-danger'; remove.textContent = '삭제'; remove.addEventListener('click', () => { if (!confirmDetachedLoss([item], '이 항목을 지우고 정책을 저장하면')) return; state.editingItems = state.editingItems.filter((entry) => entry.id !== item.id); state.hasUnsavedChanges = true; renderItems(); });
     actions.append(edit, remove); row.append(summary, actions); host.append(row);

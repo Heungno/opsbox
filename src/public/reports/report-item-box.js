@@ -30,12 +30,18 @@ function el(tag, className, text) {
 
 const cellText = (value) => (value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value));
 
-function buildTable(columns, rows, valueOf) {
+function buildTable(columns, rows, valueOf, tableClass = 'server-table') {
   const scroll = el('div', 'table-scroll');
-  const table = el('table', 'server-table');
+  const table = el('table', tableClass);
   const head = el('thead');
   const headRow = el('tr');
-  columns.forEach((column) => headRow.append(el('th', null, column.label || column.key || String(column))));
+  columns.forEach((column) => {
+    const th = el('th', null, column.label || column.key || String(column));
+    // 열 이름: 인쇄 CSS가 열마다 너비를 정할 때 씀 (예: 로그 표의 시각·파일 경로)
+    const key = column.key ?? (typeof column === 'string' ? column : null);
+    if (key) th.setAttribute('data-column', key);
+    headRow.append(th);
+  });
   head.append(headRow);
   const body = el('tbody');
   rows.forEach((values) => {
@@ -123,7 +129,7 @@ function renderLogView(components, detail, hasMessage) {
   const columns = configured.length ? configured : [{ key: 'timestamp', label: '시각' }, { key: 'path', label: '파일 경로' }, { key: 'message', label: '로그 내용' }];
   const rows = (Array.isArray(detail.samples) ? detail.samples : []).map((sample) => ({ ...sample, message: sample.text || sample.message }));
   const counts = logCounts(detail);
-  const table = rows.length ? buildTable(columns, rows, (values, column) => values[column.key]) : emptyOrNull(hasMessage || Boolean(counts), '표시할 로그 데이터가 없습니다.');
+  const table = rows.length ? buildTable(columns, rows, (values, column) => values[column.key], 'server-table report-log-table') : emptyOrNull(hasMessage || Boolean(counts), '표시할 로그 데이터가 없습니다.');
   if (!counts) return table;
   const wrap = el('div', 'report-log-view');
   wrap.append(counts);

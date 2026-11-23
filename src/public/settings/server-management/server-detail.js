@@ -277,7 +277,7 @@ function bindServerEdit() {
     roleChoices(selectedRoles).forEach(({ value: role, label: roleLabel }) => {
       const row = document.createElement('div'); row.className = 'role-product-row';
       const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = role; checkbox.checked = selectedRoles.includes(role);
-      checkbox.className = 'role-choice-checkbox'; checkbox.style.cssText = 'appearance:checkbox;width:16px;height:16px;min-width:16px;max-width:16px;min-height:16px;max-height:16px;flex:0 0 16px;padding:0;margin:0;box-shadow:none;'; label.className = 'role-choice-label';
+      checkbox.className = 'role-choice-checkbox'; label.className = 'role-choice-label';
       label.append(checkbox, document.createTextNode(` ${roleLabel}`)); row.append(label);
       if (codeList('productsByRole', role).length) { const select = document.createElement('select'); select.dataset.roleProduct = role; select.add(new Option('제품 선택', '')); codeList('productsByRole', role).forEach(({ value, label }) => select.add(new Option(label, value))); select.value = selectedProducts[role] || ''; row.append(select); }
       checkbox.addEventListener('change', () => { row.classList.toggle('active', checkbox.checked); if (!checkbox.checked && row.querySelector('select')) row.querySelector('select').value = ''; }); checkbox.dispatchEvent(new Event('change')); roleContainer.appendChild(row);

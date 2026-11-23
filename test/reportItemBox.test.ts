@@ -155,6 +155,9 @@ test('로그 점검(WEB_LOG·WAS_LOG)은 로그 표 위에 검사 범위와 에�
   assert.equal(box.find('td').map((cell) => cell.textContent).join(','), '2026-11-22 10:00:00,/var/log/nginx/error.log,ERROR upstream timed out', '로그 표는 그대로');
   assert.equal(box.find('h4').length, 0, '블록은 하나(로그)라 소제목 없음');
   assert.equal(box.find('p', 'report-log-read-error').length, 0);
+  // 인쇄 CSS가 열마다 너비를 정할 수 있게: 로그 표 클래스와 머리 칸의 열 이름
+  assert.equal(box.find('table', 'report-log-table').length, 1);
+  assert.deepEqual(box.find('th').map((cell) => cell.getAttribute('data-column')), ['timestamp', 'path', 'message']);
 
   // 발견 0건이어도 다섯 가지 모두 보이고 모두 꺼짐, 빈 로그 안내는 덧붙이지 않음
   const clean = boxes(await render([{ ...log, status: 'Healthy', detail: { ...log.detail, matchedLineCount: 0, categories: { fatal: 0, errorException: 0, warning: 0, http5xx: 0, http4xx: 0 }, samples: [] } }]))[0];

@@ -33,3 +33,10 @@ Task 6: Ruling: 화면 파일의 직접 색 44곳·다크 덮어쓰기 13개 →
 Task 6: Ruling (사용자 결정 2026-11-23): 다크 덮어쓰기 .template-list-item이 .is-selected를 이겨 다크에서 선택 항목이 안 보였음 → 없애니 다크에서도 선택 강조가 보임. 받아들임 → 해당 다크 시나리오 15개 기준 다시 찍음
 Task 6: complete (tests: visual:compare 0 diffs 120 scenarios(다크 선택 항목 15개 기준 갱신 뒤), e2e 9/9, unit 233 pass / 20 fail = Windows 환경만(EPERM, golden CRLF))
 T7 BASE=(Task 6 커밋)
+Task 7: Ruling: 로그 건수 수정(34c8d75)이 보고서 화면을 바꿔 HEAD 비교가 16/120 어긋남 → report- 시나리오 20개 기준을 HEAD로 다시 찍고 시작. server-detail 6개(db·web, 1024·390)는 OpsBox 수신함 칸의 무작위 임시 폴더 이름 길이로 높이만 흔들림 — CSS 무관
+Task 7: Ruling: 별칭 → 새 이름 146곳(rename-aliases), --shadow-card는 none으로, --focus-ring·--diff-*-wash는 정식 토큰. 인쇄 CSS의 별칭 덮어쓰기 줄 삭제
+Task 7: Ruling (사용자 결정 2026-11-23): 다크 인쇄에서만 --surface-soft가 #fff였음(밝은 테마 인쇄는 :root[data-theme="light"]가 인쇄 :root를 이겨 #f5f7f8) → 새 이름으로 바꾸니 다크 인쇄 항목 상자 11개가 밝은 테마 인쇄와 같아짐. 받아들임 → report-print-dark 기준 다시 찍음
+Task 7: Ruling: 인라인 → 클래스. server-detail 체크박스 cssText는 servers.css 규칙이 이미 같은 값을 정해서 그냥 삭제, 그 규칙의 !important 12개도 특이도(0,2,1)로 충분해 삭제. 남은 !important 6줄은 같은 줄 이유 주석
+Task 7: Ruling: 인쇄 토큰은 계획의 --print-rule/--print-font 대신 기존 이름 --print-line/--print-serif/--print-sans 유지 + --print-ink/paper/grid/wash/head-bg. @page 쪽 번호 색도 var(--print-ink)
+Task 7: Ruling (사용자 요청): 인쇄 로그 표가 고정 배치라 칸이 같은 너비 → th[data-column]로 시각 36mm·경로 44mm, 로그 내용이 나머지
+Task 7: complete (tests: cssStructure 9/9, visual:compare 0 diffs except server-detail 6개(임시 폴더 이름), e2e 9/9, unit 실패 = Windows 환경만(EPERM, golden CRLF; resultImport는 전체 실행에서만 흔들림))

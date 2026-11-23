@@ -14,10 +14,10 @@
 .template-output-example {
   min-width: 0;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 10px;
-  color: var(--text);
-  background: var(--surface-soft);
+  color: var(--ink);
+  background: var(--surface-sunk);
 }
 
 .template-output-example h3 {
@@ -28,14 +28,14 @@
 .template-output-example pre {
   overflow: auto;
   margin: 0 0 8px;
-  color: var(--text);
+  color: var(--ink);
   font: 11px/1.5 Consolas, 'Courier New', monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .template-output-example small {
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 .template-editor {
@@ -43,9 +43,9 @@
   min-height: 340px;
   height: min(58vh, 680px);
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 10px;
-  background: var(--control-bg);
+  background: var(--surface);
 }
 
 .template-editor pre {
@@ -75,7 +75,7 @@
 }
 
 .template-editor pre {
-  color: var(--text);
+  color: var(--ink);
 }
 
 .template-editor pre::-webkit-scrollbar {
@@ -94,9 +94,9 @@
 }
 
 .template-editor textarea:focus {
-  background: var(--control-bg);
-  color: var(--text);
-  -webkit-text-fill-color: var(--text);
+  background: var(--surface);
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
   border: 0;
   box-shadow: none;
 }
@@ -108,7 +108,7 @@
 .template-variable {
   border-radius: 3px;
   background: var(--editor-variable-wash);
-  color: var(--primary-bright);
+  color: var(--petrol);
   font-weight: 700;
 }
 
@@ -140,7 +140,7 @@
 
 .template-help {
   margin-top: 8px;
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
 }
 
@@ -192,7 +192,7 @@
   white-space: pre;
   overflow-wrap: normal;
   resize: none;
-  caret-color: var(--text);
+  caret-color: var(--ink);
   font-family: var(--font-code);
 }
 
@@ -203,8 +203,8 @@
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  background: var(--badge-bg);
-  color: var(--badge-fg);
+  background: var(--surface);
+  color: var(--petrol);
   vertical-align: middle;
 }
 

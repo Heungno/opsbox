@@ -5,7 +5,7 @@
 }
 
 .report-tree-type {
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   margin: 10px 0;
   overflow: hidden;
 }
@@ -22,7 +22,7 @@
 
 .report-tree-type-summary {
   padding: 14px 16px;
-  color: var(--text);
+  color: var(--ink);
   font-weight: 700;
 }
 
@@ -44,15 +44,15 @@
 
 .report-tree-server {
   margin: 0 12px 10px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  background: var(--surface);
 }
 
 .report-tree-server-summary {
   cursor: pointer;
   list-style: none;
   padding: 12px 14px;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .report-tree-title {
@@ -63,13 +63,13 @@
 }
 
 .report-tree-title small {
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
   font-weight: 500;
 }
 
 .report-tree-empty {
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
   font-weight: 500;
   margin: 0;
@@ -87,7 +87,7 @@
 
 .type-report-card h3 {
   margin: 22px 0 10px;
-  color: var(--text);
+  color: var(--ink);
   font-size: 14px;
 }
 
@@ -96,7 +96,7 @@
 }
 
 .report-group-title {
-  border-bottom: 2px solid var(--border);
+  border-bottom: 2px solid var(--rule);
 }
 
 .common-report-group > .card {
@@ -116,28 +116,28 @@
 .role-report-group .type-report-card > h2 {
   margin: 0 0 12px;
   padding-bottom: 12px;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .role-report-group .type-report-card > .policy-help {
   margin: 0 0 20px;
   padding: 10px 12px;
-  border-left: 3px solid var(--primary);
-  color: var(--text-light);
+  border-left: 3px solid var(--petrol);
+  color: var(--slate);
 }
 
 .role-report-group .type-report-card > h3 {
   margin: 20px 0 10px;
-  color: var(--text);
+  color: var(--ink);
   font-size: 15px;
 }
 
 .report-subsection {
   margin: 16px 0;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 8px;
-  background: var(--surface-soft);
+  background: var(--surface-sunk);
 }
 
 .report-subsection h3 {
@@ -156,9 +156,9 @@
 .db-query-result {
   min-width: 0;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 9px;
-  background: var(--surface-soft);
+  background: var(--surface-sunk);
 }
 
 .db-query-result-heading {
@@ -171,13 +171,13 @@
 }
 
 .db-query-result-heading span {
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
 
 .db-query-result-message {
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
   overflow-wrap: anywhere;
   margin: 0 0 8px;
@@ -271,7 +271,7 @@
   padding: 0;
   list-style: none;
   font-size: 13px;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .trend-legend-item,
@@ -313,17 +313,17 @@
 }
 
 .trend-grid {
-  stroke: var(--border);
+  stroke: var(--rule);
   stroke-width: 1;
 }
 
 .trend-axis {
-  fill: var(--text-light);
+  fill: var(--slate);
   font-size: 11px;
 }
 
 .trend-threshold {
-  stroke: var(--text-light);
+  stroke: var(--slate);
   stroke-width: 1;
   stroke-dasharray: 4 4;
   opacity: 0.7;
@@ -331,24 +331,24 @@
 
 .trend-threshold-label {
   paint-order: stroke;
-  stroke: var(--card-bg);
+  stroke: var(--surface);
   stroke-width: 4px;
   stroke-linejoin: round;
 }
 
 .trend-end-label {
-  stroke: var(--card-bg);
+  stroke: var(--surface);
   stroke-width: 4px;
   stroke-linejoin: round;
 }
 
 .trend-threshold-label {
-  fill: var(--text-light);
+  fill: var(--slate);
   font-size: 11px;
 }
 
 .trend-guide {
-  stroke: var(--text-light);
+  stroke: var(--slate);
   stroke-width: 1;
   opacity: 0.6;
 }
@@ -373,7 +373,7 @@
 }
 
 .trend-point {
-  stroke: var(--card-bg);
+  stroke: var(--surface);
   stroke-width: 1.5;
   pointer-events: none;
 }
@@ -391,12 +391,12 @@
 }
 
 .trend-point.is-current {
-  stroke: var(--card-bg);
+  stroke: var(--surface);
   stroke-width: 2;
 }
 
 .trend-point.is-compare {
-  fill: var(--card-bg);
+  fill: var(--surface);
   stroke-width: 2;
 }
 
@@ -414,7 +414,7 @@
 
 .trend-end-label {
   paint-order: stroke;
-  fill: var(--text);
+  fill: var(--ink);
   font-size: 12px;
   font-weight: 600;
 }
@@ -435,12 +435,12 @@
   transform: translateX(-50%);
   min-width: 150px;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 6px;
-  background: var(--card-bg);
-  color: var(--text);
+  background: var(--surface);
+  color: var(--ink);
   font-size: 12px;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
   pointer-events: none;
   display: grid;
   gap: 3px;
@@ -453,9 +453,9 @@
 .report-item-box {
   margin: 12px 0;
   padding: 12px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 8px;
-  background: var(--surface-soft);
+  background: var(--surface-sunk);
   break-inside: avoid;
 }
 
@@ -473,7 +473,7 @@
 
 .report-item-message {
   margin: 6px 0 0;
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 13px;
 }
 
@@ -485,7 +485,7 @@
   margin: 12px 0 6px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 .report-item-body > h4:first-child {
@@ -527,6 +527,94 @@
 .report-item-queries > h4 {
   margin: 10px 0 6px;
   font-size: 12px;
-  color: var(--text-light);
+  color: var(--slate);
 }
 
+/* 보고서 상세 머리: 제목과 버튼을 한 줄 양 끝에 (.header·.header .button-area 기본값을 이겨야 해서 두 클래스) */
+.header.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header.report-header .button-area {
+  margin-top: 0;
+}
+
+/* 자원 사용량: 이전 점검 비교 고르기 */
+.compare-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.compare-container > label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.compare-container > select {
+  width: 240px;
+  height: 30px;
+  font-size: 12px;
+}
+
+/* 이전 점검과 비교한 변화 배지 */
+.diff-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.diff-up {
+  background: var(--diff-up-wash);
+  color: var(--crit);
+}
+
+.diff-down {
+  background: var(--diff-down-wash);
+  color: var(--ok);
+}
+
+.diff-same {
+  background: var(--diff-same-wash);
+  color: var(--slate);
+}
+
+/* 결과가 없는 표의 안내 칸 */
+td.table-empty-cell {
+  text-align: center;
+  color: var(--slate);
+}
+
+/* 프로세스·디렉터리 표의 작은 상태 배지 (.server-badge.badge-success 와 같은 특이도, 뒤에 있어 이김) */
+.server-badge.badge-compact {
+  min-width: 50px;
+  height: 22px;
+  font-size: 11px;
+}
+
+/* 보고서 목록 검색 줄 */
+.report-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.report-filter-form > .report-filter-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.report-filter-form > .report-filter-date {
+  width: 160px;
+}
+
+.report-filter-actions {
+  display: flex;
+  gap: 8px;
+}

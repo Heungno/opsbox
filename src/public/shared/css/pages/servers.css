@@ -11,8 +11,8 @@
 }
 
 .script-item {
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: var(--ink);
+  border: 1px solid var(--rule);
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -24,7 +24,7 @@
 }
 
 .script-desc {
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
   margin-bottom: 12px;
 }
@@ -33,7 +33,7 @@
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 6px;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .command-box {
@@ -49,12 +49,12 @@
   display: grid;
   gap: 8px;
   align-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   padding: 8px 12px;
   margin-bottom: 8px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 .process-grid,
@@ -133,7 +133,7 @@
 .summary-card {
   position: relative;
   overflow: hidden;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--rule);
 }
 
 .summary-card::after {
@@ -151,9 +151,9 @@
 }
 
 .policy-header {
-  border-color: var(--border);
+  border-color: var(--rule);
   border-radius: 9px;
-  background: var(--surface-muted);
+  background: var(--surface-sunk);
 }
 
 .role-product-fields {
@@ -167,15 +167,15 @@
   gap: 12px;
   align-items: center;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   opacity: 0.62;
 }
 
 .role-product-row.active {
   opacity: 1;
-  background: var(--control-bg);
-  border-color: var(--primary);
+  background: var(--surface);
+  border-color: var(--petrol);
 }
 
 .role-product-row .role-choice-label {
@@ -188,21 +188,21 @@
 
 .role-product-row input.role-choice-checkbox,
 #role-product-fields input[type="checkbox"] {
-  appearance: checkbox !important;
-  accent-color: var(--primary);
+  appearance: checkbox;
+  accent-color: var(--petrol);
   display: inline-block;
-  flex: 0 0 16px !important;
-  width: 16px !important;
-  min-width: 16px !important;
-  max-width: 16px !important;
-  height: 16px !important;
-  min-height: 16px !important;
-  max-height: 16px !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
+  flex: 0 0 16px;
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  height: 16px;
+  min-height: 16px;
+  max-height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
   border-radius: 3px;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .role-product-row select {
@@ -211,7 +211,7 @@
 
 .server-form-section {
   padding: 14px 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--rule);
 }
 
 .server-form-section:first-child {
@@ -234,17 +234,17 @@
 .policy-section {
   padding: 12px 14px;
   margin-top: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 10px;
-  background: var(--control-bg);
+  background: var(--surface);
 }
 
 .policy-category-group {
   margin-top: 14px;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 12px;
-  background: var(--surface-soft);
+  background: var(--surface-sunk);
 }
 
 .policy-category-heading {
@@ -305,9 +305,9 @@
   gap: 7px;
   min-width: 0;
   padding: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 9px;
-  background: var(--card-bg);
+  background: var(--surface);
 }
 
 .policy-script-control.is-common label {
@@ -349,9 +349,9 @@
   align-items: center;
   gap: 10px;
   padding: 9px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 9px;
-  background: var(--card-bg);
+  background: var(--surface);
 }
 
 .role-policy-description {
@@ -360,14 +360,14 @@
 }
 
 .role-policy-description small {
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 .role-policy-option {
   display: grid;
   gap: 4px;
   margin-top: 6px;
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 11px;
 }
 
@@ -383,7 +383,7 @@
 
 .custom-query-count {
   align-self: center;
-  color: var(--text-light);
+  color: var(--slate);
   white-space: nowrap;
 }
 
@@ -393,7 +393,7 @@
   gap: 14px;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--rule);
 }
 
 .server-overview-checks h3 {
@@ -457,7 +457,7 @@
 }
 
 .server-final-json-preview pre .syntax-json-punctuation {
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 @media (max-width: 760px) {
@@ -472,13 +472,13 @@
 
 .server-final-json-preview {
   margin-top: 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--rule);
   padding-top: 12px;
 }
 
 .server-final-json-preview summary {
   cursor: pointer;
-  color: var(--primary);
+  color: var(--petrol);
   font-weight: 600;
 }
 
@@ -486,17 +486,17 @@
   max-height: 420px;
   overflow: auto;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--rule);
   border-radius: 8px;
-  background: var(--control-bg);
-  color: var(--text);
+  background: var(--surface);
+  color: var(--ink);
   font: 11px/1.5 Consolas, 'Courier New', monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .policy-section .policy-header {
-  background: var(--card-bg);
+  background: var(--surface);
 }
 
 @media (max-width: 760px) {
@@ -540,7 +540,7 @@
 
 .server-management-page [data-policy-role-panel].is-inactive,
 .server-editor-column [data-server-panel][hidden] {
-  display: none !important;
+  display: none !important; /* 패널의 display(grid)보다 이겨야 숨겨짐 */
 }
 
 .server-editor-column {
@@ -621,7 +621,7 @@
 
 .server-list-empty {
   padding: 28px 12px;
-  color: var(--text-light);
+  color: var(--slate);
   text-align: center;
 }
 
@@ -762,7 +762,7 @@
 }
 
 .server-inactive td {
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 .server-inactive-banner {
@@ -800,8 +800,14 @@
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 12px;
-  background: var(--surface-muted);
-  color: var(--text-light);
+  background: var(--surface-sunk);
+  color: var(--slate);
   vertical-align: middle;
 }
 
+/* 서버 목록 머리의 신규·검색·미사용 포함 */
+.section-title > .server-list-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}

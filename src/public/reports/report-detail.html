@@ -7,30 +7,8 @@
   <meta name="color-scheme" content="light dark" />
   <title>OpsBox | 점검 보고서 상세</title>
   <script src="/shared/js/theme-init.js?v=20261121-system"></script>
-  <link rel="stylesheet" href="/shared/css/app.css?v=20261123-tokens" />
-  <style>
-    .diff-badge {
-      display: inline-block;
-      margin-left: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 1px 6px;
-      border-radius: 4px;
-    }
-    .diff-up {
-      background: #fef2f2;
-      color: var(--danger);
-    }
-    .diff-down {
-      background: #dcfce7;
-      color: var(--success);
-    }
-    .diff-same {
-      background: #f1f5f9;
-      color: var(--text-light);
-    }
-  </style>
-  <link rel="stylesheet" href="/reports/report-print.css?v=20261122-boxes" />
+  <link rel="stylesheet" href="/shared/css/app.css?v=20261123-task7" />
+  <link rel="stylesheet" href="/reports/report-print.css?v=20261123-task7" />
 </head>
 
 <body>
@@ -60,12 +38,12 @@
       <p class="print-doc-legend">판정 표기: <span id="print-status-legend">○ 정상 · △ 경고 · × 위험 · － 미수집</span></p>
     </section>
 
-    <header class="header" style="display: flex; justify-content: space-between; align-items: center;">
+    <header class="header report-header">
       <div>
         <h1>점검 보고서</h1>
         <p id="report-title">조회중...</p>
       </div>
-      <div class="button-area" style="margin-top: 0;">
+      <div class="button-area">
         <button type="button" class="btn btn-secondary" id="print-report-button">보고서 인쇄 / PDF</button>
         <a id="btn-back" href="#" class="btn btn-primary">서버 상세로</a>
       </div>
@@ -92,9 +70,9 @@
     <section class="card">
       <div class="section-header">
         <h2>자원 사용량 요약</h2>
-        <div class="compare-container" style="display: flex; gap: 8px; align-items: center;">
-          <label for="compare-select" style="font-size: 12px; font-weight: 600;">이전 점검 비교:</label>
-          <select id="compare-select" style="width: 240px; height: 30px; font-size: 12px;">
+        <div class="compare-container">
+          <label for="compare-select">이전 점검 비교:</label>
+          <select id="compare-select">
             <option value="">비교 안 함</option>
           </select>
         </div>
@@ -251,7 +229,7 @@
   </template>
 
   <script type="module" src="/shared/js/common.js?v=20261122-layout"></script>
-  <script type="module" src="/reports/report-detail.js?v=20261123-logcounts"></script>
+  <script type="module" src="/reports/report-detail.js?v=20261123-task7"></script>
 </body>
 
 </html>

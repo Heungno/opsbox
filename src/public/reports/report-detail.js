@@ -472,7 +472,7 @@ function renderWasHeapRows(items) {
   const tbody = document.getElementById('was-heap-list' + reportRoleSuffix);
   if (!items?.length) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">JVM Heap 결과가 없습니다. 새 Windows 점검 스크립트를 실행하세요.</td>';
+    row.innerHTML = '<td colspan="5" class="table-empty-cell">JVM Heap 결과가 없습니다. 새 Windows 점검 스크립트를 실행하세요.</td>';
     tbody.appendChild(row);
     return;
   }
@@ -591,7 +591,7 @@ function renderDisks(disks) {
   tbody.replaceChildren();
   if (!disks || disks.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">디스크별 상세 정보가 없는 결과입니다. 새 스크립트를 실행하면 표시됩니다.</td>';
+    row.innerHTML = '<td colspan="5" class="table-empty-cell">디스크별 상세 정보가 없는 결과입니다. 새 스크립트를 실행하면 표시됩니다.</td>';
     tbody.appendChild(row);
     return;
   }
@@ -669,7 +669,7 @@ function renderProcesses(processes, prevProcesses) {
 
   if (!processes || processes.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="5" style="text-align: center; color: var(--text-light);">점검된 프로세스가 없습니다.</td>';
+    tr.innerHTML = '<td colspan="5" class="table-empty-cell">점검된 프로세스가 없습니다.</td>';
     tbody.appendChild(tr);
     return;
   }
@@ -683,10 +683,7 @@ function renderProcesses(processes, prevProcesses) {
 
     const statusTd = document.createElement('td');
     const badge = document.createElement('span');
-    badge.className = `server-badge ${proc.running ? 'badge-success' : 'badge-danger'}`;
-    badge.style.minWidth = '50px';
-    badge.style.height = '22px';
-    badge.style.fontSize = '11px';
+    badge.className = `server-badge badge-compact ${proc.running ? 'badge-success' : 'badge-danger'}`;
     badge.textContent = proc.running ? '실행중' : '중지됨';
     statusTd.appendChild(badge);
 
@@ -726,7 +723,7 @@ function renderDirectories(directories, prevDirectories) {
 
   if (!directories || directories.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="5" style="text-align: center; color: var(--text-light);">점검된 디렉토리가 없습니다.</td>';
+    tr.innerHTML = '<td colspan="5" class="table-empty-cell">점검된 디렉토리가 없습니다.</td>';
     tbody.appendChild(tr);
     return;
   }
@@ -740,10 +737,7 @@ function renderDirectories(directories, prevDirectories) {
 
     const existTd = document.createElement('td');
     const badge = document.createElement('span');
-    badge.className = `server-badge ${dir.exists ? 'badge-success' : 'badge-danger'}`;
-    badge.style.minWidth = '50px';
-    badge.style.height = '22px';
-    badge.style.fontSize = '11px';
+    badge.className = `server-badge badge-compact ${dir.exists ? 'badge-success' : 'badge-danger'}`;
     badge.textContent = dir.exists ? '존재함' : '없음';
     existTd.appendChild(badge);
 
@@ -774,7 +768,7 @@ function renderFileChecks(fileChecks) {
   tbody.replaceChildren();
   if (!fileChecks || fileChecks.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="4" style="text-align:center;color:var(--text-light);">점검된 파일이 없습니다.</td>';
+    row.innerHTML = '<td colspan="4" class="table-empty-cell">점검된 파일이 없습니다.</td>';
     tbody.appendChild(row);
     return;
   }
@@ -802,7 +796,7 @@ function renderPorts(ports) {
   tbody.replaceChildren();
   if (!ports || ports.length === 0) {
     const row = document.createElement('tr');
-    row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">점검 대상으로 등록된 포트가 없습니다.</td>';
+    row.innerHTML = '<td colspan="5" class="table-empty-cell">점검 대상으로 등록된 포트가 없습니다.</td>';
     tbody.appendChild(row);
     return;
   }
@@ -831,7 +825,7 @@ function renderHttpChecks(checks) {
   const tbody = document.getElementById('http-check-report-list');
   tbody.replaceChildren();
   if (!checks || checks.length === 0) {
-    const row = document.createElement('tr'); row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text-light);">HTTP 응답 점검 결과가 없습니다.</td>'; tbody.appendChild(row); return;
+    const row = document.createElement('tr'); row.innerHTML = '<td colspan="5" class="table-empty-cell">HTTP 응답 점검 결과가 없습니다.</td>'; tbody.appendChild(row); return;
   }
   checks.forEach((check) => {
     const row = document.createElement('tr');

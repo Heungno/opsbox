@@ -115,7 +115,7 @@ th {
 }
 
 .result-date {
-  color: var(--text-light);
+  color: var(--slate);
 }
 
 .history-status {
@@ -124,7 +124,7 @@ th {
 
 .policy-help {
   margin-bottom: 16px;
-  color: var(--text-light);
+  color: var(--slate);
   font-size: 12px;
 }
 
@@ -260,15 +260,15 @@ fieldset.form-group legend {
   align-items: flex-start;
   gap: 10px;
   padding: 12px 12px 12px 14px;
-  border: 1px solid var(--border);
-  color: var(--text);
+  border: 1px solid var(--rule);
+  color: var(--ink);
   font-size: 13px;
   line-height: 1.5;
   animation: toast-in 0.18s ease-out;
 }
 
 .toast-info {
-  border-left-color: var(--primary);
+  border-left-color: var(--petrol);
 }
 
 .toast-message {
@@ -281,7 +281,7 @@ fieldset.form-group legend {
   height: 24px;
   border: 0;
   border-radius: 6px;
-  color: var(--text-light);
+  color: var(--slate);
   background: transparent;
   font-size: 18px;
   line-height: 1;
@@ -460,12 +460,12 @@ td a:not(.btn):hover {
 .badge-muted {
   --lamp: transparent;
   --lamp-text: var(--slate);
-  font-weight: 400 !important;
+  font-weight: 400 !important; /* .server-badge.badge-* 의 굵기(600)보다 이겨야 */
 }
 
 .badge-muted::before {
   border: 1.5px solid var(--idle);
-  box-shadow: none !important;
+  box-shadow: none !important; /* 신호 점 둘레 빛(.server-badge.badge-*::before)을 꺼야 */
 }
 
 :root .summary-badge {
@@ -657,9 +657,9 @@ td a:not(.btn):hover {
   font-weight: 600;
   min-width: 62px;
   height: 25px;
-  border: 1px solid var(--badge-border);
-  background: var(--badge-bg);
-  color: var(--badge-fg);
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--petrol);
 }
 
 #db-query-template-select[multiple] {
@@ -763,7 +763,7 @@ td a:not(.btn):hover {
 }
 
 .template-list-item[role="button"]:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--petrol);
   outline-offset: 2px;
 }
 
@@ -977,9 +977,9 @@ td a:not(.btn):hover {
 .check-builder-warning {
   margin: 0;
   padding: 8px 12px;
-  border-left: 3px solid var(--warning);
-  background: var(--surface-muted);
-  color: var(--text);
+  border-left: 3px solid var(--warn);
+  background: var(--surface-sunk);
+  color: var(--ink);
   font-size: 13px;
 }
 
@@ -1004,7 +1004,7 @@ td a:not(.btn):hover {
 
 .account-error {
   margin: 0;
-  color: var(--danger);
+  color: var(--crit);
   font-size: 13px;
 }
 
