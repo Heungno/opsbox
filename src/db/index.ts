@@ -1,6 +1,6 @@
 import { db, transaction } from './connection';
 import { migrate } from './schema';
-import { seedNewDatabase } from './seed';
+import { seedNewDatabase, upgradeSeeds } from './seed';
 
 export { DB_PATH, db, transaction } from './connection';
 
@@ -10,8 +10,9 @@ export { DB_PATH, db, transaction } from './connection';
  */
 export function prepareDatabase() {
   transaction(() => {
-    const { created } = migrate(db);
+    const { created, from } = migrate(db);
     if (created) seedNewDatabase();
+    else upgradeSeeds(from);
   });
 }
 

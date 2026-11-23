@@ -655,6 +655,33 @@
       "enabled": true,
       "items": [
         {
+          "id": "WAS_ENGINE_STATUS",
+          "name": "WAS 엔진 상태",
+          "enabled": true,
+          "executor": {
+            "type": "CONSOLE_COMMAND",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "CONSOLE"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
+        {
           "id": "WAS_JVM_HEAP",
           "name": "JVM Heap 사용률",
           "enabled": true,
@@ -2059,6 +2086,33 @@
       "category": "WAS",
       "enabled": true,
       "items": [
+        {
+          "id": "WAS_ENGINE_STATUS",
+          "name": "WAS 엔진 상태",
+          "enabled": true,
+          "executor": {
+            "type": "CONSOLE_COMMAND",
+            "options": {}
+          },
+          "inputs": [],
+          "result": {
+            "components": [
+              {
+                "type": "SUMMARY"
+              },
+              {
+                "type": "CONSOLE"
+              }
+            ],
+            "statusField": "status",
+            "statusRules": {
+              "healthy": "Healthy",
+              "warning": "Warning",
+              "critical": "Critical",
+              "notCollected": "NotCollected"
+            }
+          }
+        },
         {
           "id": "WAS_JVM_HEAP",
           "name": "JVM Heap 사용률",

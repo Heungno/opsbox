@@ -92,7 +92,7 @@ const roleItem = (role: string, item: string) => json.checks.rolePolicies[role].
 
 test('정책에 있는 역할별 항목이 순서대로 이름과 함께 기록된다', { skip: !canRunBash }, () => {
   assert.deepEqual(json.checks.rolePolicies.WEB.items.map((entry: any) => entry.item), ['WEB_ENGINE_STATUS', 'WEB_WAS_CONNECTION', 'WEB_REQUEST_VOLUME', 'WEB_LOG']);
-  assert.equal(json.checks.rolePolicies.WAS.items.length, 8);
+  assert.equal(json.checks.rolePolicies.WAS.items.length, 9);
   assert.equal(roleItem('WEB', 'WEB_LOG').name, 'WEB 로그 상태');
   assert.ok(roleItem('WAS', 'WAS_JVM_HEAP').result, '보고서 표시 정의(result) 포함');
   assert.equal(json.checks.web.product, 'Nginx');

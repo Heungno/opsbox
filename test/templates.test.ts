@@ -67,3 +67,9 @@ test('템플릿: COMMAND 경고는 응답에만 붙고 저장된 템플릿에는
   assert.match(saved.warnings[0], /비밀번호/);
   assert.equal((getTemplate(saved.id) as any).warnings, undefined);
 });
+
+test('템플릿: WAS COMMAND(JEUS · WAS_ENGINE_STATUS)도 저장된다', () => {
+  const JEUS = fs.readFileSync('docs/spikes/command-templates/jeus-6.cmd', 'utf8');
+  const saved = saveTemplate({ name: 'JEUS 6 엔진', kind: 'COMMAND', product: 'JEUS', item: 'WAS_ENGINE_STATUS', content: JEUS });
+  assert.equal(saved.product, 'JEUS'); assert.equal(saved.item, 'WAS_ENGINE_STATUS');
+});

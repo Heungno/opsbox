@@ -304,6 +304,13 @@
       "description": "Access/Error 로그의 신규 오류와 이상 징후를 확인합니다."
     },
     {
+      "value": "WAS_ENGINE_STATUS",
+      "label": "WAS 엔진 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "JEUS jeusadmin 등 제품별 관리 명령으로 엔진 상태를 확인합니다."
+    },
+    {
       "value": "WAS_JVM_HEAP",
       "label": "JVM Heap 사용률",
       "group": "WAS",
@@ -436,6 +443,7 @@
       "WEB_LOG"
     ],
     "WAS": [
+      "WAS_ENGINE_STATUS",
       "WAS_JVM_HEAP",
       "WAS_THREAD_POOL",
       "WAS_LONG_RUNNING_THREAD",

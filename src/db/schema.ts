@@ -163,12 +163,15 @@ const MIGRATIONS: string[] = [
   WHERE EXISTS (SELECT 1 FROM common_code_categories WHERE category = 'auditTargets')
     AND NOT EXISTS (SELECT 1 FROM common_codes WHERE category = 'auditTargets');
   `,
+  /* 3: 명령 템플릿 기본값 — seed.ts의 SEED_UPGRADES[3]가 넣음 */ `
+  SELECT 1;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
-/** 스키마를 최신 버전으로 올립니다. 빈 DB(버전 0)에서 만들었으면 created: true. 트랜잭션은 부르는 쪽에서 엽니다. */
-export function migrate(db: DatabaseSync): { created: boolean } {
+/** 스키마를 최신 버전으로 올립니다. 빈 DB(버전 0)에서 만들었으면 created: true, from은 올리기 전 버전. 트랜잭션은 부르는 쪽에서 엽니다. */
+export function migrate(db: DatabaseSync): { created: boolean; from: number } {
   const current = Number((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version);
   if (current > SCHEMA_VERSION) {
     throw new Error(`이 DB는 더 새 버전의 OpsBox가 만든 것입니다(DB 버전 ${current}, 이 OpsBox ${SCHEMA_VERSION}). OpsBox를 업데이트하세요.`);
@@ -185,5 +188,5 @@ export function migrate(db: DatabaseSync): { created: boolean } {
     db.exec(MIGRATIONS[version - 1]);
     db.exec(`PRAGMA user_version = ${version}`);
   }
-  return { created: current === 0 };
+  return { created: current === 0, from: current };
 }
