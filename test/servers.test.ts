@@ -8,6 +8,7 @@ import { db } from '../src/db';
 import { app } from '../src/server';
 import { deletePolicy, savePolicy } from '../src/features/policies/service';
 import { activateServer, createServer, deactivateServer, getAllServers, getCheckConfig, getServer, updateCheckConfig } from '../src/features/servers/service';
+import { getTemplate, saveTemplate } from '../src/features/templates/service';
 import { generateScript } from '../src/features/scripts/service';
 
 const webServer = (id: string) => ({ id, name: id, roles: ['WEB'], products: { WEB: 'Nginx' }, os: 'Linux', ip: '10.0.0.9', processes: [], directories: [] } as any);
@@ -79,4 +80,49 @@ test('미사용 서버는 스크립트를 내려받을 수 없다', () => {
   createServer(webServer('OFF-4'));
   deactivateServer('OFF-4');
   assert.throws(() => generateScript('OFF-4'), (e: any) => e.status === 400 && /미사용 서버는 스크립트를 내려받을 수 없습니다: OFF-4/.test(e.message));
+});
+
+const winServer = (id: string, role: 'WEB' | 'WAS', product: string) => ({
+  id, name: id, roles: [role], products: { [role]: product }, os: 'Windows', ip: '10.0.0.8', processes: [], directories: [],
+  policyIds: { [role]: `windows-${role.toLowerCase()}-default` },
+} as any);
+
+test('서버: Windows WEB 엔진 상태에 명령 템플릿을 고르면 정책 기본 조각이 덮어쓰지 않는다', () => {
+  const id = 'CMD-WEB-1';
+  createServer(winServer(id, 'WEB', 'WebtoB'));
+  updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WEB: ['WEB_ENGINE_STATUS'] }, scriptParts: { WEB_ENGINE_STATUS: 'WEBTOB41-COMMAND-WEB_ENGINE_STATUS' } } as any);
+  assert.equal(getServer(id)!.scriptParts.WEB_ENGINE_STATUS, 'WEBTOB41-COMMAND-WEB_ENGINE_STATUS');
+});
+
+test('서버: 다른 항목용 명령 템플릿이나 중지된 명령 템플릿은 저장 거부', () => {
+  const id = 'CMD-WEB-2';
+  createServer(winServer(id, 'WEB', 'WebtoB'));
+  assert.throws(
+    () => updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WEB: ['WEB_ENGINE_STATUS'] }, scriptParts: { WEB_ENGINE_STATUS: 'JEUS6-COMMAND-WAS_ENGINE_STATUS' } } as any),
+    (e: any) => e.status === 400 && e.errors?.[0]?.field === 'scriptParts.WEB_ENGINE_STATUS' && /다른 점검 항목용/.test(e.message),
+  );
+  const original = getTemplate('WEBTOB41-COMMAND-WEB_ENGINE_STATUS')!;
+  saveTemplate({ ...original, enabled: false }, original.id);
+  try {
+    assert.throws(
+      () => updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WEB: ['WEB_ENGINE_STATUS'] }, scriptParts: { WEB_ENGINE_STATUS: original.id } } as any),
+      (e: any) => e.status === 400 && e.errors?.[0]?.field === 'scriptParts.WEB_ENGINE_STATUS' && /사용할 수 없습니다/.test(e.message),
+    );
+  } finally {
+    saveTemplate({ ...original, enabled: true }, original.id);
+  }
+});
+
+test('서버: Windows WAS 서버는 WAS 엔진 상태 조각이 없어도 저장된다(명령 템플릿 미선택)', () => {
+  const id = 'CMD-WAS-1';
+  createServer(winServer(id, 'WAS', 'JEUS'));
+  assert.doesNotThrow(() => updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WAS: ['WAS_ENGINE_STATUS'] } } as any));
+  assert.ok(getServer(id)!.roleChecks.WAS!.includes('WAS_ENGINE_STATUS'));
+});
+
+test('서버: 서버 WAS 제품과 템플릿 제품이 달라도 저장된다', () => {
+  const id = 'CMD-WAS-2';
+  createServer(winServer(id, 'WAS', 'Apache Tomcat'));
+  updateCheckConfig(id, { ...getCheckConfig(id), roleChecks: { WAS: ['WAS_ENGINE_STATUS'] }, scriptParts: { WAS_ENGINE_STATUS: 'JEUS6-COMMAND-WAS_ENGINE_STATUS' } } as any);
+  assert.equal(getServer(id)!.scriptParts.WAS_ENGINE_STATUS, 'JEUS6-COMMAND-WAS_ENGINE_STATUS');
 });

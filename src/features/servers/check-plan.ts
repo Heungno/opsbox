@@ -19,6 +19,8 @@ export interface PlanContext {
   roles: string[];
   /** Windows 서버의 역할별 기본 점검 (역할 정책도, 저장값도 없을 때) */
   defaultRoleChecks: Partial<Record<RolePolicyType, ScriptPart[]>>;
+  /** 관리 명령(COMMAND) 템플릿 ID. 서버가 이 템플릿을 골랐으면 정책의 기본 조각으로 덮어쓰지 않음 */
+  commandTemplateIds: ReadonlySet<string>;
 }
 
 export function resolveServer(record: ServerRecord, context: PlanContext): Server {
@@ -43,10 +45,10 @@ export function resolveServer(record: ServerRecord, context: PlanContext): Serve
   const assignedBasic = policiesById.get(policyIds.BASIC ?? '');
   if (assignedBasic?.category === 'BASIC' && assignedBasic.enabled) {
     assignedBasic.items.filter((item) => item.enabled && ['SCRIPT', 'CONSOLE_COMMAND', 'LOG_ANALYSIS'].includes(item.executor.type) && item.executor.templateId)
-      .forEach((item) => { scriptParts[item.id as ScriptPart] = item.executor.templateId; });
+      .forEach((item) => { if (!context.commandTemplateIds.has(scriptParts[item.id as ScriptPart] ?? '')) scriptParts[item.id as ScriptPart] = item.executor.templateId; });
   }
   ROLE_POLICY_TYPES.forEach((role) => policiesById.get(policyIds[role] ?? '')?.items.filter((item) => item.enabled && item.executor.templateId && item.executor.type !== 'SQL_QUERY')
-    .forEach((item) => { scriptParts[item.id as ScriptPart] = item.executor.templateId; }));
+    .forEach((item) => { if (!context.commandTemplateIds.has(scriptParts[item.id as ScriptPart] ?? '')) scriptParts[item.id as ScriptPart] = item.executor.templateId; }));
   return {
     id: record.id,
     name: record.name,

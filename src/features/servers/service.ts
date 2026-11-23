@@ -1,14 +1,14 @@
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors';
 import { getCommonCodes } from '../common-codes/service';
 import { getPolicies } from '../policies/service';
-import { getTemplate } from '../templates/service';
+import { getTemplate, getTemplates } from '../templates/service';
 import type { ScriptPart } from '../templates/types';
 import { LINUX_DB_PRODUCTS, resolveQueryTemplate } from '../scripts/db-query-defaults';
 import { resultPathError } from '../settings/service';
 import { resolveServer, toStoredCheckConfig } from './check-plan';
 import { findServerRecord, listServerRecords, saveServerRecord, setServerEnabled } from './repository';
 import type { CheckConfig, CheckConfigInput, RolePolicyType, Server, ServerProduct, ServerRecord, ServerRole } from './types';
-import { ROLE_POLICY_TYPES } from '../../shared/constants';
+import { COMMAND_ONLY_ITEMS, ROLE_POLICY_TYPES } from '../../shared/constants';
 import { validateDirectories, validateFileChecks, validateHttpChecks, validatePorts, validateProcesses } from './validation';
 
 const COMMON_CODES = getCommonCodes();
@@ -29,7 +29,10 @@ export function getServerProduct(server: Pick<Server, 'products'>, role: ServerR
   return server.products?.[role];
 }
 
-const resolve = (record: ServerRecord) => resolveServer(record, { policies: getPolicies(), roles: ROLES, defaultRoleChecks: DEFAULT_ROLE_CHECKS });
+const resolve = (record: ServerRecord) => resolveServer(record, {
+  policies: getPolicies(), roles: ROLES, defaultRoleChecks: DEFAULT_ROLE_CHECKS,
+  commandTemplateIds: new Set(getTemplates({ kind: 'COMMAND' }).map((template) => template.id)),
+});
 
 /** 입력(화면에서 보낸 서버) → 정책 계산을 얹은 서버. 저장 전 검증과 응답에 씁니다. */
 function normalizeInput(input: Server): Server {
@@ -307,7 +310,7 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
         } else if (!query?.enabled || query.kind !== 'QUERY' || (query.dbms ?? 'MSSQL') !== requiredDbms || requiredDbms !== serverDbms) {
           errors.push({ field: `rolePolicySettings.${item}.queryTemplateId`, message: `${policyItem?.name || item} 항목에 서버 DBMS와 맞는 쿼리 템플릿을 선택하세요.` });
         } else rolePolicySettings[item] = { ...(rolePolicySettings[item] ?? {}), queryTemplateId: query.id };
-      } else if (role !== 'DB' && current.os === 'Windows' && !selectedId && !defaultTemplate && policyItem?.executor.type !== 'CHECK_BUILDER') {
+      } else if (role !== 'DB' && current.os === 'Windows' && !selectedId && !defaultTemplate && !COMMAND_ONLY_ITEMS.has(item) && policyItem?.executor.type !== 'CHECK_BUILDER') {
         errors.push({ field: `roleChecks.${role}`, message: `${item} 항목 스크립트를 먼저 스크립트 관리에서 만들고 선택하세요.` });
       }
     });
@@ -366,6 +369,12 @@ export function updateCheckConfig(id: string, config: CheckConfigInput) {
     }
     if (!templateId) continue;
     const template = getTemplate(templateId);
+    if (template?.kind === 'COMMAND') {
+      const label = policyItemById.get(part)?.name || COMMON_CODES.scriptItems.find(({ value }) => value === part)?.label || part;
+      if (!template.enabled) errors.push({ field: `scriptParts.${part}`, message: `${label} 항목의 관리 명령 템플릿을 사용할 수 없습니다.` });
+      else if (template.item !== part) errors.push({ field: `scriptParts.${part}`, message: `${label} 항목에는 다른 점검 항목용 관리 명령 템플릿을 고를 수 없습니다.` });
+      continue;
+    }
     if (!template || !template.enabled || template.kind !== 'SCRIPT_PART' || template.os !== current.os) {
       errors.push({ field: `scriptParts.${part}`, message: `${part} 점검에 사용할 ${current.os} 템플릿을 선택하세요.` });
     }

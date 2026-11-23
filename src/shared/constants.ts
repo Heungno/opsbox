@@ -11,3 +11,6 @@ export const ROLE_POLICY_TYPES = ['WEB', 'WAS', 'DB'] as const;
 
 /** 점검 스크립트를 만들 수 있는 OS */
 export const SCRIPT_OS = ['Windows', 'Linux'] as const;
+
+/** 기본 스크립트 조각 없이 관리 명령 템플릿으로만 도는 점검 항목 */
+export const COMMAND_ONLY_ITEMS: ReadonlySet<string> = new Set(['WAS_ENGINE_STATUS']);
