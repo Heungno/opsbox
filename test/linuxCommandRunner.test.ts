@@ -209,3 +209,64 @@ test('악성 템플릿: 환경 변수 이름·인자의 명령 치환을 실행�
   assert.match(was.detail.output, /arg=\$\(touch\n/, '$(…)는 글자 그대로');
   for (const name of ['home', 'args', 'index', 'tick']) assert.ok(!fs.existsSync(pwned(name)), `${name}: 명령이 실행됨`);
 });
+
+// F: 겹치는 비밀번호 두 개(WEB), @opsbox-args에만 있는 ${…PASSWORD…}(WAS), 읽을 수 없는 판정 정규식(WEB)
+const toolsF = makeDir('tools', 'F');
+const runF = once(() => {
+  fakeTool(toolsF, 'wsadmin', 'cat >/dev/null\necho "a=$A_PASSWORD b=$B_PASSWORD"\necho "svr1 RDY"');
+  fakeTool(toolsF, 'jeusadmin', 'cat >/dev/null\necho "engine1 RUNNING (login $*)"');
+  const web = commandCopy(WEBTOB, '시험 · 겹치는 비밀번호', (c) => c
+    .replace('# @opsbox-quit', '# @opsbox-require  A_PASSWORD B_PASSWORD\n# @opsbox-quit')
+    .replace('# @opsbox-status   Critical', '# @opsbox-status   Critical ~ [[:foo:]]\n# @opsbox-status   Critical'));
+  const was = commandCopy(JEUS, '시험 · 인자에만 비밀번호', (c) => c.replace(/@opsbox-require .*/, '@opsbox-require  JEUS_NODE OPSBOX_JEUS_USER'));
+  return runServer('CR-F', { WEB_ENGINE_STATUS: web, WAS_ENGINE_STATUS: was },
+    { A_PASSWORD: 'abc', B_PASSWORD: 'abcdef', JEUS_NODE: 'node1', OPSBOX_JEUS_USER: 'administrator', OPSBOX_JEUS_PASSWORD: PASSWORD }, [toolsF]);
+});
+
+/** PATH에서 timeout만 뺀 폴더 목록(timeout이 있는 폴더는 나머지 파일의 링크 폴더로 바꿈) */
+function pathWithoutTimeout(): string {
+  return (process.env.PATH ?? '').split(':').filter(Boolean).map((dir, index) => {
+    if (!fs.existsSync(path.join(dir, 'timeout'))) return dir;
+    const shadow = makeDir('no-timeout', String(index));
+    for (const name of fs.readdirSync(dir)) {
+      if (name === 'timeout' || fs.existsSync(path.join(shadow, name))) continue;
+      fs.symlinkSync(path.join(dir, name), path.join(shadow, name));
+    }
+    return shadow;
+  }).join(':');
+}
+
+// G: timeout 명령이 없는 서버에서 도구가 124로 끝남 → 시간 초과가 아님
+const toolsG = makeDir('tools', 'G');
+const runG = once(() => {
+  fakeTool(toolsG, 'jeusadmin', 'cat >/dev/null\necho "engine1 RUNNING"\nexit 124');
+  return runServer('CR-G', { WAS_ENGINE_STATUS: JEUS },
+    { PATH: `${toolsG}:${pathWithoutTimeout()}`, JEUS_NODE: 'node1', OPSBOX_JEUS_USER: 'administrator', OPSBOX_JEUS_PASSWORD: PASSWORD });
+});
+
+test('비밀번호 가림: 겹치는 값은 긴 것부터 가린다(****def 없음)', { skip: !canRunBash }, () => {
+  const run = runF();
+  const item = run.item('WEB', 'WEB_ENGINE_STATUS');
+  assert.equal(item.status, 'Healthy', JSON.stringify(item));
+  assert.match(item.detail.output, /a=\*\*\*\* b=\*\*\*\*\n/);
+  assert.doesNotMatch(run.savedText + run.log, /abc|\*\*\*\*def/);
+});
+
+test('비밀번호 가림: @opsbox-require에 없어도 @opsbox-args의 ${…PASSWORD…} 값은 가린다', { skip: !canRunBash }, () => {
+  const run = runF();
+  const item = run.item('WAS', 'WAS_ENGINE_STATUS');
+  assert.equal(item.status, 'Healthy', JSON.stringify(item));
+  assert.match(item.detail.output, /-Uadministrator -P\*\*\*\*\)/);
+  assert.doesNotMatch(run.savedText + run.log, /s3cr\*t/);
+});
+
+test('Linux 실행기: grep이 읽을 수 없는 판정 정규식은 로그를 남기고 건너뜀', { skip: !canRunBash }, () => {
+  assert.match(runF().log, /판정 정규식을 읽을 수 없어 건너뜀: \[\[:foo:\]\]/);
+});
+
+test('Linux 실행기: timeout을 쓰지 않았으면 도구의 종료 코드 124는 시간 초과가 아니다', { skip: !canRunBash }, () => {
+  const run = runG();
+  assert.doesNotMatch(run.log, /실행 시간이/);
+  const item = run.item('WAS', 'WAS_ENGINE_STATUS');
+  assert.equal(item.status, 'Healthy', JSON.stringify(item));
+});
