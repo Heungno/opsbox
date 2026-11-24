@@ -52,6 +52,7 @@
       "WEB_LOG"
     ],
     "WAS": [
+      "WAS_ENGINE_STATUS",
       "WAS_JVM_HEAP",
       "WAS_THREAD_POOL",
       "WAS_LONG_RUNNING_THREAD",

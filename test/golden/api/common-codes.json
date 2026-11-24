@@ -213,6 +213,10 @@
     {
       "value": "QUERY",
       "label": "DB 쿼리"
+    },
+    {
+      "value": "COMMAND",
+      "label": "관리 명령"
     }
   ],
   "scriptItems": [
@@ -298,6 +302,13 @@
       "group": "WEB",
       "role": "WEB",
       "description": "Access/Error 로그의 신규 오류와 이상 징후를 확인합니다."
+    },
+    {
+      "value": "WAS_ENGINE_STATUS",
+      "label": "WAS 엔진 상태",
+      "group": "WAS",
+      "role": "WAS",
+      "description": "JEUS jeusadmin 등 제품별 관리 명령으로 엔진 상태를 확인합니다."
     },
     {
       "value": "WAS_JVM_HEAP",
@@ -419,6 +430,11 @@
       "description": "등록한 MSSQL 쿼리 템플릿을 여러 개 선택해 실행하고 결과를 항목별로 저장합니다."
     },
     {
+      "value": "COMMAND_RUNNER",
+      "label": "관리 명령 실행기",
+      "group": "시스템"
+    },
+    {
       "value": "SAVE",
       "label": "결과 저장",
       "group": "시스템"
@@ -432,6 +448,7 @@
       "WEB_LOG"
     ],
     "WAS": [
+      "WAS_ENGINE_STATUS",
       "WAS_JVM_HEAP",
       "WAS_THREAD_POOL",
       "WAS_LONG_RUNNING_THREAD",
@@ -527,7 +544,8 @@
     },
     "templateKinds": {
       "SCRIPT_PART": "점검 항목 스크립트",
-      "QUERY": "DB 쿼리"
+      "QUERY": "DB 쿼리",
+      "COMMAND": "관리 명령"
     },
     "scriptItems": {
       "START": "실행 준비",
@@ -545,6 +563,7 @@
       "WEB_WAS_CONNECTION": "WEB-WAS 연동 상태",
       "WEB_REQUEST_VOLUME": "사용자 요청 처리량",
       "WEB_LOG": "WEB 로그 상태",
+      "WAS_ENGINE_STATUS": "WAS 엔진 상태",
       "WAS_JVM_HEAP": "JVM Heap 사용률",
       "WAS_THREAD_POOL": "Thread Pool 사용률",
       "WAS_LONG_RUNNING_THREAD": "장기 수행 Thread",
@@ -562,6 +581,7 @@
       "DB_TRANSACTION_LOG": "트랜잭션 로그 사용률",
       "DB_REPLICATION": "복제·이중화 상태",
       "DB_CUSTOM_QUERY": "기타 사용자 쿼리",
+      "COMMAND_RUNNER": "관리 명령 실행기",
       "SAVE": "결과 저장"
     },
     "rolePolicies": {
@@ -569,6 +589,7 @@
       "WEB::WEB_WAS_CONNECTION": "WEB_WAS_CONNECTION",
       "WEB::WEB_REQUEST_VOLUME": "WEB_REQUEST_VOLUME",
       "WEB::WEB_LOG": "WEB_LOG",
+      "WAS::WAS_ENGINE_STATUS": "WAS_ENGINE_STATUS",
       "WAS::WAS_JVM_HEAP": "WAS_JVM_HEAP",
       "WAS::WAS_THREAD_POOL": "WAS_THREAD_POOL",
       "WAS::WAS_LONG_RUNNING_THREAD": "WAS_LONG_RUNNING_THREAD",

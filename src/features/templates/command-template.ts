@@ -1,6 +1,6 @@
 /*
  * 관리 명령 템플릿(COMMAND) 해석.
- * 줄 규칙은 시험판 실행기(docs/spikes/command-templates/opsbox-command-runner.sh)와 같습니다.
+ * 줄 규칙은 실행기 조각(*-PART-COMMAND_RUNNER)과 같습니다.
  *   "# @opsbox-키 값" = 머리 주석, "#"로 시작하는 다른 줄·빈 줄 = 무시, 나머지 = 도구에 넣을 명령.
  */
 

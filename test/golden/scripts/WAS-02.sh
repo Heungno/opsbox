@@ -42,17 +42,17 @@ OPSBOX_HTTP_NAMES=('민원 API')
 OPSBOX_HTTP_URLS=('http://10.10.2.22:8080/minwon/health')
 OPSBOX_HTTP_EXPECTED=('200')
 OPSBOX_SERVER_JSON='{"id":"WAS-02","name":"민원 처리 WAS","ip":"10.10.2.22","roles":["WAS"],"products":{"WAS":"Apache Tomcat"}}'
-OPSBOX_POLICY_DEFINITIONS_JSON='{"HOST_INFO":{"id":"HOST_INFO","name":"서버 기본정보","enabled":true,"executor":{"type":"SCRIPT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"hostname","label":"호스트명"},{"key":"osName","label":"운영체제"},{"key":"osVersion","label":"OS 버전"},{"key":"status","label":"상태"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"CPU":{"id":"CPU","name":"CPU 사용률","enabled":true,"executor":{"type":"SCRIPT","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"MEMORY":{"id":"MEMORY","name":"메모리 사용률","enabled":true,"executor":{"type":"SCRIPT","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"UPTIME":{"id":"UPTIME","name":"가동시간","enabled":true,"executor":{"type":"SCRIPT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"DISK":{"id":"DISK","name":"디스크 사용량","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"},{"type":"TABLE","columns":[{"key":"device","label":"드라이브"},{"key":"volumeName","label":"볼륨명"},{"key":"totalGB","label":"전체(GB)"},{"key":"usedGB","label":"사용(GB)"},{"key":"freeGB","label":"여유(GB)"},{"key":"usagePercent","label":"사용률(%)"},{"key":"status","label":"상태"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"PROCESS":{"id":"PROCESS","name":"프로세스","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"name","label":"프로세스"},{"key":"processId","label":"PID"},{"key":"running","label":"실행 중"},{"key":"cpuSeconds","label":"CPU(초)"},{"key":"memoryMB","label":"메모리(MB)"},{"key":"uptimeMinutes","label":"가동(분)"},{"key":"status","label":"상태"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"DIRECTORY":{"id":"DIRECTORY","name":"디렉터리 사용량","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"path","label":"경로"},{"key":"exists","label":"존재"},{"key":"sizeGB","label":"크기(GB)"},{"key":"usedGB","label":"사용(GB)"},{"key":"freeGB","label":"여유(GB)"},{"key":"totalGB","label":"전체(GB)"},{"key":"usagePercent","label":"사용률(%)"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"FILE_SIZE":{"id":"FILE_SIZE","name":"파일 크기","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"path","label":"파일 경로"},{"key":"exists","label":"존재"},{"key":"sizeMB","label":"크기(MB)"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"PORT":{"id":"PORT","name":"포트 리스닝","enabled":true,"executor":{"type":"TCP_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"port","label":"포트"},{"key":"protocol","label":"프로토콜"},{"key":"description","label":"설명"},{"key":"listening","label":"수신 중"},{"key":"processName","label":"프로세스"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"HTTP":{"id":"HTTP","name":"HTTP 응답","enabled":true,"executor":{"type":"HTTP_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"name","label":"점검명"},{"key":"url","label":"URL"},{"key":"expectedStatus","label":"기대 코드"},{"key":"statusCode","label":"응답 코드"},{"key":"responseTimeMs","label":"응답 시간(ms)"},{"key":"success","label":"성공"},{"key":"error","label":"오류"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"CUSTOM_DEMO_SWAP":{"id":"CUSTOM_DEMO_SWAP","name":"Swap 사용률","enabled":true,"executor":{"type":"CHECK_BUILDER","options":{"builder":{"version":1,"type":"COMMAND_NUMBER","presetId":"linux.swap"}},"templateId":"GEN-CUSTOM_DEMO_SWAP-LINUX"},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"target","label":"대상"},{"key":"value","label":"값"},{"key":"threshold","label":"기준"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]},{"type":"CONSOLE"}],"statusField":"status"}},"WAS_JVM_HEAP":{"id":"WAS_JVM_HEAP","name":"JVM Heap 사용률","enabled":true,"executor":{"type":"SCRIPT","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"processName","label":"프로세스"},{"key":"processId","label":"PID"},{"key":"heapUsedMB","label":"사용 Heap(MB)"},{"key":"heapCapacityMB","label":"전체 Heap(MB)"},{"key":"heapUsagePercent","label":"사용률(%)"},{"key":"status","label":"상태"},{"key":"message","label":"수집 메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"WAS_THREAD_POOL":{"id":"WAS_THREAD_POOL","name":"Thread Pool 사용률","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_THREAD_POOL","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_LONG_RUNNING_THREAD":{"id":"WAS_LONG_RUNNING_THREAD","name":"장기 수행 Thread","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_LONG_RUNNING_THREAD","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"processId","label":"PID"},{"key":"threadName","label":"Thread"},{"key":"elapsedSeconds","label":"수행 시간(초)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_DB_CONNECTION_POOL":{"id":"WAS_DB_CONNECTION_POOL","name":"DB Connection Pool 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_DB_CONNECTION_POOL","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_DEPLOYMENT":{"id":"WAS_DEPLOYMENT","name":"애플리케이션 배포 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_DEPLOYMENT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_HEAP_DUMP":{"id":"WAS_HEAP_DUMP","name":"Heap Dump 파일 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_HEAP_DUMP","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"javaProcessCount","label":"Java 프로세스 수"},{"key":"existingFileCount","label":"파일 수"},{"key":"files","label":"Heap Dump 파일"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_STARTUP_SCRIPT":{"id":"WAS_STARTUP_SCRIPT","name":"기동 스크립트 변경 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_STARTUP_SCRIPT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스·경로"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_LOG":{"id":"WAS_LOG","name":"WAS 로그 상태","enabled":true,"executor":{"type":"LOG_ANALYSIS","templateId":"LINUX-PART-WAS_LOG","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"LOG_TABLE","columns":[{"key":"timestamp","label":"시각"},{"key":"path","label":"파일 경로"},{"key":"text","label":"로그 내용"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}}}'
+OPSBOX_POLICY_DEFINITIONS_JSON='{"HOST_INFO":{"id":"HOST_INFO","name":"서버 기본정보","enabled":true,"executor":{"type":"SCRIPT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"hostname","label":"호스트명"},{"key":"osName","label":"운영체제"},{"key":"osVersion","label":"OS 버전"},{"key":"status","label":"상태"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"CPU":{"id":"CPU","name":"CPU 사용률","enabled":true,"executor":{"type":"SCRIPT","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"MEMORY":{"id":"MEMORY","name":"메모리 사용률","enabled":true,"executor":{"type":"SCRIPT","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"UPTIME":{"id":"UPTIME","name":"가동시간","enabled":true,"executor":{"type":"SCRIPT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"DISK":{"id":"DISK","name":"디스크 사용량","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"METRIC"},{"type":"TABLE","columns":[{"key":"device","label":"드라이브"},{"key":"volumeName","label":"볼륨명"},{"key":"totalGB","label":"전체(GB)"},{"key":"usedGB","label":"사용(GB)"},{"key":"freeGB","label":"여유(GB)"},{"key":"usagePercent","label":"사용률(%)"},{"key":"status","label":"상태"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"PROCESS":{"id":"PROCESS","name":"프로세스","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"name","label":"프로세스"},{"key":"processId","label":"PID"},{"key":"running","label":"실행 중"},{"key":"cpuSeconds","label":"CPU(초)"},{"key":"memoryMB","label":"메모리(MB)"},{"key":"uptimeMinutes","label":"가동(분)"},{"key":"status","label":"상태"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"DIRECTORY":{"id":"DIRECTORY","name":"디렉터리 사용량","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"path","label":"경로"},{"key":"exists","label":"존재"},{"key":"sizeGB","label":"크기(GB)"},{"key":"usedGB","label":"사용(GB)"},{"key":"freeGB","label":"여유(GB)"},{"key":"totalGB","label":"전체(GB)"},{"key":"usagePercent","label":"사용률(%)"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"FILE_SIZE":{"id":"FILE_SIZE","name":"파일 크기","enabled":true,"executor":{"type":"FILESYSTEM_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"path","label":"파일 경로"},{"key":"exists","label":"존재"},{"key":"sizeMB","label":"크기(MB)"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"PORT":{"id":"PORT","name":"포트 리스닝","enabled":true,"executor":{"type":"TCP_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"port","label":"포트"},{"key":"protocol","label":"프로토콜"},{"key":"description","label":"설명"},{"key":"listening","label":"수신 중"},{"key":"processName","label":"프로세스"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"HTTP":{"id":"HTTP","name":"HTTP 응답","enabled":true,"executor":{"type":"HTTP_CHECK","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"name","label":"점검명"},{"key":"url","label":"URL"},{"key":"expectedStatus","label":"기대 코드"},{"key":"statusCode","label":"응답 코드"},{"key":"responseTimeMs","label":"응답 시간(ms)"},{"key":"success","label":"성공"},{"key":"error","label":"오류"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"CUSTOM_DEMO_SWAP":{"id":"CUSTOM_DEMO_SWAP","name":"Swap 사용률","enabled":true,"executor":{"type":"CHECK_BUILDER","options":{"builder":{"version":1,"type":"COMMAND_NUMBER","presetId":"linux.swap"}},"templateId":"GEN-CUSTOM_DEMO_SWAP-LINUX"},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"target","label":"대상"},{"key":"value","label":"값"},{"key":"threshold","label":"기준"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]},{"type":"CONSOLE"}],"statusField":"status"}},"WAS_ENGINE_STATUS":{"id":"WAS_ENGINE_STATUS","name":"WAS 엔진 상태","enabled":true,"executor":{"type":"CONSOLE_COMMAND","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"CONSOLE"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_JVM_HEAP":{"id":"WAS_JVM_HEAP","name":"JVM Heap 사용률","enabled":true,"executor":{"type":"SCRIPT","options":{"warningPercent":70,"criticalPercent":90}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"processName","label":"프로세스"},{"key":"processId","label":"PID"},{"key":"heapUsedMB","label":"사용 Heap(MB)"},{"key":"heapCapacityMB","label":"전체 Heap(MB)"},{"key":"heapUsagePercent","label":"사용률(%)"},{"key":"status","label":"상태"},{"key":"message","label":"수집 메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}}},"WAS_THREAD_POOL":{"id":"WAS_THREAD_POOL","name":"Thread Pool 사용률","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_THREAD_POOL","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_LONG_RUNNING_THREAD":{"id":"WAS_LONG_RUNNING_THREAD","name":"장기 수행 Thread","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_LONG_RUNNING_THREAD","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"processId","label":"PID"},{"key":"threadName","label":"Thread"},{"key":"elapsedSeconds","label":"수행 시간(초)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_DB_CONNECTION_POOL":{"id":"WAS_DB_CONNECTION_POOL","name":"DB Connection Pool 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_DB_CONNECTION_POOL","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_DEPLOYMENT":{"id":"WAS_DEPLOYMENT","name":"애플리케이션 배포 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_DEPLOYMENT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_HEAP_DUMP":{"id":"WAS_HEAP_DUMP","name":"Heap Dump 파일 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_HEAP_DUMP","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"javaProcessCount","label":"Java 프로세스 수"},{"key":"existingFileCount","label":"파일 수"},{"key":"files","label":"Heap Dump 파일"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_STARTUP_SCRIPT":{"id":"WAS_STARTUP_SCRIPT","name":"기동 스크립트 변경 상태","enabled":true,"executor":{"type":"SCRIPT","templateId":"LINUX-PART-WAS_STARTUP_SCRIPT","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스·경로"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}},"WAS_LOG":{"id":"WAS_LOG","name":"WAS 로그 상태","enabled":true,"executor":{"type":"LOG_ANALYSIS","templateId":"LINUX-PART-WAS_LOG","options":{}},"inputs":[],"result":{"components":[{"type":"SUMMARY"},{"type":"LOG_TABLE","columns":[{"key":"timestamp","label":"시각"},{"key":"path","label":"파일 경로"},{"key":"text","label":"로그 내용"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}}}}'
 OPSBOX_WAS_HEAP_WARNING='70'
 OPSBOX_WAS_HEAP_CRITICAL='90'
 OPSBOX_WEB_LOG_DIRS=()
 OPSBOX_WEB_LOG_DAYS='7'
 OPSBOX_WAS_LOG_DIRS=('/opt/tomcat/logs')
 OPSBOX_WAS_LOG_DAYS='7'
-OPSBOX_ROLE_ITEM_ROLES=('WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS')
-OPSBOX_ROLE_ITEM_IDS=('WAS_JVM_HEAP' 'WAS_THREAD_POOL' 'WAS_LONG_RUNNING_THREAD' 'WAS_DB_CONNECTION_POOL' 'WAS_DEPLOYMENT' 'WAS_HEAP_DUMP' 'WAS_STARTUP_SCRIPT' 'WAS_LOG')
-OPSBOX_ROLE_ITEM_META=('"name":"JVM Heap 사용률","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"processName","label":"프로세스"},{"key":"processId","label":"PID"},{"key":"heapUsedMB","label":"사용 Heap(MB)"},{"key":"heapCapacityMB","label":"전체 Heap(MB)"},{"key":"heapUsagePercent","label":"사용률(%)"},{"key":"status","label":"상태"},{"key":"message","label":"수집 메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}},"executorType":"SCRIPT"' '"name":"Thread Pool 사용률","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"장기 수행 Thread","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"processId","label":"PID"},{"key":"threadName","label":"Thread"},{"key":"elapsedSeconds","label":"수행 시간(초)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"DB Connection Pool 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"애플리케이션 배포 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"Heap Dump 파일 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"javaProcessCount","label":"Java 프로세스 수"},{"key":"existingFileCount","label":"파일 수"},{"key":"files","label":"Heap Dump 파일"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"기동 스크립트 변경 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스·경로"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"WAS 로그 상태","result":{"components":[{"type":"SUMMARY"},{"type":"LOG_TABLE","columns":[{"key":"timestamp","label":"시각"},{"key":"path","label":"파일 경로"},{"key":"text","label":"로그 내용"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"LOG_ANALYSIS"')
-OPSBOX_ROLE_ITEM_MESSAGES=('연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.')
+OPSBOX_ROLE_ITEM_ROLES=('WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS' 'WAS')
+OPSBOX_ROLE_ITEM_IDS=('WAS_ENGINE_STATUS' 'WAS_JVM_HEAP' 'WAS_THREAD_POOL' 'WAS_LONG_RUNNING_THREAD' 'WAS_DB_CONNECTION_POOL' 'WAS_DEPLOYMENT' 'WAS_HEAP_DUMP' 'WAS_STARTUP_SCRIPT' 'WAS_LOG')
+OPSBOX_ROLE_ITEM_META=('"name":"WAS 엔진 상태","result":{"components":[{"type":"SUMMARY"},{"type":"CONSOLE"}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"CONSOLE_COMMAND"' '"name":"JVM Heap 사용률","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"processName","label":"프로세스"},{"key":"processId","label":"PID"},{"key":"heapUsedMB","label":"사용 Heap(MB)"},{"key":"heapCapacityMB","label":"전체 Heap(MB)"},{"key":"heapUsagePercent","label":"사용률(%)"},{"key":"status","label":"상태"},{"key":"message","label":"수집 메시지"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected","warningPercent":70,"criticalPercent":90}},"executorType":"SCRIPT"' '"name":"Thread Pool 사용률","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"장기 수행 Thread","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"processId","label":"PID"},{"key":"threadName","label":"Thread"},{"key":"elapsedSeconds","label":"수행 시간(초)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"DB Connection Pool 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"poolName","label":"Pool"},{"key":"activeCount","label":"사용 중"},{"key":"maxCount","label":"최대"},{"key":"usagePercent","label":"사용률(%)"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"애플리케이션 배포 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"Heap Dump 파일 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"javaProcessCount","label":"Java 프로세스 수"},{"key":"existingFileCount","label":"파일 수"},{"key":"files","label":"Heap Dump 파일"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"기동 스크립트 변경 상태","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"status","label":"상태"},{"key":"product","label":"제품"},{"key":"processCount","label":"프로세스 수"},{"key":"processes","label":"프로세스·경로"},{"key":"message","label":"결과"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"SCRIPT"' '"name":"WAS 로그 상태","result":{"components":[{"type":"SUMMARY"},{"type":"LOG_TABLE","columns":[{"key":"timestamp","label":"시각"},{"key":"path","label":"파일 경로"},{"key":"text","label":"로그 내용"}]}],"statusField":"status","statusRules":{"healthy":"Healthy","warning":"Warning","critical":"Critical","notCollected":"NotCollected"}},"executorType":"LOG_ANALYSIS"')
+OPSBOX_ROLE_ITEM_MESSAGES=('서버 정책에서 관리 명령 템플릿을 고르세요.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.' '연결된 점검 스크립트가 결과를 기록하지 않았습니다.')
 OPSBOX_DB_QUERY_ITEMS=()
 OPSBOX_DB_QUERY_NAMES=()
 OPSBOX_DB_QUERY_SQL=()
@@ -67,6 +67,11 @@ OPSBOX_BASIC_ITEM_IDS=('CUSTOM_DEMO_SWAP')
 OPSBOX_BASIC_ITEM_META=('"name":"Swap 사용률","result":{"components":[{"type":"SUMMARY"},{"type":"TABLE","columns":[{"key":"target","label":"대상"},{"key":"value","label":"값"},{"key":"threshold","label":"기준"},{"key":"status","label":"상태"},{"key":"message","label":"메시지"}]},{"type":"CONSOLE"}],"statusField":"status"},"executorType":"CHECK_BUILDER"')
 OPSBOX_BASIC_NOT_COLLECTED_MESSAGE='연결된 점검 스크립트가 결과를 기록하지 않았습니다.'
 declare -A OPSBOX_ITEM_INPUT=()
+OPSBOX_COMMAND_ROLES=('WAS')
+OPSBOX_COMMAND_ITEMS=('WAS_ENGINE_STATUS')
+OPSBOX_COMMAND_NAMES=('')
+OPSBOX_COMMAND_CONTENTS=('')
+OPSBOX_COMMAND_MESSAGES=('서버 정책에서 관리 명령 템플릿을 고르세요.')
 # ---- OpsBox 설정 끝 ----
 # ---- 역할별 점검 결과 기록 (OpsBox가 자동으로 넣음) ----
 declare -A OPSBOX_ROLE_STATUS=() OPSBOX_ROLE_DETAIL=()
@@ -696,6 +701,160 @@ else
 fi
 opsbox_role_record WAS WAS_LOG "$l_status" "$l_detail"
 opsbox_log "WAS 로그 점검 완료: $l_status, 폴더=$l_root_count, 파일=${#l_files[@]}, 기간=$l_days 일"
+
+# ---- 관리 명령 실행기 (명령 템플릿을 고른 WEB·WAS 항목) ----
+# 설정 블록의 OPSBOX_COMMAND_* 배열(같은 순서)을 항목마다 실행합니다.
+# 템플릿 머리 주석(# @opsbox-…): product·tool·home·args·require·quit·timeout(초, 기본 20)·status(<수준> ~ <정규식>)
+# 주석이 아닌 줄은 도구에 차례로 넣을 명령입니다. 판정은 출력을 대문자로 바꿔 Critical → Warning → Healthy 순서로 찾습니다.
+# 템플릿은 사용자가 고칠 수 있는 글이라 eval을 쓰지 않고, ${이름}(환경 변수)만 바꿉니다.
+# 이름에 PASSWORD가 든 @opsbox-require 변수의 값은 결과와 로그에서 ****로 가립니다.
+
+opsbox_command_name_ok() { [[ $1 =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; }
+
+# ${이름}만 환경 변수 값으로 바꿉니다(명령 실행·다른 확장은 하지 않음)
+opsbox_command_expand() {
+  local text=$1 out='' name re='^([^$]*)\$(.*)$' var_re='^\{([A-Za-z_][A-Za-z0-9_]*)\}(.*)$'
+  while [[ $text =~ $re ]]; do
+    out+=${BASH_REMATCH[1]}; text=${BASH_REMATCH[2]}
+    if [[ $text =~ $var_re ]]; then
+      name=${BASH_REMATCH[1]}; text=${BASH_REMATCH[2]}; out+=${!name-}
+    else
+      out+='$'
+    fi
+  done
+  printf '%s' "$out$text"
+}
+
+# 항목 하나 실행: opsbox_command_run <OPSBOX_COMMAND_* 배열 번호>
+opsbox_command_run() {
+  local i=$1
+  local role=${OPSBOX_COMMAND_ROLES[$i]} item=${OPSBOX_COMMAND_ITEMS[$i]} title=${OPSBOX_COMMAND_NAMES[$i]}
+  local content=${OPSBOX_COMMAND_CONTENTS[$i]} preset=${OPSBOX_COMMAND_MESSAGES[$i]}
+  local product='' tool='' home_var='' args='' require='' quit='' timeout_s=20
+  local -a rules=() commands=() words=() tool_args=() secrets=()
+  local line key value word expanded name tool_path input output='' rc=0 upper level rule pattern s
+  local status=NotCollected message='' cmds detail product_var
+  local header_re='^#[[:space:]]*@opsbox-([a-z]+)[[:space:]]+(.*)$' comment_re='^[[:space:]]*#'
+  local rule_re='^([^[:space:]]+)[[:space:]]+~[[:space:]]+([^[:space:]].*)$'
+
+  # 결과 기록: 상태 문구 [출력]
+  opsbox_command_finish() {
+    local s
+    status=$1; message=$2; output=${3-}
+    for s in "${secrets[@]}"; do
+      output=${output//"$s"/****}; message=${message//"$s"/****}; cmds=${cmds//"$s"/****}; product=${product//"$s"/****}
+    done
+    detail="{\"product\":$(opsbox_json_string "$product"),\"status\":\"$status\",\"command\":$( [ -n "$cmds" ] && opsbox_json_string "$cmds" || printf 'null'),\"output\":$( [ -n "$output" ] && opsbox_json_string "${output:0:12000}" || printf 'null'),\"message\":$( [ -n "$message" ] && opsbox_json_string "$message" || printf 'null')}"
+    opsbox_role_record "$role" "$item" "$status" "$detail"
+    if [ "$role" = WEB ]; then web_status=$status; web_check_json=$detail; fi
+    opsbox_command_log "관리 명령 판정: $role $item $status${message:+ ($message)}"
+  }
+  # 로그에도 비밀번호를 가린 뒤 남깁니다.
+  opsbox_command_log() {
+    local text=$1 s
+    for s in "${secrets[@]}"; do text=${text//"$s"/****}; done
+    opsbox_log "$text"
+  }
+
+  cmds=''
+  # 명령 템플릿을 고르지 않은 항목 등: 실행하지 않고 문구로 미수집
+  if [ -n "$preset" ]; then
+    product_var="OPSBOX_PRODUCT_$role"; opsbox_command_name_ok "$product_var" && product=${!product_var-}
+    opsbox_command_finish NotCollected "$preset"
+    return 0
+  fi
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%$'\r'}
+    if [[ $line =~ $header_re ]]; then
+      key=${BASH_REMATCH[1]}; value=${BASH_REMATCH[2]%"${BASH_REMATCH[2]##*[![:space:]]}"}
+      case $key in
+        product) product=$value ;;
+        tool) tool=$value ;;
+        home) home_var=$value ;;
+        args) args=$value ;;
+        require) require=$value ;;
+        quit) quit=$value ;;
+        timeout) timeout_s=$value ;;
+        status) rules+=("$value") ;;
+        *) opsbox_command_log "모르는 머리 주석 무시: @opsbox-$key" ;;
+      esac
+    elif [[ $line =~ $comment_re ]] || [[ -z ${line//[[:space:]]/} ]]; then
+      continue
+    else
+      commands+=("$line")
+    fi
+  done <<< "$content"
+  [[ $timeout_s =~ ^[0-9]+$ ]] && [ "$timeout_s" -gt 0 ] || timeout_s=20
+
+  cmds=$(printf '%s, ' "${commands[@]}"); cmds="$tool: ${cmds%, }"
+
+  # 이름 검사(간접 확장 전에), 비밀번호 값 모으기
+  read -r -a words <<< "$require"
+  for name in "${words[@]}"; do
+    if ! opsbox_command_name_ok "$name"; then opsbox_command_finish NotCollected "@opsbox-require의 환경 변수 이름이 올바르지 않습니다: $name"; return 0; fi
+    [[ $name == *PASSWORD* ]] && [ -n "${!name-}" ] && secrets+=("${!name}")
+  done
+  if [ -n "$home_var" ] && ! opsbox_command_name_ok "$home_var"; then
+    opsbox_command_finish NotCollected "@opsbox-home의 환경 변수 이름이 올바르지 않습니다: $home_var"; return 0
+  fi
+
+  opsbox_command_log "관리 명령 점검 시작: $role $item ${title:-$product}"
+
+  # 1) 도구 찾기: PATH → $홈/bin
+  tool_path=''
+  [ -n "$tool" ] && tool_path=$(type -P -- "$tool" 2>/dev/null)
+  if [ -z "$tool_path" ] && [ -n "$tool" ] && [ -n "$home_var" ] && [ -n "${!home_var-}" ] && [ -f "${!home_var}/bin/$tool" ] && [ -x "${!home_var}/bin/$tool" ]; then tool_path="${!home_var}/bin/$tool"; fi
+  if [ -z "$tool_path" ]; then
+    opsbox_command_finish NotCollected "$tool을 PATH${home_var:+ 또는 \$$home_var/bin}에서 찾을 수 없습니다."; return 0
+  fi
+  opsbox_command_log "도구: $tool_path"
+
+  # 2) 필요한 환경 변수(로그인 정보 등)
+  for name in "${words[@]}"; do
+    if [ -z "${!name-}" ]; then
+      opsbox_command_finish NotCollected "환경 변수 $name 이(가) 비어 있습니다. 실행 계정에 설정하세요(파일에 적지 않음)."; return 0
+    fi
+  done
+
+  # 3) 실행 (명령 + 종료 명령을 표준 입력으로). 인자는 글자를 먼저 나눈 뒤 ${이름}을 바꿔, 값에 공백이 있어도 한 인자입니다.
+  read -r -a words <<< "$args"
+  for word in "${words[@]}"; do
+    expanded=$(opsbox_command_expand "$word")
+    [ -n "$expanded" ] && tool_args+=("$expanded")
+  done
+  input=$(printf '%s\n' "${commands[@]}" ${quit:+"$quit"})
+  if command -v timeout >/dev/null 2>&1; then
+    output=$(printf '%s\n' "$input" | timeout "$timeout_s" "$tool_path" "${tool_args[@]}" 2>&1); rc=$?
+  else
+    output=$(printf '%s\n' "$input" | "$tool_path" "${tool_args[@]}" 2>&1); rc=$?
+  fi
+  tool_args=()
+  if [ "$rc" = 124 ]; then
+    opsbox_command_finish NotCollected "$tool 실행 시간이 ${timeout_s}초를 넘었습니다." "$output"; return 0
+  fi
+
+  # 4) 판정 (출력을 대문자로 바꿔서 찾음, 정규식은 grep 옵션이 되지 않게 -e로)
+  for s in "${secrets[@]}"; do output=${output//"$s"/****}; done
+  upper=$(printf '%s' "$output" | tr 'a-z' 'A-Z')
+  for level in Critical Warning Healthy; do
+    for rule in "${rules[@]}"; do
+      [[ $rule =~ $rule_re ]] || continue
+      [ "${BASH_REMATCH[1]}" = "$level" ] || continue
+      pattern=${BASH_REMATCH[2]}
+      if printf '%s\n' "$upper" | grep -Eq -e "$pattern" 2>/dev/null; then
+        opsbox_command_finish "$level" '' "$output"; return 0
+      fi
+    done
+  done
+  opsbox_command_finish NotCollected "${product:-$tool} 상태 값을 확인할 수 없습니다(맞는 판정 규칙 없음)." "$output"
+  return 0
+}
+
+for opsbox_command_index in "${!OPSBOX_COMMAND_ITEMS[@]}"; do
+  opsbox_command_run "$opsbox_command_index"
+done
+unset -f opsbox_command_finish opsbox_command_log
 
 # ---- 역할별 점검 결과 정리 (OpsBox가 자동으로 넣음) ----
 opsbox_finalize_role_policies() {

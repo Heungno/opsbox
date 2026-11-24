@@ -1,3 +1,5 @@
+기능으로 들어감: seeds/templates.json의 *-COMMAND-*, *-PART-COMMAND_RUNNER
+
 # 명령 템플릿 시험판 (WebtoB 4.1 · JEUS 6)
 
 앱과 섞지 않은 **따로 떨어진 시험판**입니다. OpsBox 스크립트 조각·정책·화면은 건드리지 않습니다.

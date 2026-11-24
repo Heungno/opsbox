@@ -4,8 +4,10 @@ import { test } from 'node:test';
 
 import { parseCommandTemplate } from '../src/features/templates/command-template';
 
-test('명령 템플릿: 시험판 jeus-6.cmd를 읽는다', () => {
-  const { template, errors } = parseCommandTemplate(fs.readFileSync('docs/spikes/command-templates/jeus-6.cmd', 'utf8'));
+const seedContent = (id: string): string => (JSON.parse(fs.readFileSync('seeds/templates.json', 'utf8')) as { id: string; content: string }[]).find((entry) => entry.id === id)!.content;
+
+test('명령 템플릿: 기본 JEUS 6 템플릿을 읽는다', () => {
+  const { template, errors } = parseCommandTemplate(seedContent('JEUS6-COMMAND-WAS_ENGINE_STATUS'));
   assert.deepEqual(errors, []);
   assert.equal(template.tool, 'jeusadmin'); assert.equal(template.timeoutSeconds, 30);
   assert.deepEqual(template.require, ['JEUS_NODE', 'OPSBOX_JEUS_USER', 'OPSBOX_JEUS_PASSWORD']);

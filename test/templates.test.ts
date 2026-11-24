@@ -7,6 +7,8 @@ import fs from 'node:fs';
 import { prepareDatabase } from '../src/db';
 import { deleteGeneratedTemplate, deleteTemplate, getTemplate, getTemplateHistory, getTemplates, restoreTemplateVersion, saveTemplate } from '../src/features/templates/service';
 
+const seedContent = (id: string): string => (JSON.parse(fs.readFileSync('seeds/templates.json', 'utf8')) as { id: string; content: string }[]).find((entry) => entry.id === id)!.content;
+
 test('템플릿: 한 건 수정은 다른 템플릿의 순서와 내용을 바꾸지 않는다', () => {
   const before = getTemplates();
   const target = before[5];
@@ -54,7 +56,7 @@ test('템플릿: 쓰이지 않는 종류 SCRIPT(통째 스크립트)는 저장�
 });
 
 test('템플릿: COMMAND는 제품·항목을 저장하고 OS는 없으며, 형식이 틀리면 저장 거부', () => {
-  const WEBTOB = fs.readFileSync('docs/spikes/command-templates/webtob-4.1.cmd', 'utf8');
+  const WEBTOB = seedContent('WEBTOB41-COMMAND-WEB_ENGINE_STATUS');
   const saved = saveTemplate({ name: 'WebtoB 4.1 엔진', kind: 'COMMAND', product: 'WebtoB', item: 'WEB_ENGINE_STATUS', os: 'Linux', content: WEBTOB });
   assert.equal(saved.product, 'WebtoB'); assert.equal(saved.item, 'WEB_ENGINE_STATUS'); assert.equal(saved.os, undefined);
   assert.throws(() => saveTemplate({ name: 'x', kind: 'COMMAND', product: 'WebtoB', item: 'WEB_ENGINE_STATUS', content: 'st\n' }), /@opsbox-tool/);
@@ -69,7 +71,7 @@ test('템플릿: COMMAND 경고는 응답에만 붙고 저장된 템플릿에는
 });
 
 test('템플릿: WAS COMMAND(JEUS · WAS_ENGINE_STATUS)도 저장된다', () => {
-  const JEUS = fs.readFileSync('docs/spikes/command-templates/jeus-6.cmd', 'utf8');
+  const JEUS = seedContent('JEUS6-COMMAND-WAS_ENGINE_STATUS');
   const saved = saveTemplate({ name: 'JEUS 6 엔진', kind: 'COMMAND', product: 'JEUS', item: 'WAS_ENGINE_STATUS', content: JEUS });
   assert.equal(saved.product, 'JEUS'); assert.equal(saved.item, 'WAS_ENGINE_STATUS');
 });

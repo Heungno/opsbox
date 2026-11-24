@@ -16,6 +16,9 @@ import path from 'node:path';
 type Status = 'Healthy' | 'Warning' | 'Critical' | 'NotCollected';
 type Role = 'WEB' | 'WAS' | 'DB' | 'OTHER';
 
+/** 명령 템플릿을 고르지 않은 항목 문구 (DB 경로를 정한 뒤 seedDemo에서 불러옴) */
+let COMMAND_NOT_SELECTED_MESSAGE = '';
+
 /** 주간점검 횟수 (26주 = 반기) */
 const WEEKS = 26;
 const DEMO_USER = 'demo';
@@ -72,6 +75,8 @@ interface DemoServer {
   fileChecks: { path: string; warningSizeMB: number; criticalSizeMB: number }[];
   ports: { port: number; protocol: 'TCP' | 'UDP'; description: string }[];
   httpChecks: { name: string; url: string; expectedStatus: number }[];
+  /** 서버 정책에서 고른 관리 명령 템플릿 등 (항목 ID → 템플릿 ID) */
+  scriptParts?: Record<string, string>;
   logDirectories?: Partial<Record<'WEB_LOG' | 'WAS_LOG', string[]>>;
   dbTargets?: string[];
   base: { cpu: number; memory: number; volumes: { mount: string; totalGB: number; usedPercent: number; growthPerDay?: number }[] };
@@ -124,6 +129,7 @@ const SERVERS: DemoServer[] = [
   {
     id: 'WAS-01', name: '대민 포털 WAS #1', os: 'Windows', osName: 'Microsoft Windows Server 2022 Standard', osVersion: '10.0.20348', ip: '10.10.2.21',
     roles: ['WAS'], products: { WAS: 'JEUS' },
+    scriptParts: { WAS_ENGINE_STATUS: 'JEUS6-COMMAND-WAS_ENGINE_STATUS' },
     processes: [{ name: 'java' }], directories: [{ path: 'E:\\jeus\\logs' }], fileChecks: [],
     ports: [{ port: 9736, protocol: 'TCP', description: 'JEUS 관리' }, { port: 8088, protocol: 'TCP', description: 'JEUS HTTP' }],
     httpChecks: [{ name: '업무 API', url: 'http://10.10.2.21:8088/api/health', expectedStatus: 200 }],
@@ -411,6 +417,16 @@ class ResultBuilder {
         : { status: 'Healthy', detail: { status: 'Healthy', configuredPaths: [], existingFileCount: 0, files: [] } },
       WAS_STARTUP_SCRIPT: jmx('비교할 기준 파일 또는 체크섬이 정책에 등록되지 않아 변경 여부를 판정할 수 없습니다.'),
       WAS_LOG: { status: log.status, detail: log },
+      WAS_ENGINE_STATUS: this.server.scriptParts?.WAS_ENGINE_STATUS
+        ? {
+          status: 'Healthy',
+          detail: {
+            product: 'JEUS 6', status: 'Healthy', command: 'jeusadmin: allenginenames, pidlist',
+            output: ['ENGINE NAME          STATE      PID', 'container1           RUNNING    4120', 'container2           RUNNING    4188', 'adminServer          RUNNING    3977'].join('\n'),
+            message: null,
+          },
+        }
+        : { status: 'NotCollected', detail: { message: COMMAND_NOT_SELECTED_MESSAGE } },
     };
   }
 
@@ -611,6 +627,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
   const withResults = options.results ?? true;
   // 데모 DB 경로를 정한 뒤에 불러와야 하므로 여기서 import 합니다.
   const { db } = await import('../src/db');
+  ({ COMMAND_NOT_SELECTED_MESSAGE } = await import('../src/features/scripts/commands'));
   const { createServer, deactivateServer } = await import('../src/features/servers/service');
   const { buildScriptConfig } = await import('../src/features/scripts/assembly');
   const { storeUploadedResult } = await import('../src/features/results/importer');
@@ -657,6 +674,7 @@ export async function seedDemo(options: { results?: boolean } = {}) {
       id: demo.id, name: demo.name, roles: demo.roles, products: demo.products, os: demo.os, ip: demo.ip, resultPath: demo.resultPath,
       policyIds, roleChecks, rolePolicySettings,
       processes: demo.processes, directories: demo.directories, fileChecks: demo.fileChecks, ports: demo.ports, httpChecks: demo.httpChecks,
+      scriptParts: demo.scriptParts,
     } as any);
     const config = buildScriptConfig(server);
     const definitions: Definitions = { rolePolicies: config.checks.rolePolicies as Definitions['rolePolicies'], policyItems: config.checks.policyItems, basicPolicyItems: config.checks.basicPolicyItems };

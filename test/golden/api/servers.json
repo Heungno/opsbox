@@ -281,6 +281,7 @@
       "CPU": "WINDOWS-PART-CPU",
       "MEMORY": "WINDOWS-PART-MEMORY",
       "UPTIME": "WINDOWS-PART-UPTIME",
+      "WAS_ENGINE_STATUS": "JEUS6-COMMAND-WAS_ENGINE_STATUS",
       "WAS_JVM_HEAP": "WINDOWS-PART-WAS_JVM_HEAP",
       "WAS_THREAD_POOL": "WINDOWS-PART-WAS_THREAD_POOL",
       "WAS_LONG_RUNNING_THREAD": "WINDOWS-PART-WAS_LONG_RUNNING_THREAD",
@@ -292,6 +293,7 @@
     },
     "roleChecks": {
       "WAS": [
+        "WAS_ENGINE_STATUS",
         "WAS_JVM_HEAP",
         "WAS_THREAD_POOL",
         "WAS_LONG_RUNNING_THREAD",
@@ -373,6 +375,7 @@
     },
     "roleChecks": {
       "WAS": [
+        "WAS_ENGINE_STATUS",
         "WAS_JVM_HEAP",
         "WAS_THREAD_POOL",
         "WAS_LONG_RUNNING_THREAD",
@@ -463,6 +466,7 @@
         "WEB_LOG"
       ],
       "WAS": [
+        "WAS_ENGINE_STATUS",
         "WAS_JVM_HEAP",
         "WAS_THREAD_POOL",
         "WAS_LONG_RUNNING_THREAD",
