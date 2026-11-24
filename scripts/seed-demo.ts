@@ -426,7 +426,8 @@ class ResultBuilder {
             message: null,
           },
         }
-        : { status: 'NotCollected', detail: { message: COMMAND_NOT_SELECTED_MESSAGE } },
+        // 실행기가 남기는 모양과 같게 (Linux·Windows 같음)
+        : { status: 'NotCollected', detail: { product, status: 'NotCollected', command: null, output: null, message: COMMAND_NOT_SELECTED_MESSAGE } },
     };
   }
 

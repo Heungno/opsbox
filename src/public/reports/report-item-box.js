@@ -155,7 +155,12 @@ function renderMetricView(detail) {
 function renderView(view, item, components, detail, hasMessage) {
   if (view === 'TABLE') return renderTableView(item, components, detail, hasMessage);
   if (view === 'LOG_TABLE') return renderLogView(components, detail, hasMessage);
-  if (view === 'CONSOLE') return el('pre', 'webtob-console-output', String(detail.output || detail.console?.stdout || detail.command || detail.message || '콘솔 출력이 없습니다.'));
+  if (view === 'CONSOLE') {
+    const text = detail.output || detail.console?.stdout || detail.command;
+    // 문구는 제목 아래에 이미 보이므로, 출력·명령이 없을 때 콘솔 칸에 다시 넣지 않습니다.
+    if (!text && hasMessage) return null;
+    return el('pre', 'webtob-console-output', String(text || detail.message || '콘솔 출력이 없습니다.'));
+  }
   if (view === 'METRIC') return renderMetricView(detail);
   return el('pre', 'webtob-console-output', JSON.stringify(detail, null, 2));
 }

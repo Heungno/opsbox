@@ -172,3 +172,13 @@ test('로그 점검(WEB_LOG·WAS_LOG)은 로그 표 위에 검사 범위와 에�
   assert.equal(missing.find('div', 'report-log-counts').length, 0);
   assert.match(missing.textContent, /WEB 로그 폴더를 지정하세요/);
 });
+
+test('콘솔: 출력·명령 없이 문구만 있으면 문구는 제목 아래 한 번만(콘솔 칸에 되풀이하지 않음)', async () => {
+  const message = '서버 정책에서 관리 명령 템플릿을 고르세요.';
+  const item = { item: 'WAS_ENGINE_STATUS', name: 'WAS 엔진 상태', status: 'NotCollected', result: { components: [{ type: 'SUMMARY' }, { type: 'CONSOLE' }] }, detail: { product: 'JEUS', status: 'NotCollected', command: null, output: null, message } };
+  const box = boxes(await render([item]))[0];
+  assert.equal(box.textContent.split(message).length - 1, 1, box.textContent);
+  assert.equal(box.find('pre').length, 0);
+  const noMessage = boxes(await render([{ ...item, detail: {} }]))[0];
+  assert.equal(noMessage.find('pre')[0].textContent, '콘솔 출력이 없습니다.', '문구도 없으면 기존처럼 빈 콘솔 안내');
+});
