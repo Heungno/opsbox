@@ -4,7 +4,7 @@ import { codeList, loadCodes } from '/shared/js/codes.js';
 import { roleChoices } from './server-list-view.js';
 import { createServerPicker } from '/shared/js/server-picker.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from './server-overview.js';
-import { COMMAND_ONLY_ITEMS, activeScriptItems, commandTemplateOptions, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
+import { COMMAND_ONLY_ITEMS, activeScriptItems, commandTemplateOptions, storedCommandTemplateLabel, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, directoryFromInputs, defaultScriptTemplate, defaultScriptTemplateName, isDefaultScriptTemplate as isDefaultScript, policyCheckIds, policyRoleTabs, resolveQueryTemplateId as resolveQueryTemplate } from './server-policy-form.js';
 import { scriptCommand, scriptDescription } from './server-script-panel.js';
 import { loadStatusLabels, statusLabel } from '/shared/js/status.js';
 
@@ -1275,8 +1275,9 @@ function createPolicyScriptControl(item, label, showLabel = false) {
     || state.managedTemplates.find((template) => template.id === selectedId && template.kind === 'COMMAND' && template.item === item);
   const defaultTemplate = getDefaultScriptTemplate(item);
   const choose = document.createElement('button'); choose.type = 'button'; choose.className = 'btn btn-small policy-script-select';
+  const role = String(item).split('_')[0];
   choose.textContent = selected
-    ? selected.name
+    ? (selected.kind === 'COMMAND' ? storedCommandTemplateLabel(selected, state.currentServer?.products?.[role] || '') : selected.name)
     : selectedId ? '저장된 템플릿 없음'
       : COMMAND_ONLY_ITEMS.includes(item) ? '선택 안 함 · 미수집'
         : (defaultTemplate?.name || getDefaultScriptTemplateName(item));
@@ -1376,7 +1377,11 @@ function populateScriptTemplatePicker(item) {
     select.add(new Option(`${category} · ${template.name}`, template.id));
   });
   commandOptions.forEach((option) => select.add(new Option(option.label, option.id)));
-  if (selectedId && !selectableTemplates.some((template) => template.id === selectedId) && !commandOptions.some((option) => option.id === selectedId)) select.add(new Option('저장된 템플릿을 찾을 수 없음', selectedId));
+  if (selectedId && !selectableTemplates.some((template) => template.id === selectedId) && !commandOptions.some((option) => option.id === selectedId)) {
+    // 사용 중지한 명령 템플릿은 목록에 없지만 저장된 것이므로 버튼과 같은 이름(중지됨·제품 다름)으로 보여 줍니다.
+    const storedCommand = state.managedTemplates.find((template) => template.id === selectedId && template.kind === 'COMMAND' && template.item === scriptItem);
+    select.add(new Option(storedCommand ? storedCommandTemplateLabel(storedCommand, state.currentServer?.products?.[role] || '') : '저장된 템플릿을 찾을 수 없음', selectedId));
+  }
   select.value = selectedId;
   updateSelectedTemplateEditButton();
   const querySelect = document.getElementById('db-query-template-select');

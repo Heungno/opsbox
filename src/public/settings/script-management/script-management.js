@@ -138,7 +138,7 @@ function updateFormMode() {
 }
 
 const COMMAND_HELP = [
-  '관리 도구 명령을 실행해 상태를 판정하는 템플릿입니다. 머리 주석: @opsbox-product(제품 이름), @opsbox-tool(도구 경로), @opsbox-home(설치 경로 변수), @opsbox-args(도구 인자), @opsbox-require(필수 환경 변수), @opsbox-quit(종료 명령), @opsbox-timeout(초, 기본 20), @opsbox-status <수준> ~ <정규식>. 주석이 아닌 빈 줄 아닌 줄은 도구에 보낼 명령입니다.',
+  '관리 도구 명령을 실행해 상태를 판정하는 템플릿입니다. 머리 주석: @opsbox-product(제품 이름), @opsbox-tool(도구 이름: PATH, 그다음 @opsbox-home의 bin에서 찾음), @opsbox-home(설치 경로 변수), @opsbox-args(도구 인자), @opsbox-require(필수 환경 변수), @opsbox-quit(종료 명령), @opsbox-timeout(초, 기본 20), @opsbox-status <수준> ~ <정규식>. 주석이 아닌 빈 줄 아닌 줄은 도구에 보낼 명령입니다.',
   '판정은 Critical, Warning, Healthy 순서로 처음 맞는 규칙을 씁니다. 정규식은 ERE 범위만 쓰세요(Linux는 bash grep -E, Windows는 .NET 정규식이 읽으므로 \\d, 전방탐색 등은 쓰지 않습니다). 출력을 대문자로 바꾼 뒤 맞춰 보므로 패턴도 대문자로 씁니다.',
   '@opsbox-args 값에는 공백을 쓸 수 없습니다. 비밀번호는 직접 쓰지 말고 ${환경변수}로 지정하세요.',
 ].join('\n');

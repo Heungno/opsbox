@@ -3,7 +3,7 @@ import { beforeEach, test } from 'node:test';
 
 import { resetCodes, setCodes } from '../../src/public/shared/js/codes.js';
 import { effectiveResultPath, healthOf, roleBadgeText } from '../../src/public/settings/server-management/server-overview.js';
-import { COMMAND_ONLY_ITEMS, commandTemplateOptions, activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, defaultScriptTemplate, defaultScriptTemplateName, policyCheckIds, policyRoleTabs, resolveQueryTemplateId } from '../../src/public/settings/server-management/server-policy-form.js';
+import { COMMAND_ONLY_ITEMS, commandTemplateOptions, storedCommandTemplateLabel, activeScriptItems, compatibleDbQueries, dbTargetHint, defaultQueryTemplateId, defaultScriptTemplate, defaultScriptTemplateName, policyCheckIds, policyRoleTabs, resolveQueryTemplateId } from '../../src/public/settings/server-management/server-policy-form.js';
 import { scriptCommand, scriptDescription } from '../../src/public/settings/server-management/server-script-panel.js';
 
 beforeEach(() => {
@@ -113,4 +113,12 @@ test('선택 창: 그 항목의 명령 템플릿만, 서버 제품과 같은 것
   ]);
   assert.deepEqual(commandTemplateOptions(t, 'WAS_ENGINE_STATUS', 'WAS', '')[0].label, 'A 템플릿 (관리 명령 · 제품: WebLogic — 이 서버 WAS는 제품 미지정)');
   assert.deepEqual(COMMAND_ONLY_ITEMS, ['WAS_ENGINE_STATUS']);
+});
+
+test('서버 정책: 저장된 명령 템플릿 표시 이름 — 중지됨·제품 다름을 붙인다(선택 창과 같은 표시)', () => {
+  const t = (enabled: boolean, product: string) => ({ id: 'x', kind: 'COMMAND', item: 'WAS_ENGINE_STATUS', name: 'X', product, enabled });
+  assert.equal(storedCommandTemplateLabel(t(true, 'JEUS'), 'jeus'), 'X');
+  assert.equal(storedCommandTemplateLabel(t(false, 'JEUS'), 'JEUS'), 'X (중지됨)');
+  assert.equal(storedCommandTemplateLabel(t(true, 'WebLogic'), 'JEUS'), 'X (제품 다름)');
+  assert.equal(storedCommandTemplateLabel(t(false, 'WebLogic'), ''), 'X (중지됨 · 제품 다름)');
 });

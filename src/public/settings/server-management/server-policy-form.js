@@ -77,6 +77,14 @@ export function commandTemplateOptions(templates, item, role, serverProduct) {
     }));
 }
 
+/** 서버에 저장된 명령 템플릿의 표시 이름: 사용 중지면 "(중지됨)", 서버 제품과 다르면 "(제품 다름)" */
+export function storedCommandTemplateLabel(template, serverProduct) {
+  const notes = [];
+  if (!template.enabled) notes.push('중지됨');
+  if (upper(template.product) !== upper(serverProduct)) notes.push('제품 다름');
+  return notes.length ? `${template.name} (${notes.join(' · ')})` : template.name;
+}
+
 /** 기본 스크립트 이름 (항목 이름은 공통코드 scriptItems) */
 export function defaultScriptTemplateName(os, item) {
   return `${os || 'Windows'} 점검 항목 · ${codeLabel('scriptItems', item)}`;
