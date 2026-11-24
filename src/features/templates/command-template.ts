@@ -28,6 +28,7 @@ export function parseCommandTemplate(content: string): { template: CommandTempla
   const errors: CommandIssue[] = [];
   const warnings: CommandIssue[] = [];
   const lineErrors: CommandIssue[] = [];
+  let sawStatusLine = false;
 
   content.split('\n').forEach((raw, index) => {
     const no = index + 1;
@@ -53,6 +54,7 @@ export function parseCommandTemplate(content: string): { template: CommandTempla
           break;
         }
         case 'status': {
+          sawStatusLine = true;
           const rule = /^(\S+)\s+~\s+(\S.*)$/.exec(value);
           if (!rule) { lineErrors.push({ line: no, message: `${no}번 줄: 판정 규칙은 '<수준> ~ <정규식>' 형식이어야 합니다.` }); break; }
           if (!LEVELS.includes(rule[1])) { lineErrors.push({ line: no, message: `${no}번 줄: 수준은 Critical·Warning·Healthy 중 하나여야 합니다.` }); break; }
@@ -71,6 +73,8 @@ export function parseCommandTemplate(content: string): { template: CommandTempla
 
   if (!template.tool) errors.push({ line: 0, message: '@opsbox-tool(관리 도구 이름)이 필요합니다.' });
   errors.push(...lineErrors);
+  // 판정 줄을 적었는데 틀린 경우는 그 줄 오류로 충분하다.
+  if (!template.rules.length && !sawStatusLine) errors.push({ line: 0, message: '@opsbox-status 판정 규칙이 1개 이상 필요합니다.' });
   if (!template.commands.length) errors.push({ line: 0, message: '도구에 넣을 명령 줄이 1개 이상 필요합니다.' });
   return { template, errors, warnings };
 }

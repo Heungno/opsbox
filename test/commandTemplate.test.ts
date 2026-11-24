@@ -47,3 +47,8 @@ test('명령 템플릿: 모르는 키는 경고, CRLF도 같게 읽고, -P${VAR}
   assert.deepEqual(a.warnings, []);
   assert.deepEqual(parseCommandTemplate(lf.replace(/\n/g, '\r\n')), a);
 });
+
+test('명령 템플릿: @opsbox-status 판정 규칙이 하나도 없으면 오류', () => {
+  const { errors } = parseCommandTemplate('# @opsbox-tool wsadmin\nsi\n');
+  assert.deepEqual(errors, [{ line: 0, message: '@opsbox-status 판정 규칙이 1개 이상 필요합니다.' }]);
+});
