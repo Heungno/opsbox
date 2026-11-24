@@ -127,7 +127,7 @@ WEB·WAS 정책의 **엔진 상태** 항목(`WEB_ENGINE_STATUS`, `WAS_ENGINE_STA
 | 머리 주석 | 뜻 |
 | --- | --- |
 | `@opsbox-product` | 결과에 남는 제품 이름 |
-| `@opsbox-tool` | 관리 도구 이름. PATH, 홈 디렉터리의 `bin` 순서로 찾습니다. Windows는 `.exe`·`.cmd`·`.bat`도 찾습니다 |
+| `@opsbox-tool` | 관리 도구 이름. PATH, 홈 디렉터리의 `bin` 순서로 찾습니다. Windows는 각 위치에서 `<이름>.exe`·`.cmd`·`.bat`·`.com`을 먼저, 확장자 없는 `<이름>`을 마지막에 찾습니다 |
 | `@opsbox-home` | 홈 디렉터리 환경 변수 이름 (예: `JEUS_HOME`) |
 | `@opsbox-args` | 도구에 넘길 인자. `${환경변수}`만 실행 중에 값으로 바뀝니다 |
 | `@opsbox-require` | 꼭 있어야 하는 환경 변수. 하나라도 비면 미수집입니다 |

@@ -87,3 +87,20 @@ test('조립: Windows 명령 항목이 있으면 시드 실행기 조각이 SAVE
   assert.equal(script.indexOf(content(), at + 1), -1, '한 번만');
   assert.equal(script.indexOf(save), at + content().length + '\r\n\r\n'.length, 'SAVE 바로 앞');
 });
+
+test('Windows 실행기: 도구 이름은 .exe·.cmd·.bat·.com을 먼저, 확장자 없는 이름은 마지막에 찾는다', () => {
+  assert.ok(content().includes("$names = @(($Tool + '.exe'), ($Tool + '.cmd'), ($Tool + '.bat'), ($Tool + '.com'), $Tool)"));
+  const find = content().slice(content().indexOf('function Find-OpsBoxCommandTool'), content().indexOf('function Get-OpsBoxCommandSpec'));
+  assert.equal(find.split('foreach ($name in $names)').length - 1, 2, 'PATH와 $홈\\bin 둘 다 같은 순서');
+});
+
+test('Windows 실행기: .bat/.cmd 도구 경로에 % 또는 ^가 있으면 실행하지 않고 글자를 알려 준다', () => {
+  assert.ok(content().includes("$isBatch -and $toolPath -match '[%^]'"));
+  assert.ok(content().includes('경로에 cmd.exe로 넘길 수 없는 글자(% ^)가 있습니다'));
+});
+
+test('Windows 실행기: 시간 초과면 taskkill /T로 자식 프로세스까지 끝낸다(출력은 버림)', () => {
+  const timeoutBranch = content().slice(content().indexOf('if (-not $process.WaitForExit($timeoutMs))'), content().indexOf("$output = Get-OpsBoxCommandOutput $stdoutTask $stderrTask 2000"));
+  assert.match(timeoutBranch, /& taskkill\.exe \/PID \$process\.Id \/T \/F 2>\$null \| Out-Null/);
+  assert.ok(timeoutBranch.indexOf('taskkill') < timeoutBranch.indexOf('$process.Kill()'), 'Kill() 전에 taskkill');
+});
